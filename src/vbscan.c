@@ -3,7 +3,10 @@
  * vbscan.c
  *
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * July, 2001; May, 2001
+ *
+ * last modified July, 2001
+ * first written May, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
@@ -125,10 +128,10 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
       sig = sqrt(sig/q0);
 
       flag = 0;
-      if(fabs(sig-sig_prev)<tol) flag=1;
+      if(fabs(sig-sig_prev)>tol*(sig_prev+tol*100.0)) flag=1;
       for(j=0; j<n_gen; j++) {
-	if(fabs(mu[j]-mu_prev[j])<tol) { flag=1; break; }
-	if(fabs(pi[j]-pi_prev[j])<tol) { flag=1; break; }
+	if(fabs(mu[j]-mu_prev[j])>tol*(fabs(mu_prev[j])+tol*100.0)) { flag=1; break; }
+	if(fabs(pi[j]-pi_prev[j])>tol*(pi_prev[j]+tol*100.0)) { flag=1; break; }
       }
       if(flag==0) break;
       
@@ -191,9 +194,9 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
       sig = sqrt(sig/q0);
 
       flag = 0;
-      if(fabs(sig-sig_prev)<tol) flag=1;
+      if(fabs(sig-sig_prev)>tol*(sig_prev+tol*100.0)) flag=1;
       for(j=0; j<n_gen; j++) 
-	if(fabs(mu[j]-mu_prev[j])<tol) { flag=1; break; }
+	if(fabs(mu[j]-mu_prev[j])>tol*(fabs(mu_prev[j])+tol*100.0)) { flag=1; break; }
       if(flag==0) break;
       
       sig_prev = sig;
@@ -246,7 +249,7 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
 
       flag = 0;
       for(j=0; j<n_gen; j++) 
-	if(fabs(pi[j]-pi_prev[j])<tol) { flag=1; break; }
+	if(fabs(pi[j]-pi_prev[j])>tol*(pi_prev[j]+tol*100.0)) { flag=1; break; }
       if(flag==0) break;
       
       for(j=0; j<n_gen; j++) 

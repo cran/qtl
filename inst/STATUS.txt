@@ -1,6 +1,281 @@
 
-Library qtl
-============
+Revision history for the R/qtl package
+----------------------------------------------------------------------
+copyright (c) 2001, Karl W Broman, Johns Hopkins University
+Licensed under the GNU General Public License version 2 (June, 1991)
+http://biosun01.biostat.jhsph.edu/~kbroman/qtl
+----------------------------------------------------------------------
+
+Version 0.92, 2/12/2002:
+
+ Minor changes:
+
+   In read.cross.mm and read.cross.csv, when using the function
+   read.table, we replaced the use of as.is=TRUE with
+   colClasses="character". Apparently as.is=TRUE didn't work in R
+   version 1.4.0.  
+
+   In read.cross, changed the default of the argument "estimate.map"
+   to FALSE.
+
+
+Version 0.91, 12/3/2001:
+
+ Minor changes:
+
+  Fixed a problem with chromosome labels in plot.scantwo.
+
+  Fixed a slight bug in summary.ripple.
+
+  Previously forgot to implement the use of the "main" arg for
+  plot.scanone. 
+
+  Fixed a slight bug in read.cross.gary related to having just one
+  marker on a chromosome.
+
+  Fixed a slight bug in plot.cross for the case auto.layout=FALSE.
+
+  Revised read.cross so that, for the csv format, if the argument
+  "genotypes" is NULL, the genotypes are assumed to be correct. If
+  there are genotypes > 5, it is assumed to be a 4-way cross.
+
+  For some reason, the wrapper for est_map for 4-way crosses got
+  deleted.  I've re-written it.  Hopefully it works!
+
+  Fixed a slight bug in plot.map for plotting two sex-specific maps.
+  (The function works by pulling apart the sex-specific maps and then
+  calling plot.map again twice.  After those calls, it should return.)
+
+  Expanded examples in the help file for fake.4way.
+
+  Fixed a bug in create.map for sex-specific maps.
+
+  Revised calc.genoprob, argmax.geno and sim.geno so that, in the case
+  of one marker on a chromosome, off.end is forced to be > 0.
+
+  Revised plot.scanone so that if there is exactly one LOD score for a
+  chromosome, a small segment is plotted rather than a dot.
+
+  Fixed a couple of minor bugs in read.cross for the mapmaker format:
+  in dealing with the "symbols" information in the mapmaker file, and
+  in counting the number of lines in the file.  
+
+  Added a utility function checkcovar() to check phenotypes and
+  covariates in scanone and scantwo (thus removing some redundancy).
+
+
+Version 0.90, 11/24/2001:
+
+ Minor changes:
+
+  Replaced the example data fake.bc with something that will allow the
+  illustration of the use of covariates.
+
+  Added print.summary.ripple; I'd forgotten to write it before.
+
+  Added an updated tutorial on R/qtl, distributed as the file
+  rqtltour.pdf
+
+
+Version 0.89, 11/22/2001:
+
+ Major changes:
+
+  Consolidated scanone, vbscan and discan into the single function
+  scanone, with an argument model=c("normal","binary","2part","np").
+  The non-parametric "method" is now a "model".  
+
+  Buried scanone.perm and scantwo.perm as internal functions.  To do
+  permutation tests, one now uses the main functions (such as scantwo)
+  and specifies the n.perm argument.
+
+  Similarly, read.cross.* and write.cross.* were buried, so that the
+  user is expected to call either read.cross or write.cross rather
+  than calling the format-specific functions directly.  This was done
+  anticipating an increase in the number of such format-specific
+  read.cross functions. 
+
+  Got rid of find.errors and plot.errors, as I don't like them.  Use
+  calc.errorlod and plot.errorlod instead.  
+
+  Wanted to toss pull.chr, but instead just kept an internal version
+  which calls subset.cross and prints a warning, in case our one
+  official user has code which requires it.
+
+ Minor changes:
+
+  Added an "eq.spacing" argument to sim.map for generating maps with
+  equally-spaced markers.  This seems more useful than putting them
+  down at random.
+
+  Re-wrote a great deal of the help documentation (especially the
+  examples and details).
+
+  Added a new example data set, badorder, with some errors in marker
+  order.  (This is to illustrate the functions est.rf, ripple and
+  switch.order.) 
+
+  Fixed a slight error in summary.scantwo.  We print pairs of loci
+  only if their joint LOD exceeds its threshold and either (a) the
+  epistasis LOD exceeds its threshold or (b) both conditional LODs
+  exceed their thresholds.  
+
+  Totally re-wrote print.summary.scantwo.  It was unnecessarily
+  complicated before.
+
+  Made a very slight change regarding the zlim in plot.scantwo.
+
+  Fixed scantwo, summary.scantwo and plot.scantwo to deal with cases
+  of bad LOD scores (NAs, negative numbers and Infs).  A warning
+  message will always be printed.
+
+  Modified scanone_imp.c so that nullRss and altRss don't allocate
+  memory each time.  Fixed a very bad bug in dealing with interactive
+  covariates.  Fixed a single-character bug in scantwo_mr.c that was
+  causing a core dump.
+
+
+Version 0.88, 11/20/2001:
+
+ Major changes:
+
+  Added a scantwo function to do two-dimensional genome scans,
+  calculating LOD scores for a two-QTL model and to test epistasis
+  between each pair, with calculations done by imputation, Haley-Knott
+  regression, marker regression or the EM algorithm.  Hao Wu wrote the
+  imputation method. 
+
+  With Hao Wu, wrote plot.scantwo to plot the results of scantwo,
+  summary.scantwo to summarize the results, and scantwo.perm to get
+  genome-wide LOD thresholds for a 2-dimensional genome scan by
+  permutation tests.  The summary.scantwo function uses a criterion
+  due to Gary Churchill and Saunak Sen.
+
+  Added a C function to calculate joint genotype probabilities for
+  pairs of putative QTLs on the same chromosome.  Because the
+  resulting set of probabilities can take up a lot of memory, we're
+  not going to make these accessible to the user.  The function
+  calc.pairprob was created, but this is not to be called by the user,
+  but rather will be called when needed.
+
+Minor changes: 
+
+  Added a "method" argument to vbscan, even though only method="em" is
+  currently available. 
+
+  Revised scanone, scantwo, discan, vbscan, and their corresponding
+  ".perm" functions so that the output has attribute "method" to
+  indicate what method was used and attribute "type" to indicate the
+  type of cross that was analyzed.  
+
+  Changed method="im" to method="em" in scanone and discan; changed
+  method="markreg" again, this time to method="mg".  Changed the order
+  of these methods in scanone.
+
+  calc.genoprob now includes an attribute "map.function" with the
+  probabilities.
+
+  Changed colors plotted in plot.rf.
+
+  Modified the C function scanone_mr (marker regression) to avoid
+  repeatedly running the null model regression in the case of complete
+  marker data.  
+
+  Changed a good amount of R code like "1:length(x)" to "seq(along=x)"
+
+  Added a function fill.geno for imputing missing marker data by
+  simulation (through sim.geno) or by the Viterbi algorithm (through
+  argmax.geno), so that one may perform quick-and-dirty (with an
+  emphasis on dirty) genome scans by marker regression.
+
+  Fixed a small bug in sim.cross.f2.
+
+  Fixed some problems related to chromosomes with only one marker:
+  read.cross.csv, create.map, subset.cross.
+
+  Fixed a bug in the location of chromosome labels in plot.scanone.
+  Added an argument "main" for placing a title on the plot. 
+
+  Revised lots of little pieces of code using "drop=FALSE" when
+  subsetting a matrix or array in order to retain the structure.
+
+  read.cross.csv can now deal with categorical phenotypes, and
+  plot.cross was revised to deal with such non-numeric phenotypes. 
+  Added an argument "auto.layout"; if TRUE, mfrow is set so that the
+  many plots produced will all fit in one figure.  par(ask=TRUE) is no
+  longer ever set.
+
+  Revised sim.cross so that when keep.qtlgeno=TRUE, the QTL genotypes
+  are retained in a component cross$qtlgeno (rather than within the
+  data matrices).
+
+
+Version 0.87, 11/13/2001:
+
+ Major changes:
+
+  Hao Wu (hao@jax.org) has implemented the imputation method of Sen
+  and Churchill (2001) for a genome scan, included as method="imp" in
+  the function scanone.  
+
+  Added a non-parametric method to the function scanone, using a
+  modified version of the Kruskal-Wallis test (cf Kruglyak and Lander
+  1995).
+
+  scanone now allows the use of covariates for all methods except the
+  non-parametric method. 
+
+  Phenotypes in a cross object are now a data.frame.  Modified example
+  data files and the following functions to make this work:
+  sim.cross.*, read.cross.*, summary.cross, write.cross.csv. 
+  
+ Minor changes:  
+
+  Changed the name of the "anova" method in scanone to "markreg".
+
+  Changed the name of the argument "print.rf" in the est.map function
+  to "trace."
+
+  Modified the default cutoff in top.errorlod; allow cuts and colors
+  in plot.errorlod to be specified by the user.
+
+  summary.cross() now checks that markers are in increasing order.
+
+  Made the third row (marker positions) in csv file optional in
+  read.cross.csv. 
+
+  Added a utility function subset.cross() for pulling out specified
+  chromosomes or groups of individuals from a cross object.  We should
+  not need pull.chr() any longer. 
+
+  Added a utility function c.cross() for concatenating multiple cross
+  objects.  
+
+  Changed stopping rules for discan, discan.perm, vbscan, vbscan.perm,
+  est.map, est.rf, ripple, scanone, scanone.perm: 
+  |x(s+1) - x(s)| < e {|x(s)| + e*100} where by default e = 1e-4
+
+  Fixed the utility function create.map() for the case where the
+  genetic map starts at somewhere other than 0.
+
+  Placed help information for discan.perm, scanone.perm and
+  vbscan.perm within the files for discan, scanone and vbscan,
+  respectively.  
+
+
+Version 0.86, 11/4/2001:
+
+  Fixed a *real* bug in argmax.geno().  
+
+  Added discan() for doing interval mapping with a dichotomous trait.
+
+  Added documentation for the print.summary.* and internal functions.
+
+  Edited documentation files to conform to R guidelines.
+
+  Reduced the minimum value of the error.prob argument in est.map,
+  calc.genoprob, argmax.geno and sim.geno from 1e-14 to 1e-50.
+
 
 Version 0.85, 10/29/2001:
 
@@ -34,7 +309,7 @@ Version 0.84, 10/10/2001:
   Changed anova method in scanone() to use observed genotypes.
   Individuals with missing or partially missing genotypes are dropped.  
 
-  Added haley-knott regression method to scanone(). 
+  Added Haley-Knott regression method to scanone(). 
 
   Added a function ripple() for comparing marker orders for a single
   chromosome, looking at all permutations of a sliding window of
@@ -206,9 +481,5 @@ Version 0.76, 05/17/2001:
   Saunak Sen and I are now working together on this project, and so
   things will begin to progress more quickly (we hope).
 
-
-
-copyright (c) 2001, Karl W Broman, Johns Hopkins University
-Licensed under the GNU General Public License version 2 (June, 1991)
-
-http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html
+----------------------------------------------------------------------
+end of STATUS.txt

@@ -1,63 +1,93 @@
 \name{sim.cross}
 \alias{sim.cross}
+
 \title{Simulate a QTL experiment}
+
 \description{
   Simulates data for a QTL experiment using a model in which QTLs act additively.
-  A backcross, intercross, or phase-known 4-way cross may be simulated.
 }
+
 \usage{
 sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
           error.prob=0, missing.prob=0, partial.missing.prob=0,
-          keep.qtlgeno=FALSE,error.ind=TRUE,
+          keep.qtlgeno=TRUE, keep.errorind=TRUE,
 	  map.function=c("haldane","kosambi","c-f"))
 }
+
 \arguments{
- \item{map}{A list of length n.chr; its components are vectors
- containing the marker locations on each of the chromosomes.}
+ \item{map}{A list whose components are vectors containing the marker
+   locations on each of the chromosomes.}
  \item{model}{A matrix where each row corresponds to a
  different QTL, and gives the chromosome number, cM position and
  effects of the QTL.}
  \item{n.ind}{Number of individuals to simulate.}
- \item{type}{Indicates whether to simulate an intercross ("f2"), a
- backcross ("bc"), or a 4-way cross ("4way").}
- \item{error.prob}{The genotyping error rate to simulate.}
- \item{missing.prob}{The rate of missing genotypes to simulate.}
+ \item{type}{Indicates whether to simulate an intercross (\code{f2}),
+   a backcross (\code{bc}), or a phase-known 4-way cross (\code{4way}).}
+ \item{error.prob}{The genotyping error rate.}
+ \item{missing.prob}{The rate of missing genotypes.}
  \item{partial.missing.prob}{When simulating an intercross or 4-way
    cross, this gives the rate at which markers will be incompletely
    informative (i.e., dominant or recessive).}
- \item{keep.qtlgeno}{If TRUE, genotypes for the simulated QTLs are not
-   removed from the marker genotype data or genetic maps.}
- \item{error.ind}{If TRUE, and if \code{error.prob > 0}, the components
-   of \code{geno} will each contain a matrix, \code{errors}, with 1's
-   indicating a simulated genotyping error.}
- \item{map.function}{Indicates whether to use the Haldane, Kosambi or Carter-Falconer
- map function when converting genetic distances into recombination
- fractions.} 
+ \item{keep.qtlgeno}{If TRUE, genotypes for the simulated QTLs will be
+   included in the output.}
+ \item{keep.errorind}{If TRUE, and if \code{error.prob > 0}, the
+   identity of genotyping errors will be included in the output.}
+ \item{map.function}{The map function to use when converting genetic
+   distances into recombination fractions.}
 }
+
 \details{
   Meiosis is assumed to exhibit no crossover interference.  If one of
   the chromosomes has class \code{X}, it is assumed to be the X
-  chromosome, and is assumed to be segregating in the cross.  Thus, in an
-  intercross, it is segregating like a backcross chromosome.  In a 4-way
-  cross, a second phenotype, \code{sex}, will be generated.
-  In order to ensure that the code is relatively easy to read,
-  simulation is actually performed in a set of subfunctions,
-  \code{sim.cross.bc}, \code{sim.cross.f2}, and \code{sim.cross.4way}.
+  chromosome, and is assumed to be segregating in the cross.  Thus, in
+  an intercross, it is segregating like a backcross chromosome.  In a
+  4-way cross, a second phenotype, \code{sex}, will be generated.
+
+  QTLs are assumed to act additively, and the residual phenotypic
+  variation is assumed to be normally distributed with variance 1.
+
+  For a backcross, the effect of a QTL is a single number corresponding
+  to half the difference between the homozygote and the heterozygote.
+
+  For an intercross, the effect of a QTL is a pair of numbers,
+  (\eqn{a,d}), where \eqn{a} is the additive effect (half the difference
+  between the homozygotes) and \eqn{d} is the dominance deviation (the
+  difference between the heterozygote and the midpoint between the
+  homozygotes).
+
+  For a four-way cross, the effect of a QTL is a set of three numbers,
+  (\eqn{a,b,c}), where, in the case of one QTL, the mean phenotype,
+  conditional on the QTL genotyping being AC, BC, AD or BD, is  \eqn{a},
+  \eqn{b}, \eqn{c} or 0, respectively.
 }  
+
 \value{
   An object of class \code{cross}.  See \code{\link[qtl]{read.cross}} for
-  details.} 
-}
-\author{Karl W Broman,
-\email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+  details. \cr 
 
-\seealso{\code{\link[qtl]{read.cross}}, \code{\link[qtl]{fake.f2}},
-         \code{\link[qtl]{fake.bc}} \code{\link[qtl]{fake.4way}} }
+  If \code{keep.qtlgeno} is TRUE, the cross object will contain a
+  component \code{qtlgeno} which is a matrix containing the QTL
+  genotypes (with complete data and no errors), coded as in the genotype
+  data. \cr 
+
+  If \code{keep.errorind} is TRUE and errors were simulated, each
+  component of \code{geno} will each contain a matrix \code{errors},
+  with 1's indicating simulated genotyping errors.
+}
+
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+
+\seealso{ \code{\link[qtl]{sim.map}}, \code{\link[qtl]{read.cross}},
+    \code{\link[qtl]{fake.f2}}, \code{\link[qtl]{fake.bc}}
+    \code{\link[qtl]{fake.4way}} }
 
 \examples{
+# simulate a genetic map
 map <- sim.map()
-fake <- sim.cross(map,type="f2", model = rbind(c(1,20,1,2),c(5,20,0.5,0.5)))
+
+# simulate 250 intercross individuals with 2 QTLs
+fake <- sim.cross(map, type="f2", n.ind=250,
+                  model = rbind(c(1,45,1,1),c(5,20,0.5,-0.5)))
 }
                     
 \keyword{datagen}

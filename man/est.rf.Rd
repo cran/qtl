@@ -5,12 +5,13 @@
 
 \description{
   Estimate the sex-averaged recombination fraction between all pairs of
-  typed markers.
+  genetic markers.
 }
 
 \usage{
-est.rf(cross, maxit=1000, tol=1e-6)
+est.rf(cross, maxit=4000, tol=1e-4)
 }
+
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
@@ -21,11 +22,11 @@ est.rf(cross, maxit=1000, tol=1e-6)
 }
 
 \value{
-  The \code{cross} object in the input is returned with a component,
-  \code{rf}, added.  This is a matrix of size (tot.mar x tot.mar).  The
-  diagonal contains the number of typed meioses per marker, the lower
-  triangle contains the estimated recombination fractions, and the upper
-  triangle contains the LOD scores (testing rf = 0.5).
+  The input \code{cross} object is returned with a component, \code{rf},
+  added.  This is a matrix of size (tot.mar x tot.mar).  The diagonal
+  contains the number of typed meioses per marker, the lower triangle
+  contains the estimated recombination fractions, and the upper triangle
+  contains the LOD scores (testing rf = 0.5).
 }
 
 \details{
@@ -37,15 +38,15 @@ est.rf(cross, maxit=1000, tol=1e-6)
   4-way cross, we estimate sex-averaged recombination fractions.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
-data(fake.f2)
-fake.f2 <- est.rf(fake.f2)
-plot.rf(fake.f2)
+data(badorder)
+badorder <- est.rf(badorder)
+plot.rf(badorder)
 }
 
-\seealso{\code{\link[qtl]{plot.rf}}, \code{\link[qtl]{est.map}} }
+\seealso{ \code{\link[qtl]{plot.rf}}, \code{\link[qtl]{est.map}},
+  \code{\link[qtl]{badorder}} }
 
 \keyword{utilities}

@@ -3,11 +3,12 @@
 # ripple.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001
+# last modified Nov, 2001
+# first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: ripple, summary.ripple
+# Contains: ripple, summary.ripple, print.summary.ripple
 #           ripple.perm1, ripple.perm2, ripple.perm.sub
 #
 ######################################################################
@@ -22,12 +23,12 @@
 ripple <-
 function(cross, chr, window=4, error.prob=0,
          map.function=c("haldane","kosambi","c-f"),
-         maxit=1000,tol=1e-5,sex.sp=TRUE)
+         maxit=4000, tol=1e-4, sex.sp=TRUE)
 {
   # pull out relevant chromosome
   if(length(chr) > 1)
     stop("ripple only works for one chromosome at a time.")
-  cross <- pull.chr(cross,chr)
+  cross <- subset(cross,chr=chr)
   chr.name <- names(cross$geno)[1]
 
   map.function <- match.arg(map.function)
@@ -85,7 +86,8 @@ function(cross, chr, window=4, error.prob=0,
   # sort orders by lod
   o <- rev(order(loglik[-1])+1)
 
-  orders <- cbind(orders,lod=loglik,chrlen)[c(1,o),]
+  orders <- cbind(orders,LOD=loglik,chrlen)[c(1,o),]
+  rownames(orders) <- c("Initial", paste(1:(nrow(orders)-1)))
   class(orders) <- c("ripple","matrix")
   attr(orders,"chr") <- chr.name
   attr(orders,"window") <- window
@@ -102,15 +104,33 @@ function(cross, chr, window=4, error.prob=0,
 ######################################################################
 
 summary.ripple <-
-function(object,lod.cutoff=2,...)
+function(object, lod.cutoff= -1, ...)
 {
   n <- ncol(object)
-  if(!any(object[-1,n-1] > -lod.cutoff)) object <- object[1:2,]
-  else # make sure first row is included
-    object <- rbind(object[1,],object[-1,][object[-1,n-1] > -lod.cutoff,])
+  o <- (object[-1,n-1] >= lod.cutoff)
+  if(!any(o)) object <- object[1:2,,drop=FALSE]
+  else  # make sure first row is included
+    object <- object[c(TRUE,o),,drop=FALSE]
 
+  rownames(object) <- c("Initial ", paste(1:(nrow(object)-1)))
   class(object) <- c("summary.ripple","matrix")
   object
+}
+
+######################################################################
+#
+# print.summary.ripple
+#
+######################################################################
+
+print.summary.ripple <-
+function(x, ...)
+{
+  n <- ncol(x)
+  x[,(n-1):n] <- round(x[,(n-1):n],1)
+
+  colnames(x)[n-1] <- "    LOD"
+  print.matrix(x)
 }
 
 ######################################################################

@@ -1,0 +1,139 @@
+######################################################################
+#
+# calc.pairprob.R
+#
+# copyright (c) 2001, Karl W Broman, Johns Hopkins University
+# last modified Nov, 2001
+# first written Nov, 2001
+# Licensed under the GNU General Public License version 2 (June, 1991)
+# 
+# Part of the R/qtl package
+# Contains: calc.pairprob
+#
+######################################################################
+
+######################################################################
+#
+# calc.pairprob: calculate joint genotype probabilities for all pairs
+#                of putative QTLs, conditional on the observed marker
+#                data
+#
+# This is an *internal* function, not to be called by the user.
+#
+# The input argument cross is assumed to have just one chromosome.
+#
+######################################################################
+
+calc.pairprob <-
+function(cross, step=0, off.end=0, error.prob=0, 
+         map.function=c("haldane","kosambi","c-f"))
+{
+  if(step==0 && off.end > 0) step <- off.end*2
+
+  # map function
+  map.function <- match.arg(map.function)
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else mf <- mf.h
+ 
+  # don't let error.prob be exactly zero, just in case
+  if(error.prob < 1e-50) error.prob <- 1e-50
+
+  n.ind <- nind(cross)
+  n.chr <- nchr(cross)
+
+  # which type of cross is this?
+  if(class(cross)[1] == "f2") {
+    one.map <- TRUE
+    if(class(cross$geno[[1]]) == "A") { # autosomal
+      cfunc <- "calc_pairprob_f2"
+      n.gen <- 3
+      gen.names <- c("A","H","B")
+    }
+    else {                             # X chromsome 
+      cfunc <- "calc_pairprob_bc"
+      n.gen <- 2
+      gen.names <- c("A","H")
+    }
+  }
+  else if(class(cross)[1] == "bc") {
+    cfunc <- "calc_pairprob_bc"
+    n.gen <- 2
+    gen.names <- c("A","H")
+    one.map <- TRUE
+  }
+  else if(class(cross)[1] == "4way") {
+    cfunc <- "calc_pairprob_4way"
+    n.gen <- 4
+    one.map <- FALSE
+    gen.names <- c("AC","AD","BC","BD")
+  }
+  else stop(paste("calc.pairprob not available for cross type",
+                  class(cross)[1], "."))
+  
+  # genotype data
+  gen <- cross$geno[[1]]$data
+  gen[is.na(gen)] <- 0
+  
+  # get recombination fractions
+  if(one.map) {
+    map <- create.map(cross$geno[[1]]$map,step,off.end)
+    rf <- mf(diff(map))
+    rf[rf < 1e-14] <- 1e-14
+    
+    # new genotype matrix with pseudomarkers filled in
+    newgen <- matrix(ncol=length(map),nrow=nrow(gen))
+    colnames(newgen) <- names(map)
+    newgen[,colnames(gen)] <- gen
+    newgen[is.na(newgen)] <- 0
+    n.pos <- ncol(newgen)
+    marnames <- names(map)
+  }
+  else {
+    map <- create.map(cross$geno[[1]]$map,step,off.end)
+    rf <- mf(diff(map[1,]))
+    rf[rf < 1e-14] <- 1e-14
+    rf2 <- mf(diff(map[2,]))
+    rf2[rf2 < 1e-14] <- 1e-14
+    
+    # new genotype matrix with pseudomarkers filled in
+    newgen <- matrix(ncol=ncol(map),nrow=nrow(gen))
+    colnames(newgen) <- colnames(map)
+    newgen[,colnames(gen)] <- gen
+    newgen[is.na(newgen)] <- 0
+    n.pos <- ncol(newgen)
+    marnames <- colnames(map)
+  }
+  
+  if(n.pos < 2) return(NULL)
+
+  # below: at least two positions
+  # call the C function
+  if(one.map) {
+    z <- .C(cfunc,
+            as.integer(n.ind),         # number of individuals
+            as.integer(n.pos),         # number of markers
+            as.integer(newgen),        # genotype data
+            as.double(rf),             # recombination fractions
+            as.double(error.prob),     # 
+            as.double(rep(0,n.gen*n.ind*n.pos)),
+            pairprob=as.double(rep(0,n.ind*n.pos*(n.pos-1)/2*n.gen^2)),
+            PACKAGE="qtl")
+  }
+  else {
+    z <- .C(cfunc,
+            as.integer(n.ind),         # number of individuals
+            as.integer(n.pos),         # number of markers
+            as.integer(newgen),        # genotype data
+            as.double(rf),             # recombination fractions
+            as.double(rf2),            # recombination fractions
+            as.double(error.prob),     # 
+            as.double(rep(0,n.gen*n.ind*n.pos)),
+            pairprob=as.double(rep(0,n.ind*n.pos*(n.pos-1)/2*n.gen^2)),
+            PACKAGE="qtl")
+  }
+  
+  array(z$pairprob, dim=c(n.ind,n.pos*(n.pos-1)/2,n.gen,n.gen))
+}
+
+# end of calc.pairprob.R

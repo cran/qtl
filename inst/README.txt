@@ -1,82 +1,117 @@
 
 README file for the qtl package
+----------------------------------------------------------------------
+This explains the installation of the qtl package for R.  If you have
+any problems with installation, send an email to Karl Broman
+<kbroman@jhsph.edu>.
+----------------------------------------------------------------------
 
-copyright (c) 2001, Karl W Broman, Johns Hopkins University
-Licensed under the GNU General Public License version 2 (June, 1991)
+Obtaining R
 
-This is a quick document to explain the installation and use
-of the "qtl" package for R
+  You can download R from the Comprehensive R Archive Network (CRAN).
+  Visit http://cran.r-project.org or a local mirror (for example,
+  http://cran.us.r-project.org).  Source code is available for UNIX,
+  and binaries are available for Windows, MacOS, and many versions of
+  Linux.  
+
+  On Windows, we recommend installing R in "c:\R" rather than
+  "c:\Program Files\R".  Why didn't Microsoft use "Programs" rather
+  than "Program files"?
 
 
-Installation (Windows)
+Obtaining R/qtl
 
-  1. Unzip the "qtl.zip" file into the directory $RHOME\library
-     ($RHOME is something like c:\Program Files\R\rw1030)
-     Note that this should create a directory $RHOME\library\qtl
-     containing the R source code and the compiled dll
+  You can obtain the latest version of R/qtl from 
 
-  2. Start Rgui 
+      http://biosun01.biostat.jhsph.edu/~kbroman/qtl
+
+  Copies of R/qtl will also be placed on CRAN, but the version at the 
+  above site will be update more frequently.
+
+
+Installation of R/qtl (Windows)
+
+  1. Unzip the "qtl.zip" file into the directory $RHOME\library (where
+     $RHOME is something like c:\R\rw1030).  Note that this should
+     create a directory $RHOME\library\qtl containing the R source
+     code and the compiled dll.  
+
+  2. Start Rgui. 
 
   3. Type "link.html.help()" to get the help files for the qtl 
-     package added to the help indices
+     package added to the help indices.
 
-  4. Note that the source code is in the file "qtl_*.tar.gz"
-
-
-Installation (Unix)
-
-  1. Go into the directory containing "qtl_*.tar.gz"
-
-  2. Type "R INSTALL qtl"
+  4. Note that the source code is in the file "qtl_*.tar.gz", which
+     you may download separately.
 
 
-A brief example of using the package 
-(See the help file "A starting point" for further information.)
+Installation of R/qtl (Unix)
 
-library()                  # List available packages
-library(help=qtl)          # List functions and data within "qtl"
-library(qtl)               # Load the qtl package
+  1. Go into the directory containing "qtl_*.tar.gz".
 
-data(listeria)             # Make the dataset "listeria" available
+  2. Type "R INSTALL qtl" to have the package installed in the
+     standard location (/usr/local/lib/R/library).  You'll probably
+     need to be superuser.
 
-# different ways to get help
-?sim.cross
-help(sim.cross)
-help.start()
+     To install the package locally, type 
 
-plot.missing(listeria)     # plot genotype matrix
-plot.map(listeria)         # plot genetic map
-plot(listeria)             # both of these, plus phenotype histograms 
+         R INSTALL --library=$LOCALLIB qtl_*.tar.gz
 
-# remove markers with no genotype data
-listeria <- remove.nullmarkers(listeria)
+     (where $LOCALLIB is something like "/home/auser/Rlibs").  You'll
+     then need to create a file ~/.Renviron containing the line 
 
-# estimate genetic map
-newmap <- est.map(listeria,error.prob=0,print.rf=TRUE)    
-plot.map(listeria,newmap)       # plot original map vs new map
+         R_LIBS=/home/auser/Rlibs
 
-# calc cond'l genotype probabilities
-listeria <- calc.genoprob(listeria,step=1,off.end=0)  
+     so that R will know to search for packages in that directory.
 
-# identify most likely underlying genotypes
-listeria <- argmax.geno(listeria)
 
-# identify genotypes possibly in error
-listeria <- calc.errorlod(listeria)
-plot.errorlod(listeria)
-top.errorlod(listeria)
+Getting started
 
-# estimate pairwise recombination fractions
-listeria <- est.rf(listeria)
-plot.rf(listeria)
-plot.rf(listeria,c(1,5,13))
+  Once you start R, you'll need to type "library(qtl)" to load the
+  package.  You can create a file "~/.Rprofile" or "c:\.Rprofile"
+  containing R code to be run whenever you start R.  If you use the
+  R/qtl package regularly, you should place the line "library(qtl)" in
+  such a file.
 
-# take log phenotype and then do genome scan
-# (for these data, this is not really appropriate)
-listeria$pheno[,1] <- log(listeria$pheno[,1])
-output1 <- scanone(listeria,method="anova")
-output2 <- scanone(listeria,method="im")
-plot(output1)
-plot(output1,c(5,13))
-plot(output1,output2,c(5,13))
+  Efficient use of the R/qtl package requires considerable knowledge
+  of the R language.  Learning R may require a formidable investment
+  of time, but it will definitely be worth the effort.  Numerous free
+  documents on getting started with R are available on CRAN
+  (http://cran.r-project.org).  In additional, several books are
+  available on S/S-PLUS, which is very similar to R.  For example, see
+  WN Venables, BD Ripley (1999) Modern Applied Statistics with S-PLUS,
+  3rd edition. Springer.
 
+  To get started with R/qtl, you might first peruse the documentation
+  that is bundled with it.  Type help.start() to start the html
+  version of the R help pages.  Then click "Packages" -> "qtl".  
+
+  In Windows, you may gain access to the help documents by clicking
+  "Help" in the menu bar and then "R language (html)".  Windows users
+  may wish to place the line "options(htmlhelp=TRUE)" in the
+  file "c:\.Rprofile".  
+
+  The help file titled "A starting point" gives a brief walk-through
+  of an example analysis, and so is a good place to start.  You may
+  also view this help file by typing 
+
+      ?"A starting point"
+
+  from the command line in R.  
+
+  A tutorial on R/qtl (as a PDF document) is also available.  It
+  briefly describes the aims of the R/qtl package, lists the available
+  functions grouped in categories, and provides a few extended
+  examples.  The tutorial is bundled with R/qtl, as "rqtltour.pdf" and
+  is also available from the R/qtl website: 
+
+      http://biosun01.biostat.jhsph.edu/~kbroman/qtl
+
+
+Questions/comments/concerns
+
+  If you have any questions, suggestions, problems or complaints
+  regarding R/qtl, please email Karl Broman <kbroman@jhsph.edu>.
+  
+----------------------------------------------------------------------
+end of README.txt

@@ -1,45 +1,73 @@
 \name{plot.errorlod}
 \alias{plot.errorlod}
+
 \title{Plot grid of error LOD values}
+
 \description{
-  Plot a grid showing the LOD scores indicating which genotypes are
-  likely to be in error, including lines at the chromosome boundaries.
+  Plot a grid of the LOD scores indicating which genotypes are
+  likely to be in error.
 }
+
 \usage{
-plot.errorlod(x,chr,\dots)
+plot.errorlod(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
+              col=c("white","gray85","hotpink","purple3"), \dots)
 }
+
 \arguments{
   \item{x}{An object of class \code{cross}.  See
     \code{\link[qtl]{read.cross}} for details.}
-  \item{chr}{Indicates for which chromosomes the error LOD scores should
+  \item{chr}{The chromosomes for which the error LOD scores should
     be plotted.}
+  \item{ind}{Indicates the individuals for which the error LOD scores
+    should be plotted.}
+  \item{breaks}{A set of breakpoints for the colors; must give one more
+    breakpoint than color.  Intervals are open on the left and closed on
+    the right, except for the lowest interval.}
+  \item{col}{A vector of colors to appear in the image.}
   \item{\dots}{Ignored at this point.}
 }
-\value{
+
+\details{
   Uses \code{\link[base]{image}} to plot a grid with different shades
-  of pixels to indicate which genotypes are most likely to be in
-  error.  (Darker pixels have higher error LOD scores.) 
+  of pixels to indicate which genotypes are likely to be in error.
+
+  Darker pixels have higher error LOD scores:
+  \eqn{LOD \le 2} in white;
+  \eqn{2 < LOD \le 3}{2 < LOD <= 3} in gray;
+  \eqn{3 < LOD \le 4.5}{3 < LOD <= 4.5} in pink;
+  \eqn{LOD > 4.5} in purple.
 }
+
+\value{None.}
 
 \examples{
-data(fake.bc)
-fake.bc <- calc.genoprob(fake.bc,error.prob=0.01)
-fake.bc <- calc.errorlod(fake.bc,error.prob=0.01)
-plot.errorlod(fake.bc)
-\testonly{data(fake.f2)}
-\testonly{fake.f2 <- calc.errorlod(fake.f2)}
-\testonly{plot.errorlod(fake.f2)}
+data(hyper)
+# run calc.genoprob, then calc.errorlod; use same error.prob
+hyper <- calc.genoprob(hyper,error.prob=0.01)
+hyper <- calc.errorlod(hyper,error.prob=0.01)
+
+# plot the error LOD scores; print those above a specified cutoff 
+plot.errorlod(hyper)
+plot.errorlod(hyper,chr=1)
+top.errorlod(hyper,cutoff=4)
+
+# plot genotype data, flagging genotypes with error LOD > cutoff
+plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
+
+# Note that if markers are extremely tightly linked,
+#     any recombination event will have a high error LOD
+plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
+hyper$geno[[1]]$map
 }
 
-\seealso{\code{\link[base]{image}}, \code{\link[qtl]{calc.errorlod}},
-  \code{\link[qtl]{top.errorlod}}, \code{\link[qtl]{find.errors}},
-  \code{\link[qtl]{plot.errors}} }
+\seealso{ \code{\link[qtl]{calc.errorlod}},
+  \code{\link[qtl]{top.errorlod}}, \code{\link[base]{image}} }
 
-\references{SE Lincoln and ES Lander (1992) Systematic detection of
-  errors in genetic linkage data.  Genomics 14:604-610}
+\references{
+  Lincoln, S. E. and Lander, E. S. (1992) Systematic detection of
+  errors in genetic linkage data.  \emph{Genomics} \bold{14}, 604--610.
+}
 
-\author{Karl W Broman,
-\email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \keyword{hplot}

@@ -1,8 +1,10 @@
 \name{clean}
 \alias{clean}
-\title{Remove intermediate calculations}
+
+\title{Remove derived data}
+
 \description{
-  Remove information on intermediate calculations from a cross object.
+  Remove any intermediate calculations from a cross object.
 }
 
 \usage{
@@ -15,23 +17,24 @@ clean(cross)
 }
 
 \value{
-  An object of class \code{cross}, with any intermediate calculations
+  The input object, with any intermediate calculations
   (such as is produced by \code{\link[qtl]{calc.genoprob}},
-  \code{\link[qtl]{argmax.geno}} and \code{\link[qtl]{sim.geno}}) removed.
+  \code{\link[qtl]{argmax.geno}} and \code{\link[qtl]{sim.geno}})
+  removed.
 }
 
 \examples{
 data(fake.f2)
+names(fake.f2$geno)
 fake.f2 <- calc.genoprob(fake.f2)
+names(fake.f2$geno)
 fake.f2 <- clean(fake.f2)
+names(fake.f2$geno)
 }
 
-\seealso{\code{\link[qtl]{drop.qtlgeno}},
-  \code{\link[qtl]{drop.nullmarkers}},
+\seealso{ \code{\link[qtl]{drop.nullmarkers}},
   \code{\link[qtl]{drop.markers}} }
 
-\author{Karl W Broman,
-\email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \keyword{manip}

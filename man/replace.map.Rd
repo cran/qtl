@@ -1,5 +1,6 @@
 \name{replace.map}
 \alias{replace.map}
+
 \title{Replace the genetic map of a cross}
 
 \description{
@@ -19,15 +20,15 @@
 \value{The input \code{cross} object with the genetic map replaced by
   the input \code{map}.}
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
-data(fake.f2,fake.bc)
-map <- pull.map(fake.f2)
-fake.bc <- replace.map(fake.bc,map)
+data(fake.f2)
+newmap <- est.map(fake.f2)
+plot.map(fake.f2,newmap)
+fake.f2 <- replace.map(fake.f2, newmap)
 }
 
-\seealso{\code{\link[qtl]{pull.map}} }
+\seealso{ \code{\link[qtl]{pull.map}}, \code{\link[qtl]{est.map}} }
 
 \keyword{manip}

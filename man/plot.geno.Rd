@@ -1,15 +1,16 @@
 \name{plot.geno}
 \alias{plot.geno}
-\title{Plot genotypes with indication of likely errors}
+
+\title{Plot observed genotypes, flagging likely errors}
 
 \description{
-  Plot genotypes on a particular chromosome for a set of individuals,
-  with an indication of likely errors.}
+  Plot the genotypes on a particular chromosome for a set of
+  individuals, flagging likely errors.
 }
 
 \usage{
 plot.geno(x, chr, ind, horizontal=FALSE, cutoff=2,
-         method=c("lod","argmax"), min.sep=1,\dots) 
+          min.sep=1, \dots) 
 }			    
 
 \arguments{
@@ -19,40 +20,51 @@ plot.geno(x, chr, ind, horizontal=FALSE, cutoff=2,
   \item{ind}{Vector of individuals to plot.  If missing, all individuals
     are plotted.}
   \item{horizontal}{If TRUE, chromosomes are plotted horizontally.}
-  \item{cutoff}{Cutoff on error LOD score (if that method is used);
-    genotypes with error LOD scores above this cutoff are flagged as
-    errors.}
-  \item{method}{Indicates whether to use the error LOD scores calculated
-    by \code{\link[qtl]{calc.errorlod}} or the results of
-    \code{\link[qtl]{argmax.geno}} and \code{\link[qtl]{find.errors}}.}
+  \item{cutoff}{Genotypes with error LOD scores above this value are
+    flagged as possible errors.}
   \item{min.sep}{Markers separated by less than this value (as a
     percent of the chromosome length) are pulled apart, so that they may
-    be distinguished in the picture.} 
+    be distinguished in the picture.}
   \item{\dots}{Ignored at this point.}
 }
 
-\value{
-  A plot of the genotypes for a set of individuals.  Likely errors are
-  indicated by red squares.  In a backcross,
-  genotypes AA and AB are indicated by white and black circles,
-  respectively.  In an intercross, genotypes AA, AB and BB are indicated
-  by white, gray, and black circles, respectively, and the partially
-  missing genotypes "not BB" (D in mapmaker) and "not AA" (C in
-  mapmaker) are indicated by green and orange circles, respectively. 
+\details{
+  Plots the genotypes for a set of individuals.  Likely errors are
+  indicated by red squares.  In a backcross, genotypes AA and AB are
+  indicated by white and black circles, respectively.  In an intercross,
+  genotypes AA, AB and BB are indicated by white, gray, and black
+  circles, respectively, and the partially missing genotypes ``not BB''
+  (D in mapmaker) and ``not AA'' (C in mapmaker) are indicated by green
+  and orange circles, respectively.
 }
+
+\value{None.}
 
 \examples{
-data(listeria)
-listeria <- calc.genoprob(listeria,error.prob=0.01)
-listeria <- calc.errorlod(listeria,error.prob=0.01)
-plot.geno(listeria,13)
+data(hyper)
+# run calc.genoprob, then calc.errorlod; use same error.prob
+hyper <- calc.genoprob(hyper,error.prob=0.01)
+hyper <- calc.errorlod(hyper,error.prob=0.01)
+
+# plot the error LOD scores; print those above a specified cutoff 
+plot.errorlod(hyper)
+plot.errorlod(hyper,chr=1)
+top.errorlod(hyper,cutoff=4)
+
+# plot genotype data, flagging genotypes with error LOD > cutoff
+plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
+
+# Note that if markers are extremely tightly linked,
+#     any recombination event will have a high error LOD
+plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
+hyper$geno[[1]]$map
 }
 
-\seealso{\code{\link[base]{image}}, \code{\link[qtl]{plot.cross}} }
+\seealso{ \code{\link[qtl]{calc.errorlod}},
+  \code{\link[qtl]{plot.errorlod}}, \code{\link[qtl]{top.errorlod}},
+  \code{\link[base]{image}} }
 
 
-\author{Karl W Broman,
-\email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \keyword{hplot}

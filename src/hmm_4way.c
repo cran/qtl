@@ -3,7 +3,10 @@
  * hmm_4way.c
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ * 
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  * 
  * C functions for the R/qtl package
@@ -12,6 +15,7 @@
  *           nrec_4way2, calc_genoprob_4way, sim_geno_4way, 
  *           est_map_4way, argmax_geno_4way, errorlod_4way, 
  *           calc_errorlod_4way, nrec2_4way, logprec_4way, est_rf_4way
+ *           calc_pairprob_4way
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the "4-way" cross (autosomal data)
@@ -160,7 +164,6 @@ double nrec_4way(int gen1, int gen2)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 double nrec_4way1(int gen1, int gen2)
 {
   switch(gen1) {
@@ -195,7 +198,6 @@ double nrec_4way2(int gen1, int gen2)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 void calc_genoprob_4way(int *n_ind, int *n_mar, int *geno, 
 			double *rf1, double *rf2, double *error_prob, 
 			double *genoprob) 
@@ -204,7 +206,6 @@ void calc_genoprob_4way(int *n_ind, int *n_mar, int *geno,
 		init_4way, emit_4way, step_4way);
 }
 
-
 void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		   double *rf1, double *rf2, double *error_prob, int *draws)
 {
@@ -212,21 +213,14 @@ void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 	   draws, init_4way, emit_4way, step_4way);
 }
 
-
 void est_map_4way(int *n_ind, int *n_mar, int *geno, double *rf1, double *rf2,
 		  double *error_prob, double *loglik, int *maxit, 
-		  double *tol, int *sexsp, int *prnt)
+		  double *tol, int *sexsp, int *trace)
 {
-  if(*sexsp) 
-    est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
-	    init_4way, emit_4way, step_4way, nrec_4way1, nrec_4way2,
-	    loglik, *maxit, *tol, 1, *prnt);
-  else
-    est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
-	    init_4way, emit_4way, step_4way, nrec_4way, nrec_4way,
-	    loglik, *maxit, *tol, 0, *prnt);
+  est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
+	  init_4way, emit_4way, step_4way, nrec_4way1, nrec_4way2, 
+	  loglik, *maxit, *tol, *sexsp, *trace);
 }
-
 
 void argmax_geno_4way(int *n_ind, int *n_pos, int *geno, 
 		      double *rf1, double *rf2, 
@@ -235,7 +229,6 @@ void argmax_geno_4way(int *n_ind, int *n_pos, int *geno,
   argmax_geno(*n_ind, *n_pos, 4, geno, rf1, rf2, *error_prob,
 	      argmax, init_4way, emit_4way, step_4way);
 }
-
 
 double errorlod_4way(int obs, double *prob, double error_prob)
 {
@@ -261,7 +254,6 @@ double errorlod_4way(int obs, double *prob, double error_prob)
   else return(log10(p));
 }
 
-
 void calc_errorlod_4way(int *n_ind, int *n_mar, int *geno, 
 		      double *error_prob, double *genoprob, 
 		      double *errlod)
@@ -269,7 +261,6 @@ void calc_errorlod_4way(int *n_ind, int *n_mar, int *geno,
   calc_errorlod(*n_ind, *n_mar, 4, geno, *error_prob, genoprob,
 		errlod, errorlod_4way);
 }
-
 
 double nrec2_4way(int obs1, int obs2, double rf)
 {
@@ -349,7 +340,6 @@ double nrec2_4way(int obs1, int obs2, double rf)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 double logprec_4way(int obs1, int obs2, double rf)
 {
   int temp;
@@ -428,12 +418,19 @@ double logprec_4way(int obs1, int obs2, double rf)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 void est_rf_4way(int *n_ind, int *n_mar, int *geno, double *rf, 
 	       int *maxit, double *tol)
 {
   est_rf(*n_ind, *n_mar, geno, rf, nrec2_4way, logprec_4way, 
 	 *maxit, *tol);
+}
+
+void calc_pairprob_4way(int *n_ind, int *n_mar, int *geno, 
+			double *rf1, double *rf2, double *error_prob, 
+			double *genoprob, double *pairprob) 
+{
+  calc_pairprob(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, genoprob,
+		pairprob, init_4way, emit_4way, step_4way);
 }
 
 /* end of hmm_4way.c */
