@@ -12,10 +12,10 @@
 }
 
 \usage{
-read.cross(format=c("csv","mm","gary","karl"), dir=".", file,
-           genfile, mapfile, phefile, chridfile, mnamesfile,
-           pnamesfile, sep=",", na.strings="-",
-           genotypes=c("A","H","B","C","D"), estimate.map=FALSE)
+read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
+           file, genfile, mapfile, phefile, chridfile, mnamesfile,
+           pnamesfile, sep=",", na.strings=c("-","NA"),
+           genotypes=c("A","H","B","D","C"), estimate.map=TRUE)
 }
 
 \arguments{
@@ -50,9 +50,9 @@ read.cross(format=c("csv","mm","gary","karl"), dir=".", file,
     careful attention to the third and fourth of these; the order of
     these can be confusing!  These five character strings are converted
     to (1,2,3,5,4) in the \code{cross} object that is returned.} 
-  \item{estimate.map}{For formats \code{csv} and \code{mm} only: if TRUE
-    and marker positions are not included in the input files, the
-    genetic map is estimated using the function
+  \item{estimate.map}{For formats \code{csv}, \code{qtx}, and \code{mm}
+    only: if TRUE and marker positions are not included in the input
+    files, the genetic map is estimated using the function
     \code{\link[qtl]{est.map}}.}   
 }
 
@@ -92,12 +92,41 @@ read.cross(format=c("csv","mm","gary","karl"), dir=".", file,
 
 \details{
   The available formats are comma-delimited (\code{csv}), Mapmaker
-  (\code{mm}), Gary Churchill's format (\code{gary}) and Karl Broman's
-  format (\code{karl}).  The required files and their specification for
-  each format appears below.  The comma-delimited format is recommended.
-  Note that these formats work only for backcross and intercross data.
+  (\code{mm}), Map Manager QTX (\code{qtx}), Gary Churchill's format
+  (\code{gary}) and Karl Broman's format (\code{karl}).  The required
+  files and their specification for each format appears below.  The
+  comma-delimited format is recommended. Note that these formats work
+  only for backcross and intercross data. 
 }
 
+
+\section{X chromosome}{
+  \bold{The genotypes for the X chromosome require special care!}
+
+  Any X chromosome genotype data should be coded like an
+  autosome in a backcross, with genotypes A and H.
+
+  The phenotype data should contain a column named "sex" which indicates
+  the sex of each individual, either coded as 0=female and 1=male, or as
+  a factor with levels female/male or f/m.  Case will be ignored both in
+  the name and in the factor levels.  If no such phenotype column is
+  included, it will be assumed that all individuals are of the same sex.
+
+  In the case of an intercross, the phenotype data may also contain a
+  column names "pgm" (for "paternal grandmother") indicating the
+  direction of the cross.  It should be coded as 0/1 with 0 indicating
+  the cross (AxB)x(AxB) or (BxA)x(AxB) and 1 indicating the cross
+  (AxB)x(BxA) or (BxA)x(BxA).  If no such phenotype column is included,
+  it will be assumed that all individuals come from the same direction
+  of cross. 
+
+  In a backcross, females should be coded 1=AA and 2=AB, while males
+  should be coded 1=A and 2=B (hemizygous).
+
+  In an intercross, males should be coded as 1=A and 2=B (hemizygous),
+  which females should be coded as 1=AA and 2=AB for pgm=0, and 1=BB and
+  2=AB for pgm=1.
+}
 
 \section{CSV format}{
   The input file is a text file with a specified field delimiter
@@ -114,7 +143,10 @@ read.cross(format=c("csv","mm","gary","karl"), dir=".", file,
   autosome.
 
   An optional third line should contain blanks in the phenotype
-  columns, followed by marker positions, in cM. 
+  columns, followed by marker positions, in cM.
+
+  Marker order is taken from the cM positions, if provided; otherwise,
+  it is taken from the column order.
 
   Subsequent lines should give the data, with one line for each
   individual, and with phenotypes followed by genotypes.  If possible,
@@ -138,20 +170,46 @@ read.cross(format=c("csv","mm","gary","karl"), dir=".", file,
   followed by phenotype data, with marker and phenotype names always
   beginning with the symbol \code{*}.
     
-  A second file, giving marker positions and chromosome assignments, is
-  not standard for the Mapmaker software, but is necessary for us; it is
-  specified with the argument \code{mapfile}.  (For this format, if
-  \code{genfile} is specified by not \code{mapfile}, we assume that
-  \code{genfile} is the file to use.)  The file should contain two or
-  three columns separated by white space and with no header row.
-  The first column gives the chromosome assignments.  The second column
-  gives the marker names, with markers listed in the order along the
-  chromosomes.  An optional third column lists the map positions of the
-  markers.
+  A second file contains the genetic map information, specified with
+  the argument \code{mapfile}.  (For the Mapmaker format, if
+  \code{genfile} is specified but not \code{mapfile}, we assume that
+  \code{genfile} is the file to use.)  The map file may be in
+  one of two formats.  The function will determine which format of map
+  file is presented.  
+
+  The simplest format for the map file is not standard for the Mapmaker
+  software, but is easy to create.  The file contains two or three
+  columns separated by white space and with no header row.  The first
+  column gives the chromosome assignments.  The second column gives the
+  marker names, with markers listed in the order along the chromosomes.
+  An optional third column lists the map positions of the markers.
+
+  Another possible format for the map file is the \code{.maps}
+  format, which is produced by Mapmaker.  The code for reading this
+  format was written by Brian Yandell; I'm not really familiar with it
+  myself.  
+
+  Marker order is taken from the map file, either by the order they are
+  presented or by the cM positions, if specified.  
 
   If a chromosome has the identifier \code{X} or \code{x}, it is assumed
   to be the X chromosome; otherwise, it is assumed to be an autosome.
 }
+
+\section{Map Manager QTX format}{
+  This format requires a single file (that produced by the Map Manager
+  QTX program).
+}  
+
+\section{QTL Cartographer format}{
+  This format requires two files: the \code{.cro} and \code{.map} files
+  for the QTL Cartographer (produced by the QTL Cartographer
+  sub-program, Rmap and Rcross).
+
+  Note that the QTL Cartographer cross types are converted as follows:
+  RF1 to riself, RF2 to risib, RF0 (doubled haploids) to bc, B1 or B2 to
+  bc, RF2 or SF2 to f2.
+}  
 
 \section{Gary format}{
   This format requires the six files; all files have default names, and
@@ -216,18 +274,25 @@ dat1 <- read.cross("csv", dir="Mydata", file="mydata.csv")
 dat2 <- read.cross("mm", dir="Mydata", file="mydata.raw",
                    mapfile="mydata.map")
 
+# Map Manager QTX format
+dat3 <- read.cross("qtx", dir="Mydata", file="mydata.qtx")
+
+# QTL Cartographer format
+dat4 <- read.cross("qtlcart", dir="Mydata", file="qtlcart.cro",
+                   mapfile="qtlcart.map")
+
 # Gary format
-dat3 <- read.cross("gary", dir="Mydata", genfile="geno.dat",
+dat5 <- read.cross("gary", dir="Mydata", genfile="geno.dat",
                    mapfile="markerpos.txt", phefile="pheno.dat",
                    chridfile="chrid.dat", mnamesfile="mnames.txt",
                    pnamesfile="pnames.txt")
 
 # Karl format
-dat4 <- read.cross("karl", dir="Mydata", genfile="gen.txt",
+dat6 <- read.cross("karl", dir="Mydata", genfile="gen.txt",
                    phefile="phe.txt", mapfile="map.txt")}
 } 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian S. Yandell}
 
 \seealso{ \code{\link[qtl]{write.cross}}, \code{\link[qtl]{sim.cross}};
   the \code{sampledata} directory in the package distribution contains

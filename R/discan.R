@@ -2,8 +2,8 @@
 #
 # discan.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,9 +21,11 @@
 
 discan <-
 function(cross, pheno.col=1, method=c("em","mr"),
+         x.treatment=c("simple","full"),
          maxit=4000, tol=1e-4)
 {
   method <- match.arg(method)
+  x.treatment <- match.arg(x.treatment)
 
   # check phenotypes
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
@@ -54,27 +56,13 @@ function(cross, pheno.col=1, method=c("em","mr"),
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
 
-    # which type of cross is this?
-    if(type == "f2") {
-      if(class(cross$geno[[i]]) == "A") { # autosomal
-        n.gen <- 3
-        gen.names <- c("A","H","B")
-      }
-      else {                             # X chromsome 
-        n.gen <- 2
-        gen.names <- c("A","H","B") 
-      }
-    }
-    else if(type == "bc") {
-      n.gen <- 2
-      gen.names <- c("A","H")
-    }
-    else if(type == "4way") {
-      n.gen <- 4
-      gen.names <- c("AC","AD","BC","BD")
-    }
-    else stop(paste("discan not available for cross type",
-                    type, "."))
+    chrtype <- class(cross$geno[[i]])
+    if(chrtype=="X") sexpgm <- getsex(cross)
+    else sexpgm <- NULL
+
+    # get genotype names
+    gen.names <- getgenonames(type,chrtype,x.treatment,sexpgm)
+    n.gen <- length(gen.names)
 
     # pull out genotype data (mr)
     # or genotype probabilities (im)
@@ -87,6 +75,10 @@ function(cross, pheno.col=1, method=c("em","mr"),
       # discard partially informative genotypes
       if(type=="f2" || type=="f2ss") newgeno[newgeno>3] <- 0
       if(type=="4way") newgeno[newgeno>4] <- 0
+
+      # Fix up X chromosome
+      if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+         newgeno <- fixXdata(type, x.treatment, sexpgm, geno=newgeno)
 
       n.pos <- ncol(newgeno)
       map <- cross$geno[[i]]$map
@@ -101,6 +93,10 @@ function(cross, pheno.col=1, method=c("em","mr"),
       n.pos <- ncol(genoprob)
       genoprob <- genoprob[keep.ind,,]
 
+      # Fix up X chromosome
+      if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+         genoprob <- fixXdata(type, x.treatment, sexpgm, prob=genoprob)
+
       map <- create.map(cross$geno[[i]]$map,
                         attr(cross$geno[[i]]$prob,"step"),
                         attr(cross$geno[[i]]$prob,"off.end"))
@@ -110,7 +106,7 @@ function(cross, pheno.col=1, method=c("em","mr"),
     }
 
     # call the C function
-    if(method == "mr") {
+    if(method == "mr") 
       z <- .C(cfunc,
               as.integer(n.ind),         # number of individuals
               as.integer(n.pos),         # number of markers
@@ -119,8 +115,8 @@ function(cross, pheno.col=1, method=c("em","mr"),
               as.double(pheno),          # phenotype data
               result=as.double(rep(0,n.pos*(n.gen+1))),
               PACKAGE="qtl")
-    }
-    else { # interval mapping
+
+    else  # interval mapping
       z <- .C(cfunc,
               as.integer(n.ind),         # number of individuals
               as.integer(n.pos),         # number of markers
@@ -131,14 +127,10 @@ function(cross, pheno.col=1, method=c("em","mr"),
               as.integer(maxit),
               as.double(tol),
               PACKAGE="qtl")
-    }
-
     z <- matrix(z$result,nrow=n.pos)
 
     if(method == "em") z[,1] <- z[,1] - llik0
-
-    if(type=="f2" && class(cross$geno[[i]])=="X") # add BB column
-      z <- cbind(z[,1:3],rep(NA,n.pos))
+    z[is.na(z[,1]),1] <- 0
     colnames(z) <- c("lod",gen.names)
       
     w <- names(map)
@@ -150,13 +142,53 @@ function(cross, pheno.col=1, method=c("em","mr"),
     z <- as.data.frame(z)
     z <- cbind(chr=rep(names(cross$geno)[i],length(map)), pos=map, z)
     rownames(z) <- w
-    results <- rbind(results,z)
+
+    # if different number of columns from other chromosomes,
+    #     expand to match
+    if(!is.null(results) && ncol(z) != ncol(results)) {
+      cnz <- colnames(z)
+      cnr <- colnames(results)
+      wh.zr <- match(cnz,cnr)
+      wh.rz <- match(cnr,cnz)
+      if(all(!is.na(wh.rz))) {
+        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=ncol(z)))
+        dimnames(newresults) <- list(rownames(results), cnz)
+        newresults[,cnr] <- results
+        results <- newresults
+        for(i in 2:ncol(results))
+          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+      }
+      else if(all(!is.na(wh.zr))) {
+        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=ncol(results)))
+        dimnames(newz) <- list(rownames(z), cnr)
+        newz[,cnz] <- z
+        z <- newz
+        for(i in 2:ncol(z))
+          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
+      }
+      else {
+        newnames <- c(cnr, cnz[is.na(wh.zr)])
+
+        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=length(newnames)))
+        dimnames(newresults) <- list(rownames(results), newnames)
+        newresults[,cnr] <- results
+        results <- newresults
+        for(i in 2:ncol(results))
+          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+        
+        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=length(newnames)))
+        dimnames(newz) <- list(rownames(z), newnames)
+        newz[,cnz] <- z
+        z <- newz
+        for(i in 2:ncol(z))
+          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
+      }
+    }
+
+    results <- rbind(results, z)
   }
 
-  # replace any lod = NaN with 0
-  results[is.na(results[,3]),3] <- 0
-
-  class(results) <- c("scanone",class(results))
+  class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method
   attr(results,"type") <- type
   attr(results,"model") <- "binary"

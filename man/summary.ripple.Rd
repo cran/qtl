@@ -17,7 +17,10 @@ summary.ripple(object, lod.cutoff = -1, \dots)
  \item{object}{An object of class \code{ripple}, the output of the
    function \code{\link[qtl]{ripple}}.}
  \item{lod.cutoff}{Only marker orders with LOD score (relative to the
-   initial order) above this cutoff will be displayed.} 
+   initial order) above this cutoff will be displayed.  For output of
+   \code{\link[qtl]{ripple}} in the case of minimization of the number
+   of obligate crossovers, we double this argument and treat it as a
+   cutoff for the number of obligate crossovers.}
  \item{\dots}{Ignored at this point.}
 }
 
@@ -32,13 +35,14 @@ summary.ripple(object, lod.cutoff = -1, \dots)
 
 \examples{ % I don't run the following, since they are run in ripple.Rd
 \dontrun{data(badorder)
-rip2 <- ripple(badorder, 1, 2)
-summary(rip2)
+rip7c <- ripple(badorder, 1, 7)
+summary(rip7c)
 
-badorder <- switch.order(badorder, 1, rip2[2,])
-rip2p <- ripple(badorder, 1, 2)
-summary(rip2p)}
-}
+rip2l <- ripple(badorder, 1, 2, method="likelihood")
+summary(rip2l)
+
+badorder <- switch.order(badorder, 1, rip7c[2,])
+}}
 
 \seealso{ \code{\link[qtl]{ripple}}, \code{\link[qtl]{est.map}},
   \code{\link[qtl]{est.rf}} }

@@ -11,9 +11,10 @@
 }
 
 \usage{
-scantwo(cross, chr, pheno.col=1, method=c("em","imp","hk","mr"), 
-        addcov=NULL, intcov=NULL, run.scanone=TRUE,
-        incl.markers=FALSE, maxit=4000, tol=1e-4,
+scantwo(cross, chr, pheno.col=1,
+        method=c("em","imp","hk","mr","mr-imp","mr-argmax"), 
+        addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+        run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
         trace=TRUE, n.perm)
 }
 
@@ -26,9 +27,18 @@ scantwo(cross, chr, pheno.col=1, method=c("em","imp","hk","mr"),
    used as the phenotype.}
  \item{method}{Indicates whether to use standard interval mapping (ie
    the EM algorithm), imputation, Haley-Knott regression, or marker
-   regression.}
- \item{addcov}{Additive covariates.}
- \item{intcov}{Interactive covariates (interact with QTL genotype).}
+   regression.  Marker regression is performed either by dropping
+   individuals with missing genotypes (\code{"mr"}), or by first filling
+   in missing data using a single imputation (\code{"mr-imp"}) or by the
+   Viterbi algorithm (\code{"mr-argmax"}).}
+ \item{addcovar}{Additive covariates.}
+ \item{intcovar}{Interactive covariates (interact with QTL genotype).}
+ \item{x.treatment}{How to treat the X-chromosome.  Simple: hemizygous
+   males are equivalent to homozygous females.  Full: hemizygous males
+   are treated differently from homozygous females.  Note that columns
+   \code{"sex"} and \code{"pgm"} in the phenotype data are needed; see
+   the section on the X chromosome in the help file for
+   \code{\link[qtl]{read.cross}}.} 
  \item{run.scanone}{If TRUE, run the function \code{\link[qtl]{scanone}}
    and place the results on the diagonal.}
  \item{incl.markers}{If FALSE, do calculations only at points on an
@@ -148,11 +158,11 @@ fake.bc <- calc.genoprob(fake.bc, step=10)
 ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]
 out <- scantwo(fake.bc, method="hk", pheno.col=1,
-               addcov=ac, intcov=ic)
+               addcovar=ac, intcovar=ic)
 plot(out)
 }
 
 \seealso{ \code{\link[qtl]{plot.scantwo}}, \code{\link[qtl]{summary.scantwo}},
-  \code{\link[qtl]{scanone}} }
+  \code{\link[qtl]{scanone}}, \code{\link[qtl]{max.scantwo}} }
 
 \keyword{models}

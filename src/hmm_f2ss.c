@@ -2,9 +2,9 @@
  * 
  * hmm_f2ss.c
  * 
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, 2002, Karl W Broman, Johns Hopkins University
  *
- * last modified Sep, 2001
+ * last modified Mar, 2002
  * first written Sep, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -57,7 +57,7 @@ double emit_f2ss(int obs_gen, int true_gen, double error_prob)
     if(true_gen != 1) return(log(1.0-error_prob/2.0));
     else return(log(error_prob/2.0));
   }
-  return(log(-1.0)); /* shouldn't get here */
+  return(0.0); /* shouldn't get here */
 }
     
 double step_f2ss(int gen1, int gen2, double rf1, double rf2) 

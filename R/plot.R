@@ -2,13 +2,14 @@
 #
 # plot.R
 #
-# copyright (c) 2000-2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2000-2002, Karl W Broman, Johns Hopkins University
+# last modified July, 2002
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: plot.missing, plot.map, plot.cross, plot.geno, plot.info
+# Contains: plot.missing, plot.map, plot.cross, plot.geno, plot.info,
+#           plot.pxg
 #
 ######################################################################
 
@@ -40,9 +41,8 @@ function(x,chr,reorder=FALSE,main="Missing genotypes",...)
   type <- class(cross)[1]
   g <- t(Geno[o,])
   g[is.na(g)] <- 0
-  if(type == "bc") {
+  if(type == "bc" || type=="risib" || type=="riself") 
     g[g > 0] <- 1
-  }
   else if(type=="f2") {
     g[g > 0 & g < 4] <- 1
     g[g > 3] <- 0.5
@@ -178,7 +178,7 @@ function(x,map2,horizontal=FALSE,...)
       par(xpd=TRUE,xaxt="n",las=1)
       on.exit(par(xpd=old.xpd,xaxt=old.xaxt,las=old.las))
       
-      plot(0,0,type="n",ylim=c(0,maxlen),xlim=c(0.5,n.chr+0.5),
+      plot(0,0,type="n",ylim=c(maxlen,0),xlim=c(0.5,n.chr+0.5),
 	   ylab="Location (cM)", xlab="Chromosome")
       
       a <- par("usr")
@@ -218,7 +218,7 @@ function(x,map2,horizontal=FALSE,...)
       par(xpd=TRUE,xaxt="n",las=1)
       on.exit(par(xpd=old.xpd,xaxt=old.xaxt,las=old.las))
 
-      plot(0,0,type="n",ylim=c(0,maxloc),xlim=c(0.5,n.chr+0.5),
+      plot(0,0,type="n",ylim=c(maxloc,0),xlim=c(0.5,n.chr+0.5),
            ylab="Location (cM)", xlab="Chromosome")
 
       a <- par("usr")
@@ -329,8 +329,8 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
   cross <- subset(cross,chr=chr)
   type <- class(cross)[1]
   
-  if(type != "bc" && type != "f2")
-    stop("This function has only been coded for bc and f2 crosses.")
+  if(type != "bc" && type != "f2" && type != "riself" && type != "risib")
+    stop("Only available for backcross, intercross or RI strains.")
 
   if(is.na(match("errorlod",names(cross$geno[[1]])))) {
     warning("First running calc.errorlod.")
@@ -380,12 +380,11 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
 
     # AB genotypes
     ind <- tind; ind[!is.na(data) & data!=2] <- NA
-    if(type=="bc")
-      points(x,ind,pch=16,col=color[3]) 
-    else {
+    if(type=="f2") {
       points(x,ind,pch=16,col=color[2])
       points(x,ind,pch=1)
     }
+    else points(x,ind,pch=16,col=color[3]) 
 
     if(type=="f2") {
       # BB genotypes
@@ -429,12 +428,11 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
 
     # AB genotypes
     ind <- tind; ind[!is.na(data) & data!=2] <- NA
-    if(type=="bc")
-      points(ind,y,pch=16,col=color[3])
-    else {
+    if(type=="f2") {
       points(ind,y,pch=16,col=color[2])
       points(ind,y,pch=1)
     }
+    else points(ind,y,pch=16,col=color[3])
 
     if(type=="f2") {
       # BB genotypes
@@ -479,9 +477,10 @@ function(x,chr,method=c("both","entropy","variance"),...)
   method <- match(match.arg(method),c("entropy","variance","both"))-1
 
   if(!missing(chr)) cross <- subset(cross,chr=chr)
-  results <- NULL
 
   n.chr <- nchr(cross)
+  results <- NULL
+
   if(is.na(match("prob",names(cross$geno[[1]])))) { # need to run calc.genoprob
     warning("First running calc.genoprob.")
     cross <- calc.genoprob(cross)
@@ -528,7 +527,7 @@ function(x,chr,method=c("both","entropy","variance"),...)
     if(length(o) > 0) 
       w[o] <- paste(w[o],names(cross$geno)[i],sep=".c")
     rownames(z) <- w
-    results <- rbind(results,z)
+    results <- rbind(results, z)
   }
 
   # check whether gap was included as an argument
@@ -538,10 +537,10 @@ function(x,chr,method=c("both","entropy","variance"),...)
       plot.scanone(results,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results[,-3],ylim=c(0,1),gap=gap,
+      plot.scanone(results,lodcolumn=4,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==2)
-      plot.scanone(results,results[,-3],ylim=c(0,1),gap=gap,
+      plot.scanone(results,results,lodcolumn=3:4,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
   }
   else { # gap was included in ...
@@ -549,16 +548,101 @@ function(x,chr,method=c("both","entropy","variance"),...)
       plot.scanone(results,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results[,-3],ylim=c(0,1),
+      plot.scanone(results,lodcolumn=4,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==2)
-      plot.scanone(results,results[,-3],ylim=c(0,1),
+      plot.scanone(results,results,lodcolumn=3:4,ylim=c(0,1),
                    main="Missing information",...)
   }
 
   colnames(results)[3:4] <- c("misinfo.entropy","misinfo.variance")
+
   class(results) <- c("scanone","data.frame")
   invisible(results)
+}
+
+# Plot phenotypes against the genotypes at a marker
+plot.pxg <-
+function(x, marker, pheno.col=1, jitter=1, infer=TRUE, ...)
+{
+  oldlas <- par("las")
+  on.exit(par(las=oldlas))
+  par(las=1)
+
+  cross <- x
+  type <- class(cross)[1]
+
+  # find chromosome containing the marker
+  o <- sapply(cross$geno,function(a,b)
+              !is.na(match(b,colnames(a$data))),marker)
+  if(!any(o)) stop(paste("Marker",marker,"not found"))
+
+  chr <- names(cross$geno)[o]
+  cross <- subset(cross, chr)
+
+  chrtype <- class(cross$geno[[1]])
+
+  # if X chromosome and backcross or intercross, get sex/direction data
+  if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+    sexpgm <- getsex(cross)
+
+  # number of possible genotypes
+  gen.names <- getgenonames(type, chrtype, "full", sexpgm)
+  n.gen <- length(gen.names)
+
+  jitter <- jitter/10
+  if(n.gen==2) jitter <- jitter*0.75
+  
+  # if infer=TRUE, fill in genotype data by a single imputation
+  if(infer) {
+    which.missing <- rep(0,nind(cross))
+    which.missing[is.na(cross$geno[[1]]$data[,marker])] <- 1
+    cross <- fill.geno(cross, method="imp")
+  }
+
+  # data to plot
+  x <- cross$geno[[1]]$data[,marker]
+  y <- cross$pheno[,pheno.col]
+  u <- runif(nind(cross),-jitter, jitter)
+
+  if(!infer) {
+    if(type == "f2" || type=="f2ss") # replace C's and D's with NA's
+      x[x>3] <- NA
+    if(type == "4way") # similarly for 4-way cross
+      x[x>4] <- NA
+  }
+
+  # in case of X chromosome, recode some genotypes
+  if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss")) 
+    x <- as.numeric(fixXdata(type, "full", sexpgm, geno=as.matrix(x)))
+
+  # create plot
+  r <- (1-2*jitter)/2
+  plot(x+u,y,xlab="Genotype",ylab=colnames(cross$pheno)[pheno.col],
+       main=marker,xlim=c(1-r+jitter,n.gen+r+jitter),xaxt="n")
+  abline(v=1:n.gen,col="gray",lty=3)
+  if(infer) {
+    points((x+u)[which.missing==1],y[which.missing==1],col="red")
+    points((x+u)[which.missing==0],y[which.missing==0])
+  }
+  else points(x+u,y)
+
+  # add confidence intervals
+  me <- tapply(y,x,mean,na.rm=TRUE)
+  se <- tapply(y,x,function(a) sd(a,na.rm=TRUE)/sqrt(sum(!is.na(a))))
+  segments(1:n.gen+jitter*2,me,1:n.gen+jitter*4,me,lwd=2,col="blue")
+  segments(1:n.gen+jitter*3,me-se,1:n.gen+jitter*3,me+se,lwd=2,col="blue")
+  segments(1:n.gen+jitter*2.5,me-se,1:n.gen+jitter*3.5,me-se,lwd=2,col="blue")
+  segments(1:n.gen+jitter*2.5,me+se,1:n.gen+jitter*3.5,me+se,lwd=2,col="blue")
+
+  # add genotypes below
+  u <- par("usr")
+  segments(1:n.gen,u[3],1:n.gen,u[3]-diff(u[3:4])*0.015,xpd=TRUE)
+  text(1:n.gen,u[3]-diff(u[3:4])*0.05,gen.names,xpd=TRUE)
+
+  p.value <- anova(aov(y~x,subset=(which.missing==0)))[1,5]
+  names(p.value) <- NULL
+  invisible(list(p.value=p.value,data=cbind(geno=x,pheno=y,inferred=which.missing)))
 }
 
 # end of plot.R

@@ -2,8 +2,8 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,14 +26,21 @@ function(object,...)
   n.mar <- nmar(object)
   type <- class(object)[1]
 
+  if(type != "f2" && type != "f2ss" && type != "bc" && type != "4way" &&
+     type != "riself" && type != "risib")
+    stop(paste("Cross type", type, "is not suppoted."))
+
+  # combine genotype data into one big matrix
   Geno <- object$geno[[1]]$data
   if(n.chr > 1)
     for(i in 2:n.chr)
       Geno <- cbind(Geno,object$geno[[i]]$data)
 
+  # proportion of missing genotype data
   missing.gen <- mean(is.na(Geno))
   
-  if(type=="f2") {
+  # table of genotype values
+  if(type=="f2" || type=="f2ss") {
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:5))
     names(typings) <- c("AA","AB","BB","not BB","not AA")
   }
@@ -41,11 +48,16 @@ function(object,...)
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:2))
     names(typings) <- c("AA","AB")
   }
-  else 
-    typings <- table(factor(Geno[!is.na(Geno)]))
+  else if(type=="riself" || type=="risib") {
+    typings <- table(factor(Geno[!is.na(Geno)], levels=1:2))
+    names(typings) <- c("AA","BB")
+  }
+  else typings <- table(factor(Geno[!is.na(Geno)]))
 
+  # turn into fractions
   typings <- typings/sum(typings)
 
+  # amount of missing phenotype data
   missing.phe <- as.numeric(cbind(apply(object$pheno,2,function(a) mean(is.na(a)))))
 
   # check that object$geno[[i]]$data has colnames and that they match
@@ -80,6 +92,59 @@ function(object,...)
   if(!is.data.frame(object$pheno))
     warning("Phenotypes should be a data.frame.")
 
+  # check genotype data
+  if(type=="bc" || type=="riself" || type=="risib") {
+    # Invalid genotypes?
+    if(any(!is.na(Geno) & Geno != 1 & Geno != 2)) {
+      warning("Invalid genotypes.")
+      cat("    Observed genotypes:", paste(unique(Geno),collapse=" "), "\n")
+    }
+
+    # Missing genotype category on autosomes?
+    if(sum(!is.na(Geno) & Geno==2) == 0 ||
+       sum(!is.na(Geno) & Geno==1) == 0)
+      warning("Strange genotype pattern.")
+  }
+  else if(type=="f2" || type=="f2ss") {
+    # invalid genotypes
+    if(any(!is.na(Geno) & Geno!=1 & Geno!=2 & Geno!=3 &
+           Geno!=4 & Geno!=5)) {
+      warning("Invalid genotypes.")
+      cat("    Observed genotypes:", paste(unique(Geno),collapse=" "), "\n")
+    }
+
+    # X chromosome
+    for(i in 1:n.chr) {
+      if(class(object$geno[[i]]) == "X") {
+        dat <- object$geno[[i]]$data
+        if(any(!is.na(dat) & dat!=1 & dat!=2)) {
+          warning("Invalid genotypes on X chromosome:")
+          cat("    Observed genotypes:", paste(unique(dat),collapse=" "), "\n")
+        }
+      }
+    }
+
+    # Missing genotype category on autosomes?
+    dat <- NULL
+    for(i in 1:n.chr) {
+      if(class(object$geno[[i]]) != "X") 
+        dat <- cbind(dat,object$geno[[i]]$data)
+    }
+    if(sum(!is.na(dat) & dat==2) == 0 ||
+       sum(!is.na(dat) & dat==1) == 0 ||
+       sum(!is.na(dat) & dat==3) == 0)
+      warning("Strange genotype pattern.")
+  }
+
+  # Look for duplicate marker names
+  mnames <- NULL
+  for(i in 1:nchr(object)) 
+    mnames <- c(mnames,colnames(object$geno[[i]]$data))
+  o <- table(mnames)
+  if(any(o > 1))
+    warning("Duplicate markers [", paste(mnames[mnames==names(o)[o>1]],
+                                         collapse=", "), "]")
+
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,
 			missing.gen=missing.gen,typing.freq=typings,
@@ -95,23 +160,23 @@ function(x,...)
 {
   cat("\n")
   if(x$type=="f2") cat("    F2 intercross\n\n")
+  else if(x$type=="f2ss") cat("    F2 intercross w/ sex-specific maps\n\n")
   else if(x$type=="bc") cat("    Backcross\n\n")
   else if(x$type=="4way") cat("    4-way cross\n\n")
+  else if(x$type=="riself") cat("    RI strains via selfing\n\n")
+  else if(x$type=="risib") cat("    RI strains via sib matings\n\n")
   else cat(paste("    cross", x$type, "\n\n",sep=" "))
 
   cat("    No. individuals: ", x$n.ind,"\n\n")
-  cat("    No. phenotypes:  ", x$n.phe,"\n\n")
+  cat("    No. phenotypes:  ", x$n.phe,"\n")
+  cat("    Percent phenotyped: ", round((1-x$missing.phe)*100,1), "\n\n")
   cat("    No. chromosomes: ", x$n.chr,"\n")
   cat("    Total markers:   ", sum(x$n.mar), "\n")
-  cat("    No. markers:     ", x$n.mar, "\n")
-  cat("\n")
+  cat("    No. markers:     ", x$n.mar, "\n\n")
   cat("    Percent genotyped: ", round((1-x$missing.gen)*100,1), "\n")
   cat("    Genotypes (%):     ", 
       paste(names(x$typing.freq),round(x$typing.freq*100,1),sep=":", collapse="  "),
-      "\n")
-  cat("\n")
-  cat("    Percent phenotyped: ", round((1-x$missing.phe)*100,1), "\n")
-  cat("\n")
+      "\n\n")
 }
 
 

@@ -2,8 +2,8 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,8 +21,15 @@
 
 calc.errorlod <-
 function(cross, error.prob=0.01,
-         map.function=c("haldane","kosambi","c-f"))
+         map.function=c("haldane","kosambi","c-f","morgan"))
 {
+
+  # don't let error.prob be exactly zero (or >1)
+  if(error.prob < 1e-50) error.prob <- 1e-50
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
 
   # map function
   map.function <- match.arg(map.function)
@@ -30,12 +37,14 @@ function(cross, error.prob=0.01,
   n.ind <- nind(cross)
   n.chr <- nchr(cross)
   n.mar <- nmar(cross)
-
-  if(class(cross)[1]=="bc") cfunc <- "calc_errorlod_bc"
-  else if(class(cross)[1]=="f2") cfunc <- "calc_errorlod_f2"
-  else if(class(cross)[1]=="4way") cfunc <- "calc_errorlod_4way"
+  type <- class(cross)[1]
+  
+  if(type=="bc" || type=="risib" || type=="riself")
+    cfunc <- "calc_errorlod_bc"
+  else if(type=="f2") cfunc <- "calc_errorlod_f2"
+  else if(type=="4way") cfunc <- "calc_errorlod_4way"
   else stop(paste("calc.errorlod not available for cross type",
-                  class(cross)[1],"."))
+                  type,"."))
   
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {

@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Sept, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -19,7 +19,7 @@
 ######################################################################
 
 est.map <- 
-function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
+function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan"),
          maxit=4000, tol=1e-4, sex.sp=TRUE, trace=FALSE)
 {
 
@@ -31,12 +31,19 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
   else if(map.function=="c-f") {
     mf <- mf.cf; imf <- imf.cf
   }
+  else if(map.function=="morgan") {
+    mf <- mf.m; imf <- imf.m
+  }
   else {
     mf <- mf.h; imf <- imf.h
   }
 
-  # don't let error.prob be exactly zero, just in case
+  # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
 
   n.ind <- nind(cross)
   n.mar <- nmar(cross)
@@ -44,6 +51,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
 
   newmap <- vector("list",n.chr)
   names(newmap) <- names(cross$geno)
+  type <- class(cross)[1]
 
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
@@ -54,27 +62,27 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
     }
 
     # which type of cross is this?
-    if(class(cross)[1] == "f2") {
+    if(type == "f2") {
       one.map <- TRUE
       if(class(cross$geno[[i]]) == "A") # autosomal
         cfunc <- "est_map_f2"
       else                              # X chromsome 
         cfunc <- "est_map_bc"
     }
-    else if(class(cross)[1] == "bc") {
+    else if(type == "bc" || type=="riself" || type=="risib") {
       one.map <- TRUE
       cfunc <- "est_map_bc"
     }
-    else if(class(cross)[1] == "4way") {
+    else if(type == "4way") {
       one.map <- FALSE
       cfunc <- "est_map_4way"
     }
-    else if(class(cross)[1] == "f2ss") {
+    else if(type == "f2ss") {
       one.map <- FALSE
       cfunc <- "est_map_f2ss"
     }
     else stop(paste("est.map not available for cross type",
-                    class(cross)[1], "."))
+                    type, "."))
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -84,6 +92,8 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
     if(one.map) {
       # recombination fractions
       rf <- mf(diff(cross$geno[[i]]$map))
+      if(type=="risib" || type=="riself")
+        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)))
       rf[rf < 1e-14] <- 1e-14
     }
     else {
@@ -113,6 +123,8 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
               as.integer(trace),
               PACKAGE="qtl")
 
+      if(type=="riself" || type=="risib") 
+        z$rf <- adjust.rf.ri(z$rf, substr(type, 3, nchar(type)), expand=FALSE)
       newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),imf(z$rf)))
       names(newmap[[i]]) <- names(cross$geno[[i]]$map)
       attr(newmap[[i]],"loglik") <- z$loglik

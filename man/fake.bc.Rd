@@ -44,8 +44,10 @@ out2.nocovar <- scanone(fake.bc, pheno.col=2)
 # genome scans with covariates
 ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]
-out1.covar <- scanone(fake.bc, pheno.col=1, addcov=ac, intcov=ic)
-out2.covar <- scanone(fake.bc, pheno.col=2, addcov=ac, intcov=ic)
+out1.covar <- scanone(fake.bc, pheno.col=1,
+                      addcovar=ac, intcovar=ic)
+out2.covar <- scanone(fake.bc, pheno.col=2,
+                      addcovar=ac, intcovar=ic)
 
 # summaries
 summary(out1.nocovar, 3)
@@ -60,6 +62,7 @@ plot(out2.covar,out2.nocovar,chr=c(2,5,10))
 
 \seealso{ \code{\link[qtl]{sim.cross}}, \code{\link[qtl]{fake.4way}},
   \code{\link[qtl]{fake.f2}}, \code{\link[qtl]{listeria}},
-  \code{\link[qtl]{hyper}} }
+  \code{\link[qtl]{hyper}},
+  \code{\link[qtl]{bristle3}}, \code{\link[qtl]{bristleX}} }
 
 \keyword{datasets}

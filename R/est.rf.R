@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -34,9 +34,9 @@ function(cross, maxit=4000, tol=1e-4)
 
   # which type of cross is this?
   type <- class(cross)[1]
-  if(type == "f2") 
+  if(type == "f2" || type=="f2ss") 
     cfunc <- "est_rf_f2"
-  else if(type == "bc") 
+  else if(type == "bc" || type=="risib" || type=="riself") 
     cfunc <- "est_rf_bc"
   else if(type == "4way") 
     cfunc <- "est_rf_4way"
@@ -45,7 +45,7 @@ function(cross, maxit=4000, tol=1e-4)
 
   Geno[is.na(Geno)] <- 0
   
-  if(type=="bc")
+  if(type=="bc" || type=="risib" || type=="riself")
     z <- .C(cfunc,
             as.integer(n.ind),         # number of individuals
             as.integer(n.mar),         # number of markers

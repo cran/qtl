@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified May, 2002
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,8 +21,8 @@
 ######################################################################
 
 ripple <-
-function(cross, chr, window=4, error.prob=0,
-         map.function=c("haldane","kosambi","c-f"),
+function(cross, chr, window=4, method=c("countxo","likelihood"),
+         error.prob=0, map.function=c("haldane","kosambi","c-f","morgan"),
          maxit=4000, tol=1e-4, sex.sp=TRUE)
 {
   # pull out relevant chromosome
@@ -31,6 +31,26 @@ function(cross, chr, window=4, error.prob=0,
   cross <- subset(cross,chr=chr)
   chr.name <- names(cross$geno)[1]
 
+  if(nmar(cross)[1] < 3) {
+    warning("Less than three markers.")
+    return(NULL)
+  }
+
+  # don't let error.prob be exactly zero (or >1)
+  if(error.prob < 1e-50) error.prob <- 1e-50
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
+
+  # make sure window is an integer >= 2
+  if(window < 2) {
+    warning("The window argument must be > 1; using window=2.")
+    window <- 2
+  }
+  window <- round(window)
+
+  method <- match.arg(method)
   map.function <- match.arg(map.function)
 
   # get marker orders to test
@@ -54,44 +74,98 @@ function(cross, chr, window=4, error.prob=0,
     orders <- as.numeric(unlist(strsplit(unique(apply(orders,1,paste,collapse=":")),":")))
     orders <- matrix(orders,ncol=n.mar,byrow=TRUE)
   }
-
-  m <- seq(0,by=5,length=n.mar)
-  temcross <- cross
-  if(is.matrix(cross$geno[[1]]$map)) 
-    temcross$geno[[1]]$map <- rbind(m,m)
-  else temcross$geno[[1]]$map <- m
-
-  # calculate log likelihoods (and est'd chr length) for each marker order
   n.orders <- nrow(orders)
-  loglik <- 1:n.orders
-  chrlen <- 1:n.orders
 
+  
   # how often to print information about current order being considered
   if(n.orders > 49) print.by <- 10
   else if(n.orders > 14) print.by <- 5
   else print.by <- 2
 
-  for(i in 1:n.orders) {
-    if(i==1) cat("  ", n.orders,"total orders\n")
-    if((i %/% print.by)*print.by == i) cat("    --Order", i, "\n")
-    temcross$geno[[1]]$data <- cross$geno[[1]]$data[,orders[i,]]
-    newmap <- est.map(temcross,error.prob,map.function,maxit,tol,sex.sp)
-    loglik[i] <- attr(newmap[[1]],"loglik")
-    chrlen[i] <- newmap[[1]][n.mar]
+  if(method=="likelihood") {
+    # calculate log likelihoods (and est'd chr length) for each marker order
+    loglik <- 1:n.orders
+    chrlen <- 1:n.orders
+
+    # create temporary cross
+    m <- seq(0,by=5,length=n.mar)
+    temcross <- cross
+    if(is.matrix(cross$geno[[1]]$map)) 
+      temcross$geno[[1]]$map <- rbind(m,m)
+    else temcross$geno[[1]]$map <- m
+
+    for(i in 1:n.orders) {
+      if(i==1) cat("  ", n.orders,"total orders\n")
+      if((i %/% print.by)*print.by == i) cat("    --Order", i, "\n")
+      temcross$geno[[1]]$data <- cross$geno[[1]]$data[,orders[i,]]
+      newmap <- est.map(temcross,error.prob,map.function,maxit,tol,sex.sp)
+      loglik[i] <- attr(newmap[[1]],"loglik")
+      chrlen[i] <- diff(range(newmap[[1]]))
+#      if(is.matrix(newmap[[1]])) chrlen[i] <- newmap[[1]][n.mar,1]
+#      else chrlen[i] <- newmap[[1]][n.mar]
+    }
+
+    # re-scale log likelihoods and convert to lods
+    loglik <- (loglik - loglik[1])/log(10)
+
+    # sort orders by lod
+    o <- rev(order(loglik[-1])+1)
+
+    # create output 
+    orders <- cbind(orders,LOD=loglik,chrlen)[c(1,o),]
   }
+  else { # count obligate crossovers for each order
+    # which type of cross is this?
+    type <- class(cross)[1]
+    if(type == "f2") {
+      if(class(cross$geno[[1]]) == "A") # autosomal
+        func <- "R_ripple_f2"
+      else func <- "R_ripple_bc"        # X chromsome  
+    }
+    else if(type == "bc" || type=="riself" || type=="risib") func <- "R_ripple_bc"
+    else if(type == "4way") func <- "R_ripple_4way"
+    else stop(paste("ripple not available for cross", type))
 
-  # re-scale log likelihoods and convert to lods
-  loglik <- (loglik - loglik[1])/log(10)
+    # data to be input
+    genodat <- cross$geno[[1]]$data
+    genodat[is.na(genodat)] <- 0
+    n.ind <- nind(cross)
+
+    cat("  ", n.orders,"total orders\n")
+    z <- .C(func,
+            as.integer(n.ind),
+            as.integer(n.mar),
+            as.integer(genodat),
+            as.integer(n.orders),
+            as.integer(orders-1),
+            oblxo=as.integer(rep(0,n.orders)),
+            as.integer(print.by),
+            PACKAGE="qtl")
+
+    oblxo <- z$oblxo
+    # sort orders by lod
+    o <- order(oblxo[-1])+1
+
+    # create output 
+    orders <- cbind(orders,obligXO=oblxo)[c(1,o),]
+  }
   
-  # sort orders by lod
-  o <- rev(order(loglik[-1])+1)
-
-  orders <- cbind(orders,LOD=loglik,chrlen)[c(1,o),]
   rownames(orders) <- c("Initial", paste(1:(nrow(orders)-1)))
   class(orders) <- c("ripple","matrix")
   attr(orders,"chr") <- chr.name
   attr(orders,"window") <- window
   attr(orders,"error.prob") <- error.prob
+  attr(orders,"method") <- method
+
+  # make sure, for each order considered, that the proximal marker
+  # (in the original order) is to the left of the distal marker
+  # (in the original order) 
+  orders[,1:n.mar] <- t(apply(orders[,1:n.mar,drop=FALSE],1,
+                              function(a) {
+                                n <- length(a)
+                                if((1:n)[a==1] > (1:n)[a==n]) return(rev(a))
+                                else return(a) }))
+
   orders
 }
 
@@ -104,10 +178,14 @@ function(cross, chr, window=4, error.prob=0,
 ######################################################################
 
 summary.ripple <-
-function(object, lod.cutoff= -1, ...)
+function(object, lod.cutoff = -1, ...)
 {
   n <- ncol(object)
-  o <- (object[-1,n-1] >= lod.cutoff)
+
+  if(!is.na(match("obligXO",colnames(object)))) # counts of crossovers
+    o <- (object[-1,n] <= (object[1,n] - lod.cutoff*2))
+  else o <- (object[-1,n-1] >= lod.cutoff) # likelihood analysis
+
   if(!any(o)) object <- object[1:2,,drop=FALSE]
   else  # make sure first row is included
     object <- object[c(TRUE,o),,drop=FALSE]
@@ -127,10 +205,17 @@ print.summary.ripple <-
 function(x, ...)
 {
   n <- ncol(x)
-  x[,(n-1):n] <- round(x[,(n-1):n],1)
+  x <- round(x,1)
 
-  colnames(x)[n-1] <- "    LOD"
-  print.matrix(x)
+  if(is.na(match("obligXO",colnames(x)))) 
+    colnames(x)[n-1] <- "    LOD"
+
+  if(nrow(x) > 20) {
+    print.matrix(x[1:20,])
+    n <- nrow(x)-20
+    cat(paste("... [", n, " additional rows] ...\n",sep=""))
+  }
+  else print.matrix(x)
 }
 
 ######################################################################

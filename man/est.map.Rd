@@ -10,7 +10,7 @@
 
 \usage{
 est.map(cross, error.prob=0,
-        map.function=c("haldane","kosambi","c-f"), maxit=4000,
+        map.function=c("haldane","kosambi","c-f","morgan"), maxit=4000,
         tol=1e-4, sex.sp=TRUE, trace=FALSE)
 }
 \arguments{
@@ -18,9 +18,9 @@ est.map(cross, error.prob=0,
    \code{\link[qtl]{read.cross}} for details.}
  \item{error.prob}{Assumed genotyping error rate used in the calculation
    of the penetrance Pr(observed genotype | true genotype).}
- \item{map.function}{Indicates whether to use the Haldane, Kosambi or Carter-Falconer
- map function when converting genetic distances into recombination
- fractions.}
+ \item{map.function}{Indicates whether to use the Haldane, Kosambi,
+   Carter-Falconer, or Morgan map function when converting genetic
+   distances into recombination fractions.}
  \item{maxit}{Maximum number of EM iterations to perform.}
  \item{tol}{Tolerance for determining convergence.}
  \item{sex.sp}{Indicates whether to estimate sex-specific maps; this is 
