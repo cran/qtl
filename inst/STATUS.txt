@@ -6,7 +6,13 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
-Version 0.97, 6/19/2003:
+Version 0.97-22, 12/30/2003:
+
+  Just changed the call to print.coefmat to a call to printCoefmat
+  to avoid a warning message from CRAN.
+
+
+Version 0.97-21, 6/19/2003:
 
 Major changes:
 

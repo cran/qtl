@@ -12,7 +12,7 @@
 
 \usage{
 calc.genoprob(cross, step=0, off.end=0, error.prob=0, 
-              map.function=c("haldane","kosambi","c-f"))
+              map.function=c("haldane","kosambi","c-f","morgan"))
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
