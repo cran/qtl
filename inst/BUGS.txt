@@ -1,0 +1,97 @@
+
+Bugs and bug fixes for R/qtl
+----------------------------
+
+Version 0.84 bugs:
+
+    1. The "hyper" data has some markers out of order. [Fixed in
+       version 0.85]
+
+
+Version 0.83 bugs:
+
+>   1. In scanone(), when there is a spike in the phenotype,
+       sometimes the LOD curve has huge peaks and sometimes not.  I
+       belive this is due to multiple modes in the likelihood surface,
+       and with floating point errors, sometimes you go to one mode
+       and sometimes another.
+
+    2. There seems to be an error in summary.scanone() when there is
+       only one chromosome.  Also, if there is more than one location
+       sharing the maximum LOD, it returns all of them. [Fixed in
+       version 0.85.]
+
+
+Version 0.81 bugs:
+
+>   1. I often getting the following warning message when reading data
+       with read.cross in "karl" format:
+       
+         "no finite arguments to min/max; returning extreme. in: 
+          max(..., na.rm = na.rm)"
+
+    2. read.cross.karl() can give an error when it's trying to
+       determine the number (and thus autosomal/sex-linked status) of
+       each chromosome using the marker names, if the marker names are
+       not of the usual mouse form. [I believe this is fixed in
+       version 0.84.]
+
+    3. Regarding the function read.cross.mm() (for reading data in 
+       mapmaker format):
+ 
+       a. It gives an error when the map file has *'s in front of each
+          of the marker names. [Fixed in version 0.82.]
+
+       b. It leaves 0's where there is missing data; these should be
+          NAs. [Fixed in version 0.82.]
+
+       c. It fails to assign the correct chr type ("A" vs "X") to each
+          chromosome. [Fixed in version 0.82.]
+
+       d. It doesn't give marker names to the columns in the data
+          matrices.  This causes major problems in argmax.geno(). 
+          [Fixed in version 0.82.]
+
+    4. summary.cross() should ensure that there are marker names in
+       the appropriate places. [Fixed in version 0.82.]
+
+
+Version 0.80 bugs:
+
+    1. Slight bug in replace.map() for 4way crosses.  [Fixed in
+       version 0.81.]
+
+
+Version 0.78 bugs:
+
+    1. There is a bug in argmax.geno, in the case step > 0.
+       I saw some data like 2-2-2-2-2-1, where with error.prob=0.01,
+       it gave argmax=2-2-2-2-2-2 when step=1 but not when step=0.
+       [This isn't really a bug, but rather a sad truth in result of
+       the Viterbi algorthm.  The current code does, however,
+       incorrectly chose among the most likely sequences, if there are
+       several possible such.]
+
+version 0.77 bugs:
+
+    1. In create.map (used in calc.genoprob), there's a "names" 
+       problem (resulting in an error) when the markers are
+       equally-spaced and the "step" argument is at exactly that
+       spacing. [Fixed in version 0.78.]
+
+
+version 0.76 bugs:
+
+    1. In sim.cross, there's a problem with the dimnames for
+       the error indicator component, when simulating genotyping
+       errors with a QTL present. [Fixed in version 0.77.]
+       
+
+----------------------------------------------------------------------
+This file is intended to contain all known bugs in the R/qtl package,
+version by version.  See STATUS.txt for a list of bug fixes.  The bugs
+marked with ">" are not yet fixed.
+
+If you find a potential bug in R/qtl, please send an email, with as
+many details as possible and potentially example data, to Karl Broman,
+kbroman@jhsph.edu 

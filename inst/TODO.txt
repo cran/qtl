@@ -1,0 +1,63 @@
+
+Things to do for R/qtl
+----------------------
+ 
+o summary.cross() should check that markers are in increasing order.
+
+o Allow use of covariates in scanone() function (ie, CIM).
+
+o Make third row (marker positions) in csv file optional.
+
+o Implement multiple interval mapping (MIM).
+
+o Fix problem in create.map for when map doesn't start at 0.
+
+o Write drop.ind(), to drop some set of individuals from a cross.
+  [make general: subset.cross rather than remove.markers, drop.ind,
+   pull.chr, etc.]
+
+o pull.chr() should be more flexible in the chr argument.
+
+o phenotypes should be a data.frame.
+
+o Add appropriate functions to analyze RI lines and advanced
+  intercrosses. 
+  
+o Non-parametric interval mapping (Kruglyak and Lander 1995)
+
+o Starting values in vbscan().
+
+o Fix up details on model in help files for vbscan() and vbscan.perm().
+
+o Re-write vbscan.perm() in C code (like scanone.perm()).
+
+o Revise the details section of the help file for read.cross.mm().
+
+o Individual numbers in plot.geno() function.
+
+o plot.geno() to plot only individuals with apparent genotyping
+  errors, with a mix of chromosomes.
+
+o plot.pxg(): dotplot of phenotypes split by genotype at a particular
+  marker.  Also do interaction plots for a pair of markers.
+
+o Thoroughly test argmax.geno, calc.genoprob, sim.geno, est.map,
+  est.rf, calc.errorlod.  Compare these to mapmaker.  Compare scanone
+  to mapmaker/qtl.
+
+o Forward selection or MCMC with the BIC-delta criterion.
+
+o Forward selection with permutation tests.
+
+o Add a scantwo() function, scanning for pairs of loci simultaneously,
+  calculating LOD scores for the main effects, interactions, and
+  total. 
+
+o Implement Sen and Churchill's pseudomarker (imputation) algorithms.
+
+----------------------------------------------------------------------
+This file is intended to contain a list of many of the additions that
+are planned for the R/qtl package.  
+
+If you any additions to suggest, please send an email to Karl Broman,
+kbroman@jhsph.edu 

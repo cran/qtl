@@ -1,0 +1,144 @@
+######################################################################
+#
+# calc.genoprob.R
+#
+# copyright (c) 2001, Karl W Broman, Johns Hopkins University
+# Sept, 2001; July, 2001; May, 2001; Apr, 2001; Feb, 2001
+# Licensed under the GNU General Public License version 2 (June, 1991)
+# 
+# Part of the R/qtl package
+# Contains: calc.genoprob
+#
+######################################################################
+
+######################################################################
+#
+# calc.genoprob: calculate genotype probabilities conditional on 
+#                observed marker genotypes
+#
+######################################################################
+
+calc.genoprob <-
+function(cross, step=0, off.end=0, error.prob=0,
+         map.function=c("haldane","kosambi","c-f"))
+{
+
+  # map function
+  map.function <- match.arg(map.function)
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else mf <- mf.h
+ 
+  # don't let error.prob be exactly zero, just in case
+  if(error.prob < 1e-14) error.prob <- 1e-14
+
+  n.ind <- nind(cross)
+  n.chr <- nchr(cross)
+
+  # calculate genotype probabilities one chromosome at a time
+  for(i in 1:n.chr) {
+
+    # which type of cross is this?
+    if(class(cross)[1] == "f2") {
+      one.map <- TRUE
+      if(class(cross$geno[[i]]) == "A") { # autosomal
+        cfunc <- "calc_genoprob_f2"
+        n.gen <- 3
+        gen.names <- c("A","H","B")
+      }
+      else {                             # X chromsome 
+        cfunc <- "calc_genoprob_bc"
+        n.gen <- 2
+        gen.names <- c("A","H")
+      }
+    }
+    else if(class(cross)[1] == "bc") {
+      cfunc <- "calc_genoprob_bc"
+      n.gen <- 2
+      gen.names <- c("A","H")
+      one.map <- TRUE
+    }
+    else if(class(cross)[1] == "4way") {
+      cfunc <- "calc_genoprob_4way"
+      n.gen <- 4
+      one.map <- FALSE
+      gen.names <- c("AC","AD","BC","BD")
+    }
+    else stop(paste("calc.genoprob not available for cross type",
+                    class(cross)[1], "."))
+
+    # genotype data
+    gen <- cross$geno[[i]]$data
+    gen[is.na(gen)] <- 0
+    
+    # recombination fractions
+    if(one.map) {
+      # recombination fractions
+      map <- create.map(cross$geno[[i]]$map,step,off.end)
+      rf <- mf(diff(map))
+      rf[rf < 1e-14] <- 1e-14
+
+      # new genotype matrix with pseudomarkers filled in
+      newgen <- matrix(ncol=length(map),nrow=nrow(gen))
+      dimnames(newgen) <- list(NULL,names(map))
+      newgen[,colnames(gen)] <- gen
+      newgen[is.na(newgen)] <- 0
+      n.pos <- ncol(newgen)
+    }
+    else {
+      map <- create.map(cross$geno[[i]]$map,step,off.end)
+      rf <- mf(diff(map[1,]))
+      rf[rf < 1e-14] <- 1e-14
+      rf2 <- mf(diff(map[2,]))
+      rf2[rf2 < 1e-14] <- 1e-14
+
+      # new genotype matrix with pseudomarkers filled in
+      newgen <- matrix(ncol=ncol(map),nrow=nrow(gen))
+      dimnames(newgen) <- list(NULL,dimnames(map)[[2]])
+      newgen[,colnames(gen)] <- gen
+      newgen[is.na(newgen)] <- 0
+      n.pos <- ncol(newgen)
+    }
+
+
+    # call the C function
+    if(one.map) {
+      z <- .C(cfunc,
+              as.integer(n.ind),         # number of individuals
+              as.integer(n.pos),         # number of markers
+              as.integer(newgen),        # genotype data
+              as.double(rf),             # recombination fractions
+              as.double(error.prob),     # 
+              genoprob=as.double(rep(0,n.gen*n.ind*n.pos)),
+              PACKAGE="qtl")
+
+      cross$geno[[i]]$prob <- array(z$genoprob,dim=c(n.ind,n.pos,n.gen))
+      dimnames(cross$geno[[i]]$prob) <- list(NULL, names(map), gen.names)
+    }
+    else {
+      z <- .C(cfunc,
+              as.integer(n.ind),         # number of individuals
+              as.integer(n.pos),         # number of markers
+              as.integer(newgen),        # genotype data
+              as.double(rf),             # recombination fractions
+              as.double(rf2),            # recombination fractions
+              as.double(error.prob),     # 
+              genoprob=as.double(rep(0,n.gen*n.ind*n.pos)),
+              PACKAGE="qtl")
+
+      cross$geno[[i]]$prob <- array(z$genoprob,dim=c(n.ind,n.pos,n.gen))
+      dimnames(cross$geno[[i]]$prob) <-
+        list(NULL, colnames(map), gen.names)
+    }
+
+    # attribute set to the error.prob value used, for later
+    #     reference, especially by calc.errorlod()
+    attr(cross$geno[[i]]$prob,"error.prob") <- error.prob
+    attr(cross$geno[[i]]$prob,"step") <- step
+    attr(cross$geno[[i]]$prob,"off.end") <- off.end
+  }
+
+  cross
+}
+
+# end of calc.genoprob.R

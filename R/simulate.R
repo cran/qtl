@@ -1,0 +1,727 @@
+######################################################################
+#
+# simulate.R
+#
+# copyright (c) 2001, Karl W Broman, Johns Hopkins University
+# Oct, 2001; July, 2001; May, 2001; April, 2001
+# Licensed under the GNU General Public License version 2 (June, 1991)
+# 
+# Part of the R/qtl package
+# Contains: sim.map, sim.cross, sim.cross.bc, sim.cross.f2,
+#           sim.cross.4way
+#
+######################################################################
+
+######################################################################
+#
+# sim.map: simulate a genetic map
+#
+######################################################################
+
+sim.map <-
+function(len=rep(100,20), n.mar=10, anchor.tel=TRUE, include.x=TRUE,
+         sex.sp=FALSE)
+{
+  if(length(len)!=length(n.mar) && length(len)!=1 && length(n.mar)!=1)
+    stop("Lengths of vectors len and n.mar do not conform.")
+
+  # make vectors the same length
+  if(length(len) == 1) len <- rep(len,length(n.mar))
+  else if(length(n.mar) == 1) n.mar <- rep(n.mar,length(len))
+
+  map <- vector("list",length(len))
+  names(map) <- as.character(1:length(map))
+  if(include.x) names(map)[length(map)] <- "X"
+
+  for(i in 1:length(len)) {
+    if(anchor.tel) {
+      if(n.mar[i] < 2) n.mar[i] <- 2
+      map[[i]] <- c(0,len[i])
+      if(n.mar[i] > 2) map[[i]] <- sort(c(map[[i]],runif(n.mar[i]-2,0,len[i])))
+    }
+    else {
+      map[[i]] <- sort(runif(n.mar[i],0,len[i]))
+      map[[i]] <- map[[i]] - min(map[[i]])
+    }
+    names(map[[i]]) <- paste("D", names(map)[i], "M", 1:n.mar[i], sep="")
+    class(map[[i]]) <- "A"
+  }
+
+  if(sex.sp) {
+    for(i in 1:length(len)) {
+      if(anchor.tel) {
+        if(n.mar[i] < 2) n.mar[i] <- 2
+        tempmap <- c(0,len[i])
+        if(n.mar[i] > 2) tempmap <- sort(c(tempmap,runif(n.mar[i]-2,0,len[i])))
+      }
+      else {
+        tempmap <- sort(runif(n.mar[i],0,len[i]))
+        tempmap <- tempmap - min(tempmap)
+      }
+      map[[i]] <- rbind(map[[i]],tempmap)
+      dimnames(map[[i]]) <- list(NULL,paste("D", names(map)[i], "M", 1:n.mar[i], sep=""))
+      class(map[[i]]) <- "A"
+
+      if(include.x && i==length(len))  # if X chromosome, force no recombination in male
+        map[[i]][2,] <- rep(0,ncol(map[[i]]))
+
+    }
+  }
+
+  if(include.x) class(map[[length(map)]]) <- "X"
+
+  class(map) <- "map"
+  map
+}
+
+    
+    
+  
+######################################################################
+#
+# sim.cross: Simulate an experimental cross
+#
+# Note: These functions are a bit of a mess.  I was in the "get it to
+#       work without worrying about efficiency" mode while writing it.
+#       Sorry!
+#
+######################################################################
+
+sim.cross <-
+function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
+         error.prob=0, missing.prob=0, partial.missing.prob=0,
+         keep.qtlgeno=FALSE, error.ind=TRUE,
+         map.function=c("haldane","kosambi","c-f"))
+{
+  type <- match.arg(type)
+  map.function <- match.arg(map.function)
+
+  if(type=="bc")
+    cross <- sim.cross.bc(map,model,n.ind,error.prob,missing.prob,
+                          error.ind,map.function)
+  else if(type=="f2")
+    cross <- sim.cross.f2(map,model,n.ind,error.prob,missing.prob,
+                          partial.missing.prob,error.ind,map.function)
+  else
+    cross <- sim.cross.4way(map,model,n.ind,error.prob,missing.prob,
+                            partial.missing.prob,error.ind,map.function)
+  if(!keep.qtlgeno)
+    cross <- drop.qtlgeno(cross)
+
+  cross
+
+}
+
+
+######################################################################
+#
+# sim.cross.bc
+#
+######################################################################
+
+sim.cross.bc <-
+function(map,model,n.ind,error.prob,missing.prob,
+         error.ind,map.function)
+{
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else mf <- mf.h
+
+  if(any(sapply(map,is.matrix)))
+    stop("Map must not be sex-specific.")
+
+  n.chr <- length(map)
+
+  if(is.null(model)) n.qtl <- 0
+  else {
+    if(!((!is.matrix(model) && length(model) == 3) ||
+         (is.matrix(model) && ncol(model) == 3))) 
+      stop("Model must be a matrix with 3 columns (chr, pos and effect).")
+    if(!is.matrix(model)) model <- rbind(model)
+    n.qtl <- nrow(model)
+    if(any(model[,1] < 0 | model[,1] > length(map)))
+      stop("Chromosome indicators in model matrix out of range.")
+    model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
+  }
+
+  # if any QTLs, place qtls on map
+  if(n.qtl > 0) {
+    for(i in 1:n.qtl) {
+      temp <- map[[model[i,1]]]
+      if(model[i,2] < min(temp)) {
+        temp <- c(model[i,2],temp)
+        names(temp)[1] <- paste("QTL",i,sep="")
+      }
+      else if(model[i,2] > max(temp)) {
+        temp <- c(temp,model[i,2])
+        names(temp)[length(temp)] <- paste("QTL",i,sep="")
+      }
+      else {
+        j <- max((1:length(temp))[temp < model[i,2]])
+        temp <- c(temp[1:j],model[i,2],temp[(j+1):length(temp)])
+        names(temp)[j+1] <- paste("QTL",i,sep="")
+      }
+      map[[model[i,1]]] <- temp
+    }
+  }
+  
+  geno <- vector("list", n.chr)
+  names(geno) <- names(map)
+  n.mar <- sapply(map,length)
+  mar.names <- lapply(map,names)
+  chr.type <- sapply(map,function(a)
+                     if(is.null(class(a))) return("A")
+                     else return(class(a)))
+  
+  for(i in 1:n.chr) {
+    data <- matrix(nrow=n.ind,ncol=n.mar[i])
+    dimnames(data) <- list(NULL,mar.names[[i]])
+
+    # simulate genotype data
+    d <- diff(map[[i]]) # inter-marker distances (cM)
+    r <- mf(d) # recombination fractions (Kosambi map function)
+    rbar <- 1-r
+
+    # first locus on chromosome
+    data[,1] <- sample(1:2,n.ind,repl=TRUE)
+
+    # rest of markers
+    if(n.mar[i] > 1) {
+      for(j in 1:(n.mar[i]-1)) {
+        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
+        data[rec==0,j+1] <- data[rec==0,j]
+        data[rec==1,j+1] <- 3-data[rec==1,j]
+      }
+    } # if n.mar[i] > 1
+
+    geno[[i]] <- list(data = data, map = map[[i]])
+    class(geno[[i]]) <- chr.type[i]
+    class(geno[[i]]$map) <- NULL
+    
+  } # end loop over chromosomes
+
+  # simulate phenotypes
+  pheno <- rnorm(n.ind,0,1)
+
+  if(n.qtl > 0) {
+    # find QTL positions in genotype data
+    QTL.chr <- QTL.loc <- NULL
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0) {
+        QTL.chr <- c(QTL.chr,rep(i,length(o)))
+        QTL.loc <- c(QTL.loc,o)
+      }
+    }
+
+    # incorporate QTL effects
+    for(i in 1:n.qtl) {
+      QTL.geno <- geno[[QTL.chr[i]]]$data[,QTL.loc[i]]
+      pheno[QTL.geno==1] <- pheno[QTL.geno==1] - model[i,3]
+      pheno[QTL.geno==2] <- pheno[QTL.geno==2] + model[i,3]
+    }
+
+  } # end simulate phenotype
+      
+  n.mar <- sapply(geno, function(a) length(a$map))
+
+  # add errors
+  if(error.prob > 0) {
+    for(i in 1:n.chr) {
+      a <- sample(0:1,n.mar[i]*n.ind,repl=TRUE,
+                  prob=c(1-error.prob,error.prob))
+      geno[[i]]$data[a == 1] <- 3 - geno[[i]]$data[a == 1]
+      if(error.ind) {
+        errors <- matrix(0,n.ind,n.mar[i])
+        errors[a==1] <- 1
+        colnames(errors) <- colnames(geno[[i]]$data)
+        geno[[i]]$errors <- errors
+      }
+    } 
+  } 
+
+  # add missing
+  if(missing.prob > 0) {
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0)
+        x <- geno[[i]]$data[,o]
+      geno[[i]]$data[sample(c(TRUE,FALSE),n.mar[i]*n.ind,repl=TRUE,
+                            prob=c(missing.prob,1-missing.prob))] <- NA
+      if(length(o)>0)
+        geno[[i]]$data[,o] <- x
+    }
+  }
+
+  pheno <- as.matrix(pheno)
+  dimnames(pheno) <- list(NULL, "phenotype")
+
+  cross <- list(geno=geno,pheno=pheno)
+  class(cross) <- c("bc","cross")
+
+  cross
+}  
+       
+######################################################################
+#
+# sim.cross.f2
+#
+######################################################################
+
+sim.cross.f2 <-              
+function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
+         error.ind,map.function)
+{
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else mf <- mf.h
+
+  if(any(sapply(map,is.matrix)))
+    stop("Map must not be sex-specific.")
+
+  n.chr <- length(map)
+  if(is.null(model)) n.qtl <- 0
+  else {
+    if(!((!is.matrix(model) && length(model) == 4) ||
+         (is.matrix(model) && ncol(model) == 4))) {
+      stop("Model must be a matrix with 4 columns (chr, pos and effects).")
+    }
+    if(!is.matrix(model)) model <- rbind(model)
+    n.qtl <- nrow(model)
+    if(any(model[,1] < 0 | model[,1] > length(map)))
+      stop("Chromosome indicators in model matrix out of range.")
+    model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
+  }
+
+  # if any QTLs, place qtls on map
+  if(n.qtl > 0) {
+    for(i in 1:n.qtl) {
+      temp <- map[[model[i,1]]]
+      if(model[i,2] < min(temp)) {
+        temp <- c(model[i,2],temp)
+        names(temp)[1] <- paste("QTL",i,sep="")
+      }
+      else if(model[i,2] > max(temp)) {
+        temp <- c(temp,model[i,2])
+        names(temp)[length(temp)] <- paste("QTL",i,sep="")
+      }
+      else {
+        j <- max((1:length(temp))[temp < model[i,2]])
+        temp <- c(temp[1:j],model[i,2],temp[(j+1):length(temp)])
+        names(temp)[j+1] <- paste("QTL",i,sep="")
+      }
+      map[[model[i,1]]] <- temp
+    }
+  }
+  
+  geno <- vector("list", n.chr)
+  names(geno) <- names(map)
+  n.mar <- sapply(map,length)
+  mar.names <- lapply(map,names)
+  chr.type <- sapply(map,function(a)
+                     if(is.null(class(a))) return("A")
+                     else return(class(a)))
+  
+  for(i in 1:n.chr) {
+
+    data <- matrix(nrow=n.ind,ncol=n.mar[i])
+    dimnames(data) <- list(NULL,mar.names[[i]])
+
+    # simulate genotype data
+    d <- diff(map[[i]]) # inter-marker distances (cM)
+    r <- mf(d) # recombination fractions (Kosambi map function)
+    rbar <- 1-r
+
+    # first locus on chromosome
+    if(chr.type[i]=="X") data[,1] <- sample(1:2,n.ind,repl=TRUE)
+    else data[,1] <- sample(1:3,n.ind,repl=TRUE,prob=c(1,2,1))
+    
+    # rest of markers
+    if(n.mar[i] > 1) {
+      for(j in 1:(n.mar[i]-1)) {
+        if(chr.type[i]=="X") { # X chromosome (like a backcross)
+          rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
+          data[rec==0,j+1] <- data[rec==0,j]
+          data[rec==1,j+1] <- 3-data[rec==1,j]
+        }
+        else { # F2 autosome
+          data[data[,j]==1,j+1] <- sample(1:3,sum(data[,j]==1),repl=TRUE,
+                     prob=c(rbar[j]*rbar[j],2*r[j]*rbar[j],r[j]*r[j]))
+          data[data[,j]==2,j+1] <- sample(1:3,sum(data[,j]==2),repl=TRUE,
+                     prob=c(r[j]*rbar[j],rbar[j]*rbar[j]+r[j]*r[j],r[j]*rbar[j]))
+          data[data[,j]==3,j+1] <- sample(1:3,sum(data[,j]==3),repl=TRUE,
+                     prob=c(r[j]*r[j],2*r[j]*rbar[j],rbar[j]*rbar[j]))
+        }
+      } # end loop over intervals
+    } # if n.mar[i] > 1
+
+    geno[[i]] <- list(data = data, map = map[[i]])
+    class(geno[[i]]) <- chr.type[i]
+    class(geno[[i]]$map) <- NULL
+    
+  } # end loop over chromosomes
+
+  # simulate phenotypes
+  pheno <- rnorm(n.ind,0,1)
+
+  if(n.qtl > 0) {
+    # find QTL positions in genotype data
+    QTL.chr <- QTL.loc <- NULL
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0) {
+        QTL.chr <- c(QTL.chr,rep(i,length(o)))
+        QTL.loc <- c(QTL.loc,o)
+      }
+    }
+
+    # incorporate QTL effects
+    for(i in 1:n.qtl) {
+      QTL.geno <- geno[[QTL.chr[i]]]$data[,QTL.loc[i]]
+      pheno[QTL.geno==1] <- pheno[QTL.geno==1] - model[i,3]
+      pheno[QTL.geno==2] <- pheno[QTL.geno==2] + model[i,4]
+      pheno[QTL.geno==3] <- pheno[QTL.geno==3] + model[i,3]
+    }
+
+  } # end simulate phenotype
+      
+  n.mar <- sapply(geno, function(a) length(a$map))
+
+  # add errors
+  if(error.prob > 0) {
+    for(i in 1:n.chr) {
+      if(chr.type[i]=="X") {
+        a <- sample(0:1,n.mar[i]*n.ind,repl=TRUE,
+                    prob=c(1-error.prob,error.prob))
+        geno[[i]]$data[a == 1] <- 3 - geno[[i]]$data[a == 1]
+      }
+      else {
+        a <- sample(0:2,n.mar[i]*n.ind,repl=TRUE,
+                    prob=c(1-error.prob,error.prob/2,error.prob/2))
+        if(any(a>0 & geno[[i]]$data==1))
+          geno[[i]]$data[a>0 & geno[[i]]$data==1] <-
+            (geno[[i]]$data+a)[a>0 & geno[[i]]$data==1]
+        if(any(a>0 & geno[[i]]$data==2)) {
+          geno[[i]]$data[a>0 & geno[[i]]$data==2] <-
+            (geno[[i]]$data+a)[a>0 & geno[[i]]$data==2]
+          geno[[i]]$data[geno[[i]]$data>3] <- 1
+        }
+        if(any(a>0 & geno[[i]]$data==3))
+          geno[[i]]$data[a>0 & geno[[i]]$data==3] <-
+            (geno[[i]]$data-a)[a>0 & geno[[i]]$data==3]
+      }
+
+      if(error.ind) {
+        errors <- matrix(0,n.ind,n.mar[i])
+        errors[a>0] <- 1
+        colnames(errors) <- colnames(geno[[i]]$data)
+        geno[[i]]$errors <- errors
+      }
+
+    } # end loop over chromosomes
+  } # end simulate genotyping errors
+
+  # add partial missing
+  if(partial.missing.prob > 0) {
+    for(i in 1:n.chr) {
+      if(chr.type[i] != "X") {
+        o <- sample(c(TRUE,FALSE),n.mar[i],repl=TRUE,
+                    prob=c(partial.missing.prob,1-partial.missing.prob))
+        if(any(o)) {
+          o2 <- grep("^QTL[0-9]+",mar.names[[i]])
+          if(length(o2)>0)
+            x <- geno[[i]]$data[,o2]
+          m <- (1:n.mar[i])[o]
+          for(j in m) {
+            if(runif(1) < 0.5) 
+              geno[[i]]$data[geno[[i]]$data[,j]==1 | geno[[i]]$data[,j]==2,j] <- 4
+            else 
+              geno[[i]]$data[geno[[i]]$data[,j]==3 | geno[[i]]$data[,j]==2,j] <- 5
+          }
+          if(length(o2)>0)
+            geno[[i]]$data[,o2] <- x
+        }
+      }
+
+    } # end loop over chromosomes
+  } # end simulate partially missing data
+            
+  # add missing
+  if(missing.prob > 0) {
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0)
+        x <- geno[[i]]$data[,o]
+      geno[[i]]$data[sample(c(TRUE,FALSE),n.mar[i]*n.ind,repl=TRUE,
+                            prob=c(missing.prob,1-missing.prob))] <- NA
+      if(length(o)>0)
+        geno[[i]]$data[,o] <- x
+    }
+  }
+
+  pheno <- as.matrix(pheno)
+  dimnames(pheno) <- list(NULL, "phenotype")
+
+  cross <- list(geno=geno,pheno=pheno)
+  class(cross) <- c("f2","cross")
+
+  cross
+}
+
+######################################################################
+#
+# sim.cross.4way
+#
+######################################################################
+
+sim.cross.4way <-              
+function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
+         error.ind,map.function)
+{
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else mf <- mf.h
+
+  if(!all(sapply(map,is.matrix)))
+    stop("Map must be sex-specific.")
+
+  n.chr <- length(map)
+  if(is.null(model)) n.qtl <- 0
+  else {
+    if(!((!is.matrix(model) && length(model) == 5) ||
+         (is.matrix(model) && ncol(model) == 5))) {
+      stop("Model must be a matrix with 5 columns (chr, pos and effects).")
+    }
+    if(!is.matrix(model)) model <- rbind(model)
+    n.qtl <- nrow(model)
+    if(any(model[,1] < 0 | model[,1] > length(map)))
+      stop("Chromosome indicators in model matrix out of range.")
+    model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
+  }
+
+  # if any QTLs, place qtls on map
+  if(n.qtl > 0) {
+    for(i in 1:n.qtl) {
+      temp <- map[[model[i,1]]]
+      temp1 <- temp[1,]
+      temp2 <- temp[2,]
+      qtlloc <- model[i,2]
+
+      if(qtlloc < min(temp1)) {
+        temp1 <- c(qtlloc,temp1)
+        temp2 <- min(temp2) - (min(temp1)-qtlloc)/diff(range(temp1))*diff(range(temp2))
+        temp1 <- temp1-min(temp1)
+        temp2 <- temp2-min(temp2)
+        n <- c(paste("QTL",i,sep=""),colnames(temp))
+      }
+      else if(qtlloc > max(temp1)) {
+        temp1 <- c(temp1,qtlloc)
+        temp2 <- (qtlloc-max(temp1))/diff(range(temp1))*diff(range(temp2))+max(temp2)
+        n <- c(colnames(temp),paste("QTL",i,sep=""))
+      }
+      else {
+        temp1 <- c(temp1,qtlloc)
+        o <- order(temp1)
+        wh <- (1:length(temp1))[order(temp1)==length(temp1)]
+        temp2 <- c(temp2[1:(wh-1)],NA,temp2[-(1:(wh-1))])
+        temp2[wh] <- temp2[wh-1] + (temp1[wh]-temp1[wh-1])/(temp1[wh+1]-temp1[wh-1]) *
+          (temp2[wh+1]-temp2[wh-1])
+        temp1 <- sort(temp1)
+        n <- c(colnames(temp),paste("QTL",i,sep=""))[o]
+      }
+      map[[model[i,1]]] <- rbind(temp1,temp2)
+      dimnames(map[[model[i,1]]]) <- list(NULL, n)
+    }
+  }
+  
+  geno <- vector("list", n.chr)
+  names(geno) <- names(map)
+  n.mar <- sapply(map,ncol)
+  mar.names <- lapply(map,function(a) colnames(a))
+  chr.type <- sapply(map,function(a)
+                     if(is.null(class(a))) return("A")
+                     else return(class(a)))
+  
+  for(i in 1:n.chr) {
+
+    data <- matrix(nrow=n.ind,ncol=n.mar[i])
+    dimnames(data) <- list(NULL,mar.names[[i]])
+
+    # simulate genotype data
+    d <- diff(map[[i]][1,])
+    r <- mf(d)
+    rbar <- 1-r
+    d2 <- diff(map[[i]][2,])
+    r2 <- mf(d2)
+    rbar2 <- 1-r2
+    
+    data2 <- data
+
+    # first locus on chromosome
+    data[,1] <- sample(1:2,n.ind,repl=TRUE)  # mother's chromosome
+    data2[,1] <- sample(1:2,n.ind,repl=TRUE) # father's chromosome
+
+    sex <- NULL
+    if(chr.type[i]=="X") {
+      sex <- rep(0,n.ind)
+      sex[data2[,1]==2] <- 1
+    }
+
+    # rest of markers
+    if(n.mar[i] > 1) {
+      for(j in 1:(n.mar[i]-1)) {
+        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
+        data[rec==0,j+1] <- data[rec==0,j]
+        data[rec==1,j+1] <- 3-data[rec==1,j]
+          
+        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r2[j],r2[j]))
+        data2[rec==0,j+1] <- data2[rec==0,j]
+        data2[rec==1,j+1] <- 3-data2[rec==1,j]
+      }
+    } 
+    data <- data + (data2-1)*2 
+
+    geno[[i]] <- list(data = data, map = map[[i]])
+    class(geno[[i]]) <- chr.type[i]
+    class(geno[[i]]$map) <- NULL
+    
+  } # end loop over chromosomes
+
+  # simulate phenotypes
+  pheno <- rnorm(n.ind,0,1)
+
+  if(n.qtl > 0) {
+    # find QTL positions
+    QTL.chr <- QTL.loc <- NULL
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0) {
+        QTL.chr <- c(QTL.chr,rep(i,length(o)))
+        QTL.loc <- c(QTL.loc,o)
+      }
+    }
+
+    # incorporate QTL effects
+    for(i in 1:n.qtl) {
+      QTL.geno <- geno[[QTL.chr[i]]]$data[,QTL.loc[i]]
+      pheno[QTL.geno==1] <- pheno[QTL.geno==1] + model[i,3]
+      pheno[QTL.geno==2] <- pheno[QTL.geno==2] + model[i,4]
+      pheno[QTL.geno==3] <- pheno[QTL.geno==3] + model[i,5]
+    }
+
+  } # end simulate phenotype
+      
+  n.mar <- sapply(geno, function(a) ncol(a$map))
+
+  # add errors
+  if(error.prob > 0) {
+    for(i in 1:n.chr) {
+      if(chr.type[i] != "X") { # 4-way cross; autosomal
+        a <- sample(0:3,n.mar[i]*n.ind,repl=TRUE,
+                    prob=c(1-error.prob,rep(error.prob/3,3)))
+        if(any(a>0 & geno[[i]]$data==1))
+          geno[[i]]$data[a>0 & geno[[i]]$data==1] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==1] + a[a>0 & geno[[i]]$data==1]
+        if(any(a>0 & geno[[i]]$data==2))
+          geno[[i]]$data[a>0 & geno[[i]]$data==2] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==2] + c(-1,1,2)[a[a>0 & geno[[i]]$data==2]]
+        if(any(a>0 & geno[[i]]$data==3))
+          geno[[i]]$data[a>0 & geno[[i]]$data==3] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==3] + c(-2,-1,1)[a[a>0 & geno[[i]]$data==3]]
+        if(any(a>0 & geno[[i]]$data==4))
+          geno[[i]]$data[a>0 & geno[[i]]$data==4] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==4] - a[a>0 & geno[[i]]$data==4]
+      }
+      else {
+        a <- sample(0:1,n.mar[i]*n.ind,repl=TRUE,
+                    prob=c(1-error.prob,error.prob))
+        if(any(a>0 & geno[[i]]$data==1))
+          geno[[i]]$data[a>0 & geno[[i]]$data==1] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==1] + 1
+        if(any(a>0 & geno[[i]]$data==2))
+          geno[[i]]$data[a>0 & geno[[i]]$data==2] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==2] - 1
+        if(any(a>0 & geno[[i]]$data==3))
+          geno[[i]]$data[a>0 & geno[[i]]$data==3] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==3] + 1
+        if(any(a>0 & geno[[i]]$data==4))
+          geno[[i]]$data[a>0 & geno[[i]]$data==4] <-
+            geno[[i]]$data[a>0 & geno[[i]]$data==4] - 1
+      }
+
+      if(error.ind) {
+        errors <- matrix(0,n.ind,n.mar[i])
+        errors[a>0] <- 1
+        colnames(errors) <- colnames(geno[[i]]$data)
+        geno[[i]]$errors <- errors
+      }
+
+    } # end loop over chromosomes
+  } # end simulate genotyping errors
+
+  # add partial missing
+  if(partial.missing.prob > 0) {
+    for(i in 1:n.chr) {
+      if(chr.type[i] != "X") {
+        o <- sample(c(TRUE,FALSE),n.mar[i],repl=TRUE,
+                    prob=c(partial.missing.prob,1-partial.missing.prob))
+
+        if(any(o)) {
+          o2 <- grep("^QTL[0-9]+",mar.names[[i]])
+          if(length(o2)>0)
+            x <- geno[[i]]$data[,o2]
+          m <- (1:n.mar[i])[o]
+          for(j in m) {
+            a <- sample(1:4,1)
+            if(a==1) { # AB:AA marker
+              geno[[i]]$data[geno[[i]]$data[,j]==1 | geno[[i]]$data[,j]==3,j] <- 5
+              geno[[i]]$data[geno[[i]]$data[,j]==2 | geno[[i]]$data[,j]==4,j] <- 6
+            }
+            else if(a==2) { # AA:AB marker
+              geno[[i]]$data[geno[[i]]$data[,j]==1 | geno[[i]]$data[,j]==2,j] <- 7
+              geno[[i]]$data[geno[[i]]$data[,j]==3 | geno[[i]]$data[,j]==4,j] <- 8
+            }
+            else if(a==3)  # AB:AB marker
+              geno[[i]]$data[geno[[i]]$data[,j]==2 | geno[[i]]$data[,j]==3,j] <- 10
+            else  # AB:BA marker
+              geno[[i]]$data[geno[[i]]$data[,j]==1 | geno[[i]]$data[,j]==4,j] <- 9
+          }
+          if(length(o2) > 0)
+            geno[[i]]$data[,o2] <- x
+        }
+      }
+
+    } # end loop over chromosomes
+  } # end simulate partially missing data
+            
+  # add missing
+  if(missing.prob > 0) {
+    for(i in 1:n.chr) {
+      o <- grep("^QTL[0-9]+",mar.names[[i]])
+      if(length(o)>0)
+        x <- geno[[i]]$data[,o]
+      geno[[i]]$data[sample(c(TRUE,FALSE),n.mar[i]*n.ind,repl=TRUE,
+                            prob=c(missing.prob,1-missing.prob))] <- NA
+      if(length(o)>0)
+        geno[[i]]$data[,o] <- x
+    }
+  }
+
+  if(!is.null(sex)) {
+    pheno <- cbind(pheno,sex)
+    dimnames(pheno) <- list(NULL, c("phenotype", "sex"))
+  }
+  else {
+    pheno <- cbind(pheno)
+    dimnames(pheno) <- list(NULL, "phenotype")
+  }
+
+  cross <- list(geno=geno,pheno=pheno)
+  class(cross) <- c("4way","cross")
+
+  cross
+}
+
+
+
+# end of simulate.R
