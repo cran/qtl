@@ -3,7 +3,10 @@
  * hmm_4way.h
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ * 
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  * 
  * C functions for the R/qtl package
@@ -12,6 +15,7 @@
  *           nrec_4way2, calc_genoprob_4way, sim_geno_4way, 
  *           est_map_4way, argmax_geno_4way, errorlod_4way, 
  *           calc_errorlod_4way, nrec2_4way, logprec_4way, est_rf_4way
+ *           calc_pairprob_4way
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the "4-way" cross (autosomal data)
@@ -44,7 +48,7 @@ void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_4way(int *n_ind, int *n_mar, int *geno, double *rf1, double *rf2,
 		  double *error_prob, double *loglik, int *maxit, 
-		  double *tol, int *sexsp, int *prnt);
+		  double *tol, int *sexsp, int *trace);
 
 void argmax_geno_4way(int *n_ind, int *n_pos, int *geno, 
 		      double *rf1, double *rf2, 
@@ -62,5 +66,9 @@ double logprec_4way(int obs1, int obs2, double rf);
 
 void est_rf_4way(int *n_ind, int *n_mar, int *geno, double *rf, 
 	       int *maxit, double *tol);
+
+void calc_pairprob_4way(int *n_ind, int *n_mar, int *geno, 
+			double *rf1, double *rf2, double *error_prob, 
+			double *genoprob, double *pairprob);
 
 /* end of hmm_4way.h */

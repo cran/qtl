@@ -3,7 +3,8 @@
 # errorlod.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001; Sept, 2001; May, 2001; Apr, 2001
+# last modified Nov, 2001
+# first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -59,7 +60,7 @@ function(cross, error.prob=0.01,
           calc.genoprob(cross,error.prob=error.prob,
                         step=attr(cross$geno[[i]]$prob,"step"),
                         off.end=attr(cross$geno[[i]]$prob,"off.end"),
-                        map.function=map.function)
+                        map.function=attr(cross$geno[[i]]$prob,"map.function"))
       }
          
       Pr <- cross$geno[[i]]$prob
@@ -104,14 +105,21 @@ function(cross, error.prob=0.01,
 ######################################################################
 
 plot.errorlod <-
-function(x, chr, ...)
+function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
+         col=c("white","gray85","hotpink","purple3"), ...)
 {
+  if(length(breaks) < length(col)+1)
+    stop("Length of breaks should be length(col)+1.")
+  if(length(breaks) != length(col)+1)
+    col <- col[1:(length(breaks)+1)]
+
   cross <- x
-  if(!missing(chr)) cross <- pull.chr(cross,chr)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
+  if(!missing(ind)) cross <- subset(cross,ind=ind)
 
   # remove chromosomes with < 2 markers
   n.mar <- nmar(cross)
-  cross <- pull.chr(cross,names(n.mar)[n.mar >= 2])
+  cross <- subset(cross,chr=names(n.mar)[n.mar >= 2])
   n.chr <- nchr(cross)
 
   errlod <- NULL
@@ -130,15 +138,15 @@ function(x, chr, ...)
   par(xpd=TRUE,las=1)
   on.exit(par(xpd=old.xpd,las=old.las))
 
-  colors <- c("white", "gray85", "hotpink", "firebrick")
-
   # plot grid 
+  breaks[breaks==Inf] <- max(errlod)
   image(1:nrow(errlod),1:ncol(errlod),errlod,
-        ylab="Individuals",xlab="Markers",col=colors,
-        breaks=c(-1,1,2,3,max(errlod)))
+        ylab="Individuals",xlab="Markers",col=col,
+        breaks=breaks)
 
   # plot lines at the chromosome boundaries
   n.mar <- nmar(cross)
+  n.chr <- nchr(cross)
   chr.names <- names(cross$geno)
   a <- c(0.5,cumsum(n.mar)+0.5)
 
@@ -153,7 +161,7 @@ function(x, chr, ...)
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:length(n.mar)) 
+  for(i in 1:n.chr) 
     text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,chr.names[i])
 
   title(main="Genotyping error LOD scores")
@@ -170,15 +178,15 @@ function(x, chr, ...)
 ######################################################################
 
 top.errorlod <-
-function(cross, chr, cutoff=2, msg=TRUE)  
+function(cross, chr, cutoff=3, msg=TRUE)  
 {
-  if(!missing(chr)) cross <- pull.chr(cross,chr)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
 
   mar <- ind <- lod <- chr <- NULL
 
   # remove chromosomes with < 2 markers
   n.mar <- nmar(cross)
-  cross <- pull.chr(cross,names(n.mar)[n.mar >= 2])
+  cross <- subset(cross,chr=names(n.mar)[n.mar >= 2])
 
   flag <- 0
   for(i in 1:nchr(cross)) {

@@ -1,59 +1,50 @@
 A starting point         Introductory comments
 argmax.geno              Reconstruct underlying genotypes
+badorder                 An intercross with misplaced markers
+c.cross                  Combine data for QTL experiments
 calc.errorlod            Identify likely genotyping errors
 calc.genoprob            Calculate conditional genotype probabilities
-clean                    Remove intermediate calculations
+clean                    Remove derived data
 convert2ss               Convert an intercross into a form to allow sex-
                          specific maps
 drop.markers             Drop a set of markers
 drop.nullmarkers         Drop markers without any genotype data
-drop.qtlgeno             Remove QTL genotypes
 est.map                  Estimate genetic maps
 est.rf                   Estimate pairwise recombination fractions
-fake.4way                Simulated data for a 4-way cross experiment
-fake.bc                  Simulated data for a backcross experiment
-fake.f2                  Simulated data for an F2 intercross experiment
-find.errors              Identify likely genotyping errors
+fake.4way                Simulated data for a 4-way cross
+fake.bc                  Simulated data for a backcross
+fake.f2                  Simulated data for an F2 intercross
+fill.geno                Fill holes in genotype data
 geno.table               Create table of genotype distributions
 hyper                    Data on hypertension
 listeria                 Data on Listeria monocytogenes susceptibility
 plot.cross               Plot various features of a cross object
 plot.errorlod            Plot grid of error LOD values
-plot.errors              Plot grid of likely genotyping errors
-plot.geno                Plot genotypes with indication of likely errors
-plot.info                Plot the proportion of missing information in
-                         the genotype data
+plot.geno                Plot observed genotypes, flagging likely errors
+plot.info                Plot the proportion of missing genotype
+                         information
 plot.map                 Plot genetic map
 plot.missing             Plot grid of missing genotypes
 plot.rf                  Plot recombination fractions
-plot.scanone             Plot output for a single QTL scan
-pull.chr                 Pull out a subset of chromosomes from a cross
+plot.scanone             Plot LOD curves
+plot.scantwo             Plot LOD scores for a two-dimensional genome
+                         scan
 pull.map                 Pull out the genetic map from a cross
+qtl-internal             Internal qtl functions
 read.cross               Read data for a QTL experiment
-read.cross.csv           Read data for a QTL experiment in comma-
-                         delimited format
-read.cross.gary          Read data for a QTL experiment in Gary
-                         Churchill's format
-read.cross.karl          Read data for a QTL experiment in Karl Broman's
-                         format
-read.cross.mm            Read data for a QTL experiment in mapmaker
-                         format
 replace.map              Replace the genetic map of a cross
 ripple                   Compare marker orders
-scanone                  Genome scan with single QTL model
-scanone.perm             Permutation test for genome scan with single QTL
-                         model
+scanone                  Genome scan with a single QTL model
+scantwo                  Two-dimensional genome scan with a two-QTL model
 sim.cross                Simulate a QTL experiment
 sim.geno                 Simulate genotypes given observed marker data
 sim.map                  Simulate a genetic map
+subset.cross             Subsetting data for QTL experiment
 summary.cross            Print summary of QTL experiment
 summary.ripple           Print summary of ripple results
-summary.scanone          Print summary of the scanone output
+summary.scanone          Summarize the results of a genome scan
+summary.scantwo          Summarize the results of a two-dimensional
+                         genome scan
 switch.order             Switch the order of markers on a chromosome
-top.errorlod             List genotypes with highest error LOD values
-vbscan                   Genome scan for trait with some undefined values
-vbscan.perm              Permutation test for trait with some undefined
-                         values
+top.errorlod             List genotypes with large error LOD scores
 write.cross              Write data for a QTL experiment to a file
-write.cross.csv          Write data in comma-delimited format
-write.cross.mm           Write data in mapmaker format

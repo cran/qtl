@@ -3,7 +3,8 @@
 # plot.R
 #
 # copyright (c) 2000-2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001; Sept, 2001; July, 2001; Apr, 2001; Feb, 2001; Mar, 2000
+# last modified Nov, 2001
+# first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -15,7 +16,7 @@ plot.missing <-
 function(x,chr,reorder=FALSE,main="Missing genotypes",...) 
 {
   cross <- x
-  if(!missing(chr)) cross <- pull.chr(cross,chr)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
   
   # get full genotype data into one matrix
   Geno <- cross$geno[[1]]$data
@@ -66,6 +67,7 @@ function(x,chr,reorder=FALSE,main="Missing genotypes",...)
 
   # plot lines at the chromosome boundaries
   n.mar <- nmar(cross)
+  n.chr <- nchr(cross)
   a <- c(0.5,cumsum(n.mar)+0.5)
 #  abline(v=a)
   # the following makes the lines go slightly above the plotting region
@@ -79,10 +81,11 @@ function(x,chr,reorder=FALSE,main="Missing genotypes",...)
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:length(n.mar)) 
+  for(i in 1:n.chr)
     text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,names(cross$geno)[i])
 
   title(main=main)
+  invisible()
 }
 
 plot.map <-
@@ -96,7 +99,7 @@ function(x,map2,horizontal=FALSE,...)
 
   sex.sp <- FALSE
 
-  if(is.matrix(map[[1]])) { # sex-specific maps
+  if(is.matrix(map[[1]])) { # sex-specific map
     one.map <- FALSE
     sex.sp <- TRUE
     if(!missing(map2)) {
@@ -108,10 +111,10 @@ function(x,map2,horizontal=FALSE,...)
       else {
         if(!is.na(match("geno",names(map2))))
           map2 <- pull.map(map2)
-        Map1 <- lapply(map,function(a) a[1,])
-        Map2 <- lapply(map,function(a) a[2,])
-        Map3 <- lapply(map2,function(a) a[1,])
-        Map4 <- lapply(map2,function(a) a[2,])
+        Map1 <- lapply(map,function(a) a[1,,drop=TRUE])
+        Map2 <- lapply(map,function(a) a[2,,drop=TRUE])
+        Map3 <- lapply(map2,function(a) a[1,,drop=TRUE])
+        Map4 <- lapply(map2,function(a) a[2,,drop=TRUE])
         old.mfrow <- par("mfrow")
         on.exit(par(mfrow=old.mfrow))
         par(mfrow=c(2,1))
@@ -125,7 +128,7 @@ function(x,map2,horizontal=FALSE,...)
       map <- lapply(map,function(a) a[1,])
     }
   }
-  else {
+  else { # single map
     # determine whether a second map was given
     if(!missing(map2)) {
       if(is.logical(map2)) { # assume "map2" should be "horizontal"
@@ -274,34 +277,41 @@ function(x,map2,horizontal=FALSE,...)
     if(!sex.sp) title(main="Comparison of genetic maps")
     else title(main="Genetic map")
   }    
-
+  invisible()
 }
 
 
 plot.cross <-
-function(x,...)
+function(x,auto.layout=TRUE,...)
 {
-  cross <- x
   
   old.yaxt <- par("yaxt")
-  if(ncol(cross$pheno) > 2) {
-    old.ask <- par("ask")
-    par(ask=TRUE)
-    on.exit(par(ask=old.ask,yaxt=old.yaxt))
-  }
-  else {
-    old.mfrow <- par("mfrow")
-    par(mfrow=c(2,2))
-    on.exit(par(mfrow=old.mfrow,yaxt=old.yaxt))
+  old.mfrow <- par("mfrow")
+  on.exit(par(yaxt=old.yaxt,mfrow=old.mfrow))
+
+  n.phe <- nphe(x)
+
+  # automatically choose row/column structure for the plots
+  if(auto.layout) { 
+    nr <- ceiling(sqrt(n.phe+2))
+    nc <- ceiling((n.phe+2)/nr)
+    par(mfrow=c(nr,nc))
   }
 
-  plot.missing(cross)
-  plot.map(cross)
-  par(yaxt = "n")
-  for(i in 1:ncol(cross$pheno)) 
-    hist(cross$pheno[,i],nclass=round(sqrt(nrow(cross$pheno))+5),
-	 xlab=colnames(cross$pheno)[i],prob=TRUE, ylab="",
-	 main=paste("Histogram of", colnames(cross$pheno)[i]))
+  plot.missing(x)
+  plot.map(x)
+  for(i in 1:n.phe) {
+    if(!is.numeric(x$pheno[,i])) {
+      par(yaxt="s")
+      barplot(table(x$pheno[,i]),xlab=colnames(x$pheno)[i],
+              ylab="", main=colnames(x$pheno)[i],col="white")
+    }
+    else 
+      hist(x$pheno[,i],breaks=round(sqrt(nrow(x$pheno))+5),
+           xlab=colnames(x$pheno)[i],prob=TRUE, ylab="",
+           main=colnames(x$pheno)[i], yaxt="n")
+  }
+  invisible()
 }
 
 
@@ -313,44 +323,26 @@ function(x,...)
 ######################################################################
 
 plot.geno <-
-function(x, chr, ind, horizontal=FALSE, cutoff=2,
-         method=c("lod","argmax"),min.sep=1,...)
+function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
 {
   cross <- x  
-  method <- match.arg(method)
-  cross <- pull.chr(cross,chr)
+  cross <- subset(cross,chr=chr)
   type <- class(cross)[1]
   
   if(type != "bc" && type != "f2")
     stop("This function has only been coded for bc and f2 crosses.")
 
-  if(method=="lod") {
-    if(is.na(match("errorlod",names(cross$geno[[1]])))) {
-      warning("First running calc.errorlod.")
-      cross <- calc.errorlod(cross,error.prob=0.01)
-    }
-  }
-  else {
-    if(is.na(match("argmax",names(cross$geno[[1]])))) {
-      warning("First running argmax.geno.")
-      cross <- argmax.geno(cross,error.prob=0.01)
-    }
+  if(is.na(match("errorlod",names(cross$geno[[1]])))) {
+    warning("First running calc.errorlod.")
+    cross <- calc.errorlod(cross,error.prob=0.01)
   }
   
-  # if necessary, discard parts of argmax that are not at markers
-  if(method=="argmax") {
-    wh <- grep("^loc\-*[0-9]+",colnames(cross$geno[[1]]$argmax))
-    if(length(wh) > 0) 
-      cross$geno[[1]]$argmax <- cross$geno[[1]]$argmax[,-wh]
-  }
-
   # indicators for apparent errors
   errors <- matrix(0,ncol=ncol(cross$geno[[1]]$data),
                    nrow=nrow(cross$geno[[1]]$data))
   dimnames(errors) <- dimnames(cross$geno[[1]]$data)
 
-  if(method=="lod") top <- top.errorlod(cross,1,cutoff,FALSE)
-  else top <- find.errors(cross,1,msg=FALSE)
+  top <- top.errorlod(cross,1,cutoff,FALSE)
   if(length(top) > 0)
     for(i in 1:nrow(top))
       errors[top[i,2],as.character(top[i,3])] <- 1
@@ -470,6 +462,7 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2,
       points(ind,y,pch=0,col=color[6],cex=1.5)
     }
   }
+  invisible()
 }
     
 ######################################################################
@@ -480,12 +473,12 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2,
 ######################################################################
 
 plot.info <-
-function(x,chr,which=c("both","entropy","variance"),return.result=FALSE,...)
+function(x,chr,method=c("both","entropy","variance"),...)
 {
   cross <- x
-  which <- match(match.arg(which),c("entropy","variance","both"))-1
+  method <- match(match.arg(method),c("entropy","variance","both"))-1
 
-  if(!missing(chr)) cross <- pull.chr(cross,chr)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
   results <- NULL
 
   n.chr <- nchr(cross)
@@ -493,7 +486,9 @@ function(x,chr,which=c("both","entropy","variance"),return.result=FALSE,...)
     warning("First running calc.genoprob.")
     cross <- calc.genoprob(cross)
   }
+
   gap <- attr(cross$geno[[1]]$prob,"off.end")*2+10 # gap between chr in plot
+
   n.ind <- nind(cross)
   for(i in 1:n.chr) {
     n.gen <- dim(cross$geno[[i]]$prob)[3]
@@ -507,14 +502,14 @@ function(x,chr,which=c("both","entropy","variance"),return.result=FALSE,...)
                as.double(cross$geno[[i]]$prob),
                info1=as.double(rep(0,n.pos)),
                info2=as.double(rep(0,n.pos)),
-               as.integer(which))
+               as.integer(method))
 
-    if(which != 1) { # rescale entropy version
+    if(method != 1) { # rescale entropy version
       if(n.gen==3) maxent <- 1.5*log(2)
       else maxent <- log(n.gen)
       info$info1 <- -info$info1/maxent
     }
-    if(which != 0) { # rescale variance version
+    if(method != 0) { # rescale variance version
       maxvar <- c(0.25,0.5,1.25)[n.gen-1]
       info$info2 <- info$info2/maxvar
     }
@@ -536,16 +531,34 @@ function(x,chr,which=c("both","entropy","variance"),return.result=FALSE,...)
     results <- rbind(results,z)
   }
 
-  if(which==0) plot.scanone(results,ylim=c(0,1),gap=gap)
-  else if(which==1) plot.scanone(results[,-3],ylim=c(0,1),gap=gap)
-  else if(which==2) plot.scanone(results,results[,-3],ylim=c(0,1),gap=gap)
-  
-  if(return.result) {
-    colnames(results)[3:4] <- c("misinfo.entropy","misinfo.variance")
-    class(results) <- c("scanone","data.frame")
-    return(results)
+  # check whether gap was included as an argument
+  args <- list(...)
+  if(is.na(match("gap",names(args)))) {
+    if(method==0)
+      plot.scanone(results,ylim=c(0,1),gap=gap,
+                   main="Missing information",...)
+    else if(method==1)
+      plot.scanone(results[,-3],ylim=c(0,1),gap=gap,
+                   main="Missing information",...)
+    else if(method==2)
+      plot.scanone(results,results[,-3],ylim=c(0,1),gap=gap,
+                   main="Missing information",...)
   }
-  else invisible()
+  else { # gap was included in ...
+    if(method==0)
+      plot.scanone(results,ylim=c(0,1),
+                   main="Missing information",...)
+    else if(method==1)
+      plot.scanone(results[,-3],ylim=c(0,1),
+                   main="Missing information",...)
+    else if(method==2)
+      plot.scanone(results,results[,-3],ylim=c(0,1),
+                   main="Missing information",...)
+  }
+
+  colnames(results)[3:4] <- c("misinfo.entropy","misinfo.variance")
+  class(results) <- c("scanone","data.frame")
+  invisible(results)
 }
 
 # end of plot.R

@@ -3,7 +3,14 @@
  * util.c
  *
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Feb, 2001
+ *                     and Hao Wu, The Jackson Laboratory
+ *
+ * This file written mostly by Karl Broman with some additions
+ * from Hao Wu.
+ *
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
@@ -11,9 +18,11 @@
  * These are utility functions, mostly for the HMM engine.
  *
  * Other functions: addlog, subtrlog, reorg_geno, reorg_genoprob,
+ *                  reorg_pairprob
  *                  allocate_alpha, reorg_draws, allocate_double,
  *                  sample_int, allocate_imatrix, allocate_dmatrix
  *                  reorg_errlod, double_permute, random_int
+ *                  wtaverage
  *
  **********************************************************************/
 
@@ -87,7 +96,6 @@ void reorg_geno(int n_ind, int n_pos, int *geno, int ***Geno)
 
 }
 
-
 /**********************************************************************
  * 
  * reorg_genoprob
@@ -118,9 +126,59 @@ void reorg_genoprob(int n_ind, int n_pos, int n_gen,
   for(i=0; i<n_gen; i++) 
     for(j=0; j<n_pos; j++) 
       (*Genoprob)[i][j] = genoprob + i*n_ind*n_pos + j*n_ind;
-  
 }
 
+/**********************************************************************
+ * 
+ * reorg_pairprob
+ *
+ * Reorganize the joint genotype probabilities so that they form a 
+ * quintuply indexed array rather than a single long vector
+ *
+ * Afterwards, pairprob indexed like 
+ *    Pairprob[gen1][gen2][pos1][pos2][ind] with pos2 > pos1
+ * 
+ * You *must* refer to cases with pos2 > pos1, as cases with
+ * pos2 <= pos1 point off into the ether.
+ *
+ * Allocation done by R_alloc, so that R does the cleanup.
+ *
+ **********************************************************************/
+
+void reorg_pairprob(int n_ind, int n_pos, int n_gen, 
+		    double *pairprob, double ******Pairprob)
+{
+  int i, j, k, s, n_pairs;
+  double ****ptr1, ***ptr2, **ptr3;
+
+  /* note: n_pos must be at least 2 */
+  n_pairs = n_pos*(n_pos-1)/2;
+
+  *Pairprob = (double *****)R_alloc(n_gen, sizeof(double ****));
+
+  ptr1 = (double ****)R_alloc(n_gen*n_gen, sizeof(double ***));
+  (*Pairprob)[0] = ptr1;
+  for(i=1; i<n_gen; i++) 
+    (*Pairprob)[i] = ptr1 + i*n_gen;
+
+  ptr2 = (double ***)R_alloc(n_gen*n_gen*n_pos, sizeof(double **));
+  for(i=0; i<n_gen; i++)
+    for(j=0; j<n_gen; j++) 
+      (*Pairprob)[i][j] = ptr2 + (i*n_gen+j)*n_pos;
+
+  ptr3 = (double **)R_alloc(n_gen*n_gen*n_pos*n_pos, sizeof(double **));
+  for(i=0; i<n_gen; i++) 
+    for(j=0; j<n_gen; j++)
+      for(k=0; k<n_pos; k++)
+	(*Pairprob)[i][j][k] = ptr3 + ((i*n_gen+j)*n_pos + k)*n_pos;
+  
+  for(i=0; i<n_gen; i++) 
+    for(j=0; j<n_gen; j++)
+      for(k=0; k<n_pos-1; k++)
+	for(s=(k+1); s<n_pos; s++) 
+	  (*Pairprob)[i][j][k][s] = pairprob + (i*n_gen+j)*n_ind*n_pairs +
+	    + n_ind*(2*n_pos-1-k)*k/2 + (s-k-1)*n_ind;
+}
 
 /**********************************************************************
  * 
@@ -144,9 +202,7 @@ void allocate_alpha(int n_pos, int n_gen, double ***alpha)
 
   for(i=1; i< n_gen; i++) 
     (*alpha)[i] = (*alpha)[i-1] + n_pos;
-
 }
-
 
 /**********************************************************************
  * 
@@ -176,10 +232,8 @@ void reorg_draws(int n_ind, int n_pos, int n_draws,
   
   for(i=0; i<n_draws; i++) 
     for(j=0; j<n_pos; j++) 
-      (*Draws)[i][j] = draws + i*n_ind*n_pos + j*n_ind;
-  
+      (*Draws)[i][j] = draws + (i*n_pos+j)*n_ind;
 }
-
 
 /**********************************************************************
  * 
@@ -195,7 +249,6 @@ void allocate_double(int n, double **vector)
 {
   *vector = (double *)R_alloc(n, sizeof(double));
 }
-
 
 /**********************************************************************
  * 
@@ -217,9 +270,7 @@ void allocate_dmatrix(int n_row, int n_col, double ***matrix)
 
   for(i=1; i<n_row; i++) 
     (*matrix)[i] = (*matrix)[i-1]+n_col;
-
 }
-
 
 /**********************************************************************
  * 
@@ -241,9 +292,7 @@ void allocate_imatrix(int n_row, int n_col, int ***matrix)
 
   for(i=1; i<n_row; i++) 
     (*matrix)[i] = (*matrix)[i-1]+n_col;
-
 }
-
 
 /**********************************************************************
  * 
@@ -266,9 +315,7 @@ int sample_int(int n, double *p)
     else r -= p[i];
   }
   return(n); /* this shouldn't happen */
-  
 }
-
 
 /**********************************************************************
  * 
@@ -291,7 +338,6 @@ void reorg_errlod(int n_ind, int n_mar, double *errlod, double ***Errlod)
   (*Errlod)[0] = errlod;
   for(i=1; i< n_mar; i++) 
     (*Errlod)[i] = (*Errlod)[i-1] + n_ind;
-
 }
 
 /**********************************************************************
@@ -322,7 +368,6 @@ void double_permute(double *array, long len)
   }
 }
 
-
 /**********************************************************************
  * 
  * random_int
@@ -339,9 +384,45 @@ void double_permute(double *array, long len)
 
 int random_int(int low, int high)
 {
-  
   return((int)(unif_rand()*(double)(high - low + 1)) + low);
-  
+}
+
+/**********************************************************************
+ * wtaverage
+ * calculate the weight average of the LOD scores
+ *********************************************************************/
+
+double wtaverage(double *LOD, int n_draws)
+{
+  int k, idx, nnewLOD;
+  double sum, sums, meanLOD, varLOD, *newLOD;
+
+  /* calculate the number of LOD needs to be thrown */
+  idx = (int) floor( 0.5*log(n_draws)/log(2) );
+  nnewLOD = n_draws-2*idx; /* number of items in newLOD vector */
+  /* allocate memory for newLOD */  
+  newLOD = (double *)R_alloc( nnewLOD, sizeof(double) );
+
+  /* sort the LOD scores in ascending order */
+  R_rsort(LOD, n_draws);
+
+  /* get a new list of LOD scores, throwing the biggest 
+     and smallest idx LOD scores. */
+  for(k=idx, sum=0.0; k<n_draws-idx; k++) {
+    newLOD[k-idx] = LOD[k];
+    sum += LOD[k]; /* calculate the sum of newLOD in the same loop */
+  }
+
+  /* calculate the mean of newLOD */
+  meanLOD = sum / nnewLOD; 
+  /* calculate the variance of newLOD */
+  for(k=0,sums=0.0; k<nnewLOD; k++) 
+    sums += (newLOD[k]-meanLOD) * (newLOD[k]-meanLOD);
+  varLOD = sums/(nnewLOD-1);
+
+  /* return the weight average */
+  return( meanLOD+0.5*log(10.0)*varLOD );
+
 }
 
 /* end of util.c */

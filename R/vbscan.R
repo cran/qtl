@@ -3,11 +3,12 @@
 # vbscan.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# July, 2001; May, 2001
+# last modified Nov, 2001
+# first written May, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: vbscan, vbscan.perm
+# Contains: vbscan
 #
 ######################################################################
 
@@ -20,10 +21,10 @@
 ######################################################################
 
 vbscan <-
-function(cross, chr, pheno.col=1, upper=FALSE,
-	 maxit=1000, tol=1e-8)
+function(cross, pheno.col=1, upper=FALSE, method="em",
+	 maxit=4000, tol=1e-4)
 {
-  if(!missing(chr)) cross <- pull.chr(cross, chr)
+  method <- match.arg(method)
 
   # check arguments are okay
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
@@ -33,7 +34,7 @@ function(cross, chr, pheno.col=1, upper=FALSE,
 
   # remove individuals with missing phenotypes
   if(any(is.na(y))) {
-    drop <- (1:length(y))[is.na(y)]
+    drop <- (seq(along=y))[is.na(y)]
     y <- y[-drop]
     for(i in 1:length(cross$geno)) 
       cross$geno[[i]]$prob <- cross$geno[[i]]$prob[-drop,,]
@@ -121,27 +122,8 @@ function(cross, chr, pheno.col=1, upper=FALSE,
   }
   
   class(results) <- c("scanone","data.frame")
+  attr(results,"method") <- method
+  attr(results,"type") <- class(cross)[1]
+  attr(results,"model") <- "twopart"
   results
-}
-
-
-# permutation test for vbscan
-vbscan.perm <-
-function(cross, chr, pheno.col=1, upper=FALSE,
-	 n.perm=1000, maxit=1000, tol=1e-8)
-{
-  if(!missing(chr)) cross <- pull.chr(cross, chr)
-
-  n.ind <- nind(cross)
-
-  res <- matrix(ncol=3,nrow=n.perm)
-  for(i in 1:n.perm) {
-    cross$pheno <- as.matrix(cross$pheno[sample(1:n.ind),])
-    tem <- vbscan(cross,pheno.col=pheno.col,upper=upper,
-                      maxit=maxit,tol=tol)
-#    print(c(i,dim(tem)))
-    res[i,] <- apply(tem[,3:5],2,max)
-  }
-  colnames(res) <- c("lod","lod.p","lod.mu")
-  res
 }

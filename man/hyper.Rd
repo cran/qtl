@@ -1,41 +1,75 @@
 \name{hyper}
 \alias{hyper}
 \non_function{}
+
 \title{Data on hypertension}
+
 \description{ 
-  This is data from a real experiment on hypertension in the mouse.  The
-  phenotype is the blood pressure.  See the references below. Note that,
-  for most markers, genotypes are available on only the individuals with
-  extreme phenotypes.  At many markers, only recombinant individuals
-  were typed.  We thank Bev Paigen and Gary Churchill for allowing us to
-  distribute these data with the R/qtl package. 
+  Data from an experiment on hypertension in the mouse.
 } 
+
 \usage{data(hyper)}
+
 \format{
-  The data is an object of class \code{cross}.  See
-  \code{\link[qtl]{read.cross}} for details. There are 250 backcross
-  individuals typed at 174 markers (actually one contains only missing
-  values), including 4 on the X chromosome, with one phenotype (blood
-  pressure). }  
+  An object of class \code{cross}.  See \code{\link[qtl]{read.cross}}
+  for details. 
+}  
+
+\details{
+There are 250 backcross individuals typed at 174 markers (actually one
+contains only missing values), including 4 on the X chromosome, with one
+phenotype. 
+
+The phenotype is the blood pressure.  See the reference below.  Note
+that, for most markers, genotypes are available on only the individuals
+with extreme phenotypes.  At many markers, only recombinant individuals
+were typed.
+}
+
 
 \references{
-  Sugiyama et al. (2001) Concordance of murine quantitative trait loci
-  for salt-induced hypertension with rat and human loci. Genomics 71:70-77.
+  Sugiyama, F., Churchill, G. A., Higgens, D. C., Johns, C.,
+  Makaritsis, K. P., Gavras, H. and Paigen, B. (2001) Concordance of
+  murine quantitative trait loci for salt-induced hypertension with rat
+  and human loci. \emph{Genomics} \bold{71}, 70--77. 
 }
   
-\source{Bev Paigen and Gary Churchill (The Jackson Laboratory, Bar
-  Harbor, Maine)
-  \url{http://www.jax.org/research/churchill/datasets/qtl/qtlarchive} }
-
-\author{Karl W Broman,
-\email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\source{
+  Bev Paigen and Gary Churchill (The Jackson Laboratory, Bar Harbor,
+  Maine)
+  \url{http://www.jax.org/research/churchill/datasets/qtl/qtlarchive}   
+}
 
 \examples{
 data(hyper)
+summary(hyper)
+plot(hyper)
+
+# Note the selective genotyping
+plot.missing(hyper, reorder=TRUE)
+
+# A marker on c14 has no data; remove it
+hyper <- drop.nullmarkers(hyper)
+
+# Genome scan with normal model
+hyper <- calc.genoprob(hyper, step=2.5)
+out <- scanone(hyper)
+summary(out,3)
+
+# Non-parametric genome scan
+out.np <- scanone(hyper, model="np")
+summary(out.np,3)
+plot(out.np,out,chr=c(1,4),lty=1,col=c("blue","black"))
+
+# Two-dimensional genome scan, using Haley-Knott regression
+# Here we just do c1 and c4, and on a more coarse grid.
+hyper.coarse <- calc.genoprob(hyper, step=5)
+out2 <- scantwo(hyper.coarse, method="hk", chr=c(1,4))
+plot(out2)
+summary(out2,c(8,0,0))
 }
 
-\seealso{\code{\link[qtl]{fake.bc}}, \code{\link[qtl]{fake.f2}},
+\seealso{ \code{\link[qtl]{fake.bc}}, \code{\link[qtl]{fake.f2}},
   \code{\link[qtl]{fake.4way}}, \code{\link[qtl]{listeria}} } 
 
 \keyword{datasets}

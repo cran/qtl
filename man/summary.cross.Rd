@@ -5,13 +5,15 @@
 \alias{totmar}
 \alias{nchr}
 \alias{nphe}
+
 \title{Print summary of QTL experiment}
+
 \description{
   Print some summary information about a \code{cross} object.
 }
 
 \usage{
-summary.cross(object,\dots)
+summary.cross(object, \dots)
 nind(object)
 nmar(object)
 totmar(object)
@@ -28,9 +30,9 @@ nphe(object)
 \value{
 The six functions described here return the following values.
  
-  \item{summary.cross}{An object of class
-  \code{summary.cross}, which is then printed with
-  \code{print.summary.cross}.}
+  \item{summary.cross}{An object of class \code{summary.cross}
+    containing a variety of summary information about the cross (this is
+    generally printed automatically.)}
 
   \item{nind}{The number of individuals in the cross.}
 
@@ -44,8 +46,7 @@ The six functions described here return the following values.
   \item{nphe}{The number of phenotypes.} 
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
 data(fake.f2)
@@ -57,6 +58,6 @@ nchr(fake.f2)
 nphe(fake.f2)
 }
 
-\seealso{\code{\link[qtl]{read.cross}} }
+\seealso{ \code{\link[qtl]{read.cross}}, \code{\link[qtl]{plot.cross}} }
 
 \keyword{print}

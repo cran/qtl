@@ -3,7 +3,10 @@
  * hmm_main.h
  *
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ *
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
@@ -11,7 +14,7 @@
  * These functions are for the main HMM engine
  *
  * Contains: calc_genoprob, sim_geno, est_map, argmax_geno,
- *           calc_errorlod, est_rf
+ *           calc_errorlod, est_rf, calc_pairprob
  *  
  **********************************************************************/
 
@@ -155,7 +158,7 @@ void sim_geno(int n_ind, int n_pos, int n_gen, int n_draws,
  * 
  * sexsp        Indicates whether sex-specific maps should be estimated
  *
- * prnt         Indicates whether to print initial and final rec fracs
+ * trace         Indicates whether to print initial and final rec fracs
  *
  **********************************************************************/
 
@@ -168,7 +171,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
 	     double stepf(int, int, double, double), 
 	     double nrecf1(int, int), double nrecf2(int, int), 
 	     double *loglik, int maxit, double tol, int sexsp, 
-	     int prnt);
+	     int trace);
 
 
 /**********************************************************************
@@ -280,5 +283,58 @@ void est_rf(int n_ind, int n_mar, int *geno, double *rf,
 	    double erec(int, int, double), 
 	    double logprec(int, int, double), 
 	    int maxit, double tol);
+
+/**********************************************************************
+ * 
+ * calc_pairprob
+ *
+ * This function uses the hidden Markov model technology to calculate 
+ * the joint genotype probabilities for all pairs of putative QTLs.
+ * This assumes data on a single chromosome
+ *
+ * n_ind        Number of individuals
+ *
+ * n_pos        Number of markers (or really positions at which to 
+ *              calculate the genotype probabilities)
+ *
+ * n_gen        Number of different genotypes
+ *  
+ * geno         Genotype data, as a single vector storing the matrix 
+ *              by columns, with each column corresponding to a marker
+ *
+ * rf           Recombination fractions
+ *
+ * rf2          A second set of recombination fractions, in case of
+ *              sex-specific maps (may be ignored)
+ *
+ * error_prob   Genotyping error probability
+ *
+ * genoprob     Genotype probabilities (the output); a single vector, 
+ *              of length n_ind x n_pos x n_gen, stored by columns 
+ *              (ind moves fastest, then mar, then genotype
+ *
+ * pairprob     Joint genotype probabilities for pairs of positions.
+ *              A single vector of length n_ind x n_pos x (n_pos-1)/2 x
+ *              n_gen^2.  We only calculate probabilities for 
+ *              pairs (i,j) with i < j.
+ *
+ * initf        Function returning log Pr(g_i)
+ *
+ * emitf        Function returning log Pr(O_i | g_i)
+ * 
+ * stepf        Function returning log Pr(g_2 | g_1)
+ *
+ **********************************************************************/
+
+/* Note: true genotypes coded as 1, 2, ...
+   but in the alpha's and beta's, we use 0, 1, ... */
+
+void calc_pairprob(int n_ind, int n_pos, int n_gen, int *geno, 
+		   double *rf, double *rf2, 
+		   double error_prob, double *genoprob, 
+		   double *pairprob, 
+		   double initf(int), 
+		   double emitf(int, int, double),
+		   double stepf(int, int, double, double));
 
 /* end of hmm_main.h */

@@ -3,7 +3,8 @@
 # write.cross.R
 #
 # copyright (c) 2000-2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001; Sept, 2001; Feb, 2001
+# last modified Nov, 2001
+# first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
@@ -43,7 +44,7 @@ write.cross.mm <-
 function(cross, filestem="data", chr, digits=5)
 {
   if(!missing(chr)) 
-    cross <- pull.chr(cross,chr)
+    cross <- subset(cross,chr=chr)
 
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
@@ -93,7 +94,7 @@ function(cross, filestem="data", chr, digits=5)
       else {
         lo <- seq(1,n.ind-1,by=60)
         hi <- c(lo[-1]-1,n.ind)
-        for(k in 1:length(lo)) {
+        for(k in seq(along=lo)) {
           if(k==1) write(paste(mn,paste(x[lo[k]:hi[k]],collapse="")),file,append=TRUE)
           else write(paste(paste(rep(" ", mlmn),collapse=""),
                            paste(x[lo[k]:hi[k]],collapse="")),file,append=TRUE)
@@ -120,7 +121,7 @@ function(cross, filestem="data", chr, digits=5)
     else {
       lo <- seq(1,n.ind-1,by=10)
       hi <- c(lo[-1]+1,n.ind)
-      for(k in 1:length(lo)) {
+      for(k in seq(along=lo)) {
         if(k==1) write(paste(pn,paste(x[lo[k]:hi[k]],collapse=" ")),file,append=TRUE)
         else write(paste(paste(rep(" ", mlpn),collapse=""),
                          paste(x[lo[k]:hi[k]],collapse=" ")),file,append=TRUE)
@@ -162,7 +163,7 @@ function(cross, filestem="data", chr, digits=5)
 write.cross.csv <-
 function(cross, filestem="data", chr, digits=5)
 {
-  if(!missing(chr)) cross <- pull.chr(cross,chr)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
 
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
@@ -186,8 +187,9 @@ function(cross, filestem="data", chr, digits=5)
     firstmar <- firstmar + n.mar[i]
   }
   geno[geno=="NA"] <- "-"
-  data <- cbind(matrix(as.character(round(cross$pheno,digits)),ncol=n.phe),geno)
-  colnames(data) <- c(colnames(cross$pheno),unlist(lapply(cross$geno,function(a) colnames(a$data))))
+  data <- cbind(matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind),geno)
+  colnames(data) <- c(colnames(cross$pheno),
+                      unlist(lapply(cross$geno, function(a) colnames(a$data))))
   chr <- rep(names(cross$geno),n.mar)
   pos <- unlist(lapply(cross$geno,function(a) a$map))
   chr <- c(rep("",n.phe),chr)

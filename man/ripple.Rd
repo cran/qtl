@@ -11,7 +11,7 @@
 \usage{
 ripple(cross, chr, window=4, error.prob=0,
        map.function=c("haldane","kosambi","c-f"),
-       maxit=1000, tol=1e-5, sex.sp=TRUE)
+       maxit=4000, tol=1e-4, sex.sp=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -40,22 +40,27 @@ ripple(cross, chr, window=4, error.prob=0,
 }
 
 \value{
-  A matrix, given class "ripple"; the first set of columns are marker
-  indices describing the order.  The last two columns are lod (log base
-  10 likelihood ratios) comparing each order to the initial order and
-  the estimated chromosome length for the given order.
+  A matrix, given class \code{"ripple"}; the first set of columns are
+  marker indices describing the order.  The last two columns are LOD
+  scores (log base 10 likelihood ratios) comparing each order to the
+  initial order and the estimated chromosome length for the given
+  order.  Positive LOD scores indicate that the alternate order has more
+  support than the original.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
-data(fake.f2)
-output <- ripple(fake.f2,7,2)
-summary(output,2)
+data(badorder)
+rip2 <- ripple(badorder, 1, 2)
+summary(rip2)
+
+badorder <- switch.order(badorder, 1, rip2[2,])
+\dontrun{rip2p <- ripple(badorder, 1, 2)
+summary(rip2p)}
 }
 
-\seealso{\code{\link[qtl]{summary.ripple}}, \code{\link[qtl]{est.map}},
-  \code{\link[qtl]{est.rf}} }
+\seealso{ \code{\link[qtl]{summary.ripple}}, \code{\link[qtl]{switch.order}},
+  \code{\link[qtl]{est.map}}, \code{\link[qtl]{est.rf}} }
 
 \keyword{utilities}

@@ -3,14 +3,17 @@
  * hmm_bc.h
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ *
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
  *
  * Contains: init_bc, emit_bc, step_bc, nrec_bc, calc_genoprob_bc,
  *           sim_geno_bc, est_map_bc, argmax_geno_bc, errorlod_bc,
- *           calc_errorlod_bc, est_rf_bc 
+ *           calc_errorlod_bc, est_rf_bc, calc_pairprob_bc
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the backcross.
@@ -36,7 +39,7 @@ void sim_geno_bc(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_bc(int *n_ind, int *n_mar, int *geno, double *rf, 
 		double *error_prob, double *loglik, int *maxit, 
-		double *tol, int *prnt);
+		double *tol, int *trace);
 
 void argmax_geno_bc(int *n_ind, int *n_pos, int *geno, 
 		   double *rf, double *error_prob, int *argmax);
@@ -48,5 +51,9 @@ void calc_errorlod_bc(int *n_ind, int *n_mar, int *geno,
 		      double *errlod);
 
 void est_rf_bc(int *n_ind, int *n_mar, int *geno, double *rf);
+
+void calc_pairprob_bc(int *n_ind, int *n_mar, int *geno, 
+		      double *rf, double *error_prob, double *genoprob,
+		      double *pairprob);
 
 /* end of hmm_bc.h */

@@ -3,7 +3,8 @@
 # summary.cross.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001; Sept, 2001; Feb, 2001
+# last modified Nov, 2001
+# first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -15,8 +16,8 @@
 summary.cross <-
 function(object,...)
 {
-  if(is.na(match("cross",class(object))))
-    stop("This is not an object of class cross.")
+#  if(is.na(match("cross",class(object))))
+#    stop("This is not an object of class cross.")
     
   n.ind <- nind(object)
   tot.mar <- totmar(object)
@@ -71,8 +72,13 @@ function(object,...)
       stop(warn)
     }
       
+    if((is.matrix(map) && (any(diff(map[1,])<0) || any(diff(map[2,])<0))) ||
+       (!is.matrix(map) && any(diff(map)<0)))
+        stop(paste("Markers out of order on chr", chr))
   }
     
+  if(!is.data.frame(object$pheno))
+    warning("Phenotypes should be a data.frame.")
 
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,
@@ -128,7 +134,6 @@ function(object)
 {
   if(any(is.na(match(c("pheno","geno"),names(object)))))
     stop("This is not an object of class cross.")
-
   length(object$geno)
 }
 

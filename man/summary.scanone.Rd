@@ -1,42 +1,53 @@
 \name{summary.scanone}
 \alias{summary.scanone}
-\title{Print summary of the scanone output}
+
+\title{Summarize the results of a genome scan}
+
 \description{
-  Print the rows of the output from the function \code{scanone} that
-  correspond to the maximum LOD for each chromosome. 
+  Print the rows of the output from \code{\link[qtl]{scanone}} that
+  correspond to the maximum LOD for each chromosome, provided that they
+  exceed a specified threshold.
 }
 
 \usage{
-summary.scanone(object,threshold=0,\dots)
+summary.scanone(object, threshold=0, \dots)
 }
 
 \arguments{
- \item{object}{An object of class \code{scanone}, the output of the
-   function \code{\link[qtl]{scanone}}.  This is a data.frame whose
-   first column is the chromosome number and third column is the LOD
-   score.}
- \item{threshold}{Only peaks with LOD score above this value will be returned.}
+ \item{object}{An object of the form output by the function
+   \code{\link[qtl]{scanone}}: a data.frame whose first column is the
+   chromosome ID and third column is the LOD score.  All other
+   columns are ignored.}
+ \item{threshold}{Only peaks with LOD score above this value will be
+   returned.}
  \item{\dots}{Ignored at this point.}
 }
 
 \value{
   An object of class \code{summary.scanone}, to be printed by
   \code{print.summary.scanone}.  This is a data.frame with one row per
-  chromosome, that at which the LOD score is a maximum.
+  chromosome, corresponding to the maximum LOD scores.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} \cr
-\url{http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
-data(fake.f2)
-fake.f2 <- calc.genoprob(fake.f2,step=1,off.end=5)
-output1 <- scanone(fake.f2,method="im")
-summary(output1)
-summary(output1,3)
+data(listeria)
+listeria <- calc.genoprob(listeria, step=2.5)
+out <- scanone(listeria, model="2part")
+# All peaks
+summary(out)
+
+# Peaks for LOD(p,mu)
+summary(out, 5)
+
+# peaks for LOD(p)
+summary(out[,-3],3)
+
+# peaks for LOD(mu)
+summary(out[,-(3:4)],3)
 }
 
-\seealso{\code{\link[qtl]{scanone}}, \code{\link[qtl]{plot.scanone}},
-         \code{\link[qtl]{vbscan}} }
+\seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{plot.scanone}} }
 
 \keyword{print}

@@ -3,7 +3,8 @@
 # argmax.geno.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Sept, 2001; July, 2001; May, 2001; Apr, 2001; Feb, 2001
+# last modified Sept, 2001
+# first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -22,7 +23,6 @@ argmax.geno <-
 function(cross, step=0, off.end=0, error.prob=0,
          map.function=c("haldane","kosambi","c-f"))
 {
-
   # map function
   map.function <- match.arg(map.function)
   if(map.function=="kosambi") mf <- mf.k
@@ -30,7 +30,7 @@ function(cross, step=0, off.end=0, error.prob=0,
   else mf <- mf.h
 
   # don't let error.prob be exactly zero, just in case
-  if(error.prob < 1e-14) error.prob <- 1e-14
+  if(error.prob < 1e-50) error.prob <- 1e-50
 
   n.ind <- nind(cross)
   n.chr <- nchr(cross)
@@ -38,6 +38,8 @@ function(cross, step=0, off.end=0, error.prob=0,
 
   # loop over chromosomes
   for(i in 1:n.chr) {
+    if(n.mar[i]==1) temp.offend <- max(c(off.end,5))
+    else temp.offend <- off.end
 
     # which type of cross is this?
     if(class(cross)[1] == "f2") {
@@ -71,7 +73,7 @@ function(cross, step=0, off.end=0, error.prob=0,
     # recombination fractions
     if(one.map) {
       # recombination fractions
-      map <- create.map(cross$geno[[i]]$map,step,off.end)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
       rf <- mf(diff(map))
       rf[rf < 1e-14] <- 1e-14
 
@@ -83,7 +85,7 @@ function(cross, step=0, off.end=0, error.prob=0,
       n.pos <- ncol(newgen)
     }
     else {
-      map <- create.map(cross$geno[[i]]$map,step,off.end)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
       rf <- mf(diff(map[1,]))
       rf[rf < 1e-14] <- 1e-14
       rf2 <- mf(diff(map[2,]))
@@ -136,12 +138,10 @@ function(cross, step=0, off.end=0, error.prob=0,
     #     reference
     attr(cross$geno[[i]]$argmax,"error.prob") <- error.prob
     attr(cross$geno[[i]]$argmax,"step") <- step
-    attr(cross$geno[[i]]$argmax,"off.end") <- off.end
+    attr(cross$geno[[i]]$argmax,"off.end") <- temp.offend
   }
 
   cross
 }
-
-  
 
 # end of argmax.geno.R

@@ -3,7 +3,10 @@
  * vbscan.h
  *
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * July, 2001; May, 2001
+ *
+ * last modified July, 2001
+ * first written May, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package

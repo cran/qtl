@@ -3,7 +3,10 @@
  * hmm_f2.c
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ *
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  * 
  * C functions for the R/qtl package
@@ -11,7 +14,7 @@
  * Contains: init_f2, emit_f2, step_f2, init_f2b, emit_f2b, step_f2b,
  *           calc_genoprob_f2, sim_genoprob_f2, est_map_f2, 
  *           argmax_geno_f2, errorlod_f2, calc_errorlod_f2, nrec2_f2,
- *           logprec_f2, est_rf_f2
+ *           logprec_f2, est_rf_f2, calc_pairprob_f2
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the F2 intercross.
@@ -204,11 +207,11 @@ void sim_geno_f2(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_f2(int *n_ind, int *n_mar, int *geno, double *rf, 
 		double *error_prob, double *loglik, int *maxit, 
-		double *tol, int *prnt)
+		double *tol, int *trace)
 {
   est_map(*n_ind, *n_mar, 4, geno, rf, rf, *error_prob, 
 	  init_f2b, emit_f2b, step_f2b, nrec_f2b, nrec_f2b,
-	  loglik, *maxit, *tol, 0, *prnt);
+	  loglik, *maxit, *tol, 0, *trace);
 }
 
 
@@ -340,4 +343,13 @@ void est_rf_f2(int *n_ind, int *n_mar, int *geno, double *rf,
 	 *maxit, *tol);
 }
 
+void calc_pairprob_f2(int *n_ind, int *n_mar, int *geno, 
+		      double *rf, double *error_prob, double *genoprob,
+		      double *pairprob) 
+{
+  calc_pairprob(*n_ind, *n_mar, 3, geno, rf, rf, *error_prob, genoprob,
+		pairprob, init_f2, emit_f2, step_f2);
+}
+
+  
 /* end of hmm_f2.c */

@@ -3,14 +3,17 @@
  * hmm_bc.c
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Aug, 2001; Feb, 2001
+ *
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
  *
  * Contains: init_bc, emit_bc, step_bc, nrec_bc, calc_genoprob_bc,
  *           sim_geno_bc, est_map_bc, argmax_geno_bc, errorlod_bc,
- *           calc_errorlod_bc, est_rf_bc 
+ *           calc_errorlod_bc, est_rf_bc, calc_pairprob_bc
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the backcross.
@@ -34,7 +37,6 @@ double init_bc(int true_gen)
 {
   return(log(0.5));
 }
-
 
 double emit_bc(int obs_gen, int true_gen, double error_prob)
 {
@@ -60,15 +62,12 @@ double nrec_bc(int gen1, int gen2)
   else return(1.0);
 }
 
-
-
 void calc_genoprob_bc(int *n_ind, int *n_mar, int *geno, 
 		      double *rf, double *error_prob, double *genoprob) 
 {
   calc_genoprob(*n_ind, *n_mar, 2, geno, rf, rf, *error_prob, genoprob,
 		init_bc, emit_bc, step_bc);
 }
-
 
 void sim_geno_bc(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		 double *rf, double *error_prob, int *draws)
@@ -79,11 +78,11 @@ void sim_geno_bc(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_bc(int *n_ind, int *n_mar, int *geno, double *rf, 
 		double *error_prob, double *loglik, int *maxit, 
-		double *tol, int *prnt)
+		double *tol, int *trace)
 {
   est_map(*n_ind, *n_mar, 2, geno, rf, rf, *error_prob, 
 	  init_bc, emit_bc, step_bc, nrec_bc, nrec_bc,
-	  loglik, *maxit, *tol, 0, *prnt);
+	  loglik, *maxit, *tol, 0, *trace);
 }
 
 void argmax_geno_bc(int *n_ind, int *n_pos, int *geno, 
@@ -92,7 +91,6 @@ void argmax_geno_bc(int *n_ind, int *n_pos, int *geno,
   argmax_geno(*n_ind, *n_pos, 2, geno, rf, rf, *error_prob,
 	      argmax, init_bc, emit_bc, step_bc);
 }
-
 
 double errorlod_bc(int obs, double *prob, double error_prob)
 {
@@ -108,7 +106,6 @@ double errorlod_bc(int obs, double *prob, double error_prob)
   if(p < TOL) return(-12.0);
   else return(log10(p));
 }
-
 
 void calc_errorlod_bc(int *n_ind, int *n_mar, int *geno, 
 		      double *error_prob, double *genoprob, 
@@ -165,8 +162,15 @@ void est_rf_bc(int *n_ind, int *n_mar, int *geno, double *rf)
 
     } /* end loops over markers */
   }
-
-
 }
  
+void calc_pairprob_bc(int *n_ind, int *n_mar, int *geno, 
+		      double *rf, double *error_prob, double *genoprob,
+		      double *pairprob) 
+{
+  calc_pairprob(*n_ind, *n_mar, 2, geno, rf, rf, *error_prob, genoprob,
+		pairprob, init_bc, emit_bc, step_bc);
+}
+
+
 /* end of hmm_bc.c */

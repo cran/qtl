@@ -3,7 +3,8 @@
 # est.map.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Sept, 2001; July, 2001; May, 2001; Apr, 2001
+# last modified Sept, 2001
+# first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -19,7 +20,7 @@
 
 est.map <- 
 function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
-         maxit=1000, tol=1e-5, sex.sp=TRUE, print.rf=FALSE)
+         maxit=4000, tol=1e-4, sex.sp=TRUE, trace=FALSE)
 {
 
   # map function
@@ -35,7 +36,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
   }
 
   # don't let error.prob be exactly zero, just in case
-  if(error.prob < 1e-14) error.prob <- 1e-14
+  if(error.prob < 1e-50) error.prob <- 1e-50
 
   n.ind <- nind(cross)
   n.mar <- nmar(cross)
@@ -96,6 +97,8 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
     }
 
 
+    if(trace) cat(paste("Chr ", names(cross$geno)[i], ":\n",sep="")) 
+
     # call the C function
     if(one.map) {
       z <- .C(cfunc,
@@ -107,7 +110,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
               loglik=as.double(0),       # log likelihood
               as.integer(maxit),
               as.double(tol),
-              as.integer(print.rf),
+              as.integer(trace),
               PACKAGE="qtl")
 
       newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),imf(z$rf)))
@@ -126,7 +129,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f"),
               as.integer(maxit),
               as.double(tol),
               as.integer(temp.sex.sp),
-              as.integer(print.rf),
+              as.integer(trace),
               PACKAGE="qtl")
               
       if(!temp.sex.sp) z$rf2 <- z$rf

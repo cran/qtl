@@ -3,7 +3,8 @@
 # est.rf.R
 #
 # copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# Oct, 2001; May, 2001; Apr, 2001
+# last modified Nov, 2001
+# first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -19,7 +20,7 @@
 ######################################################################
 
 est.rf <-
-function(cross, maxit=1000, tol=1e-6) 
+function(cross, maxit=4000, tol=1e-4) 
 {
   n.chr <- nchr(cross)
   n.mar <- totmar(cross)
@@ -71,15 +72,12 @@ function(cross, maxit=1000, tol=1e-6)
 plot.rf <-
 function(x, chr, which=c("both","lod","rf"), ...)
 {
-  cross <- x
   which <- match.arg(which)
   
-  if(!missing(chr)) 
-    cross <- pull.chr(cross,chr)
+  if(!missing(chr)) x <- subset(x,chr=chr)
   
-  g <- cross$rf
-  if(is.null(g)) 
-    stop("You must run est.rf first.")
+  if(is.na(match("rf",names(x)))) stop("You must run est.rf first.")
+  g <- x$rf
   
   old.xpd <- par("xpd")
   old.las <- par("las")
@@ -87,44 +85,35 @@ function(x, chr, which=c("both","lod","rf"), ...)
   on.exit(par(xpd=old.xpd,las=old.las))
 
   # if any of the rf's are NA (ie no data), put NAs in corresponding LODs
-  some.nas <- FALSE
-  if(any(is.na(g))) {
-    some.nas <- TRUE
-    g[is.na(t(g))] <- NA
-  }
+  if(any(is.na(g))) g[is.na(t(g))] <- NA
+
+  # convert rf to -2*(log2(rf)+1); place 12's on the diagonal;
+  #    anything above 12 replaced by 12;
+  #    NA's replaced by -1
+  g[row(g) > col(g) & g > 0.5] <- 0.5
+  g[row(g) > col(g)] <- -4*(log2(g[row(g) > col(g)])+1)
+  diag(g) <- 12
+  g[!is.na(g) & g>12] <- 12
+  
+  g[is.na(g)] <- -1
 
   if(which=="lod") { # plot LOD scores 
     # copy upper triangle (LODs) to lower triangle (rec fracs)
     g[row(g) > col(g)] <- t(g)[row(g) > col(g)]
-    diag(g) <- 12
-    g[g>12] <- 12
-    br <- c(seq(-1.01,11.01),12)
   }
   else if(which=="rf") { # plot recombination fractions
     # copy lower triangle (rec fracs) to upper triangle (LODs)
     g[row(g) < col(g)] <- t(g)[row(g) < col(g)]
-    diag(g) <- 0
-    g[g < 0] <- 0
-    g[g > 0.5] <- 0.5
-    g <- 0.5 - g
-    br <- c(seq(0,0.5,length=13)-0.5/12-0.001,0.5)
   }
-  else { # plot both LOD scores and recombination fractions
-    # rescale lower triangle (rec fracs) to match range of upper triangle
-    diag(g) <- 12
-    g[row(g) > col(g) & g > 0.5] <- 0.5
-    g[row(g) > col(g)] <- (0.5 - g[row(g) > col(g)])*24
-    g[g>12] <- 12
-    br <- c(seq(-1.01,11.01),12)
-  }
-  g[is.na(g)] <- min(br)
-  diag(g) <- min(br)
+  br <- c(-1, seq(-1e-6, 12, length=65))
+
 
   image(1:ncol(g),1:nrow(g),t(g),ylab="Markers",xlab="Markers",breaks=br,
-        col=c("gray50",heat.colors(12)))
+        col=c("lightgray",rev(rainbow(64,start=0,end=2/3))))
   
   # plot lines at the chromosome boundaries
-  n.mar <- nmar(cross)
+  n.mar <- nmar(x)
+  n.chr <- nchr(x)
   a <- c(0.5,cumsum(n.mar)+0.5)
   abline(v=a,xpd=FALSE)
   abline(h=a,xpd=FALSE)
@@ -137,10 +126,10 @@ function(x, chr, which=c("both","lod","rf"), ...)
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:length(n.mar)) 
-    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,names(cross$geno)[i])
-  for(i in 1:length(n.mar)) 
-    text(a[2]+(a[2]-a[1])*0.025,mean(wh[i+c(0,1)]),names(cross$geno)[i])
+  for(i in 1:n.chr) 
+    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,names(x$geno)[i])
+  for(i in 1:n.chr) 
+    text(a[2]+(a[2]-a[1])*0.025,mean(wh[i+c(0,1)]),names(x$geno)[i])
 
   if(which=="lod") title(main="Pairwise LOD scores")
   else if(which=="rf") title(main="Recombination fractions")

@@ -3,7 +3,10 @@
  * hmm_f2ss.c
  * 
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Sept, 2001
+ *
+ * last modified Sep, 2001
+ * first written Sep, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  * 
  * C functions for the R/qtl package
@@ -57,7 +60,6 @@ double emit_f2ss(int obs_gen, int true_gen, double error_prob)
   return(log(-1.0)); /* shouldn't get here */
 }
     
-  
 double step_f2ss(int gen1, int gen2, double rf1, double rf2) 
 {
   switch(gen1) {
@@ -110,7 +112,6 @@ double nrec_f2ss1(int gen1, int gen2)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 double nrec_f2ss2(int gen1, int gen2)
 {
   switch(gen1) {
@@ -128,16 +129,14 @@ double nrec_f2ss2(int gen1, int gen2)
   return(log(-1.0)); /* shouldn't get here */
 }
 
-
 void est_map_f2ss(int *n_ind, int *n_mar, int *geno, double *rf1,
 		  double *rf2, double *error_prob, double *loglik,
-		  int *maxit, double *tol, int *junk, int *prnt)
+		  int *maxit, double *tol, int *junk, int *trace)
 {
   est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
 	  init_f2ss, emit_f2ss, step_f2ss, nrec_f2ss1, nrec_f2ss2,
-	  loglik, *maxit, *tol, 1, *prnt);
+	  loglik, *maxit, *tol, 1, *trace);
 }
-
 
 void argmax_geno_f2ss(int *n_ind, int *n_pos, int *geno, 
 		      double *rf1, double *rf2, 

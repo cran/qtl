@@ -3,7 +3,14 @@
  * util.h
  *
  * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- * Feb, 2001
+ *                     and Hao Wu, The Jackson Laboratory 
+ *
+ * This file written mostly by Karl Broman with some additions
+ * from Hao Wu.
+ * 
+ * last modified Nov, 2001
+ * first written Feb, 2001
+ *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
@@ -11,9 +18,11 @@
  * These are utility functions, mostly for the HMM engine.
  *
  * Other functions: addlog, subtrlog, reorg_geno, reorg_genoprob,
+ *                  reorg_pairprob,
  *                  allocate_alpha, reorg_draws, allocate_double,
  *                  sample_int, allocate_imatrix, allocate_dmatrix,
  *                  reorg_errlod, double_permute, random_int
+ *                  wtaverage
  *
  **********************************************************************/
 
@@ -73,6 +82,23 @@ void reorg_geno(int n_ind, int n_pos, int *geno, int ***Geno);
 
 void reorg_genoprob(int n_ind, int n_pos, int n_gen, 
 		    double *genoprob, double ****Genoprob);
+
+/**********************************************************************
+ * 
+ * reorg_pairprob
+ *
+ * Reorganize the joint genotype probabilities so that they form a 
+ * quintuply indexed array rather than a single long vector
+ *
+ * Afterwards, pairprob indexed like 
+ *    Pairprob[gen2][gen1][pos2][pos1][ind] with pos2 > pos1
+ *
+ * Allocation done by R_alloc, so that R does the cleanup.
+ *
+ **********************************************************************/
+
+void reorg_pairprob(int n_ind, int n_pos, int n_gen, 
+		    double *pairprob, double ******Pairprob);
 
 /**********************************************************************
  * 
@@ -150,7 +176,6 @@ void allocate_imatrix(int n_row, int n_col, int ***matrix);
 
 int sample_int(int n, double *p);
 
-
 /**********************************************************************
  * 
  * reorg_errlod
@@ -197,5 +222,13 @@ void double_permute(double *array, long len);
  **********************************************************************/
 
 int random_int(int low, int high);
+
+/**********************************************************************
+ * wtaverage
+ * calculate the weight average of the LOD scores
+ *********************************************************************/
+
+double wtaverage(double *LOD, int n_draws);
+
 
 /* end of util.h */

@@ -1,5 +1,6 @@
-fake.4way                Simulated data for a 4-way cross experiment
-fake.bc                  Simulated data for a backcross experiment
-fake.f2                  Simulated data for an F2 intercross experiment
+badorder                 An intercross with misplaced markers
+fake.4way                Simulated data for a 4-way cross
+fake.bc                  Simulated data for a backcross
+fake.f2                  Simulated data for an F2 intercross
 hyper                    Data on hypertension
 listeria                 Data on Listeria monocytogenes susceptibility
