@@ -11,12 +11,19 @@
 
 \arguments{
  \item{\dots}{A set of objects of class \code{cross}.  See
-   \code{\link[qtl]{read.cross}} for details.  These must all be of the
-   same cross type, with the same phenotypes and the same chromosomes
-   and markers.}
+   \code{\link[qtl]{read.cross}} for details.  These must all either be of the
+   same cross type or be a combination of backcrosses and intercrosses.
+   All crosses must have exactly the same genetic maps, including the
+   same number of chromosomes, chromosome names, number of markers per
+   chromosome, marker names, and marker orders.}
 }
 
-\value{The concatenated input, as a \code{cross} object.}
+\value{The concatenated input, as a \code{cross} object. Additional
+  columns are added to the phenotype data indicating which cross an
+  individual comes from; another column indicates cross type (0=BC,
+  1=intercross), if there are crosses of different types.  The crosses
+  are not required to have exactly the same set of phenotypes;
+  phenotypes with the same names are assumed to be the same.}
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 

@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -60,6 +60,8 @@
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * result       Result vectro of length n_pos; upon return, contains 
  *              the LOD scores.
  *
@@ -74,13 +76,14 @@
 void scanone_em_covar(int n_ind, int n_pos, int n_gen, 
 		      double ***Genoprob, double **Addcov, int n_addcov,
 		      double **Intcov, int n_intcov, double *pheno, 
+		      double *weights,
 		      double *result, int maxit, double tol, int trace)
 {
   int i, j, k, s, flag=0, n_par;
   double **wts, *param, *oldparam, regtol; 
   double *x, *coef, *resid, *qty, *qraux, *work;
   int *jpvt, ny, ncol0, error_flag;
-  double llik, oldllik=0.0, *work1, *work2, temp;
+  double llik, oldllik=0.0, *work1, *work2, temp, sw;
 
   /* recenter phenotype to have mean 0, for
      possibly increased numerical stability */
@@ -108,6 +111,18 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
   regtol = TOL;
   ny = 1;
 
+  /* adjust phenotypes and covariates with weights */
+  /* Note: weights are actually sqrt(weights) */
+  sw = 0.0;
+  for(i=0; i<n_ind; i++) {
+    pheno[i] *= weights[i];
+    for(j=0; j<n_addcov; j++)
+      Addcov[j][i] *= weights[i];
+    for(j=0; j<n_intcov; j++)
+      Intcov[j][i] *= weights[i];
+    sw += log(weights[i]);   /* sum of log weights */
+  }
+
   /* NULL model is now done in R ********************
      (only do it once!)
   for(i=0; i<n_ind; i++) {
@@ -132,13 +147,13 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       for(k=0; k<n_gen; k++) 
 	wts[k][j] = Genoprob[k][i][j];
     mstep_em_covar(n_ind, n_gen, Addcov, n_addcov, Intcov, n_intcov,
-		   pheno, wts, oldparam, work1, work2, &error_flag);
+		   pheno, weights, wts, oldparam, work1, work2, &error_flag);
     
     if(!error_flag) { /* only proceed if there's no error */
 
       if(trace) {
 	estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
-		       Intcov, n_intcov, pheno, wts, oldparam, 0);
+		       Intcov, n_intcov, pheno, weights, wts, oldparam, 0);
 	oldllik = 0.0;
 	for(k=0; k<n_ind; k++) {
 	  temp = 0.0;
@@ -151,9 +166,9 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       /* begin EM iterations */
       for(j=0; j<maxit; j++) {
 	estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
-		       Intcov, n_intcov, pheno, wts, oldparam, 1);
+		       Intcov, n_intcov, pheno, weights, wts, oldparam, 1);
 	mstep_em_covar(n_ind, n_gen, Addcov, n_addcov, Intcov, n_intcov,
-		       pheno, wts, param, work1, work2, &error_flag);
+		       pheno, weights, wts, param, work1, work2, &error_flag);
 	
 	if(error_flag) { /* error: X'X singular; break out of EM */
 	  flag=0; 
@@ -162,7 +177,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 
 	if(trace) {
 	  estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
-			 Intcov, n_intcov, pheno, wts, param, 0);
+			 Intcov, n_intcov, pheno, weights, wts, param, 0);
 	  llik = 0.0;
 	  for(k=0; k<n_ind; k++) {
 	    temp = 0.0;
@@ -191,14 +206,14 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       if(!error_flag) { /* skip if there was an error */
 	/* calculate log likelihood */
 	estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
-		       Intcov, n_intcov, pheno, wts, param, 0);
+		       Intcov, n_intcov, pheno, weights, wts, param, 0);
 	llik = 0.0;
 	for(k=0; k<n_ind; k++) {
 	  temp = 0.0;
 	  for(s=0; s < n_gen; s++) temp += wts[s][k];
 	  llik += log(temp);
 	}
-	result[i] = -llik/log(10.0);
+	result[i] = -(llik+sw)/log(10.0);
       }
       else result[i] = NA_REAL;
       
@@ -234,6 +249,8 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * wts      Pr(QTL gen | phenotype, model, multipoint marker data),
  *          indexed as wts[gen][ind]
  *
@@ -249,6 +266,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 
 void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov, 
 		    double **Intcov, int n_intcov, double *pheno, 
+		    double *weights,
 		    double **wts, double *param, double *work1, 
 		    double *work2, int *error_flag)
 {
@@ -263,7 +281,7 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
   for(j=0; j<nparm1; j++) work2[j] = 0.0;
   for(i=0; i<n_ind; i++) {
     for(j=0; j<n_gen; j++) /* QTL effects */
-      work2[j] += (wts[j][i]*pheno[i]);
+      work2[j] += (wts[j][i]*pheno[i]*weights[i]);
     for(j=0,k=n_gen; j<n_addcov; j++,k++) /* add covar */
       work2[k] += (Addcov[j][i]*pheno[i]);
     for(j=0,s=n_gen+n_addcov; j<n_gen-1; j++) {
@@ -276,12 +294,12 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
   for(j=0; j<nparm1*nparm1; j++) work1[j] = 0.0;
   for(i=0; i<n_ind; i++) {
     for(j=0; j<n_gen; j++) /* QTLxQTL */
-      work1[j+nparm1*j] += wts[j][i];
+      work1[j+nparm1*j] += wts[j][i]*weights[i]*weights[i];
     for(j=0, k=n_gen; j<n_addcov; j++, k++) {
       for(s=j, sk=k; s<n_addcov; s++, sk++)  /* add x add */
 	work1[k+nparm1*sk] += (Addcov[j][i]*Addcov[s][i]);
       for(s=0; s<n_gen; s++) /* QTL x add */
-	work1[s+nparm1*k] += (Addcov[j][i]*wts[s][i]);
+	work1[s+nparm1*k] += (Addcov[j][i]*wts[s][i]*weights[i]);
     }
     for(j=0, k=n_gen+n_addcov; j<n_gen-1; j++, k += n_intcov) {
       for(s=0; s<n_intcov; s++) {
@@ -291,7 +309,7 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
 	for(sk=0; sk<n_addcov; sk++) /* add x int */
 	  work1[sk+n_gen+(k+s)*nparm1] += 
 	    (Addcov[sk][i]*wts[j][i]*Intcov[s][i]);
-	work1[j+(k+s)*nparm1] += wts[j][i]*Intcov[s][i]; /* qtl x int */
+	work1[j+(k+s)*nparm1] += wts[j][i]*Intcov[s][i]*weights[i]; /* qtl x int */
       }
     }
   }
@@ -346,6 +364,8 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * wts      On output, Pr(QTL gen | pheno, model, multipt marker data), 
  *          indexed as wts[gen][ind]
  *
@@ -359,8 +379,8 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
 
 void estep_em_covar(int n_ind, int n_gen, int pos, double ***Genoprob,
 		    double **Addcov, int n_addcov, double **Intcov,
-		    int n_intcov, double *pheno, double **wts,
-		    double *param, int rescale)
+		    int n_intcov, double *pheno, double *weights,
+		    double **wts, double *param, int rescale)
 {
   int i, j, k, s, nparm1;
   double temp;
@@ -377,7 +397,7 @@ void estep_em_covar(int n_ind, int n_gen, int pos, double ***Genoprob,
       temp += (Addcov[j][i]*param[k]);
 
     /* QTL effect + addcov effect*/
-    for(j=0; j<n_gen; j++) wts[j][i] = param[j]+temp;
+    for(j=0; j<n_gen; j++) wts[j][i] = param[j]*weights[i]+temp;
 
     /* interactive cov effect */
     for(j=0, s=n_gen+n_addcov; j<n_gen-1; j++) {

@@ -2,9 +2,9 @@
  * 
  * scantwo_hk.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -43,7 +43,8 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
 		       double *genoprob, double *pairprob, 
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result)
+		       double *pheno, double *weights, 
+		       double *result)
 {
   double ***Genoprob, **Result, **Addcov, **Intcov, *****Pairprob;
 
@@ -57,7 +58,7 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
 
   scantwo_1chr_hk(*n_ind, *n_pos, *n_gen, Genoprob, Pairprob, 
 		  Addcov, *n_addcov, Intcov, *n_intcov, 
-		  pheno, Result);
+		  pheno, weights, Result);
 }
 
 /**********************************************************************
@@ -92,6 +93,8 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
@@ -103,7 +106,7 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
 void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double **Result)
+		     double *weights, double **Result)
 {
   int ny, *jpvt, i, i2, j, k, k2, k3, s;
   int n_col_a, n_col_f, n_gen_sq;
@@ -128,6 +131,13 @@ void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
   work = (double *)R_alloc(2 * n_col_f, sizeof(double));
   ny = 1;
 
+  /* modify pheno, Addcov and Intcov with weights */
+  for(j=0; j<n_ind; j++) {
+    pheno[j] *= weights[j];
+    for(k=0; k<n_addcov; k++) Addcov[k][j] *= weights[j];
+    for(k=0; k<n_intcov; k++) Intcov[k][j] *= weights[j];
+  }    
+
   /* NULL model is now done in R ********************
      (only do it once!)
   for(j=0; j<n_ind; j++) {
@@ -149,9 +159,9 @@ void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
       /* fill up X matrix */
       for(j=0; j<n_ind; j++) { 
 	for(k=0, s=0; k<n_gen; k++, s++) /* QTL 1 */
-	  x[j+s*n_ind] = Genoprob[k][i][j];  /* s keeps track of column */
+	  x[j+s*n_ind] = Genoprob[k][i][j]*weights[j];  /* s keeps track of column */
 	for(k=0; k<n_gen-1; k++,s++) /* QTL 2 */
-	  x[j+s*n_ind] = Genoprob[k][i2][j];
+	  x[j+s*n_ind] = Genoprob[k][i2][j]*weights[j];
 	for(k=0; k<n_addcov; k++, s++) /* additive covariates */
 	  x[j+s*n_ind] = Addcov[k][j];
 	for(k=0; k<n_gen-1; k++) /* interactive x QTL 1 */
@@ -173,12 +183,12 @@ void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
       /* fill up X matrix */
       for(j=0; j<n_ind; j++) { 
 	for(k=0, s=0; k<n_gen; k++, s++) /* QTL 1 */
-	  x[j+s*n_ind] = Genoprob[k][i][j];  /* s keeps track of column */
+	  x[j+s*n_ind] = Genoprob[k][i][j]*weights[j];  /* s keeps track of column */
 	for(k=0; k<n_gen-1; k++,s++) /* QTL 2 */
-	  x[j+s*n_ind] = Genoprob[k][i2][j];
+	  x[j+s*n_ind] = Genoprob[k][i2][j]*weights[j];
 	for(k=0; k<n_gen-1; k++)
 	  for(k2=0; k2<n_gen-1; k2++,s++) /* QTL 2 x QTL 2 */
-	    x[j+s*n_ind] = Pairprob[k][k2][i][i2][j];
+	    x[j+s*n_ind] = Pairprob[k][k2][i][i2][j]*weights[j];
 	for(k=0; k<n_addcov; k++, s++) /* additive covariates */
 	  x[j+s*n_ind] = Addcov[k][j];
 	for(k=0; k<n_gen-1; k++) /* interactive x QTL 1 */
@@ -224,8 +234,8 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *genoprob1, double *genoprob2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result_full,
-		       double *result_int)
+		       double *pheno, double *weights,
+		       double *result_full, double *result_int)
 {
   double ***Genoprob1, ***Genoprob2, **Result_full, **Result_int;
   double **Addcov, **Intcov;
@@ -241,7 +251,7 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 
   scantwo_2chr_hk(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2, 
 		  Genoprob1, Genoprob2, Addcov, *n_addcov, Intcov, 
-		  *n_intcov, pheno, Result_full, Result_int);
+		  *n_intcov, pheno, weights, Result_full, Result_int);
 }
 
 /**********************************************************************
@@ -278,6 +288,8 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
@@ -293,6 +305,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double ***Genoprob2, 
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
+		     double *weights,
 		     double **Result_full, double **Result_int)
 {
   int ny, *jpvt, i, i2, j, k, k2, k3, s;
@@ -318,6 +331,13 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
   work = (double *)R_alloc(2 * n_col_f, sizeof(double));
   ny = 1;
 
+  /* modify pheno, Addcov and Intcov with weights */
+  for(j=0; j<n_ind; j++) {
+    pheno[j] *= weights[j];
+    for(k=0; k<n_addcov; k++) Addcov[k][j] *= weights[j];
+    for(k=0; k<n_intcov; k++) Intcov[k][j] *= weights[j];
+  }    
+
   /* NULL model is now done in R ********************
      (only do it once!)
   for(j=0; j<n_ind; j++) {
@@ -340,9 +360,9 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
       /* fill up X matrix */
       for(j=0; j<n_ind; j++) { 
 	for(k=0, s=0; k<n_gen1; k++, s++) /* QTL 1 */
-	  x[j+s*n_ind] = Genoprob1[k][i][j];  /* s keeps track of column */
+	  x[j+s*n_ind] = Genoprob1[k][i][j]*weights[j];  /* s keeps track of column */
 	for(k=0; k<n_gen2-1; k++,s++) /* QTL 2 */
-	  x[j+s*n_ind] = Genoprob2[k][i2][j];
+	  x[j+s*n_ind] = Genoprob2[k][i2][j]*weights[j];
 	for(k=0; k<n_addcov; k++, s++) /* additive covariates */
 	  x[j+s*n_ind] = Addcov[k][j];
 	for(k=0; k<n_gen1-1; k++) /* interactive x QTL 1 */
@@ -364,12 +384,12 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
       /* fill up X matrix */
       for(j=0; j<n_ind; j++) { 
 	for(k=0, s=0; k<n_gen1; k++, s++) /* QTL 1 */
-	  x[j+s*n_ind] = Genoprob1[k][i][j];  /* s keeps track of column */
+	  x[j+s*n_ind] = Genoprob1[k][i][j]*weights[j];  /* s keeps track of column */
 	for(k=0; k<n_gen2-1; k++,s++) /* QTL 2 */
-	  x[j+s*n_ind] = Genoprob2[k][i2][j];
+	  x[j+s*n_ind] = Genoprob2[k][i2][j]*weights[j];
 	for(k=0; k<n_gen1-1; k++)
 	  for(k2=0; k2<n_gen2-1; k2++,s++) /* QTL 2 x QTL 2 */
-	    x[j+s*n_ind] = Genoprob1[k][i][j]*Genoprob2[k2][i2][j];
+	    x[j+s*n_ind] = Genoprob1[k][i][j]*Genoprob2[k2][i2][j]*weights[j];
 	for(k=0; k<n_addcov; k++, s++) /* additive covariates */
 	  x[j+s*n_ind] = Addcov[k][j];
 	for(k=0; k<n_gen1-1; k++) /* interactive x QTL 1 */

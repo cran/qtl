@@ -13,7 +13,8 @@
 \usage{
 scantwo(cross, chr, pheno.col=1,
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"), 
-        addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+        addcovar=NULL, intcovar=NULL, weights=NULL,
+        x.treatment=c("simple","full"),
         run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
         trace=TRUE, n.perm)
 }
@@ -39,6 +40,8 @@ scantwo(cross, chr, pheno.col=1,
    \code{"sex"} and \code{"pgm"} in the phenotype data are needed; see
    the section on the X chromosome in the help file for
    \code{\link[qtl]{read.cross}}.} 
+ \item{weights}{Optional weights of individuals.  Should be either NULL
+   or a vector of length n.ind containing positive weights.}
  \item{run.scanone}{If TRUE, run the function \code{\link[qtl]{scanone}}
    and place the results on the diagonal.}
  \item{incl.markers}{If FALSE, do calculations only at points on an
@@ -149,7 +152,7 @@ out.2dim <- scantwo(fake.f2, method="hk")
 plot(out.2dim)
 
 \testonly{permo.2dim <- scantwo(fake.f2, method="hk", n.perm=3)
-}\dontrun{permo.2dim <- scantwo(fake.f2, method="hk",n.perm=1000)
+}\dontrun{permo.2dim <- scantwo(fake.f2, method="hk", n.perm=1000)
 }apply(permo.2dim,2,quantile,0.95)
 
 # covariates

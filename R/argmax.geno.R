@@ -2,8 +2,8 @@
 #
 # argmax.geno.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -67,8 +67,11 @@ function(cross, step=0, off.end=0, error.prob=0,
       cfunc <- "argmax_geno_f2ss"
       one.map <- FALSE
     }
-    else stop(paste("argmax.geno not available for cross type",
-                    type, "."))
+    else {
+      err <- paste("argmax.geno not available for cross type",
+                   type, ".")
+      stop(err)
+    }
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -105,9 +108,10 @@ function(cross, step=0, off.end=0, error.prob=0,
       n.pos <- ncol(newgen)
     }
     if(any(is.na(rf))) { # this occurs when there is only one marker
-      rf <- rf2 <- 0
-      warning(paste("Only one marker on chr ", names(cross$geno)[i],
-                    ": argmax results tenuous.", sep=""))
+      rf <- rf2 <- 0 
+      warn <- paste("Only one marker on chr ", names(cross$geno)[i],
+                    ": argmax results tenuous.", sep="")
+      warning(warn)
     }
 
 

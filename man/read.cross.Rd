@@ -50,9 +50,9 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
     careful attention to the third and fourth of these; the order of
     these can be confusing!  These five character strings are converted
     to (1,2,3,5,4) in the \code{cross} object that is returned.} 
-  \item{estimate.map}{For formats \code{csv}, \code{qtx}, and \code{mm}
-    only: if TRUE and marker positions are not included in the input
-    files, the genetic map is estimated using the function
+  \item{estimate.map}{For formats \code{csv}, \code{qtx}, \code{mm}, and
+    \code{gary} only: if TRUE and marker positions are not included in
+    the input files, the genetic map is estimated using the function 
     \code{\link[qtl]{est.map}}.}   
 }
 
@@ -212,17 +212,18 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
 }  
 
 \section{Gary format}{
-  This format requires the six files; all files have default names, and
-  so need not be specified if the default name is used. 
+  This format requires the six files.  All files have default names, and
+  so the file names need not be specified if the default names are used. 
 
   \code{genfile} (default = \code{"geno.dat"}) contains the genotype
   data.  The file contains one line per individual, with genotypes for
   the set of markers separated by white space.  Missing values are
   coded as 9, and genotypes are coded as 0/1/2 for AA/AB/BB.
 
-  \code{mapfile} (default = \code{"markerpos.txt"}) contains the two
-  columns with no header row: the marker names in the first columns and
-  their cM position in the second column.
+  \code{mapfile} (default = \code{"markerpos.txt"}) contains two
+  columns with no header row: the marker names in the first column and
+  their cM position in the second column.  If marker positions are not
+  available, use \code{mapfile=TRUE}, and a dummy map will be inserted.
   
   \code{phefile} (default = \code{"pheno.dat"}) contains the phenotype
   data, with one row for each mouse and one column for each phenotype.
@@ -236,7 +237,9 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
   names.
 
   \code{pnamesfile} (default = \code{"pnames.txt"}) contains the names
-  of the phenotypes.
+  of the phenotypes.  If phenotype names file is not available, use
+  \code{pnamesfile=NULL}; arbitrary phenotype names will then be
+  assigned. 
 }
 
 

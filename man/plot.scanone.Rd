@@ -9,9 +9,9 @@
 }
 
 \usage{
-plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE, ylim,
-             lty=c(1,2,3), col="black", lwd=2, add=FALSE,
-             gap=25, main, \dots)
+plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
+             xlim, ylim, lty=c(1,2,3), col="black", lwd=2, add=FALSE,
+             gap=25, main, mtick = c("line", "triangle"), \dots)
 }			    
 
 \arguments{
@@ -30,6 +30,7 @@ plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE, ylim,
     columns of the input should be plotted (generally column 3).}
   \item{incl.markers}{Indicate whether to plot line segments at the
   marker locations.}
+  \item{xlim}{Limits for x-axis (optional).}
   \item{ylim}{Limits for y-axis (optional).}
   \item{lty}{Line types; a vector of length 1 or 3.}
   \item{col}{Line colors; a vector of length 1 or 3.}
@@ -37,6 +38,8 @@ plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE, ylim,
   \item{add}{If TRUE, add to a current plot.}
   \item{gap}{Gap separating chromosomes (in cM).}
   \item{main}{An optional title for the plot.}
+  \item{mtick}{Tick mark type for markers (line segments or
+    upward-pointing triangels).}
   \item{\dots}{Passed to the function \code{\link[base]{plot}} when it
     is called.}
 }

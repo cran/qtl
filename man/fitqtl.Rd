@@ -43,11 +43,16 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
     (\%var) and P value (Pvalue).
     \item result.drop is a drop-one-term ANOVA table as a matrix. It
     contains degrees of freedom (df), Type III sum of squares (Type III
-    SS), LOD score(LOD), percentage of variance explained (\%var) and P
-    value (Pvalue). Note that the degree of freedom, Type III sum of
-    squares, the LOD score and the percentage of variance explained are
-    the values comparing the full to the sub-model with the term
-    dropped. 
+    SS), LOD score(LOD), percentage of variance explained (\%var), F
+    statistics (F value),  and P values for chi square (Pvalue(chi2))
+    and F distribution (Pvalue(F)).
+    
+    Note that the degree of freedom, Type III sum of squares, the LOD
+    score and the percentage of variance explained are the values
+    comparing the full to the sub-model with the term dropped. Also note
+    that for imputation method, the percentage of variance explained, the
+    the F values and the P values are approximations calculated from the
+    LOD score.
   }
 }
 

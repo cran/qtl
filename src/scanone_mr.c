@@ -2,9 +2,9 @@
  * 
  * scanone_mr.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -41,7 +41,8 @@
 
 void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno, 
 		  double *addcov, int *n_addcov, double *intcov, 
-		  int *n_intcov, double *pheno, double *result)
+		  int *n_intcov, double *pheno, double *weights, 
+		  double *result)
 {
   int **Geno;
   double **Result, **Addcov, **Intcov;
@@ -54,7 +55,7 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
   if(*n_intcov > 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
 
   scanone_mr(*n_ind, *n_pos, *n_gen, Geno, Addcov, *n_addcov,
-	     Intcov, *n_intcov, pheno, Result);
+	     Intcov, *n_intcov, pheno, weights, Result);
 }
 
 /**********************************************************************
@@ -81,6 +82,8 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
  *              the first column contains the RSS, the next set contain
  *              estimated genotype-specific means, and the last column
@@ -90,7 +93,8 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 
 void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
 		double **Addcov, int n_addcov, double **Intcov,
-		int n_intcov, double *pheno, double **Result)
+		int n_intcov, double *pheno, double *weights,
+		double **Result)
 {
   int ny, *jpvt, k, i, j, ncol, ncol0, k2, s;
   double *work, *x, *qty, *qraux, *coef, *resid, tol, rss0, *y;
@@ -115,6 +119,10 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   y = (double *)R_alloc(n_ind, sizeof(double));
   ny = 1;
 
+  for(j=0; j<n_ind; j++) 
+    pheno[j] *= weights[j];
+  /* note: weights are really square-root of weights */
+
   for(i=0; i<n_pos; i++) {
 
     /* genotyped individuals at this marker */
@@ -133,9 +141,9 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
       /* null model */
       /* fill up X matrix */
       for(j=0; j<this_n_ind; j++) {
-        x[j] = 1.0;
+        x[j] = weights[which_ind[j]];
         for(k=0; k<n_addcov; k++) 
-  	  x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]];
+  	  x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]] * weights[which_ind[j]];
       }
       /* linear regression */
       dqrls_(x, &this_n_ind, &ncol0, y, &ny, &tol, coef, resid,
@@ -159,15 +167,17 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
     /* fill up X matrix */
     for(j=0; j<this_n_ind; j++) {
       for(k=0; k<n_gen; k++) {
-	if(Geno[i][which_ind[j]] == k+1) x[j+k*this_n_ind] = 1.0;
+	if(Geno[i][which_ind[j]] == k+1) 
+	  x[j+k*this_n_ind] = weights[which_ind[j]];
 	else x[j+k*this_n_ind] = 0.0;
       }
       for(k=0; k<n_addcov; k++)
-	x[j+(k+n_gen)*this_n_ind] = Addcov[k][which_ind[j]];
+	x[j+(k+n_gen)*this_n_ind] = Addcov[k][which_ind[j]] * weights[which_ind[j]];
       for(k=0,s=0; k<n_gen-1; k++) {
 	if(Geno[i][which_ind[j]] == k+1) {
 	  for(k2=0; k2<n_intcov; k2++,s++) 
-	    x[j+(n_gen+n_addcov+s)*this_n_ind] = Intcov[k2][which_ind[j]];
+	    x[j+(n_gen+n_addcov+s)*this_n_ind] = 
+	      Intcov[k2][which_ind[j]] * weights[which_ind[j]];
 	}
 	else {
 	  for(k2=0; k2<n_intcov; k2++,s++) 

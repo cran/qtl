@@ -2,14 +2,14 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: summary.cross, print.summary.cross, nind, nchr, nmar,
-#           totmar, nphe
+#           totmar, nphe, nmissing
 #
 ######################################################################
 
@@ -27,8 +27,10 @@ function(object,...)
   type <- class(object)[1]
 
   if(type != "f2" && type != "f2ss" && type != "bc" && type != "4way" &&
-     type != "riself" && type != "risib")
-    stop(paste("Cross type", type, "is not suppoted."))
+     type != "riself" && type != "risib") {
+    err <- paste("Cross type", type, "is not suppoted.")
+    stop(err)
+  }
 
   # combine genotype data into one big matrix
   Geno <- object$geno[[1]]$data
@@ -60,6 +62,18 @@ function(object,...)
   # amount of missing phenotype data
   missing.phe <- as.numeric(cbind(apply(object$pheno,2,function(a) mean(is.na(a)))))
 
+  # check that, in the case of "f2ss" and "4way" crosses, the genetic
+  #     maps are matrices with 2 rows, and that for other crosses,
+  #     the genetic maps are numeric vectors
+  if(type=="f2ss" || type=="4way") {
+    if(any(!sapply(object$geno, function(a) (is.matrix(a$map) && nrow(a$map)==2)))) 
+      warning("The genetic maps should all be matrices with two rows.")
+  }
+  else {
+    if(any(sapply(object$geno, function(a) is.matrix(a$map))))
+      warning("The genetic maps should all be numeric vectors rather than matrices.")
+  }
+
   # check that object$geno[[i]]$data has colnames and that they match
   #     the names in object$geno[[i]]$map
   for(i in 1:n.chr) {
@@ -85,8 +99,10 @@ function(object,...)
     }
       
     if((is.matrix(map) && (any(diff(map[1,])<0) || any(diff(map[2,])<0))) ||
-       (!is.matrix(map) && any(diff(map)<0)))
-        stop(paste("Markers out of order on chr", chr))
+       (!is.matrix(map) && any(diff(map)<0))) {
+      err <- paste("Markers out of order on chr", chr)
+      stop(err)
+    }
   }
     
   if(!is.data.frame(object$pheno))
@@ -95,31 +111,40 @@ function(object,...)
   # check genotype data
   if(type=="bc" || type=="riself" || type=="risib") {
     # Invalid genotypes?
-    if(any(!is.na(Geno) & Geno != 1 & Geno != 2)) {
-      warning("Invalid genotypes.")
-      cat("    Observed genotypes:", paste(unique(Geno),collapse=" "), "\n")
+    if(any(!is.na(Geno) & Geno != 1 & Geno != 2)) { 
+      warn <- paste("Invalid genotypes.",
+                    "\n    Observed genotypes:",
+                    paste(unique(as.numeric(Geno)),collapse=" "))
+      warning(warn)
+      return(Geno)
     }
 
     # Missing genotype category on autosomes?
     if(sum(!is.na(Geno) & Geno==2) == 0 ||
-       sum(!is.na(Geno) & Geno==1) == 0)
-      warning("Strange genotype pattern.")
+       sum(!is.na(Geno) & Geno==1) == 0) {
+      warn <- paste("Strange genotype pattern on chr", chr, ".")
+      warning(warn)
+    }
   }
   else if(type=="f2" || type=="f2ss") {
     # invalid genotypes
     if(any(!is.na(Geno) & Geno!=1 & Geno!=2 & Geno!=3 &
-           Geno!=4 & Geno!=5)) {
-      warning("Invalid genotypes.")
-      cat("    Observed genotypes:", paste(unique(Geno),collapse=" "), "\n")
+           Geno!=4 & Geno!=5)) { 
+      warn <- paste("Invalid genotypes on chr", chr, ".", 
+                    "\n    Observed genotypes:",
+                    paste(unique(as.numeric(Geno)),collapse=" "))
+      warning(warn)
     }
 
     # X chromosome
     for(i in 1:n.chr) {
       if(class(object$geno[[i]]) == "X") {
         dat <- object$geno[[i]]$data
-        if(any(!is.na(dat) & dat!=1 & dat!=2)) {
-          warning("Invalid genotypes on X chromosome:")
-          cat("    Observed genotypes:", paste(unique(dat),collapse=" "), "\n")
+        if(any(!is.na(dat) & dat!=1 & dat!=2)) { 
+          warn <- paste("Invalid genotypes on X chromosome:",
+                        "\n    Observed genotypes:",
+                        paste(unique(as.numeric(dat)),collapse=" "))
+          warning(warn)
         }
       }
     }
@@ -144,6 +169,10 @@ function(object,...)
   if(any(o > 1))
     warning("Duplicate markers [", paste(mnames[mnames==names(o)[o>1]],
                                          collapse=", "), "]")
+
+  # make sure the genotype data are matrices rather than data frames
+  if(any(sapply(object$geno, function(a) is.data.frame(a$data))))
+    warning("The $data objects should be simple matrices, not data frames.")
 
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,
@@ -241,6 +270,28 @@ function(object) {
     stop("This is not an object of class cross.")
 
   ncol(object$pheno)
+}
+
+# count number of missing genotypes for each individual or each marker
+nmissing <-
+function(cross,which=c("ind","mar"))
+{
+  which <- match.arg(which)
+
+  if(which=="ind") {
+    n.missing <- rep(0,nind(cross))
+    for(i in 1:nchr(cross)) 
+      n.missing <- n.missing +
+        apply(cross$geno[[i]]$data,1,function(a) sum(is.na(a)))
+  }
+  else {
+    n.missing <- NULL
+    for(i in 1:nchr(cross))
+      n.missing <- c(n.missing,
+                     apply(cross$geno[[i]]$data,2,function(a) sum(is.na(a))))
+  }
+
+  n.missing
 }
 
 # end of summary.cross.R

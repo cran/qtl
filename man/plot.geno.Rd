@@ -9,8 +9,8 @@
 }
 
 \usage{
-plot.geno(x, chr, ind, horizontal=FALSE, cutoff=2,
-          min.sep=1, \dots) 
+plot.geno(x, chr, ind, horizontal=FALSE, cutoff=3.5,
+          min.sep=2, cex=1.3, \dots) 
 }			    
 
 \arguments{
@@ -25,6 +25,8 @@ plot.geno(x, chr, ind, horizontal=FALSE, cutoff=2,
   \item{min.sep}{Markers separated by less than this value (as a
     percent of the chromosome length) are pulled apart, so that they may
     be distinguished in the picture.}
+  \item{cex}{Character expansion for the size of points in the plot.
+    Larger numbers give larger points; see \code{\link[qtl]{par}}.}
   \item{\dots}{Ignored at this point.}
 }
 

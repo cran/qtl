@@ -2,10 +2,10 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002, Hao Wu, The Jackson Laboratory
-#                     and Karl W. Broman, Johns Hopkins University
-# last modified May, 2002
-# first written April, 2002
+# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
+#                       and Karl W. Broman, Johns Hopkins University
+# last modified Jun, 2003
+# first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -93,8 +93,10 @@ scanqtl <-
       idx.varied <- c(idx.varied, i) 
       # make the genetic map on this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) # no this chromosome in cross
-        stop(paste("There's no chromosome number ", chr[i], "in input cross object"))
+      if(length(i.chr) == 0) { # no this chromosome in cross
+        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
+        stop(err)
+      }
       if(!("draws" %in% names(cross$geno[[1]]))) # there's no draw in input cross object
         stop("There's no draws field in input cross object")
       # make genetic map
@@ -125,8 +127,9 @@ scanqtl <-
 
     }
     else { # fixed position rather than range
-      pos[[i]] <- locatemarker(cross$geno[[as.character(chr[i])]]$map,
-                               pos[[i]], chr[i], "draws")
+# Hao asked me to comment these two lines out      
+#      pos[[i]] <- locatemarker(cross$geno[[as.character(chr[i])]]$map,
+#                               pos[[i]], chr[i], "draws")
     }
   }
   # Now, pos contains all the marker positions for all chromosomes

@@ -2,8 +2,8 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -43,8 +43,11 @@ function(cross, error.prob=0.01,
     cfunc <- "calc_errorlod_bc"
   else if(type=="f2") cfunc <- "calc_errorlod_f2"
   else if(type=="4way") cfunc <- "calc_errorlod_4way"
-  else stop(paste("calc.errorlod not available for cross type",
-                  type,"."))
+  else {
+    err <- paste("calc.errorlod not available for cross type",
+                  type,".")
+    stop(err)
+  }
   
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {

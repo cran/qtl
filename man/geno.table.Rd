@@ -5,7 +5,8 @@
 
 \description{
   Create table showing the observed numbers of individuals with each
-  genotype at each marker.
+  genotype at each marker, including P-values from a chi-square tests
+  for Mendelian segregation.
 }
 
 \usage{
@@ -20,6 +21,8 @@ geno.table(cross)
 \value{
   A matrix containing, for each marker, the number of individuals with
   each possible genotype, as well as the number that were not typed.
+  The last column gives P-values from chi-square tests of Mendelian
+  segregation.  
 }
 
 \examples{

@@ -1,9 +1,9 @@
-######################################################################
+#####################################################################
 #
 # scanone.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,11 +26,12 @@
 scanone <-
 function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-         addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+         addcovar=NULL, intcovar=NULL, weights=NULL,
+         x.treatment=c("simple","full"),
          upper=FALSE, ties.random=FALSE,
          start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
 {
-  if(method=="im") # warning in case old terminology is used
+  if(length(method)==1 && method=="im") # warning in case old terminology is used
     warning("Method \"im\" is now called \"em\"; running method \"imp\".")
   model <- match.arg(model)
   method <- match.arg(method)
@@ -70,9 +71,20 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   # if n.perm specified, do a permutation test
   if(!missing(n.perm) && n.perm>0) {
     return(scanone.perm(cross, pheno.col, model, method, addcovar,
-                        intcovar, x.treatment, upper, ties.random,
+                        intcovar, weights, x.treatment, upper, ties.random,
                         start, maxit, tol, n.perm, trace))
   }
+
+  # weights for model="normal"
+  if(is.null(weights))
+    weights <- rep(1, nind(cross))
+  else if(model != "normal")
+    warning("weights used on for normal model.")
+  if(length(weights) != nind(cross))
+    stop("weights should either be NULL or a vector of length n.ind")
+  if(any(weights) <= 0)
+    stop("weights should be entirely positive")
+  weights <- sqrt(weights)
 
   if(model=="binary") {
     if(n.addcovar > 0 || n.intcovar > 0)
@@ -144,8 +156,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     if(method=="em" && model=="normal") {
       this.start <- rep(0,n.gen+1)
       if(std.start == 0) {
-        if(length(start) < n.gen+1)
-          stop(paste("Length of start argument should be 0, 1 or", n.gen+1))
+        if(length(start) < n.gen+1) {
+          err <- paste("Length of start argument should be 0, 1 or", n.gen+1)
+          stop(err)
+        }
         this.start <- c(start[1:n.gen],start[length(start)])
       }
     }
@@ -223,12 +237,14 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     }
 
     if(i==1 & (method=="hk" || method=="em")) { # get null log10 likelihood
-      if(n.addcovar > 0) resid0 <- lm(pheno ~ addcovar)$resid
-      else resid0 <- pheno - mean(pheno)
-      if(method=="hk") nllik0 <- (n.ind/2)*log10(sum(resid0^2))
+      if(n.addcovar > 0)
+        resid0 <- lm(pheno ~ addcovar, weights=weights^2)$resid
+      else 
+        resid0 <- lm(pheno ~ 1, weights=weights^2)$resid
+      if(method=="hk") nllik0 <- (n.ind/2)*log10(sum((resid0*weights)^2))
       else {
-        sig0 <- sqrt(sum(resid0^2)/n.ind)
-        nllik0 <- -sum(dnorm(resid0,0,sig0,log=TRUE))/log(10)
+        sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
+        nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
       }
     }
 
@@ -239,11 +255,12 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.integer(newgeno),       # genotype data
-              as.double(addcovar),         # additive covariates
+              as.double(addcovar),       # additive covariates
               as.integer(n.addcovar),
-              as.double(intcovar),         # interactive covariates
+              as.double(intcovar),       # interactive covariates
               as.integer(n.intcovar),
               as.double(pheno),          # phenotype data
+              as.double(weights),        # weights
               result=as.double(rep(0,n.pos*(n.gen+2))),
               PACKAGE="qtl")
 
@@ -259,6 +276,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.double(intcovar),
               as.integer(n.intcovar),
               as.double(pheno),
+              as.double(weights),
               result=as.double(rep(0,n.pos)),
               as.integer(1), # trim (for debugging purposes)
               as.integer(0), # direct (for debugging purposes)
@@ -275,6 +293,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.double(intcovar),         # interactive covariates
               as.integer(n.intcovar), 
               as.double(pheno),          # phenotype data
+              as.double(weights),
               result=as.double(rep(0,n.pos*(n.gen+2))),
               PACKAGE="qtl")
    
@@ -289,6 +308,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.double(intcovar),
               as.integer(n.intcovar),
               as.double(pheno),          # phenotype data
+              as.double(weights),
               result=as.double(rep(0,n.pos*(n.gen+2))),
               as.integer(std.start),
               as.double(this.start),
@@ -307,8 +327,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               result=as.double(rep(0,n.pos)),
               PACKAGE="qtl")
     
-    else 
-      stop(paste("Model", model, "with method", method, "not available"))
+    else  {
+      err <- paste("Model", model, "with method", method, "not available")
+      stop(err)
+    }
 
     z <- matrix(z$result,nrow=n.pos)
 
@@ -401,10 +423,12 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 ######################################################################
 
 plot.scanone <- 
-function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
+function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
          lty=c(1,2,3),col="black",lwd=2,add=FALSE,gap=25,
-         main,...)
+         main, mtick=c("line", "triangle"), ...)
 {
+  mtick <- match.arg(mtick)
+
   if(length(dim(x))!=2)
     stop("Argument x must be a matrix or data.frame.")
   if(!missing(x2) && length(dim(x2))!=2)
@@ -426,7 +450,6 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
   out <- x[,c(1:2,lodcolumn[1])]
   if(second) out2 <- x2[,c(1:2,lodcolumn[2])]
   if(third) out3 <- x3[,c(1:2,lodcolumn[3])]
-
   if(length(lty)==1) lty <- rep(lty,3)
   if(length(lwd)==1) lwd <- rep(lwd,3)
   if(length(col)==1) col <- rep(col,3)
@@ -468,26 +491,30 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
   # graphics parameters
   old.xpd <- par("xpd")
   old.las <- par("las")
-  par(xpd=TRUE,las=1)
+  par(xpd=FALSE,las=1)
   on.exit(par(xpd=old.xpd,las=old.las))
 
   # make frame of plot
   if(missing(ylim)) ylim <- c(0,maxy)
-
+  if(missing(xlim)) xlim <- c(0,maxx)
+  
   if(!add) {
     if(onechr) {
-      plot(0,0,ylim=ylim,xlim=c(0,maxx),type="n",
+      plot(0,0,ylim=ylim,xlim=xlim,type="n",
            xlab="Map position (cM)",ylab=dimnames(out)[[2]][3],
            ...)
     }
     else {
-      plot(0,0,ylim=ylim,xlim=c(0,maxx),type="n",xaxt="n",
+      plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
            xlab="",ylab=dimnames(out)[[2]][3],
            ...)
     }
     if(!missing(main)) title(main=main)
   }
 
+  # initialize xtick and xtickmark
+  xtick <- NULL
+  xticklabel <- NULL
   for(i in 1:length(chr)) {
     # plot first out
     x <- out[out[,1]==chr[i],2]+start[i]
@@ -498,15 +525,16 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
       y <- rep(y,3)
     }
     lines(x,y,lwd=lwd[1],lty=lty[1],col=col[1])
-
     # plot chromosome number
-    a <- par("usr")
+#    a <- par("usr")
     if(!add && !onechr) {
       tloc <- mean(c(min(x),max(x)))
-      text(tloc,a[3]-(a[4]-a[3])*0.05,as.character(chr[i]))
-      lines(rep(tloc,2),c(a[3],a[3]-(a[4]-a[3])*0.015))
+#      text(tloc,a[3]-(a[4]-a[3])*0.05,as.character(chr[i]))
+#      lines(rep(tloc,2),c(a[3],a[3]-(a[4]-a[3])*0.015))
+      xtick <- c(xtick, tloc)
+      xticklabel <- c(xticklabel, as.character(chr[i]))
     }
-
+    
     # plot second out
     if(second) {
       x <- out2[out2[,1]==chr[i],2]+start[i]
@@ -530,19 +558,26 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
       lines(x,y,lty=lty[3],col=col[3],lwd=lwd[3])
     }
 
-    # plot lines at marker positions
+    # plot lines or triangles at marker positions
     if(incl.markers && !add) {
       nam <- dimnames(out)[[1]][out[,1]==chr[i]]
       wh.genoprob <- (seq(along=nam))[grep("^loc\-*[0-9]+",nam)]
       if(length(wh.genoprob)==0) wh.genoprob <- seq(along=nam)
       else wh.genoprob <- (seq(along=nam))[-wh.genoprob]
       pos <- out[out[,1]==chr[i],2][wh.genoprob]+start[i]
-      for(j in pos) 
-	lines(c(j,j),c(a[3],a[3]+(a[4]-a[3])*0.02))
+      if(mtick=="line")
+        rug(pos, 0.02, quiet=TRUE)
+      else {
+        a <- par("usr")
+        points(pos, rep(a[3]+diff(a[3:4])*0.04, length(pos)), pch=17, cex=1.5)
+      }
+      #for(j in pos)
+      #  lines(c(j,j),c(a[3],a[3]+(a[4]-a[3])*0.02))
     }
-
   }
-
+  # draw the axis
+  if(!add && !onechr) 
+    axis(1, at=xtick, labels=xticklabel)
 }
 
 ######################################################################
@@ -554,7 +589,8 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,ylim,
 scanone.perm <-
 function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-         addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+         addcovar=NULL, intcovar=NULL, weights=NULL,
+         x.treatment=c("simple","full"),
          upper=FALSE, ties.random=FALSE,
          start=NULL, maxit=4000, tol=1e-4, n.perm=1000, trace=TRUE)
 {
@@ -604,8 +640,9 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
     cross$pheno <- cross$pheno[o,,drop=FALSE]
     if(!is.null(addcovar)) addcovarp <- addcovar[o,,drop=FALSE]
     if(!is.null(intcovar)) intcovarp <- intcovar[o,,drop=FALSE]
+    if(!is.null(weights)) weights <- weights[o]
     tem <- scanone(cross,,pheno.col,model,method,addcovarp,
-                   intcovarp,x.treatment,upper,ties.random,start,
+                   intcovarp,weights,x.treatment,upper,ties.random,start,
                    maxit,tol,n.perm= -1)
     if(model=="2part")
       res[i,] <- apply(tem[,3:5], 2, max,na.rm=TRUE)
@@ -651,14 +688,24 @@ function(x,...)
 
 # pull out maximum LOD peak, genome-wide
 max.scanone <-
-function(..., na.rm=TRUE)
+function(..., chr, na.rm=TRUE)
 {
   dots <- list(...)[[1]]
-  maxlod <- max(dots[,3],na.rm=TRUE)
-
-  dots <- dots[dots[,3]==maxlod,]
-
-  summary.scanone(dots,0)
+  if(missing(chr)) {
+    maxlod <- max(dots[,3],na.rm=TRUE)
+    dots <- dots[!is.na(dots[,3]) & dots[,3]==maxlod,]
+    return(summary.scanone(dots,0))
+  }
+  else {
+    res <- NULL
+    for(i in seq(along=chr)) {
+      temp <- dots[dots[,1]==chr[i],]
+      maxlod <- max(temp[,3],na.rm=TRUE)
+      temp <- temp[!is.na(temp[,3]) & temp[,3]==maxlod,]
+      res <- rbind(res,temp)
+    }
+    return(summary.scanone(res,0))
+  }
 }
 
 # end of scanone.R

@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified May, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -124,7 +124,10 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     }
     else if(type == "bc" || type=="riself" || type=="risib") func <- "R_ripple_bc"
     else if(type == "4way") func <- "R_ripple_4way"
-    else stop(paste("ripple not available for cross", type))
+    else {
+      err <- paste("ripple not available for cross", type)
+      stop(err)
+    }
 
     # data to be input
     genodat <- cross$geno[[1]]$data

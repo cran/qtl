@@ -7,7 +7,8 @@
   new order.
 }
 
-\usage{switch.order(cross, chr, order)}
+\usage{switch.order(cross, chr, order, error.prob=0,
+                    map.function=c("haldane","kosambi","c-f","morgan"))}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See
@@ -18,12 +19,18 @@
    order. The vector may have length two more than the number of
    markers, for easy in use with the output of the function
    \code{\link[qtl]{ripple}}.} 
+ \item{error.prob}{Assumed genotyping error rate (passed to
+   \code{\link[qtl]{est.map}}).} 
+ \item{map.function}{Map function to be used (passed to
+   \code{\link[qtl]{est.map}}).} 
 }
 
 \value{
   The input \code{cross} object, but with the marker order on the
-  specified chromosome updated, and with any derived data removed; 
-  the genetic map for the relevant chromosome is re-estimated.
+  specified chromosome updated, and with any derived data removed
+  (except for recombination fractions, if present, which are not
+  removed);  the genetic map for the relevant chromosome is
+  re-estimated. 
 }
 
 

@@ -2,9 +2,9 @@
  * 
  * scantwo_em.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -32,7 +32,7 @@
 void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result,
+		       double *pheno, double *weights, double *result,
 		       int *maxit, double *tol, int *trace);
 
 /**********************************************************************
@@ -63,6 +63,8 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
@@ -84,6 +86,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 void scantwo_1chr_em(int n_ind, int n_pos, int n_gen, 
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
+		     double *weights,
 		     double **Result, int maxit, double tol, int trace);
 
 /**********************************************************************
@@ -99,8 +102,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		       int *n_gen1, int *n_gen2, double *genoprob1,
 		       double *genoprob2, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result_full,
-		       double *result_int,
+		       double *pheno, double *weights,
+		       double *result_full, double *result_int,
 		       int *maxit, double *tol, int *trace);
 
 /**********************************************************************
@@ -137,6 +140,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
@@ -160,8 +165,9 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1, 
 		     int n_gen2, double ***Genoprob1, double ***Genoprob2,
 		     double **Addcov, int n_addcov, double **Intcov, 
-		     int n_intcov, double *pheno, double **Result_full,
-		     double **Result_int, int maxit, double tol, int trace);
+		     int n_intcov, double *pheno, double *weights,
+		     double **Result_full, double **Result_int, 
+		     int maxit, double tol, int trace);
 
 /**********************************************************************
  * 
@@ -182,6 +188,8 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
  * n_intcov Number of columns in Intcov
  *
  * pheno    Phenotypes
+ *
+ * weights      Vector of positive weights, of length n_ind
  *
  * Wts12    Pr(QTL1=v, QTL2=w | phenotype, model, marker data),
  *          indexed as Wts[v][w][ind]
@@ -205,6 +213,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2, 
 		      double **Addcov, int n_addcov, 
 		      double **Intcov, int n_intcov, double *pheno, 
+		      double *weights,
 		      double ***Wts12, double **Wts1, double **Wts2,
 		      double *param, int full_model,
 		      double *work1, double *work2, int *error_flag);
@@ -240,6 +249,8 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * param    Current parameter estimates (including the resid SD)
  *
  * full_model   If 1, use the full model (with QTLxQTL interaction)
@@ -254,8 +265,8 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
 		      double ***Probs, double ***Wts12, 
 		      double **Wts1, double **Wts2,
 		      double **Addcov, int n_addcov, double **Intcov,
-		      int n_intcov, double *pheno, double *param, 
-		      int full_model, int rescale);
+		      int n_intcov, double *pheno, double *weights, 
+		      double *param, int full_model, int rescale);
 
 /* end of scantwo_em.h */
 

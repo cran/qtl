@@ -15,6 +15,7 @@
 \alias{imf.k}
 \alias{imf.m}
 \alias{locatemarker}
+\alias{makeSSmap}
 \alias{mf.cf}
 \alias{mf.h}
 \alias{mf.k}
@@ -46,6 +47,7 @@
 \alias{replaceqtl}
 \alias{vbscan}
 \alias{write.cross.csv}
+\alias{write.cross.gary}
 \alias{write.cross.mm}
 \alias{write.cross.qtlcart}
 
@@ -77,6 +79,7 @@ imf.h(r)
 imf.k(r)
 imf.m(r)
 locatemarker(map, pos, chr, flag)
+makeSSmap(cross)
 mf.cf(d)
 mf.h(d)
 mf.k(d)
@@ -88,7 +91,7 @@ read.cross.csv(dir, file, sep=",", na.strings=c("-","NA"),
                genotypes=c("A","H","B","D","C"),
                estimate.map=TRUE)
 read.cross.gary(dir, genfile, mnamesfile, chridfile, phefile,
-                pnamesfile, mapfile)
+                pnamesfile, mapfile,estimate.map=TRUE)
 read.cross.karl(dir, genfile, mapfile, phefile)
 read.cross.mm(dir, rawfile, mapfile, estimate.map=TRUE)
 read.cross.qtlcart(dir, crofile, mapfile)
@@ -100,14 +103,14 @@ ripple.perm2(n)
 ripple.perm.sub(x, mat)
 scanone.perm(cross, pheno.col=1, model=c("normal","binary","2part","np"),
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-             addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
-             upper=FALSE, ties.random=FALSE,
+             addcovar=NULL, intcovar=NULL, weights=NULL,
+             x.treatment=c("simple","full"), upper=FALSE, ties.random=FALSE,
              start=NULL, maxit=4000, tol=1e-4, n.perm=1000, trace=TRUE)
 scantwo.perm(cross, pheno.col=1,
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-             addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
-             incl.markers=FALSE, maxit=4000, tol=1e-4, trace=FALSE,
-             n.perm=1000)
+             addcovar=NULL, intcovar=NULL, weights=NULL,
+             x.treatment=c("simple","full"), incl.markers=FALSE,
+             maxit=4000, tol=1e-4, trace=FALSE, n.perm=1000)
 sim.cross.4way(map, model, n.ind, error.prob, missing.prob,
                partial.missing.prob, keep.errorind, map.function)
 sim.cross.bc(map, model, n.ind, error.prob, missing.prob,
@@ -120,9 +123,10 @@ print.summary.ripple(x, \dots)
 print.summary.scanone(x, \dots)
 print.summary.scantwo(x, \dots)
 replaceqtl(cross, qtl, replace, by.chr, by.pos, by.name, map)
-vbscan(cross, pheno.col=1, x.treatment, upper=FALSE, method="em",
-       maxit=4000, tol=1e-4)
+vbscan(cross, pheno.col=1, x.treatment, upper=FALSE,
+       method="em", maxit=4000, tol=1e-4)
 write.cross.csv(cross, filestem="data", chr, digits=5)
+write.cross.gary(cross, chr, digits)
 write.cross.mm(cross, filestem="data", chr, digits=5)
 write.cross.qtlcart(cross, filestem="data", chr)
 }

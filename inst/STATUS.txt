@@ -1,12 +1,133 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2002, Karl W Broman, Johns Hopkins University
+copyright (c) 2003, Karl W Broman, Johns Hopkins University
 Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
-Version 0.96, 9/30/2002:
+Version 0.97, 6/19/2003:
+
+Major changes:
+
+  Added an argument "weights" to the functions scanone and scantwo, to
+  allow differential weighting of individuals in a genome scan; these
+  are only used with model="normal".
+
+  Modified the function "plot.scantwo" for plotting the results from a
+  two-dimensional, two-QTL genome scan.  There are two new arguments:
+  lower controls what LOD scores are plot in the lower triangle
+  (lower="joint" corresponds to the previous version of this
+  function), while nodiag controls whether to plot the scanone results
+  on the diagonal.  Using lower="cond-int" (the default) gets rid of
+  the "coattail" effect often seen when plotting the joint LOD
+  scores.  Ted Lystig for suggested this modification.
+
+  Added a new function effectscan() for plotting the estimated allelic
+  affect at all markers on selected chromosomes.
+
+Minor changes:
+
+  Modified write.cross so that it will output data in "gary" format.
+
+  Added a function lodint, for calculating LOD support intervals based
+  on results from scanone.
+
+  Added a function nmissing(), which calculates the total number of
+  missing genotypes for each individual in a cross, or for each
+  marker.  
+
+  Added a function pull.geno() for pulling out the set of genotype
+  data for a cross as a single big matrix.
+
+  Added a function comparecrosses() for verifying that two objects of
+  class "cross" are identical.
+
+  The results of geno.table() now includes P-values from chi-square
+  tests for Mendelian segregation.
+
+  Modified the function c.cross for combining crosses.  You can now
+  combine backcrosses and intercrosses, provided that they have
+  exactly the same genetic maps.  Further, we no longer discard the
+  results of sim.geno and calc.genoprob, provided that the same step,
+  off.end, and error.prob arguments were used.  
+
+  Added an additional argument, cex, to the function plot.geno, for
+  control of the size of the points in the plot.  Also changed the
+  orientation of the plot when horiz=FALSE, so that the centromere is
+  at the top of the figure rather than the bottom.
+
+  Fixed calc.pairprob so that it will work for RI lines ("risib" or
+  "riself").  Thus, scantwo should work with RI lines now.
+
+  Updated read.cross for format="gary" so that the marker positions
+  file ("mapfile") and phenotype names file ("pnamesfile") are not
+  necessary.  Set these arguments to NULL (e.g., mapfile=NULL) if the
+  corresponding files are not available.
+
+  Added a "chr" argument to max.scanone, so you can get the maximum
+  LOD score for a particular chromosome.
+
+  Revised the function switch.order() so that, if estimated
+  recombination fractions are present (i.e., est.rf() was used), these
+  are revised appropriately; previously they had been removed.  
+  Also added err and map.function arguments, to be passed to est.map()
+  when the map is re-estimated.
+
+  Revised scanone() and scantwo() slightly; the statement for
+  producing a warning regarding the use of method=="im" (vs "imp" or
+  "em") was slightly wrong. 
+
+  Fixed a slight bug in scanqtl() for the case that a fixed position
+  is provided rather than a range (commented out two lines).
+
+  summary.cross() now prints a warning if $data objects are data
+  frames. (They should be simple matrices.)
+
+  summary.cross() now prints a warning message if the genetic maps are
+  not matrices with 2 rows for "f2ss" and "4way" crosses, or are
+  matrices for other crosses.
+
+  drop.markers() now prints a warning if some markers were not found.
+
+  Added arguments ylim and add.legend to the function effectplot().
+
+  Added arguments xlim and mtick to function plot.scanone().  (mtick
+  allows marker locations to be indicated by triangles rather than
+  line segments.)
+
+  Fixed a bug in read.cross for the case that phenotypes have values
+  like "1x2".
+
+  Fixed a slight bug in write.cross for the qtlcart format.
+
+  Fixed a bug in read.cross for the qtlcart format regarding the
+  determination of whether a chromosome is autosomal or the X.
+  (Previously, looked for an "X" or "x" in the marker names; now look
+  at whether the chromosome names contains an "X" or "x".)
+
+  Fixed a bug in makeqtl() for the case of a four-way cross.  (Hadn't
+  dealt properly with sex-specific maps.
+
+  fitqtl() now stops with a more meaningful error message if imputed
+  genotypes are not available in the input "qtl" object. 
+
+  Revised the marker names for the X chromosome in the map10 dataset
+  that is included.
+
+  Revised est.map() for the case of a sex-specific f2 (cross type
+  "f2ss"); the starting map for the EM algorithm is randomized a bit. 
+
+  Revised a bunch of the R code files so that paste() is not included
+  within stop() or warn().
+
+  In a couple of utility functions for the hidden Markov model engine,
+  I need access to the log1p() function, but I'm having trouble with
+  that in Windows.  Thus, in Windows only, I use log(1+x) in place of
+  the preferred log1p() function.
+
+
+Version 0.96, 9/13/2002:
 
  Major changes:
 

@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -32,7 +32,7 @@
 void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result);
+		       double *pheno, double *weights, double *result);
 
 /**********************************************************************
  * 
@@ -62,6 +62,8 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
@@ -73,7 +75,7 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double **Result);
+		     double *weights, double **Result);
 
 /**********************************************************************
  * 
@@ -89,8 +91,8 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
 		       int *geno1, int *geno2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result_full,
-		       double *result_int);
+		       double *pheno, double *weights,
+		       double *result_full, double *result_int);
 
 /**********************************************************************
  * 
@@ -126,6 +128,8 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
@@ -140,6 +144,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     int n_gen2, int **Geno1, int **Geno2,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
+		     double *weights,
 		     double **Result_full, double **Result_int);
 
 /* end of scantwo_mr.h */

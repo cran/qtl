@@ -2,9 +2,9 @@
  * 
  * scantwo_em.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -43,7 +43,7 @@
 void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result,
+		       double *pheno, double *weights, double *result,
 		       int *maxit, double *tol, int *trace)
 {
   double **Result, **Addcov, **Intcov, *****Pairprob;
@@ -57,7 +57,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 
   scantwo_1chr_em(*n_ind, *n_pos, *n_gen, Pairprob, 
 		  Addcov, *n_addcov, Intcov, *n_intcov, 
-		  pheno, Result, *maxit, *tol, *trace);
+		  pheno, weights, Result, *maxit, *tol, *trace);
 }
 
 /**********************************************************************
@@ -88,6 +88,8 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
@@ -109,11 +111,12 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 void scantwo_1chr_em(int n_ind, int n_pos, int n_gen, 
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
+		     double *weights,
 		     double **Result, int maxit, double tol, int trace)
 {
-  int error_flag, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
+  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
-  double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2];
+  double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2], sw;
 
   n_col[0] = (2*n_gen-1) + n_addcov + 2*(n_gen-1)*n_intcov;
   n_col[1] = n_gen*n_gen + n_addcov + (n_gen*n_gen-1)*n_intcov;
@@ -134,6 +137,17 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
   for(j=0, temp=0.0; j<n_ind; j++) temp += pheno[j];
   temp /= (double)n_ind;
   for(j=0; j<n_ind; j++) pheno[j] -= temp;
+
+  /* adjust phenotypes and covariates with weights */
+  /* Note: weights are actually sqrt(weights) */
+  sw = 0.0;
+  for(i=0; i<n_ind; i++) {
+    pheno[i] *= weights[i];
+    for(j=0; j<n_addcov; j++) Addcov[j][i] *= weights[i];
+    for(j=0; j<n_intcov; j++) Intcov[j][i] *= weights[i];
+    sw += log(weights[i]);   /* sum of log weights */
+  }
+  sw /= log(10.0); /* make log 10 */
 
   /* begin loop over pairs of positions */
   for(i1=0; i1<n_pos-1; i1++) {
@@ -159,7 +173,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	  }
 	}
 	scantwo_em_mstep(n_ind, n_gen, n_gen, Addcov, n_addcov, 
-			 Intcov, n_intcov, pheno, Probs, Wts1, Wts2,
+			 Intcov, n_intcov, pheno, weights, Probs, Wts1, Wts2,
 			 oldparam, m, work1, work2, &error_flag);
 
 	if(error_flag) {
@@ -171,7 +185,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	  if(trace>1) { /* print initial log likelihood */
 	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, oldparam, m, 0);
+			     n_intcov, pheno, weights, oldparam, m, 0);
 	    oldllik = 0.0;
 	    temp=0.0;
 	    for(j=0; j<n_ind; j++) {
@@ -189,10 +203,10 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, oldparam, m, 1);
+			     n_intcov, pheno, weights, oldparam, m, 1);
 
 	    scantwo_em_mstep(n_ind, n_gen, n_gen, Addcov, n_addcov, 
-			     Intcov, n_intcov, pheno, Wts12, Wts1, 
+			     Intcov, n_intcov, pheno, weights, Wts12, Wts1, 
 			     Wts2, param, m, work1, work2, &error_flag);
 	    if(error_flag) {
 	      flag=0;
@@ -205,7 +219,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	    if(trace>1) { /* print log likelihood */
 	      scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 			       Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			       n_intcov, pheno, param, m, 0);
+			       n_intcov, pheno, weights, param, m, 0);
 	      llik[m] = 0.0;
 	      temp=0.0;
 	      for(j=0; j<n_ind; j++) {
@@ -256,7 +270,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	    /* calculate log likelihood */
 	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, param, m, 0);
+			     n_intcov, pheno, weights, param, m, 0);
 	    llik[m] = 0.0;
 	    temp=0.0;
 	    for(j=0; j<n_ind; j++) {
@@ -281,7 +295,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
       }
 
       Result[i2][i1] = llik[1]-llik[0];
-      Result[i1][i2] = -llik[1];
+      Result[i1][i2] = -(llik[1]+sw); /* sw = sum[log10(weights)] */
 
     } /* position 2 */
   } /* position 1 */
@@ -300,8 +314,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		       int *n_gen1, int *n_gen2, double *genoprob1,
 		       double *genoprob2, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result_full,
-		       double *result_int,
+		       double *pheno, double *weights,
+		       double *result_full, double *result_int,
 		       int *maxit, double *tol, int *trace)
 {
   double **Result_full, **Result_int, **Addcov, **Intcov;
@@ -318,7 +332,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 
   scantwo_2chr_em(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2,
 		  Genoprob1, Genoprob2, Addcov, *n_addcov, 
-		  Intcov, *n_intcov, pheno, Result_full, Result_int, 
+		  Intcov, *n_intcov, pheno, weights, 
+		  Result_full, Result_int, 
 		  *maxit, *tol, *trace);
 }
 
@@ -356,6 +371,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
@@ -379,12 +396,13 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1, 
 		     int n_gen2, double ***Genoprob1, double ***Genoprob2,
 		     double **Addcov, int n_addcov, double **Intcov, 
-		     int n_intcov, double *pheno, double **Result_full,
-		     double **Result_int, int maxit, double tol, int trace)
+		     int n_intcov, double *pheno, double *weights,
+		     double **Result_full, double **Result_int, 
+		     int maxit, double tol, int trace)
 {
-  int error_flag, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
+  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
-  double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2];
+  double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2], sw;
 
   n_col[0] = (n_gen1+n_gen2-1) + n_addcov + (n_gen1+n_gen2-2)*n_intcov;
   n_col[1] = n_gen1*n_gen2 + n_addcov + (n_gen1*n_gen2-1)*n_intcov;
@@ -406,6 +424,17 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
   for(j=0, temp=0.0; j<n_ind; j++) temp += pheno[j];
   temp /= (double)n_ind;
   for(j=0; j<n_ind; j++) pheno[j] -= temp;
+
+  /* adjust phenotypes and covariates with weights */
+  /* Note: weights are actually sqrt(weights) */
+  sw = 0.0;
+  for(i=0; i<n_ind; i++) {
+    pheno[i] *= weights[i];
+    for(j=0; j<n_addcov; j++) Addcov[j][i] *= weights[i];
+    for(j=0; j<n_intcov; j++) Intcov[j][i] *= weights[i];
+    sw += log(weights[i]);   /* sum of log weights */
+  }
+  sw /= log(10.0); /* make log 10 */
 
   /* begin loop over pairs of positions */
   for(i1=0; i1<n_pos1; i1++) {
@@ -435,7 +464,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  }
 	}
 	scantwo_em_mstep(n_ind, n_gen1, n_gen2, Addcov, n_addcov, 
-			 Intcov, n_intcov, pheno, Probs, Wts1, Wts2,
+			 Intcov, n_intcov, pheno, weights, Probs, Wts1, Wts2,
 			 oldparam, m, work1, work2, &error_flag);
 
 	if(error_flag) {
@@ -447,7 +476,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  if(trace>1) { /* print initial log likelihood */
 	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, oldparam, m, 0);
+			     n_intcov, pheno, weights, oldparam, m, 0);
 	    oldllik = 0.0;
 	    temp=0.0;
 	    for(j=0; j<n_ind; j++) {
@@ -465,10 +494,10 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, oldparam, m, 1);
+			     n_intcov, pheno, weights, oldparam, m, 1);
 
 	    scantwo_em_mstep(n_ind, n_gen1, n_gen2, Addcov, n_addcov, 
-			     Intcov, n_intcov, pheno, Wts12, Wts1, 
+			     Intcov, n_intcov, pheno, weights, Wts12, Wts1, 
 			     Wts2, param, m, work1, work2, &error_flag);
 	    if(error_flag) {
 	      flag=0;
@@ -481,7 +510,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	    if(trace>1) { /* print log likelihood */
 	      scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 			       Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			       n_intcov, pheno, param, m, 0);
+			       n_intcov, pheno, weights, param, m, 0);
 	      llik[m] = 0.0;
 	      temp=0.0;
 	      for(j=0; j<n_ind; j++) {
@@ -532,7 +561,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	    /* calculate log likelihood */
 	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, param, m, 0);
+			     n_intcov, pheno, weights, param, m, 0);
 	    llik[m] = 0.0;
 	    temp=0.0;
 	    for(j=0; j<n_ind; j++) {
@@ -557,7 +586,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
       }
 
       Result_int[i2][i1] = llik[1]-llik[0];
-      Result_full[i2][i1] = -llik[1];
+      Result_full[i2][i1] = -(llik[1]+sw);  /* sw = sum[log10(weights)] */
 
     } /* position 2 */
   } /* position 1 */
@@ -583,6 +612,8 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Wts12    Pr(QTL1=v, QTL2=w | phenotype, model, marker data),
  *          indexed as Wts[v][w][ind]
  *
@@ -605,6 +636,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2, 
 		      double **Addcov, int n_addcov, 
 		      double **Intcov, int n_intcov, double *pheno, 
+		      double *weights,
 		      double ***Wts12, double **Wts1, double **Wts2,
 		      double *param, int full_model,
 		      double *work1, double *work2, int *error_flag)
@@ -622,10 +654,10 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 
   for(i=0; i<n_ind; i++) {
     for(k1=0; k1<n_gen1; k1++) /* QTL 1 */
-      work2[k1] += (Wts1[k1][i]*pheno[i]);
+      work2[k1] += (Wts1[k1][i]*pheno[i]*weights[i]);
     s = n_gen1;
     for(k2=0; k2<n_gen2-1; k2++) /* QTL 2 */
-      work2[k2+s] += (Wts2[k2][i]*pheno[i]);
+      work2[k2+s] += (Wts2[k2][i]*pheno[i]*weights[i]);
     s += (n_gen2-1);
     for(j=0; j<n_addcov; j++) /* add covar */
       work2[j+s] += (Addcov[j][i]*pheno[i]);
@@ -642,7 +674,7 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
     if(full_model) {
       for(k1=0; k1<n_gen1-1; k1++) 
 	for(k2=0; k2<n_gen2-1; k2++) 
-	  work2[s+k1*(n_gen2-1)+k2] += (Wts12[k1][k2][i]*pheno[i]);
+	  work2[s+k1*(n_gen2-1)+k2] += (Wts12[k1][k2][i]*pheno[i]*weights[i]);
       s += (n_gen1-1)*(n_gen2-1);
       for(j=0; j<n_intcov; j++) {
 	for(k1=0; k1<n_gen1-1; k1++) 
@@ -659,22 +691,22 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
   for(i=0; i<n_ind; i++) {
     /* QTL 1 columns */
     for(k1=0; k1<n_gen1; k1++) 
-      work1[k1+nparm1*k1] += Wts1[k1][i]; 
+      work1[k1+nparm1*k1] += Wts1[k1][i]*weights[i]*weights[i]; 
 
     /* QTL 2 columns */
     for(k2=0, s=n_gen1; k2<n_gen2-1; k2++, s++) {
-      work1[s+nparm1*s] += Wts2[k2][i]; 
+      work1[s+nparm1*s] += Wts2[k2][i]*weights[i]*weights[i]; 
       for(k1=0; k1<n_gen1; k1++)  
-	work1[k1+nparm1*s] += (Wts12[k1][k2][i]);
+	work1[k1+nparm1*s] += (Wts12[k1][k2][i]*weights[i]*weights[i]);
     }
     
     /* add covar columns */
     for(j=0; j<n_addcov; j++, s++) {
       work1[s+nparm1*s] += (Addcov[j][i]*Addcov[j][i]);
       for(k1=0; k1<n_gen1; k1++) 
-	work1[k1+nparm1*s] += (Wts1[k1][i]*Addcov[j][i]);
+	work1[k1+nparm1*s] += (Wts1[k1][i]*Addcov[j][i]*weights[i]);
       for(k2=0, s2=n_gen1; k2<n_gen2-1; k2++, s2++) 
-	work1[s2+nparm1*s] += (Wts2[k2][i]*Addcov[j][i]);
+	work1[s2+nparm1*s] += (Wts2[k2][i]*Addcov[j][i]*weights[i]);
       for(j2=0; j2<j; j2++, s2++) 
 	work1[s2+nparm1*s] += (Addcov[j2][i]*Addcov[j][i]);
     }
@@ -684,9 +716,9 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
       /* int covar x QTL 1 */
       for(k1=0; k1<n_gen1-1; k1++, s++) { 
 	work1[s+nparm1*s] += (Wts1[k1][i]*Intcov[j][i]*Intcov[j][i]);
-	work1[k1+nparm1*s] += (Wts1[k1][i]*Intcov[j][i]); /* x QTL 1 */
+	work1[k1+nparm1*s] += (Wts1[k1][i]*Intcov[j][i]*weights[i]); /* x QTL 1 */
 	for(k2=0, s2=n_gen1; k2<n_gen2-1; k2++, s2++) /* x QTL 2 */
-	  work1[s2+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]);
+	  work1[s2+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]*weights[i]);
 	for(j2=0; j2<n_addcov; j2++, s2++) /* x add covar */
 	  work1[s2+nparm1*s] += (Wts1[k1][i]*Intcov[j][i]*Addcov[j2][i]);
 	/* prev interactive covar */
@@ -705,9 +737,9 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 	work1[s+nparm1*s] += (Wts2[k2][i]*Intcov[j][i]*Intcov[j][i]);
 	/* x QTL 1 */
 	for(k1=0; k1<n_gen1; k1++) 
-	  work1[k1+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]);
+	  work1[k1+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]*weights[i]);
 	/* x QTL 2 */
-	work1[n_gen1+k2+nparm1*s] += (Wts2[k2][i]*Intcov[j][i]);
+	work1[n_gen1+k2+nparm1*s] += (Wts2[k2][i]*Intcov[j][i]*weights[i]);
 	/* x add covar */
 	for(j2=0, s2=n_gen1+n_gen2-1; j2<n_addcov; j2++, s2++)
 	  work1[s2+nparm1*s] += (Wts2[k2][i]*Intcov[j][i]*Addcov[j2][i]);
@@ -731,19 +763,19 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
       /* QTL x QTL interactions */
       for(k1=0; k1<n_gen1-1; k1++) {
 	for(k2=0; k2<n_gen2-1; k2++, s++) {
-	  work1[s+nparm1*s] += Wts12[k1][k2][i];
+	  work1[s+nparm1*s] += Wts12[k1][k2][i]*weights[i]*weights[i];
 	  /* x QTL 1 */
-	  work1[k1+nparm1*s] += Wts12[k1][k2][i];
+	  work1[k1+nparm1*s] += Wts12[k1][k2][i]*weights[i]*weights[i];
 	  /* x QTL 2 */
-	  work1[n_gen1+k2+nparm1*s] += Wts12[k1][k2][i];
+	  work1[n_gen1+k2+nparm1*s] += Wts12[k1][k2][i]*weights[i]*weights[i];
 	  /* x add covar */
 	  for(j=0, s2 = n_gen1+n_gen2-1; j<n_addcov; j++, s2++) 
-	    work1[s2+nparm1*s] += (Wts12[k1][k2][i]*Addcov[j][i]);
+	    work1[s2+nparm1*s] += (Wts12[k1][k2][i]*Addcov[j][i]*weights[i]);
 	  /* x interactive covariates */
 	  for(j=0; j<n_intcov; j++, s2+=n_gen1+n_gen2-2) {
-	    work1[s2+k1+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]);
+	    work1[s2+k1+nparm1*s] += (Wts12[k1][k2][i]*Intcov[j][i]*weights[i]);
 	    work1[s2+n_gen1-1+k2+nparm1*s] +=
-	      (Wts12[k1][k2][i]*Intcov[j][i]);
+	      (Wts12[k1][k2][i]*Intcov[j][i]*weights[i]);
 	  }
 	}
       } /* end of QTL x QTL interactions */
@@ -754,8 +786,8 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 	  for(k2=0; k2<n_gen2-1; k2++, s++) {
 	    temp = Wts12[k1][k2][i]*Intcov[j][i];
 	    work1[s+nparm1*s] += temp*Intcov[j][i];
-	    work1[k1+nparm1*s] += temp; /* x QTL 1 */
-	    work1[n_gen1+k2+nparm1*s] += temp; /* x QTL 2 */
+	    work1[k1+nparm1*s] += temp*weights[i]; /* x QTL 1 */
+	    work1[n_gen1+k2+nparm1*s] += temp*weights[i]; /* x QTL 2 */
 	    /* x add covar */
 	    for(j2=0, s2=n_gen1+n_gen2-1; j2<n_addcov; j2++, s2++)
 	      work1[s2+nparm1*s] += temp*Addcov[j2][i];
@@ -765,7 +797,7 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 	      work1[s2+n_gen1-1+k2+nparm1*s] += temp*Intcov[j2][i];
 	    }
 	    /* x (QTL x QTL) */
-	    work1[s2+k1*(n_gen2-1)+k2+nparm1*s] += temp;
+	    work1[s2+k1*(n_gen2-1)+k2+nparm1*s] += temp*weights[i];
 	    s2 += (n_gen1-1)*(n_gen2-1);
 	    /* x (QTL x QTL x prev covar) */
 	    for(j2=0; j2<j; j2++, s2 += ((n_gen1-1)*(n_gen2-1))) 
@@ -843,6 +875,8 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * param    Current parameter estimates (including the resid SD)
  *
  * full_model   If 1, use the full model (with QTLxQTL interaction)
@@ -857,8 +891,8 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
 		      double ***Probs, double ***Wts12, 
 		      double **Wts1, double **Wts2,
 		      double **Addcov, int n_addcov, double **Intcov,
-		      int n_intcov, double *pheno, double *param, 
-		      int full_model, int rescale)
+		      int n_intcov, double *pheno, double *weights, 
+		      double *param, int full_model, int rescale)
 {
   int i, j, k1, k2, s;
   double temp;
@@ -875,14 +909,14 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
     /* QTL 1 effect */
     for(k1=0; k1<n_gen1; k1++) { 
       for(k2=0; k2<n_gen2; k2++) 
-	Wts12[k1][k2][i] = param[k1]+temp;
+	Wts12[k1][k2][i] = param[k1]*weights[i]+temp;
     }
     s = n_gen1; /* location in param vector */
 
     /* QTL 2 effect */
     for(k2=0; k2<n_gen2-1; k2++) { 
       for(k1=0; k1<n_gen1; k1++) 
-	Wts12[k1][k2][i] += param[k2+s];
+	Wts12[k1][k2][i] += param[k2+s]*weights[i];
     }
     s += (n_gen2-1+n_addcov);
 
@@ -904,7 +938,7 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
       /* QTL x QTL interaction */
       for(k1=0; k1<n_gen1-1; k1++) 
 	for(k2=0; k2<n_gen2-1; k2++) 
-	  Wts12[k1][k2][i] += param[k1*(n_gen2-1)+k2+s];
+	  Wts12[k1][k2][i] += param[k1*(n_gen2-1)+k2+s]*weights[i];
       s += (n_gen1-1)*(n_gen2-1);
       
       /* QTL x QTL x interactive covar */
