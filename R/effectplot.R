@@ -2,10 +2,10 @@
 #
 # effectplot.R
 #
-# copyright (c) 2002, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# Last modified July, 2002
-# first written July, 2002
+# last modified Jun, 2003
+# first written Jul, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -14,7 +14,7 @@
 
 effectplot <-
 function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
-         geno2, main)
+         geno2, main, ylim, add.legend=TRUE)
 {
   # check the input data
   if( !sum(class(cross)=="cross") )
@@ -36,13 +36,18 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
     # find chromosome containing marker
     o <- sapply(cross$geno,function(a,b)
                 !is.na(match(b,colnames(a$data))),mname1)
-    if(!any(o)) stop(paste("Marker",mname1,"not found"))
+    if(!any(o)) {
+      err <- paste("Marker",mname1,"not found")
+      stop(err)
+    }
     chr1 <- names(cross$geno)[o]
     chrtype1 <- class(cross$geno[[chr1]])
 
     # get genotype data
-    if(!any(colnames(cross$geno[[chr1]]$data)==mname1))
-      stop(paste("Marker",mname1,"not found."))
+    if(!any(colnames(cross$geno[[chr1]]$data)==mname1)) {
+      err <- paste("Marker",mname1,"not found.")
+      stop(err)
+    }
     mark1 <- cross$geno[[chr1]]$data[,mname1]
 
     # turn partially informative genotypes into NA's
@@ -68,13 +73,18 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
       # find chromosome containing marker
       o <- sapply(cross$geno,function(a,b)
                   !is.na(match(b,colnames(a$data))),mname2)
-      if(!any(o)) stop(paste("Marker",mname2,"not found"))
+      if(!any(o)) {
+        err <- paste("Marker",mname2,"not found")
+        stop(err)
+      }
       chr2 <- names(cross$geno)[o]
       chrtype2 <- class(cross$geno[[chr2]])
 
       # get genotype data
-      if(!any(colnames(cross$geno[[chr2]]$data)==mname2))
-        stop(paste("Marker",mname2,"not found."))
+      if(!any(colnames(cross$geno[[chr2]]$data)==mname2)) {
+        err <- paste("Marker",mname2,"not found.")
+        stop(err)
+      }
       mark2 <- cross$geno[[chr2]]$data[,mname2]
 
       # turn partially informative genotypes into NA's
@@ -159,6 +169,11 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
   if(!is.null(mark2)) ngen2 <- length(geno2)
 
   # calculate means and stds for interaction
+  # and make output object
+  # the output will be a data frame. For two-marker case,
+  # the rows corresponding to the first marker and the columns
+  # corresponding to the second marker
+  result <- NULL
   if(is.null(mark2)) {
     means <- tapply(pheno, mark1, mean, na.rm=TRUE)
     ses <- tapply(pheno, mark1, function(a)
@@ -174,6 +189,10 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
         geno1 <- c(geno1,rep("?",length(means)-length(geno1)))
       ngen1 <- length(geno1)
     }
+    result$Means <- means
+    names(result$Means) <- paste(mname1, geno1, sep=".")
+    result$SDs <- ses
+    names(result$SDs) <- paste(mname1, geno1, sep=".")
   }
   else {
     means <- tapply(pheno, list(mark1,mark2), mean, na.rm=TRUE)
@@ -199,14 +218,20 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
         geno2 <- c(geno2,rep("?",ncol(means)-length(geno2)))
       ngen2 <- length(geno2)
     }    
-
+    result$Means <- as.data.frame(means)
+    rownames(result$Means) <- paste(mname1, geno1, sep=".")
+    colnames(result$Means) <- paste(mname2, geno2, sep=".")
+    result$SDs <- as.data.frame(ses)
+    rownames(result$SDs) <- paste(mname1, geno1, sep=".")
+    colnames(result$SDs) <- paste(mname2, geno2, sep=".")
   }
 
+  
   ######### Draw the figure ############
   # graphics parameters
   old.xpd <- par("xpd")
   old.las <- par("las")
-  par(xpd=TRUE,las=1)
+  par(xpd=FALSE,las=1)
   on.exit(par(xpd=old.xpd,las=old.las))
   
   # colors (for case of two markers)
@@ -224,8 +249,11 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
   }
 
   # y axis limits
-  ylimits <- range(c(lo,means,hi),na.rm=TRUE)
-  ylimits[2] <- ylimits[2] + diff(ylimits)*0.1
+  if(missing(ylim)) {
+    ylimits <- range(c(lo,means,hi),na.rm=TRUE)
+    ylimits[2] <- ylimits[2] + diff(ylimits)*0.1
+  }
+  else ylimits <- ylim
 
   # x axis limits
   if(is.null(mark2)) { # one marker
@@ -292,20 +320,26 @@ function(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
       text(i, ytext, geno2[i], xpd=TRUE)
     }
     # add legend
-    col <- int.color[1:ngen1]
-    u <- sort(unique(mark2))
-    x.leg <- mean(u[ngen2-(0:1)])
-    y.leg <- a[4] - diff(a[3:4])*0.05
-    y.leg2 <- a[4] - diff(a[3:4])*0.03
-    legend(x.leg, y.leg, geno1, lty=1, pch=1,
-           col=col, cex=1, xjust=0.5)
-    text(x.leg,y.leg2,mname1)
+    if(add.legend) {
+      col <- int.color[1:ngen1]
+      u <- sort(unique(mark2))
+      x.leg <- mean(u[ngen2-(0:1)])
+      y.leg <- a[4] - diff(a[3:4])*0.05
+      y.leg2 <- a[4] - diff(a[3:4])*0.03
+      legend(x.leg, y.leg, geno1, lty=1, pch=1,
+             col=col, cex=1, xjust=0.5)
+      text(x.leg,y.leg2,mname1)
+    }
   }
 
-  if(!is.null(mark2))
-    return(invisible(data.frame(pheno=pheno,mark1=mark1,mark2=mark2)))
-  else
-    return(invisible(data.frame(pheno=pheno,mark1=mark1)))
+#  if(!is.null(mark2))
+#    return(invisible(data.frame(pheno=pheno,mark1=mark1,mark2=mark2)))
+#  else
+#    return(invisible(data.frame(pheno=pheno,mark1=mark1)))
+  
+  # return variable is invisible
+  return(invisible(result))
 }
 
 # end of effectplot.R
+

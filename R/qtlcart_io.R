@@ -2,10 +2,10 @@
 #
 # qtlcart_io.R
 #
-# copyright (c) 2002, Brian S. Yandell
-#          [modified by Karl W. Broman]
-# last modified August, 2002
-# first written June, 2002
+# copyright (c) 2002-3, Brian S. Yandell
+#          [modified by Karl W. Broman and Hao Wu]
+# last modified Jun, 2003
+# first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
@@ -42,10 +42,13 @@ function (dir, crofile, mapfile)
       markers[[i]] <- t( markers[[i]] )
       colnames( markers[[i]] ) <- name.markers
       tmp <- list( data = markers[[i]], map = map[[i]] )
-      class( tmp ) <- if( length( grep( "^.*[xX].*", name.markers )))
-        "X"
-      else
-        "A"
+#      class( tmp ) <- if( length( grep( "^.*[xX].*", name.markers )))
+#        "X"
+#      else
+#        "A"
+      # determine whether autosomal chromosome or X chromosome
+      #     using the chromosome name
+      class(tmp) <- ifelse(length(grep("[Xx]", i)), "X", "A")
       Geno[[i]] <- tmp
     }
     cross <- list(geno = Geno, pheno = cro$traits )
@@ -98,8 +101,10 @@ function( file )
   else if(cross=="B1" || cross=="B2") cross <- "bc"
   else if(cross=="SF2" || cross=="RF2") cross <- "f2"
   else if(cross!="f2" && cross!="bc" && cross!="f2ss" &&
-          cross!="risib" && cross!="riself" && cross!="4way")
-    stop(paste("Cross type",cross,"not supported."))
+          cross!="risib" && cross!="riself" && cross!="4way") {
+    err <- paste("Cross type",cross,"not supported.")
+    stop(err)
+  }
 
   notraits <- as.numeric( s$otraits[1] )
   skip <- ctrl[ "s" == ns ]
@@ -183,7 +188,10 @@ function( cross, filestem="data", chr )
   else if(type=="f2" || type=="f2ss") type <- "RF2"
   else if(type=="riself") type <- "RI1"
   else if(type=="risib") type <- "RI2"
-  else warning(paste("Cross type", type, "may not work with QTL Cartographer."))
+  else {
+    warn <- paste("Cross type", type, "may not work with QTL Cartographer.")
+    warning(warn)
+  }
 
   # write genotype and phenotype data
   file <- paste(filestem, ".cro", sep="")
@@ -215,11 +223,14 @@ function( cross, filestem="data", chr )
       g <- unlist( cross$geno[[i]]$data[ind,] )
       g[ is.na( g ) ] <- 0
       g <- c(-1,0,1,2,10,12)[ 1 + g ]
-      if( length( g ) < 40)
+#      if( length( g ) < 40) # replaced by Hao with the following
+      if( length( g ) <= 40)
         write(paste( "      ", paste( g, collapse = " " )), file, append=TRUE)
       else {
-        lo <- seq( 1, n.ind-1, by=40)
-        hi <- c( lo[-1]+1, length( g ))
+#        lo <- seq( 1, n.ind-1, by=40) # replaced by Hao with the following
+        lo <- seq( 1, length(g), by=40)
+#        hi <- c( lo[-1]+1, length( g )) # replaced by Hao with the following
+        hi <- c( lo[-1]-1, length( g ))
         for(k in seq(along=lo)) {
           write( paste( "      ", paste( g[lo[k]:hi[k]], collapse = " " )),
                 file, append=TRUE)

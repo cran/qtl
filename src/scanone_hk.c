@@ -2,9 +2,9 @@
  * 
  * scanone_hk.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -41,7 +41,7 @@
 void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
 		  double *genoprob, double *addcov, int *n_addcov, 
                   double *intcov, int *n_intcov, double *pheno,
-		  double *result)
+		  double *weights, double *result)
 {
   double ***Genoprob, **Result, **Addcov, **Intcov;
 
@@ -53,7 +53,7 @@ void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
   if(*n_intcov > 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
 
   scanone_hk(*n_ind, *n_pos, *n_gen, Genoprob, Addcov, *n_addcov,
-	     Intcov, *n_intcov, pheno, Result);
+	     Intcov, *n_intcov, pheno, weights, Result);
 }
 
 /**********************************************************************
@@ -84,6 +84,8 @@ void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
  *              the first column contains the LOD, the next set contain
  *              estimated genotype-specific means, and the last column
@@ -93,7 +95,8 @@ void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
 
 void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
                 double **Addcov, int n_addcov, double **Intcov, 
-		int n_intcov, double *pheno, double **Result)
+		int n_intcov, double *pheno, double *weights, 
+		double **Result)
 {
   int ny, *jpvt, k, i, j, ncol, ncol0, k2, s;
   double *work, *x, *qty, *qraux, *coef, *resid, tol;
@@ -127,18 +130,22 @@ void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
   for(j=0; j<n_ind; j++)  rss0 += (resid[j]*resid[j]);
   Null model is now done in R ********************/
 
+  for(j=0; j<n_ind; j++) 
+    pheno[j] *= weights[j];
+  /* note: weights are really square-root of weights */
+
   for(i=0; i<n_pos; i++) { /* loop over positions */
     for(k=0; k<n_gen; k++) jpvt[k] = k;
 
     /* fill up X matrix */
     for(j=0; j<n_ind; j++) {
       for(k=0; k<n_gen; k++)
-	x[j+k*n_ind] = Genoprob[k][i][j]; 
+	x[j+k*n_ind] = Genoprob[k][i][j]*weights[j]; 
       for(k=0; k<n_addcov; k++)
-	x[j+(k+n_gen)*n_ind] = Addcov[k][j];
+	x[j+(k+n_gen)*n_ind] = Addcov[k][j]*weights[j];
       for(k=0,s=0; k<n_gen-1; k++)
 	for(k2=0; k2<n_intcov; k2++,s++) 
-	  x[j+(n_gen+n_addcov+s)*n_ind] = Genoprob[k][i][j]*Intcov[k2][j];
+	  x[j+(n_gen+n_addcov+s)*n_ind] = Genoprob[k][i][j]*Intcov[k2][j]*weights[j];
     }
 
     /* linear regression of phenotype on QTL genotype probabilities */

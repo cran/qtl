@@ -2,13 +2,13 @@
  *
  * scantwo_imp.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *                     and Hao Wu, The Jackson Lab
  *
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.
  *
- * last modified Nov, 2001 
+ * last modified Oct, 2002 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -48,7 +48,7 @@ void R_scantwo_imp(int *n_ind, int *same_chr, int *n_pos1, int *n_pos2,
 		   int *n_gen1, int *n_gen2, int *n_draws, int *draws1, 
 		   int *draws2, double *addcov, int *n_addcov, 
 		   double *intcov, int *n_intcov, double *pheno, 
-		   double *result)
+		   double *weights, double *result)
 {
   int ***Draws1, ***Draws2;
   double **Addcov, **Intcov;
@@ -65,7 +65,7 @@ void R_scantwo_imp(int *n_ind, int *same_chr, int *n_pos1, int *n_pos2,
   /* call the engine function scantwo_imp */
   scantwo_imp(*n_ind, *same_chr, *n_pos1, *n_pos2, *n_gen1, *n_gen2, 
 	      *n_draws, Draws1, Draws2, Addcov, *n_addcov, 
-	      Intcov, *n_intcov, pheno, result);
+	      Intcov, *n_intcov, pheno, weights, result);
 }
 
 /**********************************************************************
@@ -108,6 +108,8 @@ void R_scantwo_imp(int *n_ind, int *same_chr, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * result       Result vector of length [n_pos1*n_pos2];
  *
  **********************************************************************/
@@ -116,11 +118,11 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 		 int n_gen1, int n_gen2, int n_draws, int ***Draws1, 
 		 int ***Draws2, double **Addcov, int n_addcov, 
 		 double **Intcov, int n_intcov, double *pheno, 
-		 double *result)
+		 double *weights, double *result)
 {
 
   /* create local variables */
-  int i1, i2, j; /* loop variants */
+  int i, i1, i2, j; /* loop variants */
   double lrss0, lrss_add, lrss_full, *LODfull, *LODint;
   int n_col_f, n_gen_sq, *iwork, idx; 
   double *dwork;
@@ -136,6 +138,14 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
   dwork = (double *)R_alloc(n_col_f*n_ind + 2*n_ind + 4*n_col_f,
 			    sizeof(double));
 			 
+  /* adjust phenotypes and covariates using weights */
+  /* Note: these are actually square-root of weights */
+  for(i=0; i<n_ind; i++) {
+    pheno[i] *= weights[i];
+    for(j=0; j<n_addcov; j++) Addcov[j][i] *= weights[i];
+    for(j=0; j<n_intcov; j++) Intcov[j][i] *= weights[i];
+  }
+
   /* Note that lrss0 is the log10(RSS) for model E(Yi) = b0;
      lrss_add is the log10(RSS) for model 
                  E(Yi) = b0 + b1*q1 + b2*q2;
@@ -144,7 +154,8 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
      Additive and interactive covariates are included (if any) */
 
   /* Call nullRss to calculate the RSS for the null model */
-  lrss0 = log10(nullRss(pheno, n_ind, Addcov, n_addcov, dwork, iwork));
+  lrss0 = log10(nullRss(pheno, weights, n_ind, Addcov, 
+			n_addcov, dwork, iwork));
 
   /* calculate the LOD score for each pair of markers */
   if(same_chr) { /* if the pair is on the same chromesome */
@@ -153,7 +164,7 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 	for(j=0; j<n_draws; j++) { /* loop over imputations */
 
 	  /* rss for alternative model */
-	  altRss2(pheno, n_ind, n_gen1, n_gen1, Draws1[j][i1], 
+	  altRss2(pheno, weights, n_ind, n_gen1, n_gen1, Draws1[j][i1], 
 		  Draws1[j][i2], Addcov, n_addcov, Intcov, n_intcov, 
 		  &lrss_add, &lrss_full, dwork, iwork);
 	  
@@ -177,7 +188,7 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
       for(i2=0; i2<n_pos2; i2++) { /* loop over markers on chr 2 */
 	for(j=0; j<n_draws; j++) { /* loop over imputations */
 	  /* rss for alternative model */
-	  altRss2(pheno, n_ind, n_gen1, n_gen2, Draws1[j][i1], 
+	  altRss2(pheno, weights, n_ind, n_gen1, n_gen2, Draws1[j][i1], 
 		  Draws2[j][i2], Addcov, n_addcov, Intcov, n_intcov, 
 		  &lrss_add, &lrss_full, dwork, iwork);
 	  
@@ -198,7 +209,8 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 }
 
 
-void altRss2(double *pheno, int n_ind, int n_gen1, int n_gen2, 
+void altRss2(double *pheno, double *weights, 
+	     int n_ind, int n_gen1, int n_gen2, 
 	     int *Draws1, int *Draws2, double **Addcov, int n_addcov, 
 	     double **Intcov, int n_intcov, double *lrss_add, 
 	     double *lrss_full, double *dwork, int *iwork)
@@ -206,7 +218,6 @@ void altRss2(double *pheno, int n_ind, int n_gen1, int n_gen2,
   int ny, *jpvt, i, k, s;
   int n_col_a, n_col_f, n_gen_sq;
   double *work, *x, *qty, *qraux, *coef, *resid, tol;
-
   
   /* constants */
   n_gen_sq = n_gen1*n_gen2;
@@ -232,10 +243,10 @@ void altRss2(double *pheno, int n_ind, int n_gen1, int n_gen2,
 
   /* fill up X matrix */
   for(i=0; i<n_ind; i++) {
-    x[i+(Draws1[i]-1)*n_ind] = 1.0; /* QTL 1 */
+    x[i+(Draws1[i]-1)*n_ind] = weights[i]; /* QTL 1 */
     s = n_gen1;
     if(Draws2[i] < n_gen2) /* QTL 2 */
-      x[i+(Draws2[i]-1+s)*n_ind] = 1.0; 
+      x[i+(Draws2[i]-1+s)*n_ind] = weights[i]; 
     s += (n_gen2-1);
     for(k=0; k<n_addcov; k++) /* add cov */
       x[i+(k+s)*n_ind] = Addcov[k][i];
@@ -266,13 +277,13 @@ void altRss2(double *pheno, int n_ind, int n_gen1, int n_gen2,
 
   /* fill up X matrix */
   for(i=0; i<n_ind; i++) {
-    x[i+(Draws1[i]-1)*n_ind] = 1.0; /* QTL 1 */
+    x[i+(Draws1[i]-1)*n_ind] = weights[i]; /* QTL 1 */
     s = n_gen1;
     if(Draws2[i] < n_gen2) /* QTL 2 */
-      x[i+(Draws2[i]-1+s)*n_ind] = 1.0; 
+      x[i+(Draws2[i]-1+s)*n_ind] = weights[i]; 
     s += (n_gen2-1);
     if(Draws1[i] < n_gen1 && Draws2[i] < n_gen2) /* QTL x QTL */
-      x[i+((Draws1[i]-1)*(n_gen2-1)+Draws2[i]-1+s)*n_ind] = 1.0;
+      x[i+((Draws1[i]-1)*(n_gen2-1)+Draws2[i]-1+s)*n_ind] = weights[i];
     s += ((n_gen1-1)*(n_gen2-1));
     for(k=0; k<n_addcov; k++) /* add cov */
       x[i+(k+s)*n_ind] = Addcov[k][i];

@@ -2,10 +2,10 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified June, 2002
-# first written April, 2002
+# last modified Jun, 2003
+# first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -72,13 +72,17 @@ makeqtl <-
     for(i in 1:n.pos) {
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) # no this chromosome in cross
-        stop(paste("There's no chromosome number ", chr[i], "in input cross object"))
+      if(length(i.chr) == 0) { # no this chromosome in cross 
+        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
+        stop(err)
+      }
       i.pos <- pos[i] # marker position
       # make the genetic map for this chromosome
       map <- create.map(cross$geno[[i.chr]]$map,
                         attr(cross$geno[[i.chr]]$draws,"step"),
                         attr(cross$geno[[i.chr]]$draws,"off.end"))
+      # pull out the female map if there are sex-specific maps
+      if(is.matrix(map)) map <- map[1,]
 
       # locate this marker (given chromosome and position)
       marker.idx <- locatemarker(map, i.pos, i.chr, flag="draws")
@@ -97,7 +101,10 @@ makeqtl <-
         n.gen[i] <- 2
       else if(type == "4way") 
         n.gen[i] <- 4
-      else stop(paste("scan not available for cross", type))
+      else {
+        err <- paste("makeqtl not available for cross", type)
+        stop(err)
+      }
     }
     # give geno dimension names
     # the 2nd dimension called "Q1", "Q2", etc.
@@ -116,8 +123,10 @@ makeqtl <-
     for(i in 1:n.pos) {
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) # no this chromosome in cross
-        stop(paste("There's no chromosome number ", chr[i], "in input cross object"))
+      if(length(i.chr) == 0) { # no this chromosome in cross
+        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
+        stop(err)
+      }
       i.pos <- pos[i] # marker position
       # locate this marker (given chromosome and position)
       marker.idx <- locatemarker(cross$geno[[i.chr]]$map, i.pos, i.chr, flag="prob")
@@ -173,10 +182,14 @@ replaceqtl <-
   
   # update the imputed genotype and n.gen vector (if any)
   if("geno" %in% names(qtl)) {
-    if(missing(map))  # make genetic map on this chromosome
+    if(missing(map))  { # make genetic map on this chromosome
+      # pull out female map in case that there are sex-specific maps
+      if(is.matrix(map)) map <- map[1,]
+
       map <- create.map(cross$geno[[by.chr]]$map,
                         attr(cross$geno[[by.chr]]$draws,"step"),
                         attr(cross$geno[[by.chr]]$draws,"off.end"))
+    }
 
     # locate this marker (given chromosome and position)
     marker.idx <- locatemarker(map, by.pos, by.chr, "draws")
@@ -196,7 +209,10 @@ replaceqtl <-
       qtl$n.gen[replace] <- 2
     else if(type == "4way") 
       qtl$n.gen[replace] <- 4
-    else stop(paste("scan not available for cross", type))
+    else {
+      err <- paste("replaceqtl not available for cross", type)
+      stop(err)
+    }
   }
   
   # update the genoprob (if any)
@@ -250,14 +266,21 @@ addqtl <-
       n.gen <- 2
     else if(type == "4way") 
       n.gen <- 4
-    else stop(paste("scan not available for cross", type))
+    else {
+      err <- paste("addqtl not available for cross", type)
+      stop(err)
+    }
     qtl$n.gen <- c(qtl$n.gen, n.gen)
   
     # add the imputed genotype
-    if(missing(map))  # make genetic map on this chromosome, if missing
+    if(missing(map)) { # make genetic map on this chromosome, if missing
+      # pull out female map in case that there are sex-specific maps
+      if(is.matrix(map)) map <- map[1,]
+
       map <- create.map(cross$geno[[add.chr]]$map,
                         attr(cross$geno[[add.chr]]$draws,"step"),
                         attr(cross$geno[[add.chr]]$draws,"off.end"))
+    }
 
     # locate this marker (given chromosome and position)
     marker.idx <- locatemarker(map, add.pos, add.chr, "draws")

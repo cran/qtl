@@ -10,6 +10,37 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 0.96 bugs:
+
+    1. Bug in summary.cross: when there are duplicate marker names, it
+       fails to find them.  [Fixed in version 0.97.]
+
+    2. Bug in read.cross: problem if a phenotype has values like "1x2".
+       [Fixed in version 0.97.]
+
+>>  3. Bug in scanone for X chromosome with EM algorithm when there is
+       a "sex" column in the phenotype data but all individuals have
+       the same sex.
+
+    4. There's likely an error in write.cross.qtlcart.  See 
+       the line with "lo <- seq(1,n.ind-1,by=40)"
+       [Fixed in version 0.97.]
+
+    5. Problem in makeqtl in the case of a four-way cross:  the
+       function doesn't take into account of the result of
+       create.map() being a vector. [Fixed in version 0.97.]
+
+    6. Problem in fitqtl: it doesn't seem to recognize the case of
+       there being no available "draws" data.  [Fixed in version 0.97.]
+
+    7. fitqtl: doesn't work when you give only one qtl. [Fixed in
+       version 0.97.]
+   
+
+>>  8. scanone: when model="binary" and method="mr", a warning message
+       should be displayed, and method="em" should be used.  
+
+
 Version 0.95 bugs:
 
 >>  1. scantwo is not working well for the EM algorithm, in the case

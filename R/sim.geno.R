@@ -2,8 +2,8 @@
 #
 # sim.geno.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -65,8 +65,11 @@ function(cross, n.draws=16, step=0, off.end=0, error.prob=0,
       cfunc <- "sim_geno_4way"
       one.map <- FALSE
     }
-    else stop(paste("sim_geno not available for cross type",
-                    type, "."))
+    else {
+      err <- paste("sim_geno not available for cross type",
+                   type, ".")
+      stop(err)
+    }
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -141,6 +144,7 @@ function(cross, n.draws=16, step=0, off.end=0, error.prob=0,
     attr(cross$geno[[i]]$draws,"error.prob") <- error.prob
     attr(cross$geno[[i]]$draws,"step") <- step
     attr(cross$geno[[i]]$draws,"off.end") <- temp.offend
+    attr(cross$geno[[i]]$draws,"map.function") <- map.function
   }
 
   # store simulated genotypes as integers

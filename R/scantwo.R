@@ -2,9 +2,9 @@
 #
 # scantwo.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University,
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University,
 #                       and Hao Wu, The Jackson Lab.
-# last modified June, 2002
+# last modified Jun, 2003
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -12,7 +12,7 @@
 # method and the plot.scantwo and summary.scantwo functions.
 #
 # Part of the R/qtl package
-# Contains: scantwo, plot.scantwo, scantwo.perm, summary.scantwo
+# Contains: scantwo, scantwo.perm, summary.scantwo
 #           print.summary.scantwo, max.scantwo
 #
 ######################################################################
@@ -28,11 +28,12 @@
 scantwo <-
 function(cross, chr, pheno.col=1,
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-         addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+         addcovar=NULL, intcovar=NULL, weights=NULL,
+         x.treatment=c("simple","full"),
          run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
          trace=TRUE, n.perm)
 {
-  if(method=="im") # warning in case old terminology is used
+  if(length(method)==1 && method=="im") # warning in case old terminology is used
     warning("Method \"im\" is now called \"em\"; running method \"imp\".")
   method <- match.arg(method)
   
@@ -83,14 +84,24 @@ function(cross, chr, pheno.col=1,
   # if n.perm specified, do a permutation test
   if(!missing(n.perm) && n.perm>0) { 
     return(scantwo.perm(cross, pheno.col, method, addcovar,
-                        intcovar, x.treatment, incl.markers, maxit, tol,
-                        trace, n.perm))
+                        intcovar, weights, x.treatment, incl.markers,
+                        maxit, tol, trace, n.perm))
   }
+
+  # weights of individuals
+  if(is.null(weights))
+    weights <- rep(1, nind(cross))
+  if(length(weights) != nind(cross))
+    stop("weights should either be NULL or a vector of length n.ind")
+  if(any(weights) <= 0)
+    stop("weights should be entirely positive")
+  weights <- sqrt(weights)
 
   if(run.scanone) { # also do scanone
     if(trace) cat(" --Running scanone\n")
-    temp <- scanone(cross,, pheno.col, , method, addcovar, intcovar,
-                    x.treatment, maxit=maxit, tol=tol, trace=FALSE)
+    temp <- scanone(cross, pheno.col=pheno.col, method=method,
+                    addcovar=addcovar, intcovar=intcovar, weights=weights,
+                    x.treatment=x.treatment, maxit=maxit, tol=tol, trace=FALSE)
     nam <- rownames(temp)
     out.scanone <- temp[,3]
     names(out.scanone) <- nam
@@ -256,6 +267,7 @@ function(cross, chr, pheno.col=1,
                 as.double(intcovar),
                 as.integer(n.intcovar),
                 as.double(pheno),
+                as.double(weights),
                 result=as.double(rep(0,2*n.pos[i]*n.pos[j])),
                 PACKAGE="qtl")
         z <- array(z$result,dim=c(n.pos[i], n.pos[j], 2)) # rearrange the result 
@@ -268,12 +280,14 @@ function(cross, chr, pheno.col=1,
         if(i==j) { # same chromosome
 
           if(i==1) { # first time! do null model and get neg log10 likelihood
-            if(n.addcovar > 0) resid0 <- lm(pheno ~ addcovar)$resid
-            else resid0 <- pheno - mean(pheno)
-            if(method=="hk") nllik0 <- (n.ind/2)*log10(sum(resid0^2))
+            if(n.addcovar > 0)
+              resid0 <- lm(pheno ~ addcovar, weights=weights^2)$resid
+            else
+              resid0 <- lm(pheno ~ 1, weights=weights^2)$resid
+            if(method=="hk") nllik0 <- (n.ind/2)*log10(sum((resid0*weights)^2))
             else {
-              sig0 <- sqrt(sum(resid0^2)/n.ind)
-              nllik0 <- -sum(dnorm(resid0,0,sig0,log=TRUE))/log(10)
+              sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
+              nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
             }
           }
 
@@ -318,6 +332,7 @@ function(cross, chr, pheno.col=1,
                     as.double(intcovar),
                     as.integer(n.intcovar),
                     as.double(pheno),
+                    as.double(weights),
                     result=as.double(rep(0,n.pos[i]^2)),
                     PACKAGE="qtl")
           else
@@ -331,6 +346,7 @@ function(cross, chr, pheno.col=1,
                     as.double(intcovar),
                     as.integer(n.intcovar),
                     as.double(pheno),
+                    as.double(weights),
                     result=as.double(rep(0,n.pos[i]^2)),
                     as.integer(maxit),
                     as.double(tol),
@@ -358,6 +374,7 @@ function(cross, chr, pheno.col=1,
                     as.double(intcovar),
                     as.integer(n.intcovar),
                     as.double(pheno),
+                    as.double(weights),
                     full=as.double(rep(0,n.pos[i]*n.pos[j])),
                     int=as.double(rep(0,n.pos[i]*n.pos[j])),
                     PACKAGE="qtl")
@@ -375,6 +392,7 @@ function(cross, chr, pheno.col=1,
                     as.double(intcovar),
                     as.integer(n.intcovar),
                     as.double(pheno),
+                    as.double(weights),
                     full=as.double(rep(0,n.pos[i]*n.pos[j])),
                     int=as.double(rep(0,n.pos[i]*n.pos[j])),
                     as.integer(maxit),
@@ -410,6 +428,7 @@ function(cross, chr, pheno.col=1,
                   as.double(intcovar),
                   as.integer(n.intcovar),
                   as.double(pheno),
+                  as.double(weights),
                   result=as.double(rep(0,n.pos[i]^2)),
                   PACKAGE="qtl")
 
@@ -441,6 +460,7 @@ function(cross, chr, pheno.col=1,
                   as.double(intcovar),
                   as.integer(n.intcovar),
                   as.double(pheno),
+                  as.double(weights),
                   full=as.double(rep(0,n.pos[i]*n.pos[j])),
                   int=as.double(rep(0,n.pos[i]*n.pos[j])),
                   PACKAGE="qtl")
@@ -462,7 +482,6 @@ function(cross, chr, pheno.col=1,
     warning("Some LOD scores NA, Inf or < 0")
 #  results[is.na(results) | results<0 | results == Inf] <- 0
   
-
   # output has 2 fields, lod and map
   out <- list(lod=results,map=gmap)
   class(out) <- "scantwo"
@@ -480,151 +499,6 @@ function(cross, chr, pheno.col=1,
 
 ######################################################################
 #
-# plot.scantwo: plot output from scantwo
-#
-######################################################################
-
-plot.scantwo <- 
-function(x,chr,incl.markers=FALSE,zlim,contours=FALSE,
-         main,zscale=TRUE,...)
-{
-#  if( !any(class(x) == "scantwo") )
-#    stop("Input variable is not an object of class scantwo!")
-  
-  lod <- x$lod
-  map <- x$map
-
-  # deal with bad LOD score values
-  if(any(is.na(lod) | lod< -1e-6 | lod==Inf)) 
-    warning("Some LOD scores NA, Inf or < 0; set to 0")
-  lod[is.na(lod) | lod<0 | lod == Inf] <- 0
-
-  # if incl.markers is FALSE, drop positions
-  #     for which third column of map is 0
-  if(!incl.markers && any(map[,3]==0)) {
-    o <- (map[,3]==1)
-    lod <- lod[o,o]
-    map <- map[o,]
-  }
-
-  # turn NA's into negative values (plotted as white?)
-  lod[is.na(lod)] <- -10
-
-  # pull out desired chromosomes
-  if(missing(chr) || length(chr)==0)
-    chr <- unique(map[,1])
-  else {
-    a <- unique(map[,1])
-    if(is.numeric(chr) && all(chr < 0)) 
-      chr <- a[-match(-chr,a)]
-    else chr <- a[match(chr,a)]
-    keep <- (1:nrow(map))[!is.na(match(map[,1],chr))]
-
-    map <- map[keep,]
-    lod <- lod[keep,keep]
-  }
-
-  chr <- as.character(chr)
-
-  if( missing(zlim) ) { # no given zlim
-    # calculate the zlim for interactive and joint
-    zlim.int <- max( lod[row(lod)<col(lod)] )
-    zlim.jnt <- max( lod[row(lod)>=col(lod)] )
-  }
-  else {
-    zlim.int <- zlim[2]
-    zlim.jnt <- zlim[1]
-  }
-
-  
-  # rescale the data in upper triangle based on zlims.jnt
-  lod[row(lod)<col(lod)] <- lod[row(lod)<col(lod)]*zlim.jnt/zlim.int
-
-  if(missing(zlim)) zlim.jnt <- max(lod)
-
-  # make sure LOD values are below (0,zlim.jnt) or update zlim.jnt
-  if(max(lod) > zlim.jnt) {
-    warning("LOD values out of range; updating zlim.")
-    temp <- max(lod)
-    zlim.int <- zlim.int*temp/zlim.jnt
-    zlim.jnt <- temp
-  }
-
-  # save old par parameters, to restore them on exit
-  old.mar <- par("mar")
-  old.las <- par("las")
-  old.mfrow <- par("mfrow") 
-  on.exit(par(las=old.las,mar=old.mar,mfrow=old.mfrow))
-  par(las=1)
-
-  if(zscale) {
-    layout(cbind(1,2),c(6,1))
-    par(mar=c(5,4,4,2)+0.1)
-  }
-
-  image( 1:ncol(lod), 1:nrow(lod), lod, ylab="Positions", xlab="Positions",
-         zlim=c(0,zlim.jnt), col=rev(rainbow(256,start=0,end=2/3)) )
-
-  # add contours if requested
-  if(contours) contour(1:ncol(lod), 1:nrow(lod), lod, add=TRUE)
-
-  # calculate how many markers in each chromesome
-  n.mar <- NULL
-  for ( i in 1:length(chr) )
-    n.mar[i] <- sum(map[,1]==chr[i])
-  
-  # plot lines at the chromosome boundaries
-  wh <- c(0.5,cumsum(n.mar)+0.5)
-  abline(v=wh,xpd=FALSE)
-  abline(h=wh,xpd=FALSE)
-
-  # add chromesome numbers
-  a <- par("usr")
-  for(i in 1:length(n.mar)) 
-    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,chr[i],xpd=TRUE)
-  for(i in 1:length(n.mar)) 
-    text(a[2]+(a[2]-a[1])*0.025,mean(wh[i+c(0,1)]),chr[i],xpd=TRUE)
-  
-  # add title
-  if(!missing(main)) title(main=main)
-
-  if(zscale) {
-    # plot the colormap
-    par(mar=c(5,2,4,2)+0.1)
-    colorstep <- zlim.jnt/255
-    image( x=1:1, y=seq(0,zlim.jnt,colorstep), z=matrix(c(1:256),1,256),
-          zlim=c(1,256),ylab="",xlab="", xaxt="n", yaxt="n",
-          col=rev(rainbow(256,start=0,end=2/3)) )
-    # make sure there's a box around it
-    u <- par("usr") 
-    abline(v=u[1:2],xpd=FALSE)
-    abline(h=u[3:4],xpd=FALSE)
-  
-    # figure out how big the axis labels should be
-    fin <- par("fin")[1] # figure width in inches
-    pin <- par("pin")[1] # plot width in inches
-    mai <- par("mai")[2] # margin width in inches
-                         # note: pin + 2*mai = fin
-    xlen.mar <- mai/pin*diff(u[1:2])
-
-    # axis for joint LODs
-    yloc <- pretty(c(0,zlim.jnt),4)
-    yloc <- yloc[yloc<=u[4]]
-    segments(u[2],yloc,u[2]+xlen.mar/4,yloc,xpd=TRUE)
-    text(u[2]+xlen.mar/3,yloc,as.character(yloc),xpd=TRUE,adj=0)
- 
-    # axis for int've LODs
-    yloc <- pretty(c(0,zlim.int),4)
-    yloc.rev <- yloc*zlim.jnt/zlim.int
-    yloc <- yloc[yloc.rev <= u[4]]
-    yloc.rev <- yloc.rev[yloc.rev<=u[4]]
-    segments(u[1],yloc.rev,u[1]-xlen.mar/4,yloc.rev,xpd=TRUE)
-    text(u[1]-xlen.mar/3,yloc.rev,as.character(yloc),xpd=TRUE,adj=1)
-  }
-}
-
-######################################################################
-#
 # scantwo.perm: Permutation test of scantwo
 #
 ######################################################################
@@ -632,7 +506,8 @@ function(x,chr,incl.markers=FALSE,zlim,contours=FALSE,
 scantwo.perm <-
 function(cross, pheno.col=1,
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-         addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+         addcovar=NULL, intcovar=NULL, weights=NULL,
+         x.treatment=c("simple","full"),
          incl.markers=FALSE, maxit=4000, tol=1e-4, trace=FALSE,
          n.perm=1000) 
 {
@@ -666,7 +541,7 @@ function(cross, pheno.col=1,
     tem <- scantwo(cross,  pheno.col=pheno.col,
                    method=method, addcovar=addcovarp,
                    intcovar=intcovarp, incl.markers=incl.markers,
-                   x.treatment=x.treatment,
+                   weights=weights, x.treatment=x.treatment,
                    run.scanone=FALSE, maxit=maxit, tol=tol,
                    trace=FALSE, n.perm = -1)
 
@@ -730,7 +605,10 @@ function(object, thresholds=c(0,0,0), ...)
     df.int <- 9
     df.add <- 3
   }
-  else stop(paste("Don't know what to do with cross type", crosstype))
+  else {
+    err <- paste("Don't know what to do with cross type", crosstype)
+    stop(err)
+  }
   
   # chromsomes in the result
   chr <- unique(map[,1])

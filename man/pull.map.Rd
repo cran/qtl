@@ -29,7 +29,7 @@ map <- pull.map(fake.f2)
 plot(map)
 }
 
-\seealso{ \code{\link[qtl]{replace.map}}, \code{\link[qtl]{map}},
+\seealso{ \code{\link[qtl]{replace.map}}, \code{\link[qtl]{plot.map}},
   \code{\link[qtl]{subset.cross}} }
 
 \keyword{manip}

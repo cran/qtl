@@ -155,6 +155,14 @@ GETTING STARTED
       http://www.biostat.jhsph.edu/~kbroman/qtl
 
 
+CITING R/QTL
+
+  To cite R/qtl in publications, use
+
+      Broman KW, Wu H, Sen S, Churchill GA (2003) R/qtl: QTL mapping
+      in experimental crosses.  Bioinformatics 19:889-890
+
+
 QUESTIONS/COMMENTS/CONCERNS
 
   If you have any questions, suggestions, problems or complaints

@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.c
  *
- * copyright (c) 2001, 2002, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Apr, 2002
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -43,7 +43,7 @@
 void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result)
+		       double *pheno, double *weights, double *result)
 {
   int **Geno;
   double **Result, **Addcov, **Intcov;
@@ -56,7 +56,7 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
   if(*n_intcov > 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
 
   scantwo_1chr_mr(*n_ind, *n_pos, *n_gen, Geno, Addcov, *n_addcov, 
-		  Intcov, *n_intcov, pheno, Result);
+		  Intcov, *n_intcov, pheno, weights, Result);
 }
 
 /**********************************************************************
@@ -87,6 +87,8 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
@@ -98,7 +100,7 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double **Result)
+		     double *weights, double **Result)
 {
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
   int n_col_0, n_col_a, n_col_f, n_gen_sq, *which_ind;
@@ -128,6 +130,13 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   work = (double *)R_alloc(2 * n_col_f, sizeof(double));
   ny = 1;
 
+  /* modify pheno, Addcov and Intcov with weights */
+  for(j=0; j<n_ind; j++) {
+    pheno[j] *= weights[j];
+    for(k=0; k<n_addcov; k++) Addcov[k][j] *= weights[j];
+    for(k=0; k<n_intcov; k++) Intcov[k][j] *= weights[j];
+  }    
+
   for(i=0; i<n_pos-1; i++) { 
     for(i2=i+1; i2<n_pos; i2++) { /* loop over pairs of positions */
 
@@ -149,7 +158,7 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	  /* NULL MODEL */
 	  /* fill up X matrix */
 	  for(j=0; j<this_n_ind; j++) {
-	    x[j] = 1.0;
+	    x[j] = weights[which_ind[j]];
 	    for(k=0; k<n_addcov; k++) 
 	      x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]];
 	  }
@@ -175,10 +184,11 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	
 	/* fill up X matrix */
 	for(j=0; j<this_n_ind; j++) { 
-	  x[j+(Geno[i][which_ind[j]]-1)*this_n_ind] = 1.0; /* QTL 1 */
+	  x[j+(Geno[i][which_ind[j]]-1)*this_n_ind] = 
+	    weights[which_ind[j]]; /* QTL 1 */
 	  s = n_gen;
 	  if(Geno[i2][which_ind[j]] < n_gen) /* QTL 2 */
-	    x[j+(Geno[i2][which_ind[j]]-1+s)*this_n_ind] = 1.0;
+	    x[j+(Geno[i2][which_ind[j]]-1+s)*this_n_ind] = weights[which_ind[j]];
 	  s += (n_gen-1);
 	  for(k=0; k<n_addcov; k++) /* additive covariates */
 	    x[j+(k+s)*this_n_ind] = Addcov[k][which_ind[j]];
@@ -208,15 +218,17 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	
 	/* fill up X matrix */
 	for(j=0; j<this_n_ind; j++) { 
-	  x[j+(Geno[i][which_ind[j]]-1)*this_n_ind] = 1.0; /* QTL 1 */
+	  x[j+(Geno[i][which_ind[j]]-1)*this_n_ind] = 
+	    weights[which_ind[j]]; /* QTL 1 */
 	  s = n_gen;
 	  if(Geno[i2][which_ind[j]] < n_gen) /* QTL 2 */
-	    x[j+(Geno[i2][which_ind[j]]-1+s)*this_n_ind] = 1.0;
+	    x[j+(Geno[i2][which_ind[j]]-1+s)*this_n_ind] = 
+	      weights[which_ind[j]];
 	  s += (n_gen-1);
 	  if(Geno[i][which_ind[j]] < n_gen && 
 	     Geno[i2][which_ind[j]] < n_gen) /* QTL x QTL */
 	    x[j+((Geno[i][which_ind[j]]-1)*(n_gen-1)+s+
-		 Geno[i2][which_ind[j]]-1)*this_n_ind] = 1.0;
+		 Geno[i2][which_ind[j]]-1)*this_n_ind] = weights[which_ind[j]];
 	  s += (n_gen-1)*(n_gen-1);
 	  for(k=0; k<n_addcov; k++) /* additive covariates */
 	    x[j+(k+s)*this_n_ind] = Addcov[k][which_ind[j]];
@@ -271,8 +283,8 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
 		       int *geno1, int *geno2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *result_full,
-		       double *result_int)
+		       double *pheno, double *weights,
+		       double *result_full, double *result_int)
 {
   int **Geno1, **Geno2;
   double **Result_full, **Result_int, **Addcov, **Intcov;
@@ -288,7 +300,7 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
 
   scantwo_2chr_mr(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2, 
 		  Geno1, Geno2, Addcov, *n_addcov, Intcov, 
-		  *n_intcov, pheno, Result_full, Result_int);
+		  *n_intcov, pheno, weights, Result_full, Result_int);
 }
 
 /**********************************************************************
@@ -325,6 +337,8 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
@@ -339,6 +353,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     int n_gen2, int **Geno1, int **Geno2,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
+		     double *weights,
 		     double **Result_full, double **Result_int)
 {
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
@@ -369,6 +384,13 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
   work = (double *)R_alloc(2 * n_col_f, sizeof(double));
   ny = 1;
 
+  /* modify pheno, Addcov and Intcov with weights */
+  for(j=0; j<n_ind; j++) {
+    pheno[j] *= weights[j];
+    for(k=0; k<n_addcov; k++) Addcov[k][j] *= weights[j];
+    for(k=0; k<n_intcov; k++) Intcov[k][j] *= weights[j];
+  }    
+
   for(i=0; i<n_pos1; i++) { 
     for(i2=0; i2<n_pos2; i2++) { /* loop over pairs of positions */
 
@@ -389,7 +411,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  /* NULL MODEL */
 	  /* fill up X matrix */
 	  for(j=0; j<this_n_ind; j++) {
-	    x[j] = 1.0;
+	    x[j] = weights[which_ind[j]];
 	    for(k=0; k<n_addcov; k++) 
 	      x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]];
 	  }
@@ -415,10 +437,12 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	
 	/* fill up X matrix */
 	for(j=0; j<this_n_ind; j++) { 
-	  x[j+(Geno1[i][which_ind[j]]-1)*this_n_ind] = 1.0; /* QTL 1 */
+	  x[j+(Geno1[i][which_ind[j]]-1)*this_n_ind] = 
+	    weights[which_ind[j]]; /* QTL 1 */
 	  s = n_gen1;
 	  if(Geno2[i2][which_ind[j]] < n_gen2) /* QTL 2 */
-	    x[j+(Geno2[i2][which_ind[j]]-1+s)*this_n_ind] = 1.0;
+	    x[j+(Geno2[i2][which_ind[j]]-1+s)*this_n_ind] = 
+	      weights[which_ind[j]];
 	  s += (n_gen2-1);
 	  for(k=0; k<n_addcov; k++) /* additive covariates */
 	    x[j+(k+s)*this_n_ind] = Addcov[k][which_ind[j]];
@@ -448,15 +472,18 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	
 	/* fill up X matrix */
 	for(j=0; j<this_n_ind; j++) { 
-	  x[j+(Geno1[i][which_ind[j]]-1)*this_n_ind] = 1.0; /* QTL 1 */
+	  x[j+(Geno1[i][which_ind[j]]-1)*this_n_ind] = 
+	    weights[which_ind[j]]; /* QTL 1 */
 	  s = n_gen1;
 	  if(Geno2[i2][which_ind[j]] < n_gen2) /* QTL 2 */
-	    x[j+(Geno2[i2][which_ind[j]]-1+s)*this_n_ind] = 1.0;
+	    x[j+(Geno2[i2][which_ind[j]]-1+s)*this_n_ind] = 
+	      weights[which_ind[j]];
 	  s += (n_gen2-1);
 	  if(Geno1[i][which_ind[j]] < n_gen1 && 
 	     Geno2[i2][which_ind[j]] < n_gen2) /* QTL x QTL */
 	    x[j+((Geno1[i][which_ind[j]]-1)*(n_gen2-1)+s+
-		 Geno2[i2][which_ind[j]]-1)*this_n_ind] = 1.0;
+		 Geno2[i2][which_ind[j]]-1)*this_n_ind] = 
+	      weights[which_ind[j]];
 	  s += (n_gen1-1)*(n_gen2-1);
 	  for(k=0; k<n_addcov; k++) /* additive covariates */
 	    x[j+(k+s)*this_n_ind] = Addcov[k][which_ind[j]];

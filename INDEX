@@ -1,18 +1,20 @@
-A starting point        Introductory comments
 argmax.geno             Reconstruct underlying genotypes
+A starting point        Introductory comments
 badorder                An intercross with misplaced markers
 bristle3                Data on bristle number in Drosophila
 bristleX                Data on bristle number in Drosophila
-c.cross                 Combine data for QTL experiments
 calc.errorlod           Identify likely genotyping errors
 calc.genoprob           Calculate conditional genotype probabilities
+c.cross                 Combine data for QTL experiments
 clean                   Remove derived data
+comparecrosses          Compare two cross objects.
 convert2ss              Convert an intercross into a form to allow
                         sex-specific maps
 drop.markers            Drop a set of markers
 drop.nullmarkers        Drop markers without any genotype data
 effectplot              Plot phenotype means against genotypes at one
                         or two markers.
+effectscan              Plot allelic effect across the whole genome
 est.map                 Estimate genetic maps
 est.rf                  Estimate pairwise recombination fractions
 fake.4way               Simulated data for a 4-way cross
@@ -24,13 +26,16 @@ fitqtl                  Fit a multiple QTL model
 geno.table              Create table of genotype distributions
 hyper                   Data on hypertension
 listeria                Data on Listeria monocytogenes susceptibility
+lodint                  LOD support interval
 makeqtl                 Make a qtl object
 map10                   An example genetic map
 max.scanone             Maximum peak in genome scan
 max.scantwo             Maximum peak in two-dimensional genome scan
+nmissing                Number of missing genotypes
 plot.cross              Plot various features of a cross object
 plot.errorlod           Plot grid of error LOD values
-plot.geno               Plot observed genotypes, flagging likely errors
+plot.geno               Plot observed genotypes, flagging likely
+                        errors
 plot.info               Plot the proportion of missing genotype
                         information
 plot.map                Plot genetic map
@@ -40,8 +45,8 @@ plot.rf                 Plot recombination fractions
 plot.scanone            Plot LOD curves
 plot.scantwo            Plot LOD scores for a two-dimensional genome
                         scan
+pull.geno               Pull out the genotype data from a cross
 pull.map                Pull out the genetic map from a cross
-qtl-internal            Internal qtl functions
 read.cross              Read data for a QTL experiment
 replace.map             Replace the genetic map of a cross
 ripple                  Compare marker orders

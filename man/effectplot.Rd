@@ -10,7 +10,7 @@
 
 \usage{
 effectplot(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
-           geno2, main)
+           geno2, main, ylim, add.legend=TRUE)
 }
 
 \arguments{
@@ -25,12 +25,14 @@ effectplot(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
   \item{mname2}{Name for the second marker (optional).}
   \item{mark2}{Like \code{mark1} (optional).}
   \item{geno2}{Names for the genotypes (or classes in a covariate).}
-  \item{main}{Optional figure title}
+  \item{main}{Optional figure title.}
+  \item{ylim}{Y-axis limits.}
+  \item{add.legend}{A logical value to indicate add legend or not.}
 }
 
 \value{
-  A data.frame containing the phenotypes and marker genotypes for
-  individuals with no missing values.
+  A data.frame containing the phenotype means and standard deviations
+  for each group.
 }
 
 \details{
@@ -79,6 +81,7 @@ effectplot(fake.f2, mname1=mname1, mname2=mname2)
 
 \author{Hao Wu, \email{hao@jax.org}; Karl W Broman, \email{kbroman@jhsph.edu} }
 
-\seealso{ \code{\link[qtl]{plot.pxg.Rd}}, \code{\link[qtl]{find.marker}} }
+\seealso{ \code{\link[qtl]{plot.pxg}}, \code{\link[qtl]{find.marker}},
+  \code{\link[qtl]{effectscan}}} 
 
 \keyword{hplot}

@@ -2,8 +2,8 @@
 #
 # plot.R
 #
-# copyright (c) 2000-2002, Karl W Broman, Johns Hopkins University
-# last modified July, 2002
+# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -323,7 +323,7 @@ function(x,auto.layout=TRUE,...)
 ######################################################################
 
 plot.geno <-
-function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
+function(x, chr, ind, horizontal=FALSE, cutoff=3.5, min.sep=2, cex=1.2, ...)
 {
   cross <- x  
   cross <- subset(cross,chr=chr)
@@ -375,31 +375,31 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
     tind <- rep(1:n.ind,length(map));tind[is.na(data)] <- NA
     ind <- tind; ind[!is.na(data) & data!=1] <- NA
     x <- rep(map,rep(n.ind,length(map)))
-    points(x,ind,pch=16,col=color[1])
-    points(x,ind,pch=1)
+    points(x,ind,pch=16,col=color[1],cex=cex)
+    points(x,ind,pch=1,cex=cex)
 
     # AB genotypes
     ind <- tind; ind[!is.na(data) & data!=2] <- NA
     if(type=="f2") {
-      points(x,ind,pch=16,col=color[2])
-      points(x,ind,pch=1)
+      points(x,ind,pch=16,col=color[2],cex=cex)
+      points(x,ind,pch=1,cex=cex)
     }
-    else points(x,ind,pch=16,col=color[3]) 
+    else points(x,ind,pch=16,col=color[3],cex=cex) 
 
     if(type=="f2") {
       # BB genotypes
       ind <- tind; ind[!is.na(data) & data!=3] <- NA
-      points(x,ind,pch=16,col=color[3])
+      points(x,ind,pch=16,col=color[3],cex=cex)
 
       # not BB (D in mapmaker/qtl) genotypes
       ind <- tind; ind[!is.na(data) & data!=4] <- NA
-      points(x,ind,pch=16,col=color[4])
-      points(x,ind,pch=1)
+      points(x,ind,pch=16,col=color[4],cex=cex)
+      points(x,ind,pch=1,cex=cex)
 
       # not AA (C in mapmaker/qtl) genotypes
       ind <- tind; ind[!is.na(data) & data!=5] <- NA
-      points(x,ind,pch=16,col=color[5])
-      points(x,ind,pch=1)
+      points(x,ind,pch=16,col=color[5],cex=cex)
+      points(x,ind,pch=1,cex=cex)
     }
 
     # plot map
@@ -409,45 +409,45 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
 
     if(any(errors)) {
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
-      points(x,ind,pch=0,col=color[6],cex=1.5)
+      points(x,ind,pch=0,col=color[6],cex=cex+0.3)
     }
 
   }
   else {
     plot(0,0,type="n",ylab="Position (cM)",xlab="Individual",
          main=paste("Chromosome",names(cross$geno)[1]),
-         xlim=c(0.5,n.ind+0.5),ylim=c(0,max(map)))
+         xlim=c(0.5,n.ind+0.5),ylim=c(max(map),0))
     segments(1:n.ind,0,1:n.ind,max(map))
     
     # AA genotypes
     tind <- rep(1:n.ind,length(map));tind[is.na(data)] <- NA
     ind <- tind; ind[!is.na(data) & data!=1] <- NA
     y <- rep(map,rep(n.ind,length(map)))
-    points(ind,y,pch=16,col="white")
-    points(ind,y,pch=1)
+    points(ind,y,pch=16,col="white",cex=cex)
+    points(ind,y,pch=1,cex=cex)
 
     # AB genotypes
     ind <- tind; ind[!is.na(data) & data!=2] <- NA
     if(type=="f2") {
-      points(ind,y,pch=16,col=color[2])
-      points(ind,y,pch=1)
+      points(ind,y,pch=16,col=color[2],cex=cex)
+      points(ind,y,pch=1,cex=cex)
     }
-    else points(ind,y,pch=16,col=color[3])
+    else points(ind,y,pch=16,col=color[3],cex=cex)
 
     if(type=="f2") {
       # BB genotypes
       ind <- tind; ind[!is.na(data) & data!=3] <- NA
-      points(ind,y,pch=16,col=color[3])
+      points(ind,y,pch=16,col=color[3],cex=cex)
 
       # not BB genotypes
       ind <- tind; ind[!is.na(data) & data!=4] <- NA
-      points(ind,y,pch=16,col=color[4])
-      points(ind,y,pch=1)
+      points(ind,y,pch=16,col=color[4],cex=cex)
+      points(ind,y,pch=1,cex=cex)
 
       # not AA genotypes
       ind <- tind; ind[!is.na(data) & data!=5] <- NA
-      points(ind,y,pch=16,col=color[5])
-      points(ind,y,pch=1)
+      points(ind,y,pch=16,col=color[5],cex=cex)
+      points(ind,y,pch=1,cex=cex)
     }
 
     # plot map
@@ -457,7 +457,7 @@ function(x, chr, ind, horizontal=FALSE, cutoff=2, min.sep=1,...)
 
     if(any(errors)) {
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
-      points(ind,y,pch=0,col=color[6],cex=1.5)
+      points(ind,y,pch=0,col=color[6],cex=cex+0.3)
     }
   }
   invisible()
@@ -575,7 +575,10 @@ function(x, marker, pheno.col=1, jitter=1, infer=TRUE, ...)
   # find chromosome containing the marker
   o <- sapply(cross$geno,function(a,b)
               !is.na(match(b,colnames(a$data))),marker)
-  if(!any(o)) stop(paste("Marker",marker,"not found"))
+  if(!any(o)) {
+    err <- paste("Marker",marker,"not found")
+    stop(err)
+  }
 
   chr <- names(cross$geno)[o]
   cross <- subset(cross, chr)

@@ -12,8 +12,8 @@
 \usage{
 scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-        addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
-        upper=FALSE, ties.random=FALSE,
+        addcovar=NULL, intcovar=NULL, weights=NULL,
+        x.treatment=c("simple","full"), upper=FALSE, ties.random=FALSE,
         start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
 }
 \arguments{
@@ -34,6 +34,9 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{addcovar}{Additive covariates; allowed only for the normal model.}
  \item{intcovar}{Interactive covariates (interact with QTL genotype);
    allowed only for the normal model.}
+ \item{weights}{Optional weights of individuals.  Should be either NULL
+   or a vector of length n.ind containing positive weights.  Used only
+   in the case \code{model="normal"}}
  \item{x.treatment}{How to treat the X-chromosome.  Simple: hemizygous
    males are equivalent to homozygous females.  Full: hemizygous males
    are treated differently from homozygous females.  Note that columns

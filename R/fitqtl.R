@@ -2,10 +2,10 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# Last modified June, 2002
-# first written April, 2002
+# last modified Jun, 2003
+# first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -29,10 +29,13 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
 {
   # some input checking stuff in here
   if( !sum(class(qtl) == "qtl") )
-    stop("The first input variable must be  an object of class qtl")
-  
+    stop("The second input variable must be an object of class qtl.")
+
   method <- match.arg(method)
 
+  if(method=="imp" && is.na(match("geno", names(qtl))))
+    stop("Imputed genotypes missing from the qtl object; run sim.geno()\n\tbefore creating this object.")
+  
   # check the input phenotypes and covarariates; drop individuals
   # with missing values.
   keep.ind <- !is.na(pheno)
@@ -164,7 +167,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   output$result.full <- result.full
 
   # drop one at a time?
-  if(dropone) {
+  if(dropone & p$n.qtl > 1) { 
     # user wants to do drop one term at a time and output anova table
 
     # get the terms etc. for input formula
@@ -176,9 +179,9 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     # ANOVA table will have five columns, e.g., df,Type III SS,
     # LOD, %var, Pvalue for each dropping term
     # Full model result will not be in this table
-    result <- matrix(0, length(f.order), 6)
-    colnames(result) <- c("df", "Type III SS", "LOD", "%var", "Pvalue(Chi2)",
-                          "Pvalue(F)")
+    result <- matrix(0, length(f.order), 7)
+    colnames(result) <- c("df", "Type III SS", "LOD", "%var", "F value",
+                          "Pvalue(Chi2)", "Pvalue(F)")
     rownames(result) <- rep("",length(f.order))
 
     # record the result for full model
@@ -190,7 +193,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       
     drop.term.name <- NULL
     for( i in (1:length(f.order)) ) {
-      # loop thru all terms in formula, from the highest orderp
+      # loop thru all terms in formula, from the highest order
       # the label of the term to be droped
       label.term.drop <- f.label[i]
       
@@ -229,11 +232,14 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
                           
       # find the indices of the term(s) to be dropped
       # All terms contain label.term.drop will be dropped
-      tmp.str <- strsplit(label.term.drop,":")[[1]]
-      idx.term.drop <- 1:length(f.order)
-      for(j in 1:length(tmp.str)) 
-        idx.term.drop <- intersect(idx.term.drop,
-                                   grep(tmp.str[j], f.label, ignore.case=TRUE))
+      idx.term.drop <- NULL
+      tmp.str.drop <- tolower(strsplit(label.term.drop,":")[[1]])
+      for(j in 1:length(f.label)) {
+        tmp.str.label <- tolower(strsplit(f.label[j], ":")[[1]])
+        if(all(tmp.str.drop %in% tmp.str.label))
+          idx.term.drop <- c(idx.term.drop, j)
+      }
+                                  
       # the indices of term(s) to be kept
       idx.term.kept <- setdiff(1:length(f.order), idx.term.drop)
       
@@ -292,15 +298,17 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       result[i,4] <- result.full[1,5] - 100*(1 - exp(-2*z$lod*log(10)/n.ind))
       # Type III SS for this term - computed from %var
       result[i,2] <- result.full[3,2] * result[i,4] / 100
-      # P value (chi2)
-      result[i,5] <- 1 - pchisq(2*log(10)*result[i,3], result[i,1])
-      # P value (F)
+      # F value
       df0 <- length(pheno) - z$df - 1; df1 <- result.full[2,1];
       Rss0 <- result.full[2,2] + result[i,2];
       Rss1 <- result.full[2,2]
       Fstat <- ((Rss0-Rss1)/(df0-df1)) / (Rss1/df1)
-      result[i,6] <- 1 - pf(Fstat, df0-df1, df1)
-
+      result[i,5] <- Fstat
+      # P value (chi2)
+      result[i,6] <- 1 - pchisq(2*log(10)*result[i,3], result[i,1])
+      # P value (F)
+      result[i,7] <- 1 - pf(Fstat, df0-df1, df1)
+      # assign row name
       rownames(result)[i] <- drop.term.name[i]
     } # finish dropping terms loop
 
@@ -366,8 +374,10 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
       idx.qtl <- c(idx.qtl, idx.tmp)
     else if(label.term[i] %in% covar.dimname) # it's a covarariate
       idx.covar <- c(idx.covar, which(label.term[i]==covar.dimname))
-    else
-      stop(paste("Unrecognized term", label.term[i], "in formula"))
+    else {
+      err <- paste("Unrecognized term", label.term[i], "in formula")
+      stop(err)
+    }
   }
   n.qtl <- length(idx.qtl) # number of QTLs in formula
   n.covar <- length(idx.covar) # number of covarariates in formula

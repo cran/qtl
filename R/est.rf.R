@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -40,8 +40,11 @@ function(cross, maxit=4000, tol=1e-4)
     cfunc <- "est_rf_bc"
   else if(type == "4way") 
     cfunc <- "est_rf_4way"
-  else stop(paste("est.rf not available for cross type",
-                  type, "."))
+  else {
+    err <- paste("est.rf not available for cross type",
+                 type, ".")
+    stop(err)
+  }
 
   Geno[is.na(Geno)] <- 0
   

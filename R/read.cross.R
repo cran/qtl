@@ -2,8 +2,8 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-2002, Karl W Broman, Johns Hopkins University
-# last modified August, 2002
+# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -69,7 +69,7 @@ function(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
     if(missing(mapfile)) mapfile <- "markerpos.txt"
 
     cross <- read.cross.gary(dir,genfile,mnamesfile,chridfile,
-                             phefile,pnamesfile,mapfile)
+                             phefile,pnamesfile,mapfile,estimate.map)
   }
 
   estimate.map <- cross[[2]]
@@ -253,9 +253,11 @@ function(dir,genfile,mapfile,phefile)
   else max.gen <- 10
 
   u <- unique(geno)
-  if(any(!is.na(u) & (u > max.gen | u < 1)))
-    stop(paste("There are stange values in the genotype data :",
-               paste(u,collapse=":"), "."))
+  if(any(!is.na(u) & (u > max.gen | u < 1))) {
+    err <- paste("There are stange values in the genotype data :",
+                 paste(u,collapse=":"), ".")
+    stop(err)
+  }
 
   cross$pheno <- as.data.frame(cross$pheno)
 
@@ -335,9 +337,11 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
       type <- a[length(a)]
       if(type == "intercross") type <- "f2"
       else if(type == "backcross") type <- "bc"
-      else
-        stop(paste("File indicates invalid cross type: ", type,
-                   ".", sep=""))
+      else {
+        err <- paste("File indicates invalid cross type: ", type,
+                     ".", sep="")
+        stop(err)
+      }
     }
     else if(flag == 1) {
       flag <- 2
@@ -486,8 +490,9 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
     # pull out genotype data
     o <- match(mar,marnames)
     if(any(is.na(o))) {
-      stop(paste("Cannot find markers in genotype data: ",
-                 paste(mar[is.na(o)],collapse=" "), ".",sep=""))
+      err <- paste("Cannot find markers in genotype data: ",
+                   paste(mar[is.na(o)],collapse=" "), ".",sep="")
+      stop(err)
     }
 
     if(length(o)==1) data <- matrix(geno[,o],ncol=1)
@@ -567,7 +572,8 @@ function( mapsfile )
 ######################################################################
 
 read.cross.gary <-
-function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
+function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile,
+         estimate.map)
 {
   # create file names
   if(missing(genfile)) genfile <- "geno.dat"
@@ -582,8 +588,8 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
     mnamesfile <- file.path(dir, mnamesfile)
     chridfile <- file.path(dir, chridfile)
     phefile <- file.path(dir, phefile)
-    pnamesfile <- file.path(dir, pnamesfile)
-    mapfile <- file.path(dir, mapfile)
+    if(!is.null(pnamesfile)) pnamesfile <- file.path(dir, pnamesfile)
+    if(!is.null(mapfile)) mapfile <- file.path(dir, mapfile)
   }
 
   # read data
@@ -591,10 +597,20 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
   pheno <- as.matrix(read.table(phefile,na.strings="-",header=FALSE))
   chr <- scan(chridfile,what=character(),quiet=TRUE)
   mnames <- scan(mnamesfile,what=character(),quiet=TRUE)
-  map <- read.table(mapfile,row.names=1)
-  pnames <- scan(pnamesfile,what=character(),quiet=TRUE)
 
-  map <- map[mnames,1]
+  if(!is.null(mapfile)) {
+    map <- read.table(mapfile,row.names=1)
+    map <- map[mnames,1]
+    map.included <- TRUE
+  }
+  else {
+    map <- seq(0,by=5,len=length(mnames))
+    map.included <- FALSE
+  }
+
+  if(!is.null(pnamesfile)) pnames <- scan(pnamesfile,what=character(),quiet=TRUE)
+  else pnames <- paste("pheno",1:ncol(pheno),sep="")
+
 
   # fix up map information
   # number of chromosomes
@@ -673,14 +689,24 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
   else max.gen <- 2
 
   u <- unique(allgeno)
-  if(any(!is.na(u) & (u > max.gen | u < 1)))
-    stop(paste("There are stange values in the genotype data :",
-               paste(sort(u),collapse=":"), "."))
+  if(any(!is.na(u) & (u > max.gen | u < 1))) {
+    err <- paste("There are stange values in the genotype data :",
+                 paste(sort(u),collapse=":"), ".")
+    stop(err)
+  }
 
   cross$pheno <- as.data.frame(cross$pheno)
 
+  # if map wasn't included, go through each chromosome and
+  # make first marker at 0 cM.
+  if(!map.included) {
+    for(i in 1:nchr(cross))
+      cross$geno[[i]]$map <- cross$geno[[i]]$map - min(cross$geno[[i]]$map)
+  }
+
   # return cross + indicator of whether to run est.map
-  list(cross,FALSE)
+  # [run est.map if map not included and estimate.map == TRUE]
+  list(cross, (!map.included && estimate.map) )
 }
 
 
@@ -754,7 +780,8 @@ function(dir, file, sep=",", na.strings=c("-","NA"),
   # Fix up phenotypes
   sw2numeric <-
     function(x) {
-      pattern <- "^-*[0-9]+\.*[0-9]*$"
+#      pattern <- "^-*[0-9]+\.*[0-9]*$" # replaced by Hao with the following
+      pattern <- "^-*[0-9]*[.]*[0-9]*$"
       n <- sum(!is.na(x))
       if(length(grep(pattern,as.character(x)))>=n)
         return(as.numeric(as.character(x)))
@@ -820,9 +847,11 @@ function(dir, file, sep=",", na.strings=c("-","NA"),
   else max.gen <- 10
 
   u <- unique(allgeno)
-  if(any(!is.na(u) & (u > max.gen | u < 1)))
-    stop(paste("There are stange values in the genotype data :",
-               paste(sort(u),collapse=":"), "."))
+  if(any(!is.na(u) & (u > max.gen | u < 1))) {
+    err <- paste("There are stange values in the genotype data :",
+                 paste(sort(u),collapse=":"), ".")
+    stop(err)
+  }
 
   # check that markers are in proper order
   #     if not, fix up the order

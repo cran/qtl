@@ -2,8 +2,8 @@
 #
 # calc.pairprob.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -47,7 +47,8 @@ function(cross, step=0, off.end=0, error.prob=0,
   n.chr <- nchr(cross)
 
   # which type of cross is this?
-  if(class(cross)[1] == "f2") {
+  type <- class(cross)[1]
+  if(type == "f2") {
     one.map <- TRUE
     if(class(cross$geno[[1]]) == "A") { # autosomal
       cfunc <- "calc_pairprob_f2"
@@ -60,20 +61,29 @@ function(cross, step=0, off.end=0, error.prob=0,
       gen.names <- c("A","H")
     }
   }
-  else if(class(cross)[1] == "bc") {
+  else if(type == "bc") {
     cfunc <- "calc_pairprob_bc"
     n.gen <- 2
     gen.names <- c("A","H")
     one.map <- TRUE
   }
-  else if(class(cross)[1] == "4way") {
+  else if(type == "riself" || type=="risib") {
+    cfunc <- "calc_genoprob_bc"
+    n.gen <- 2
+    gen.names <- c("A","B")
+    one.map <- TRUE
+  }
+  else if(type == "4way") {
     cfunc <- "calc_pairprob_4way"
     n.gen <- 4
     one.map <- FALSE
     gen.names <- c("AC","BC","AD","BD")
   }
-  else stop(paste("calc.pairprob not available for cross type",
-                  class(cross)[1], "."))
+  else {
+    err <- paste("calc.pairprob not available for cross type",
+                  type, ".")
+    stop(err)
+  }
   
   # genotype data
   gen <- cross$geno[[1]]$data
@@ -83,6 +93,8 @@ function(cross, step=0, off.end=0, error.prob=0,
   if(one.map) {
     map <- create.map(cross$geno[[1]]$map,step,off.end)
     rf <- mf(diff(map))
+    if(type=="risib" || type=="riself")
+      rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)))
     rf[rf < 1e-14] <- 1e-14
     
     # new genotype matrix with pseudomarkers filled in

@@ -213,9 +213,11 @@ function(map,model,n.ind,error.prob,missing.prob,
   names(geno) <- names(map)
   n.mar <- sapply(map,length)
   mar.names <- lapply(map,names)
-  chr.type <- sapply(map,function(a)
-                     if(is.null(class(a))) return("A")
-                     else return(class(a)))
+
+#  chr.type <- sapply(map,function(a)
+#                     if(is.null(class(a))) return("A")
+#                     else return(class(a)))
+  chr.type <- sapply(map, function(a) ifelse(class(a)=="X","X","A"))
   
   for(i in 1:n.chr) {
     data <- matrix(nrow=n.ind,ncol=n.mar[i])

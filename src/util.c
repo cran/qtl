@@ -2,13 +2,13 @@
  * 
  * util.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- *                     and Hao Wu, The Jackson Laboratory
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Nov, 2001
+ * last modified Jun, 2003
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -43,7 +43,8 @@
  * Calculate addlog(a,b) = log[exp(a) + exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.
+ * in R's math library.  I'm having trouble getting access to this
+ * function in Windows, so for now I just use log(1+x) there.
  *
  **********************************************************************/
 
@@ -51,7 +52,11 @@ double addlog(double a, double b)
 {
   if(b > a + THRESH) return(b);
   else if(a > b + THRESH) return(a);
+#ifdef WIN32
+  else return(a + log(1.0 + exp(b-a)));
+#else 
   else return(a + log1p(exp(b-a)));
+#endif
 }
 		       
 /**********************************************************************
@@ -61,14 +66,19 @@ double addlog(double a, double b)
  * Calculate subtrlog(a,b) = log[exp(a) - exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.
+ * in R's math library.  I'm having trouble getting access to this
+ * function in Windows, so for now I just use log(1+x) there.
  *
  **********************************************************************/
 
 double subtrlog(double a, double b)
 {
   if(a > b + THRESH) return(a);
+#ifdef WIN32
+  else return(a + log(1.0 - exp(b-a)));
+#else 
   else return(a + log1p(-exp(b-a)));
+#endif
 }
 
 /**********************************************************************

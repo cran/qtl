@@ -10,43 +10,50 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
-o Add an example regarding the X chromosome to the help files for
-  fake.f2 and scanone.
+o effectscan: if one chromosome, plot map positions on the x-axis 
+  rather than the chromosome ID
 
-o Update the tutorial, especially regarding the revisions of the
-  ripple function and the X chromosome. (Also, the new stuff Hao
-  added.) 
+o Modify a.starting.point and the tutorial to discuss the new version
+  of plot.scantwo.
 
-o Deal with the X chromosome appropriately in fitqtl, makeqtl and
-  scanqtl. 
+o Update the tutorial, especially regarding the X chromosome and the
+  makeqtl/fitqtl/scanqtl.
 
-o est.map(trace=TRUE) giving weird values on Mac?
+o read.cross tests within package
+
+o Map positions in QTX format data for the function read.cross.
 
 o Need to modify the map expansion for RI lines for the X chromosome.
 
+o Add appropriate functions to analyze advanced intercrosses (AILs). 
+
+o Documentation on RI lines.
+
+o Deal with the X chromosome appropriately in scanone, scantwo,
+  fitqtl, makeqtl and scanqtl.
+
+o Add an example regarding the X chromosome to the help files for
+  fake.f2 and scanone.
+
 o Rescale LOD score for X chromosome in scanone/two? 
+
+
+MEDIUM TERM:
 
 o Coefficient estimates by imputation in fitqtl.
 
 o MIM for a set of QTLs at specified locations with specified
   interactions (as a new method in fitqtl and scanqtl).
 
-
-MEDIUM TERM:
+o refineqtl -- like fitqtl, but refines the locations of the QTLs as
+  in Zhao-Bang's MIM
 
 o Deal with the X chromosome appropriately in scantwo with method="em"
 
-o Include P-values for hypothesis tests in results in geno.table
-
 o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
-
-o Panels of effect plots along a chromosome.
 
 o Modify plot.rf and plot.errorlod to allow plot of a color scale, as
   in plot.scantwo.  
-
-o Allow for the possibility of weights of individuals in scanone and
-  scantwo. 
 
 o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
   and dev.mim to pull out the est'd coefficients, the residuals, and
@@ -60,11 +67,17 @@ o calc.genoprob and sim.geno for "f2ss" (intercross with sex-specific
 
 LONG TERM:
 
+o Composite interval mapping, in an automated way.
+
+o Imprinting/parent-of-origin effects.
+
+o Treating a covariate as a random effect.
+
+o Multiple phenotypes (esp. regarding pleiotropy).
+
 o Data conversion functions to/from Chuck Berry's bqtl package
 
 o subset.scanone, subset.scantwo
-
-o Add appropriate functions to analyze advanced intercrosses. 
 
 o Model search for MIM etc.
 

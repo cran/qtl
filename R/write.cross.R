@@ -2,13 +2,14 @@
 #
 # write.cross.R
 #
-# copyright (c) 2001-2002, Karl W Broman, Johns Hopkins University
-# last modified August, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+#                       and Hao Wu, The Jackson Laboratory
+# last modified Feb, 2003
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
-# Contains: write.cross, write.cross.mm, write.cross.csv
+# Contains: write.cross, write.cross.mm, write.cross.csv, write.cross.gary
 #           [See qtlcart_io.R for write.cross.qtlcart]
 #
 ######################################################################
@@ -21,14 +22,15 @@
 ######################################################################
 
 write.cross <-
-function(cross, format=c("csv","mm","qtlcart"), filestem="data", chr, digits=5)
+function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, digits=5)
 {
   match.arg <- match.arg(format)
   if(missing(chr)) chr <- 1:nchr(cross)
 
   if(format=="csv") write.cross.csv(cross,filestem,chr,digits)
   else if(format=="mm") write.cross.mm(cross,filestem,chr,digits)
-  else write.cross.qtlcart(cross, filestem, chr)
+  else if(format=="qtlcart") write.cross.qtlcart(cross, filestem, chr)
+  else write.cross.gary(cross, chr, digits)
 }
 
 
@@ -215,5 +217,78 @@ function(cross, filestem="data", chr, digits=5)
               col.names=FALSE)
 
 }
+
+
+######################################################################
+#
+# write.cross.gary: Write data for an experimental cross in
+# Gary's format. There will be 6 output files, they are:
+#    chrid.dat - chromosome ids
+#    markerpos.txt - marker position
+#    mnames.txt - marker names
+#    geno.data - genotypes
+#    pheno.data - phenotypes
+#    pnames.txt - phenotype names
+#
+######################################################################
+
+write.cross.gary <-
+function(cross, chr, digits)
+{
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
+  
+  # local variables
+  n.ind <- nind(cross)
+  tot.mar <- totmar(cross)
+  n.phe <- nphe(cross)
+  n.chr <- nchr(cross)
+  n.mar <- nmar(cross)
+
+  # chromosome ids
+  chrid <- NULL
+  for(i in 1:n.chr) {
+    # the name for this chromosome
+    chrname <- names(cross$geno[i])
+    # convert to number
+    if(chrname=="X") chrname <- 20
+    else chrname <- as.numeric(chrname)
+    chrid <- c(chrid, rep(chrname, n.mar[i]))
+  }
+  write.table(chrid, file="chrid.dat", quote=F, row.names=F,
+              col.names=F)
+
+  # marker position file
+  markpos <- NULL
+  for(i in 1:n.chr)
+    markpos <- c(markpos, cross$geno[[i]]$map)
+  write.table(markpos, file="markerpos.txt", quote=F, sep="\t",
+              row.names=T, col.names=F)
+
+  # marker names
+  mnames <- names(markpos)
+  write.table(mnames, file="mnames.txt", quote=F, row.name=F, col.names=F)
+
+  # genotype
+  geno <- NULL
+  for(i in 1:n.chr)
+    geno <- cbind(geno, cross$geno[[i]]$data)
+  # note that gary's format codes genotype from 0
+  # and 9 is for NA
+  geno <- geno - 1 # note NA will still be NA
+  write.table(geno, file="geno.dat", quote=F, row.name=F, col.name=F,
+              sep="\t", na="9")
+
+  # phenotype
+  pheno <- matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind)
+  write.table(pheno, file="pheno.dat", quote=F, row.names=F,
+              col.names=F, sep="\t", na="-999")
+  # phenotype names
+  write.table(names(cross$pheno), file="pnames.txt", quote=F, row.names=F,
+              col.names=F, sep="\t", na="-999")
+
+}
+                          
+
+  
 
 # end of write.cross.R 

@@ -90,7 +90,7 @@ void fitqtl_imp(int n_ind, int n_qtl, int *n_gen, int n_draws,
 
   /* create local variables */
   int i, j, n_qc, itmp; /* loop variants and temp variables */
-  double tol, lrss, lrss0, *LOD_array, dtmp;
+  double tol, lrss, lrss0, *LOD_array;
   double *dwork;
   int *iwork, sizefull;
 

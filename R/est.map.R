@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2003
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -81,8 +81,11 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
       one.map <- FALSE
       cfunc <- "est_map_f2ss"
     }
-    else stop(paste("est.map not available for cross type",
-                    type, "."))
+    else {
+      err <- paste("est.map not available for cross type",
+                   type, ".")
+      stop(err)
+    }
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -97,6 +100,10 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
       rf[rf < 1e-14] <- 1e-14
     }
     else {
+      # randomize the maps a bit
+      cross$geno[[i]]$map <- cross$geno[[i]]$map +
+        runif(length(cross$geno[[i]]$map), -0.2, 0.2)
+
       rf <- mf(diff(cross$geno[[i]]$map[1,]))
       rf[rf < 1e-14] <- 1e-14
       rf2 <- mf(diff(cross$geno[[i]]$map[2,]))

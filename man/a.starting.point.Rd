@@ -253,7 +253,16 @@ two-dimensional genome scan, for each simulation replicate.
 \code{hist(operm.hk,breaks=20)}
 }
 
+\section{Citing R/qtl}{
+  To cite R/qtl in publications, use the Broman et al. (2003) reference
+  listed below.
+}
+
 \references{
+  Broman, K. W., Wu, H., Sen, S. and Churchill, G. A. (2003) R/qtl: QTL
+  mapping in experimental crosses.  \emph{Bioinformatics} \bold{19},
+  889--890. 
+
   Haley, C. S. and Knott, S. A. (1992) A simple regression method for mapping
   quantitative trait loci in line crosses using flanking markers.
   \emph{Heredity} \bold{69}, 315--324.

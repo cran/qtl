@@ -2,9 +2,9 @@
  * 
  * scanone_em.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -30,6 +30,7 @@
 void R_scanone_em(int *n_ind, int *n_pos, int *n_gen, 
 		  double *genoprob, double *addcov, int *n_addcov,
 		  double *intcov, int *n_intcov, double *pheno,
+		  double *weights,
 		  double *result, int *std_start, double *start,
 		  int *maxit, double *tol, int *trace);
 
@@ -50,6 +51,8 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
  * Genoprob     Array of conditional genotype probabilities
  *
  * pheno        Phenotype data, as a vector
+ *
+ * weights      Vector of positive weights, of length n_ind
  *
  * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
  *              the first column contains the log10 likelihood, the 
@@ -74,7 +77,7 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
  **********************************************************************/
 
 void scanone_em(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-		double *pheno, double **Result, 
+		double *pheno, double *weights, double **Result, 
 		int std_start, double *start,
 		int maxit, double tol, double **work);
 

@@ -2,14 +2,13 @@
  * 
  * scanone_imp.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
- *
  *
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -32,9 +31,10 @@
  * 
  **********************************************************************/
 
-void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
+void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws, 
 		   int *draws, double *addcov, int *n_addcov, 
-		   double *intcov, int *n_intcov, double *pheno,
+		   double *intcov, int *n_intcov, double *pheno, 
+		   double *weights,
 		   double *result, int *trim, int *direct);
 
 /**********************************************************************
@@ -55,15 +55,17 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  * Draws        Array of genotype imputations, indexed as 
  *              Draws[repl][mar][ind]
  *
- * addcov       Additive covariates matrix, addcov[mar][ind]
- *  
+ * Addcov	Additive covariates matrix, Addcov[mar][ind]
+ *
  * n_addcov     Number of additive covariates
  *
- * intcov       Interacting covariates matrix, intcov[mar][ind]
+ * Intcov	Interacting covariates matrix, Intcov[mar][ind]
  *
  * n_intcov     Number of interacting covariates
  *
  * pheno        Phenotype data, as a vector
+ *
+ * weights      Vector of positive weights, of length n_ind
  *
  * result       Result vector of length [n_pos]; upon return, contains
  *              the "LPD" (log posterior distribution of QTL location).
@@ -76,15 +78,20 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  **********************************************************************/
 
 void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws, 
-		 int ***Draws, double **addcov, int n_addcov, 
-		 double **intcov, int n_intcov, double *pheno, 
+		 int ***Draws, double **Addcov, int n_addcov, 
+		 double **Intcov, int n_intcov, double *pheno, 
+		 double *weights,
 		 double *result, int trim, int direct);
 
-double nullRss(double *pheno, int n_ind, double **addcov, int n_addcov,
+/* function to calculate the null model RSS for scanone_imp */
+double nullRss(double *pheno, double *weights, int n_ind, 
+	       double **Addcov, int n_addcov, 
 	       double *dwork, int *iwork);
 
-double altRss(double *pheno, int n_ind, int n_gen, int *Draws,
-	      double **addcov, int n_addcov, double **intcov, int n_intcov,
-	      double *dwork, int *iwork);
+/* function to calculate the alternative model RSS. 
+   This function is called by scanone_imp */
+double altRss(double *pheno, double *weights, int n_ind, int n_gen, 
+	      int *Draws, double **Addcov, int n_addcov, double **Intcov, 
+	      int n_intcov, double *dwork, int *iwork);
 
 /* end of scanone_imp.h */

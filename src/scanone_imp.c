@@ -2,13 +2,13 @@
  * 
  * scanone_imp.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
  *
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Nov, 2001
+ * last modified Jun, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -45,6 +45,7 @@
 void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws, 
 		   int *draws, double *addcov, int *n_addcov, 
 		   double *intcov, int *n_intcov, double *pheno, 
+		   double *weights,
 		   double *result, int *trim, int *direct)
 {
   /* reorganize draws */
@@ -59,8 +60,8 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
   if(*n_intcov != 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
       
   scanone_imp(*n_ind, *n_pos, *n_gen, *n_draws, Draws, 
-	      Addcov, *n_addcov, Intcov, *n_intcov, pheno, result,
-	      *trim, *direct);
+	      Addcov, *n_addcov, Intcov, *n_intcov, pheno, weights,
+	      result, *trim, *direct);
 }
 
 
@@ -82,15 +83,17 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  * Draws        Array of genotype imputations, indexed as 
  *              Draws[repl][mar][ind]
  *
- * addcov	Additive covariates matrix, addcov[mar][ind]
+ * Addcov	Additive covariates matrix, Addcov[mar][ind]
  *
  * n_addcov     Number of additive covariates
  *
- * intcov	Interacting covariates matrix, intcov[mar][ind]
+ * Intcov	Interacting covariates matrix, Intcov[mar][ind]
  *
  * n_intcov     Number of interacting covariates
  *
  * pheno        Phenotype data, as a vector
+ *
+ * weights      Vector of positive weights, of length n_ind
  *
  * result       Result vector of length [n_pos]; upon return, contains
  *              the "LPD" (log posterior distribution of QTL location).
@@ -103,8 +106,9 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  **********************************************************************/
 
 void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws, 
-		 int ***Draws, double **addcov, int n_addcov, 
-		 double **intcov, int n_intcov, double *pheno, 
+		 int ***Draws, double **Addcov, int n_addcov, 
+		 double **Intcov, int n_intcov, double *pheno, 
+		 double *weights,
 		 double *result, int trim, int direct)
 {
 
@@ -124,12 +128,22 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
   /* tolerance for linear regression */
   tol = TOL;
 
+  /* adjust phenotypes and covariates using weights */
+  /* Note: these are actually square-root of weights */
+  for(i=0; i<n_ind; i++) {
+    pheno[i] *= weights[i];
+    for(j=0; j<n_addcov; j++) 
+      Addcov[j][i] *= weights[i];
+    for(j=0; j<n_intcov; j++)
+      Intcov[j][i] *= weights[i];
+  }
+
   /* calculate the number of LOD needs to be thrown */
   if(trim) idx = (int) floor( 0.5*log(n_draws)/log(2) );
   else idx=0;
 
   /* Call nullRss to calculate the RSS for the null model */
-  lrss0 = log10(nullRss(pheno, n_ind, addcov, n_addcov, dwork, iwork));
+  lrss0 = log10(nullRss(pheno, weights, n_ind, Addcov, n_addcov, dwork, iwork));
 
   /* calculate the LOD score for each marker */
   for(i=0; i<n_pos; i++) { /* loop over positions */
@@ -138,8 +152,8 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
 
       /* call altRss to calcualte the RSS for alternative model,
 	 given marker and imputatin number */
-      rss = altRss(pheno, n_ind, n_gen, Draws[j][i], addcov, n_addcov,
-		   intcov, n_intcov, dwork, iwork);
+      rss = altRss(pheno, weights, n_ind, n_gen, Draws[j][i], Addcov, 
+		   n_addcov, Intcov, n_intcov, dwork, iwork);
 
       /* calculate the LOD score for this marker in this imputation */
       LOD[j] = (double)n_ind/2.0*(lrss0-log10(rss));
@@ -179,64 +193,50 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
 
 /* function to calculate the null model RSS for scanone_imp */
 
-double nullRss(double *pheno, int n_ind, double **addcov, int n_addcov, 
+double nullRss(double *pheno, double *weights, int n_ind, 
+	       double **Addcov, int n_addcov, 
 	       double *dwork, int *iwork)
 {
   /* create local variables */
   int i, j, ny, k, *jpvt0, ncolx0;
-  double tol, rss0=0.0, s=0.0, m; 
+  double tol, rss0=0.0; 
   double *work0, *x0, *qraux0, *coef0, *qty0, *resid0;
 
   tol = TOL;
   ny = 1; /* number of phenotypes */
 
-  /*if there's no additive covariates, use two-pass 
-    algorithm to calculate null RSS */
-  if ( n_addcov == 0 ) {
-    for(i=0; i<n_ind; i++) 
-      s += pheno[i];
-    m = s / (double)n_ind;
+  ncolx0 = 1 + n_addcov; /* number of columns in x0 matrix */
+
+  /* point to areas of workspaces */
+  /* dwork length n_ind*ncolx0 + 4*ncolx0 + 2*n_ind */
+  x0 = dwork; /* length n_ind*ncolx0 */
+  coef0 = x0 + n_ind*ncolx0; /* length ncolx0 */
+  work0 = coef0 + ncolx0;  /* length 2*ncolx0 */
+  qraux0 = work0 + 2*ncolx0; /* length ncolx0 */
+  resid0 = qraux0 + ncolx0; /* length n_ind */
+  qty0 = resid0 + n_ind; /* length n_ind */
     
-    for(i=0.0; i<n_ind; i++) 
-      rss0 += (pheno[i]-m)*(pheno[i]-m);
+  jpvt0 = iwork; /* length ncolx0 */
+    
+  /* redidual and qty vector will use the same pointers 
+     as in the alternative model*/
+    
+  /* fill up x0 matrix */
+  for (i=0; i<n_ind; i++) {
+    x0[i] = weights[i]; /* the first row (column in Fortran) are all 1s */
+    for(j=0; j<n_addcov; j++) 
+      x0[(j+1)*n_ind+i] = Addcov[j][i]; 
   }
-  else {
-    /* if there are additive covariates, fit linear regression model */
-    
-    ncolx0 = 1 + n_addcov; /* number of columns in x0 matrix */
 
-    /* point to areas of workspaces */
-    /* dwork length n_ind*ncolx0 + 4*ncolx0 + 2*n_ind */
-    x0 = dwork; /* length n_ind*ncolx0 */
-    coef0 = x0 + n_ind*ncolx0; /* length ncolx0 */
-    work0 = coef0 + ncolx0;  /* length 2*ncolx0 */
-    qraux0 = work0 + 2*ncolx0; /* length ncolx0 */
-    resid0 = qraux0 + ncolx0; /* length n_ind */
-    qty0 = resid0 + n_ind; /* length n_ind */
-    
-    jpvt0 = iwork; /* length ncolx0 */
-    
-    /* redidual and qty vector will use the same pointers 
-       as in the alternative model*/
-    
-    /* fill up x0 matrix */
-    for (i=0; i<n_ind; i++) {
-      x0[i] = 1.0; /* the first row (column in Fortran) are all 1s */
-      for(j=0; j<n_addcov; j++) 
-	/* note that addcov[mar][ind] */
-    	x0[(j+1)*n_ind+i] = addcov[j][i]; 
-    }
+  k = 0;
 
-    k = 0;
-
-    /* fit linear regression model */
-    dqrls_(x0, &n_ind, &ncolx0, pheno, &ny, &tol, coef0, resid0,
-	   qty0, &k, jpvt0, qraux0, work0);
-
-    /* calculate the null RSS */
-    for (i=0,rss0=0.0; i<n_ind; i++) 
-      rss0 += resid0[i]*resid0[i];
-  }
+  /* fit linear regression model */
+  dqrls_(x0, &n_ind, &ncolx0, pheno, &ny, &tol, coef0, resid0,
+	 qty0, &k, jpvt0, qraux0, work0);
+  
+  /* calculate the null RSS */
+  for (i=0,rss0=0.0; i<n_ind; i++) 
+    rss0 += resid0[i]*resid0[i];
 
   /* return rss0 */
   return(rss0);
@@ -247,9 +247,9 @@ double nullRss(double *pheno, int n_ind, double **addcov, int n_addcov,
 /* function to calculate the alternative model RSS. 
    This function is called by scanone_imp */
 
-double altRss(double *pheno, int n_ind, int n_gen, int *Draws,
-	      double **addcov, int n_addcov, double **intcov, int n_intcov,
-	      double *dwork, int *iwork)
+double altRss(double *pheno, double *weights, int n_ind, int n_gen, 
+	      int *Draws, double **Addcov, int n_addcov, double **Intcov, 
+	      int n_intcov, double *dwork, int *iwork)
 {
   /* create local variables */
 
@@ -271,18 +271,18 @@ double altRss(double *pheno, int n_ind, int n_gen, int *Draws,
   for(i=0; i<n_ind; i++) {
     /* QTL genotypes */
     for(s=0; s<n_gen; s++) {
-      if(Draws[i] == s+1) x[i+s*n_ind] = 1.0;
+      if(Draws[i] == s+1) x[i+s*n_ind] = weights[i];
       else x[i+s*n_ind] = 0.0;
     }
 
     /* Additive covariates */
     for(s=0, s2=n_gen; s<n_addcov; s++, s2++) 
-      x[i+s2*n_ind] = addcov[s][i];
+      x[i+s2*n_ind] = Addcov[s][i];
       
     /* Interactive covariates */
     for(s=0; s<n_intcov; s++) {
       for(j=0; j<n_gen-1; j++, s2++) {
-	if(Draws[i] == j+1) x[i+n_ind*s2] = intcov[s][i];
+	if(Draws[i] == j+1) x[i+n_ind*s2] = Intcov[s][i];
 	else x[i+n_ind*s2] = 0.0;
       }
     }

@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -48,6 +48,8 @@
  *
  * pheno        Phenotype data, as a vector
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * result       Result vectro of length n_pos; upon return, contains 
  *              the LOD scores.
  *
@@ -62,6 +64,7 @@
 void scanone_em_covar(int n_ind, int n_pos, int n_gen, 
 		      double ***Genoprob, double **Addcov, int n_addcov,
 		      double **Intcov, int n_intcov, double *pheno, 
+		      double *weights,
 		      double *result, int maxit, double tol, int trace);
 
 /**********************************************************************
@@ -82,6 +85,8 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * wts      Pr(QTL gen | phenotype, model, multipoint marker data),
  *          indexed as wts[gen][ind]
  *
@@ -97,6 +102,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 
 void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov, 
 		    double **Intcov, int n_intcov, double *pheno, 
+		    double *weights,
 		    double **wts, double *param, double *work1, 
 		    double *work2, int *error_flag);
 
@@ -122,6 +128,8 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
  *
  * pheno    Phenotypes
  *
+ * weights      Vector of positive weights, of length n_ind
+ *
  * wts      On output, Pr(QTL gen | pheno, model, multipt marker data), 
  *          indexed as wts[gen][ind]
  *
@@ -135,8 +143,8 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
 
 void estep_em_covar(int n_ind, int n_gen, int pos, double ***Genoprob,
 		    double **Addcov, int n_addcov, double **Intcov,
-		    int n_intcov, double *pheno, double **wts,
-		    double *param, int rescale);
+		    int n_intcov, double *pheno, double *weights,
+		    double **wts, double *param, int rescale);
 
 /* end of scanone_em_covar.h */
 
