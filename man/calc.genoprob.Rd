@@ -79,9 +79,11 @@ calc.genoprob(cross, step=0, off.end=0, error.prob=0,
 
 \examples{
 data(fake.f2)
+\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)}
 fake.f2 <- calc.genoprob(fake.f2, step=2, off.end=5)
 
 data(fake.bc)
+\dontshow{fake.bc <- subset(fake.bc,chr=18:19)}
 fake.bc <- calc.genoprob(fake.bc, step=0, off.end=0, err=0.01)
 }
 

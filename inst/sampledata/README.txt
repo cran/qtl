@@ -8,7 +8,7 @@ set included with the R/qtl package.
 
 Note: Replace the "..." in the directory string to the appropriate
 location of the sampledata directory (for example,
-"/usr/local/lib/R/library/qtl" or "c:/R/rw1051/library/qtl").
+"/usr/local/lib/R/library/qtl" or "c:/R/rw1081/library/qtl").
 
 
 1. "csv" format

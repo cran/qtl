@@ -2,9 +2,9 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jun, 2003
+# last modified Jul, 2004
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -90,6 +90,8 @@ makeqtl <-
       # if everything is all right, take the genotype
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
 
+      ### Fix up X chromsome here, and relace stuff below ###
+
       # get the number of genotypes for this marker
       if(type == "f2") {
         if(class(cross$geno[[i.chr]]) == "A") # autosomal
@@ -132,17 +134,15 @@ makeqtl <-
       marker.idx <- locatemarker(cross$geno[[i.chr]]$map, i.pos, i.chr, flag="prob")
       # take genoprob
       prob[,i,] <- cross$geno[[i.chr]]$prob[,marker.idx,]
+
+      ### Fix up X chromsome here ###
     }
     qtl$prob <- prob
   }
 
-  if( sum(c("draws","prob") %in% names(cross$geno[[1]]))==0 ) {
-    # neither draws nor prob is in cross object
-    msg <- "There's no draws or prob fields in input cross object."
-    msg <- paste(msg, "You need run calc.prob or sim.geno first.")
-    stop(msg)
-  }
-      
+  if( sum(c("draws","prob") %in% names(cross$geno[[1]]))==0 ) 
+    stop("You need to run calc.genoprob() or sim.geno() first.")
+
   if(missing(qtl.name))  # no given qtl names
     # make qtl names
     qtl.name <- paste( paste("Chr",chr,sep=""), pos, sep="@")

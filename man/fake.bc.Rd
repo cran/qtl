@@ -33,6 +33,7 @@
 
 \examples{
 data(fake.bc)
+\dontshow{fake.bc <- subset(fake.bc,chr=c(2,5,10))}
 summary(fake.bc)
 plot(fake.bc)
 

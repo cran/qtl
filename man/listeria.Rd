@@ -45,6 +45,7 @@
 
 \examples{
 data(listeria)
+\dontshow{listeria <- subset(listeria,chr=c(1,5,6,13,15))}
 # Summaries
 summary(listeria)
 plot(listeria)

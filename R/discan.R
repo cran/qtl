@@ -2,8 +2,8 @@
 #
 # discan.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Aug, 2004
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,11 +21,9 @@
 
 discan <-
 function(cross, pheno.col=1, method=c("em","mr"),
-         x.treatment=c("simple","full"),
          maxit=4000, tol=1e-4)
 {
   method <- match.arg(method)
-  x.treatment <- match.arg(x.treatment)
 
   # check phenotypes
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
@@ -61,11 +59,11 @@ function(cross, pheno.col=1, method=c("em","mr"),
     else sexpgm <- NULL
 
     # get genotype names
-    gen.names <- getgenonames(type,chrtype,x.treatment,sexpgm)
+    gen.names <- getgenonames(type,chrtype,"full",sexpgm)
     n.gen <- length(gen.names)
 
     # pull out genotype data (mr)
-    # or genotype probabilities (im)
+    # or genotype probabilities (em)
     if(method == "mr") {
       cfunc <- "R_discan_mr"
       newgeno <- cross$geno[[i]]$data
@@ -76,9 +74,9 @@ function(cross, pheno.col=1, method=c("em","mr"),
       if(type=="f2" || type=="f2ss") newgeno[newgeno>3] <- 0
       if(type=="4way") newgeno[newgeno>4] <- 0
 
-      # Fix up X chromosome
+      # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
-         newgeno <- fixXdata(type, x.treatment, sexpgm, geno=newgeno)
+         newgeno <- reviseXdata(type, "full", sexpgm, geno=newgeno)
 
       n.pos <- ncol(newgeno)
       map <- cross$geno[[i]]$map
@@ -93,9 +91,9 @@ function(cross, pheno.col=1, method=c("em","mr"),
       n.pos <- ncol(genoprob)
       genoprob <- genoprob[keep.ind,,]
 
-      # Fix up X chromosome
+      # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
-         genoprob <- fixXdata(type, x.treatment, sexpgm, prob=genoprob)
+         genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
 
       map <- create.map(cross$geno[[i]]$map,
                         attr(cross$geno[[i]]$prob,"step"),
@@ -112,7 +110,7 @@ function(cross, pheno.col=1, method=c("em","mr"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.integer(newgeno),       # genotype data
-              as.double(pheno),          # phenotype data
+              as.integer(pheno),          # phenotype data
               result=as.double(rep(0,n.pos*(n.gen+1))),
               PACKAGE="qtl")
 
@@ -122,7 +120,7 @@ function(cross, pheno.col=1, method=c("em","mr"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.double(genoprob),       # genotype probabilities
-              as.double(pheno),          # phenotype data
+              as.integer(pheno),          # phenotype data
               result=as.double(rep(0,n.pos*(n.gen+1))),
               as.integer(maxit),
               as.double(tol),
@@ -135,13 +133,41 @@ function(cross, pheno.col=1, method=c("em","mr"),
       
     w <- names(map)
     o <- grep("^loc\-*[0-9]+",w)
-    if(length(o) > 0) 
-      w[o] <- paste(w[o],names(cross$geno)[i],sep=".c")
+    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(z) <- w
     
     z <- as.data.frame(z)
     z <- cbind(chr=rep(names(cross$geno)[i],length(map)), pos=map, z)
     rownames(z) <- w
+
+
+    # get null log10 likelihood for the X chromosome
+    if(chrtype=="X") {
+
+      # determine which covariates belong in null hypothesis
+      temp <- scanoneXnull(type, sexpgm)
+      adjustX <- temp$adjustX
+      dfX <- temp$dfX
+      sexpgmcovar <- temp$sexpgmcovar
+      sexpgmcovar.alt <- temp$sexpgmcovar.alt      
+
+      if(adjustX) { # get LOD-score adjustment
+        n.gen <- ncol(sexpgmcovar)+1
+
+        nullz <- .C("R_discan_mr",
+            as.integer(n.ind),
+            as.integer(1),
+            as.integer(n.gen),
+            as.integer(sexpgmcovar.alt),
+            as.integer(pheno),
+            result=as.double(rep(0,n.gen+1)),
+            PACKAGE="qtl")
+
+        # adjust LOD curve
+        z[,3] <- z[,3] - nullz$result[1]
+      }
+    } 
 
     # if different number of columns from other chromosomes,
     #     expand to match
@@ -187,6 +213,10 @@ function(cross, pheno.col=1, method=c("em","mr"),
 
     results <- rbind(results, z)
   }
+
+  # sort the later columns
+  neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
+  results <- results[,neworder]
 
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method

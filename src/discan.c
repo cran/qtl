@@ -2,9 +2,9 @@
  * 
  * discan.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2001
+ * last modified Aug, 2004
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -38,7 +38,7 @@
  **********************************************************************/
 
 void R_discan_mr(int *n_ind, int *n_pos, int *n_gen,
-		    int *geno, double *pheno, double *result)
+		    int *geno, int *pheno, double *result)
 {
   int **Geno;
   double **Result;
@@ -59,7 +59,7 @@ void R_discan_mr(int *n_ind, int *n_pos, int *n_gen,
  **********************************************************************/
 
 void R_discan_im(int *n_ind, int *n_pos, int *n_gen, 
-		 double *genoprob, double *pheno, double *result, 
+		 double *genoprob, int *pheno, double *result, 
 		 int *maxit, double *tol)
 {
   double ***Genoprob, **Result, **work;
@@ -96,15 +96,15 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
  **********************************************************************/
 
 void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
-		  double *pheno, double **Result)
+		  int *pheno, double **Result)
 {
   int i, j, k, n, tp, *ng, *np;
 
   /* number of individuals in each genotype group */
-  ng = (int *)R_alloc(n_gen, sizeof(int));
+  allocate_int(n_gen, &ng);
 
   /* number of individuals with phenotype=1 in each genotype group */
-  np = (int *)R_alloc(n_gen, sizeof(int));
+  allocate_int(n_gen, &np);
 
   for(i=0; i<n_pos; i++) {
     Result[0][i] = 0.0; n=tp=0; 
@@ -171,7 +171,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  **********************************************************************/
 
 void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-	       double *pheno, double **Result, 
+	       int *pheno, double **Result, 
 	       int maxit, double tol, double **work)
 {
   int i, j, k, s, flag=0;

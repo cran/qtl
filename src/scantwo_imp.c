@@ -2,13 +2,13 @@
  *
  * scantwo_imp.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *                     and Hao Wu, The Jackson Lab
  *
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.
  *
- * last modified Oct, 2002 
+ * last modified Dec, 2003 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -262,8 +262,8 @@ void altRss2(double *pheno, double *weights,
   } /* end loop over individuals */
 
   /* regression */
-  dqrls_(x, &n_ind, &n_col_a, pheno, &ny, &tol, coef, resid,
-	 qty, &k, jpvt, qraux, work);
+  F77_CALL(dqrls)(x, &n_ind, &n_col_a, pheno, &ny, &tol, coef, resid,
+		  qty, &k, jpvt, qraux, work);
 
   /* calculate RSS */
   *lrss_add = 0.0;
@@ -304,8 +304,8 @@ void altRss2(double *pheno, double *weights,
   } /* end loop over individuals */
 
   /* regression */
-  dqrls_(x, &n_ind, &n_col_f, pheno, &ny, &tol, coef, resid,
-	 qty, &k, jpvt, qraux, work);
+  F77_CALL(dqrls)(x, &n_ind, &n_col_f, pheno, &ny, &tol, coef, resid,
+		  qty, &k, jpvt, qraux, work);
 
   /* calculate RSS */
   *lrss_full = 0.0;

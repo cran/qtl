@@ -7,13 +7,15 @@
   chromosomes, markers, genotypes, genetic maps, and phenotypes.
 }
 
-\usage{comparecrosses(cross1, cross2)}
+\usage{comparecrosses(cross1, cross2, tol=1e-5)}
 
 \arguments{
  \item{cross1}{An object of class \code{cross} (must be an
    intercross). See \code{\link[qtl]{read.cross}} for details.} 
  \item{cross2}{An object of class \code{cross} (must be an
    intercross). See \code{\link[qtl]{read.cross}} for details.} 
+ \item{tol}{Tolerance value for comparing genetic map positions and
+   numeric phenotypes.}
 }
 
 \value{None.}

@@ -13,8 +13,8 @@
 scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
-        x.treatment=c("simple","full"), upper=FALSE, ties.random=FALSE,
-        start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
+        upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
+        tol=1e-4, n.perm, trace=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -37,12 +37,6 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{weights}{Optional weights of individuals.  Should be either NULL
    or a vector of length n.ind containing positive weights.  Used only
    in the case \code{model="normal"}}
- \item{x.treatment}{How to treat the X-chromosome.  Simple: hemizygous
-   males are equivalent to homozygous females.  Full: hemizygous males
-   are treated differently from homozygous females.  Note that columns
-   \code{"sex"} and \code{"pgm"} in the phenotype data are needed; see
-   the section on the X chromosome in the help file for
-   \code{\link[qtl]{read.cross}}.} 
  \item{upper}{Used only for the two-part model; if true, the
    ``undefined'' phenotype is the maximum observed phenotype; otherwise,
    it is the smallest observed phenotype.} 
@@ -137,6 +131,41 @@ Covariates must be numeric matrices.  Individuals with any missing
 covariates are discarded.  
 }
 
+\section{X chromosome}{
+The X chromosome must be treated specially in QTL mapping.
+
+If both males and females are included, male hemizygotes are allowed
+to be different from female homozygotes.  Thus, in a backcross, we will
+fit separate means for the genotype classes AA, AB, AY, and BY.  In such
+cases, sex differences in the phenotype could cause spurious linkage to
+the X chromosome, and so the null hypothesis must be changed to allow
+for a sex difference in the phenotype.
+
+
+\tabular{lllccc}{
+\bold{BC}
+ \tab \tab \bold{Sexes} \tab \bold{Null} \tab \bold{Alternative} \tab \bold{df} \cr
+ \tab \tab both sexes   \tab sex         \tab AA/AB/AY/BY        \tab 2         \cr 
+ \tab \tab all female   \tab grand mean  \tab AA/AB              \tab 1         \cr
+ \tab \tab all male     \tab grand mean  \tab AY/BY              \tab 1         \cr
+ \tab \tab              \tab             \tab                    \tab           \cr
+ 
+\bold{F2}
+ \tab \bold{Direction} \tab \bold{Sexes}\tab \bold{Null}\tab \bold{Alternative} \tab \bold{df} \cr
+ \tab Both             \tab both sexes  \tab femaleF/femaleR/male \tab AA/ABf/ABr/BB/AY/BY \tab 3         \cr
+ \tab                  \tab all female  \tab pgm        \tab AA/ABf/ABr/BB      \tab 2         \cr
+ \tab                  \tab all male    \tab grand mean \tab AY/BY              \tab 1         \cr
+ \tab Forward          \tab both sexes  \tab sex        \tab AA/AB/AY/BY        \tab 2         \cr
+ \tab                  \tab all female  \tab grand mean \tab AA/AB              \tab 1         \cr
+ \tab                  \tab all male    \tab grand mean \tab AY/BY              \tab 1         \cr
+ \tab Backward         \tab both sexes  \tab sex        \tab AB/BB/AY/BY        \tab 2         \cr
+ \tab                  \tab all female  \tab grand mean \tab AB/BB              \tab 1         \cr
+ \tab                  \tab all male    \tab grand mean \tab AY/BY              \tab 1         \cr
+}
+
+
+}
+
 \details{
   Use of the EM algorithm or Haley-Knott regression require that
   multipoint genotype probabilities are first calculated using
@@ -217,6 +246,7 @@ covariates are discarded.
 # Normal Model
 ###################
 data(hyper)
+\dontshow{hyper <- subset(hyper,chr=1:4,ind=1:100)}
 # Genotype probabilities for EM and H-K
 hyper <- calc.genoprob(hyper, step=2.5)
 out.em <- scanone(hyper, method="em")
@@ -232,10 +262,8 @@ plot(out.hk, out.em, chr=c(1,4), lty=1, col=c("blue","black"))
 
 # Imputation; first need to run sim.geno
 # Do just chromosomes 1 and 4, to save time
-\dontrun{hyper.c1n4 <- sim.geno(subset(hyper, chr=c(1,4)),
-                       step=2.5, n.draws=64)}
-\testonly{hyper.c1n4 <- sim.geno(subset(hyper, chr=c(1,4)),
-                       step=2.5, n.draws=16)}
+hyper.c1n4 <- sim.geno(subset(hyper, chr=c(1,4)),
+                       step=2.5, n.draws=8)
 out.imp <- scanone(hyper.c1n4, method="imp")
 summary(out.imp, 3)
 
@@ -245,7 +273,7 @@ plot(out.imp, out.hk, out.em, chr=c(1,4), lty=1,
 
 # Permutation tests
 \dontrun{permo <- scanone(hyper, method="hk", n.perm=1000)
-}\testonly{permo <- scanone(hyper, method="hk", n.perm=3)
+}\dontshow{permo <- scanone(hyper, method="hk", n.perm=3)
 }quantile(permo, 0.95)
 
 
@@ -264,6 +292,7 @@ plot(out.imp, out.hk, out.em, chr=c(1,4), lty=1,
 # Two-part Model
 ###################
 data(listeria)
+\dontshow{listeria <- subset(listeria,chr=c(1,5,13))}
 listeria <- calc.genoprob(listeria,step=2.5)
 out.2p <- scanone(listeria, model="2part", upper=TRUE)
 summary(out.2p, 5)
@@ -275,7 +304,7 @@ plot(out.2p, out.2p, out.2p, lodcolumn=c(4,5,3), lty=1, chr=c(1,5,13),
 # Permutation test
 \dontrun{permo <- scanone(listeria, model="2part", upper=TRUE,
                  n.perm=1000)
-}\testonly{permo <- scanone(listeria, model="2part", upper=TRUE,
+}\dontshow{permo <- scanone(listeria, model="2part", upper=TRUE,
                  n.perm=3)
 }apply(permo, 2, quantile, 0.95)
 
@@ -295,7 +324,7 @@ plot(out.bin, out.2p, lodcolumn=c(3,4), lty=1, col=c("black", "red"),
 # Permutation test
 \dontrun{permo <- scanone(listeria, pheno.col=2, model="binary",
                  n.perm=1000)
-}\testonly{permo <- scanone(listeria, pheno.col=2, model="binary",
+}\dontshow{permo <- scanone(listeria, pheno.col=2, model="binary",
                  n.perm=3)
 }quantile(permo, 0.95)
 
@@ -303,6 +332,7 @@ plot(out.bin, out.2p, lodcolumn=c(3,4), lty=1, col=c("black", "red"),
 # Covariates
 ###################
 data(fake.bc)
+\dontshow{fake.bc <- subset(fake.bc, chr=c(2,5,10))}
 plot(fake.bc)
 fake.bc <- calc.genoprob(fake.bc, step=2.5)
 # genome scans without covariates

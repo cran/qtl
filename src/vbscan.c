@@ -2,9 +2,9 @@
  * 
  * vbscan.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified July, 2001
+ * last modified July, 2004
  * first written May, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,30 +26,29 @@
 #include "R.h"
 #include "Rmath.h"
 #include "vbscan.h"
+#include "util.h"
 
 void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
 		int *survived, double *lod, int maxit, double tol)
 {
-  double **Genoprob[3], *w[3];
+  double ***Genoprob, **w;
   int i, j, k, p, flag;
   int ncol;
-  double mu[3], sig=0.0, pi[3], mu_prev[3], sig_prev, pi_prev[3];
+  double *mu, sig=0.0, *pi, *mu_prev, sig_prev, *pi_prev;
   double mu0, sig0, pi0, q0, loglik0;
   double s1, s2, s3;
 
   ncol = 4+2*n_gen; /* number of columns in output (lod) */
 
   /* set up matrix for the genoprob */
-  Genoprob[0] = (double **)R_alloc(n_pos*n_gen, sizeof(double *));
-  w[0] = (double *)R_alloc(n_gen*n_ind, sizeof(double));
-  if(!Genoprob[0] || !w[0]) 
-    error("Cannot allocate space for Genoprob and w\n");
-  for(i=0; i<n_gen; i++) {
-    Genoprob[i] = Genoprob[0]+i*n_pos;
-    w[i] = w[0]+i*n_ind;
-    for(j=0; j<n_pos; j++) 
-      Genoprob[i][j] = genoprob+i*n_ind*n_pos + j*n_ind;
-  }
+  reorg_genoprob(n_ind, n_pos, n_gen, genoprob, &Genoprob);
+
+  /* allocate space for things */
+  allocate_dmatrix(n_gen, n_ind, &w);
+  allocate_double(n_gen, &mu);
+  allocate_double(n_gen, &pi);
+  allocate_double(n_gen, &mu_prev);
+  allocate_double(n_gen, &pi_prev);
   
   /* estimates under null model */
   pi0 = mu0 = sig0 = 0.0;

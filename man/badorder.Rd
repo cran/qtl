@@ -17,8 +17,8 @@
 
 \details{
   There are 250 F2 individuals typed at a total of 36 markers on four
-  chromosome.  The data were simulated with QTLs at the center of
-  chromosomes 1 and 2. 
+  chromosomes.  The data were simulated with QTLs at the center of
+  chromosomes 1 and 3. 
 
   The order of several markers on chromosome 1 is incorrect.  Markers on
   chromosomes 2 and 3 are switched.
@@ -26,6 +26,8 @@
 
 \examples{
 data(badorder)
+\dontshow{badorder <- subset(badorder,chr=1)}
+
 # estimate recombination fractions
 badorder <- est.rf(badorder)
 plot.rf(badorder)
@@ -35,8 +37,8 @@ newmap <- est.map(badorder)
 plot.map(badorder,newmap)
 
 # assess marker order on chr 1
-\dontrun{rip3 <- ripple(badorder,1,window=3)
-summary(rip3)}
+rip3 <- ripple(badorder,1,window=3)
+summary(rip3)
 }
 
 \seealso{ \code{\link[qtl]{est.rf}}, \code{\link[qtl]{ripple}}, 

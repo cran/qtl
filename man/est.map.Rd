@@ -41,6 +41,7 @@ est.map(cross, error.prob=0,
 
 \examples{
 data(fake.f2)
+\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)}
 newmap <- est.map(fake.f2)
 logliks <- sapply(newmap, attr, "loglik")
 plot.map(fake.f2, newmap)

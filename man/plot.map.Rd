@@ -35,6 +35,7 @@
 
 \examples{
 data(fake.bc)
+\dontshow{fake.bc <- subset(fake.bc, chr=18:19)}
 plot.map(fake.bc)
 plot.map(fake.bc,horizontal=TRUE)
 newmap <- est.map(fake.bc)

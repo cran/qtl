@@ -70,7 +70,8 @@ data(fake.f2)
 qc <- c(1, 8, 13)
 qp <- c(26, 56, 28)
 fake.f2 <- subset(fake.f2, chr=qc)
-fake.f2 <- sim.geno(fake.f2, n.draws=64, step=2, err=0.001)
+\dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
+fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)
 qtl <- makeqtl(fake.f2, qc, qp)
 
 # fit model with 3 interacting QTLs interacting
@@ -78,6 +79,7 @@ qtl <- makeqtl(fake.f2, qc, qp)
 lod <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1*Q2*Q3)
 summary(lod)
 
+\dontrun{
 # fit an additive QTL model
 lod.add <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1+Q2+Q3)
 summary(lod.add)
@@ -90,7 +92,7 @@ summary(lod.sex)
 # fit the same with an additive model
 lod.sex.add <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1+Q2+Q3+Sex, cov=Sex)
 summary(lod.sex.add)
-}
+}}
 
 \seealso{ \code{\link[qtl]{summary.fitqtl}}, \code{\link[qtl]{makeqtl}},
 \code{\link[qtl]{scanqtl}} }  

@@ -42,6 +42,7 @@ plot.errorlod(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 
 \examples{
 data(hyper)
+\dontshow{hyper <- subset(hyper,chr=c(1,19))}
 # run calc.genoprob, then calc.errorlod; use same error.prob
 hyper <- calc.genoprob(hyper,error.prob=0.01)
 hyper <- calc.errorlod(hyper,error.prob=0.01)

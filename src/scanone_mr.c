@@ -2,9 +2,9 @@
  * 
  * scanone_mr.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -146,8 +146,8 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   	  x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]] * weights[which_ind[j]];
       }
       /* linear regression */
-      dqrls_(x, &this_n_ind, &ncol0, y, &ny, &tol, coef, resid,
-  	     qty, &k, jpvt, qraux, work);
+      F77_CALL(dqrls)(x, &this_n_ind, &ncol0, y, &ny, &tol, coef, resid,
+		      qty, &k, jpvt, qraux, work);
 
       /* null RSS */
       rss0 = 0.0;
@@ -187,8 +187,8 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
     }
 
     /* linear regression of phenotype on QTL genotype probabilities */
-    dqrls_(x, &this_n_ind, &ncol, y, &ny, &tol, coef, resid,
-	   qty, &k, jpvt, qraux, work);
+    F77_CALL(dqrls)(x, &this_n_ind, &ncol, y, &ny, &tol, coef, resid,
+		    qty, &k, jpvt, qraux, work);
 
     /* RSS */
     Result[0][i] = 0.0;

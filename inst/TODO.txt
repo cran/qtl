@@ -10,35 +10,101 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
-o effectscan: if one chromosome, plot map positions on the x-axis 
-  rather than the chromosome ID
+o Revise the a.starting.point a bit.
 
-o Modify a.starting.point and the tutorial to discuss the new version
-  of plot.scantwo.
+o Look at the README.txt file again.
 
-o Update the tutorial, especially regarding the X chromosome and the
-  makeqtl/fitqtl/scanqtl.
+o X chromosome in scanone and scantwo when sex and/or pgm
+  are included as covariates.
 
-o read.cross tests within package
+o Revise the documentation regarding the new version of plot.scantwo. 
 
-o Map positions in QTX format data for the function read.cross.
+o Documentation for makeqtl/fitqtl/scanqtl (especially summary.fitqtl).
 
-o Need to modify the map expansion for RI lines for the X chromosome.
+o Turn the tutorial into a Sweave vingette, to conform to the
+  Bioconductor requirements?
 
-o Add appropriate functions to analyze advanced intercrosses (AILs). 
+o Bug in the warning message regarding switched genotypes in est.rf?
+  (especially for 4-way crosses)
 
-o Documentation on RI lines.
+o Allow no p-values in summary.scantwo
 
-o Deal with the X chromosome appropriately in scanone, scantwo,
-  fitqtl, makeqtl and scanqtl.
+o Add the ability to include covariates in scanone for a binary
+  phenotype, using a logistic link function.
+
+o LOD thresholds for X chromosome in scanone/two.
+
+o Treatment of X chromosome in fitqtl, scanqtl?
 
 o Add an example regarding the X chromosome to the help files for
   fake.f2 and scanone.
 
-o Rescale LOD score for X chromosome in scanone/two? 
+o Go through makeqtl, fitqtl, scanqtl carefully.
+
+o Incorporate Steffen Moeller's code for connecting to ensembl and for
+  making pictures of QTL locations.
+
+o Ensure consistency in use of chromosome numbers vs names/IDs when
+  plotting results of genome scans, subsetting crosses, and so forth
+  (sometimes #'s taken as indices and sometimes as names).
+
+o P-values from geno.table() when an intercross has some dominant
+  markers.  Also: the X chromosome needs special treatment.
+
+o Documentation on RI lines.
 
 
 MEDIUM TERM:
+
+o Modify the map expansion for RI lines for the X chromosome.
+  [really need to add additional functions for mapping, as
+   the marginal genotype distribution is 2:1 rather than 1:1]
+  --the transition matrix is not symmetric 
+  Pr(BB|AA) = 2r/(1+4r) and Pr(AA|BB) = 4r/(1+4r)
+
+o Incorporate the code from Brian Yandell, Fei Zou and Amy Jin on
+  semi-parametric QTL mapping methods.
+
+o Implement the DIRECT algorithm for doing the pair scan more quickly.
+
+o Allow use of individual IDs; a column "id" or "ID" in the phenotype
+  data.  We could refer to these in functions like top.errorlod.
+
+o Have effectscan give output (silently)
+
+o Allow tailored allele labels (e.g. CC/CB/BB rather than AA/AB/BB)
+
+o Allow plot.missing to give results color coded by marker genotype
+  (like Saunak's cool plots).
+
+o Negative LOD scores in fitqtl()?
+
+o Ability to get at the individual contributions to the LOD score? 
+
+o Revise c.cross so that you can combine crosses even if there are
+  different numbers of chromosomes: match the marker names.
+
+o effectscan and effectplot: SEs and so forth using imputations
+
+o effectscan: if one chromosome, plot map positions on the x-axis 
+  rather than the chromosome ID.
+
+o Add appropriate functions to analyze advanced intercrosses (AILs). 
+
+o Analysis of binary traits in scantwo.
+
+o Analysis of binary traits by imputation
+
+o Pictures which indicate the locations of crossovers (e.g. in
+  plot.geno). 
+
+o Include widgets for getting more easy access to the data.
+
+o Calculate pairwise QTL probabilities by the more simple method,
+  assuming independence, in scantwo.
+
+o Permutation tests with scantwo should include the results comparing
+  2 vs 1 QTL.
 
 o Coefficient estimates by imputation in fitqtl.
 
@@ -61,11 +127,22 @@ o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
 
 o In MIM, refinement of QTL location and plots of that.
 
+o Add a FAQ document to the R/qtl web page
+    - Reading in data
+    - Haley-knott vs non-parametric vs EM
+    - Do you plan to incorporate _____?
+    - Extremely large LOD scores by EM
+
 o calc.genoprob and sim.geno for "f2ss" (intercross with sex-specific
   maps) 
 
 
 LONG TERM:
+
+o Allow phenotypes on multiple individuals (esp for recombinant inbred
+  lines). 
+
+o "embarassing parallel" processing for permutation tests (Rmpi, snow)
 
 o Composite interval mapping, in an automated way.
 
@@ -77,9 +154,7 @@ o Multiple phenotypes (esp. regarding pleiotropy).
 
 o Data conversion functions to/from Chuck Berry's bqtl package
 
-o subset.scanone, subset.scantwo
-
-o Model search for MIM etc.
+o Model search for MIM etc...forward and stepwise selection.
 
 o Function to plot, for a specified q1, LOD{q2|q1} vs q2 (using the
   output from scantwo).
@@ -100,9 +175,6 @@ o Analysis functions such as scanone and scantwo might assign an
 
 o Re-write the C code for EM underneath scanone and scantwo so that it
   is not so tedious.
-
-o Wrappers for Brian Yandell's bmapqtl software to do QTL mapping by
-  MCMC. 
 
 o Individual numbers in plot.geno function; allow it to plot only
   individuals with apparent genotyping errors, with a mix of

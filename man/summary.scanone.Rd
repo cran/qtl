@@ -33,6 +33,7 @@ summary.scanone(object, threshold=0, \dots)
 
 \examples{
 data(listeria)
+\dontshow{listeria <- subset(listeria, chr=18:19)}
 listeria <- calc.genoprob(listeria, step=2.5)
 out <- scanone(listeria, model="2part")
 # All peaks

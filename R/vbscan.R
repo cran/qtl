@@ -2,8 +2,8 @@
 #
 # vbscan.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified June, 2002
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2004
 # first written May, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,26 +21,17 @@
 ######################################################################
 
 vbscan <-
-function(cross, pheno.col=1, x.treatment=c("simple","full"),
-         upper=FALSE, method="em", maxit=4000, tol=1e-4)
+function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
+         tol=1e-4)
 {
   method <- match.arg(method)
   type <- class(cross)[1]
-  x.treatment <- match.arg(x.treatment)
 
   # check arguments are okay
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
   if(pheno.col > nphe(cross))
     stop("Specified phenotype column exceeds the number of phenotypes")
   y <- cross$pheno[,pheno.col]
-
-  # remove individuals with missing phenotypes
-  if(any(is.na(y))) {
-    drop <- (seq(along=y))[is.na(y)]
-    y <- y[-drop]
-    for(i in 1:length(cross$geno)) 
-      cross$geno[[i]]$prob <- cross$geno[[i]]$prob[-drop,,]
-  }
 
   # modify phenotypes
   if(upper) {
@@ -65,31 +56,32 @@ function(cross, pheno.col=1, x.treatment=c("simple","full"),
       cross <- calc.genoprob(cross)
     }
 
-    n.pos <- dim(cross$geno[[i]]$prob)[2]
+    genoprob <- cross$geno[[i]]$prob
+    n.pos <- dim(genoprob)[2]
     n.ind <- length(y)
 
     chrtype <- class(cross$geno[[i]])
     if(chrtype=="X") sexpgm <- getsex(cross)
     else sexpgm <- NULL
 
-    gen.names <- getgenonames(type,chrtype,x.treatment,sexpgm)
+    gen.names <- getgenonames(type,chrtype,"full", sexpgm)
     n.gen <- length(gen.names)
 
-    # Update X chromosome
+    # revise X chromosome genotypes
     if(chrtype=="X" && (type=="f2" || type=="f2ss" || type=="bc"))
-      cross$geno[[i]]$prob <- fixXdata(type, x.treatment, sexpgm,
-                                       prob=cross$geno[[i]]$prob)
+      genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
 
     z <- .C("R_vbscan",
             as.integer(n.pos),
             as.integer(n.ind),
             as.integer(n.gen),
-            as.double(cross$geno[[i]]$prob),
+            as.double(genoprob),
             as.double(y),
             as.integer(survived),
             lod=as.double(rep(0,(4+2*n.gen)*n.pos)),
             as.integer(maxit),
-            as.double(tol))
+            as.double(tol),
+            PACKAGE="qtl")
 
     map <- create.map(cross$geno[[i]]$map,
                       attr(cross$geno[[i]]$prob,"step"),
@@ -102,8 +94,9 @@ function(cross, pheno.col=1, x.treatment=c("simple","full"),
 
     w <- names(map)
     o <- grep("^loc\-*[0-9]+",w)
-    if(length(o) > 0)
-      w[o] <- paste(w[o],names(cross$geno)[i],sep=".c")
+
+    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(res) <- w
     
     colnames(res) <- c("chr","pos","lod","lod.p","lod.mu",
@@ -111,6 +104,40 @@ function(cross, pheno.col=1, x.treatment=c("simple","full"),
                        paste("mu",gen.names,sep="."), "sigma")
 
     z <- res
+
+
+    # get null log10 likelihood for the X chromosome
+    if(chrtype=="X") {
+
+      # determine which covariates belong in null hypothesis
+      temp <- scanoneXnull(type, sexpgm)
+      adjustX <- temp$adjustX
+      dfX <- temp$dfX
+      sexpgmcovar <- temp$sexpgmcovar
+      sexpgmcovar.alt <- temp$sexpgmcovar.alt
+      
+      if(adjustX) { # get LOD-score adjustment 
+        n.gen <- ncol(sexpgmcovar)+1
+        genoprob <- matrix(0,nrow=n.ind,ncol=n.gen)
+        for(i in 1:n.gen)
+          genoprob[sexpgmcovar.alt==i,i] <- 1
+
+        nullz <- .C("R_vbscan",
+            as.integer(1),
+            as.integer(n.ind),
+            as.integer(n.gen),
+            as.double(genoprob),
+            as.double(y),
+            as.integer(survived),
+            lod=as.double(rep(0,(4+2*n.gen))),
+            as.integer(maxit),
+            as.double(tol),
+            PACKAGE="qtl")
+
+        # adjust LOD curve
+        for(i in 1:3) z[,i+2] <- z[,i+2] - nullz$lod[i]
+      }
+    } 
 
     # if different number of columns from other chromosomes,
     #     expand to match
@@ -157,9 +184,16 @@ function(cross, pheno.col=1, x.treatment=c("simple","full"),
     results <- rbind(results, z)
   }
   
+  # sort the later columns
+  neworder <- c(colnames(results)[1:5],sort(colnames(results)[-(1:5)]))
+  results <- results[,neworder]
+
+
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method
   attr(results,"type") <- class(cross)[1]
   attr(results,"model") <- "twopart"
   results
 }
+
+# end of vbscan.R

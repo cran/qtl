@@ -68,6 +68,7 @@ calc.errorlod(cross, error.prob=0.01,
 
 \examples{
 data(hyper)
+\dontshow{hyper <- subset(hyper,chr=c(1,19))}
 # run calc.genoprob, then calc.errorlod; use same error.prob
 hyper <- calc.genoprob(hyper,error.prob=0.01)
 hyper <- calc.errorlod(hyper,error.prob=0.01)

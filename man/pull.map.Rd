@@ -18,7 +18,9 @@
   The genetic map: a list with each component containing the marker
   positions (in cM) for a chromosome.  Each component has class
   \code{A} or \code{X} according to whether it is an autosome or the X
-  chromosome.  The map itself is given class \code{map}.
+  chromosome.  The components are either vectors of marker positions or,
+  for a sex-specific map, 2-row matrices containing the female and male
+  marker locations.  The map itself is given class \code{map}.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

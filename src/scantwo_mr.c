@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -163,8 +163,8 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	      x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]];
 	  }
 	  /* linear regression */
-	  dqrls_(x, &this_n_ind, &n_col_0, y, &ny, &tol, 
-		 coef, resid, qty, &k, jpvt, qraux, work);
+	  F77_CALL(dqrls)(x, &this_n_ind, &n_col_0, y, &ny, &tol, 
+			  coef, resid, qty, &k, jpvt, qraux, work);
 	  /* RSS */
 	  lrss0 = 0.0;
 	  for(j=0; j<this_n_ind; j++)  lrss0 += (resid[j]*resid[j]);
@@ -205,8 +205,8 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	  }
 	}
 	/* linear regression of phenotype on QTL genotype probabilities */
-	dqrls_(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
-	       coef, resid, qty, &k, jpvt, qraux, work);
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
+			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
 	Result[i2][i] = 0.0;
 	for(j=0; j<this_n_ind; j++) Result[i2][i] += (resid[j]*resid[j]);
@@ -251,8 +251,8 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	  }
 	}
 	/* linear regression of phenotype on QTL genotype probabilities */
-	dqrls_(x, &this_n_ind, &n_col_f, y, &ny, &tol, 
-	       coef, resid, qty, &k, jpvt, qraux, work);
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_f, y, &ny, &tol, 
+			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
 	Result[i][i2] = 0.0;
 	for(j=0; j<this_n_ind; j++) Result[i][i2] += (resid[j]*resid[j]);
@@ -416,8 +416,8 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	      x[j+(k+1)*this_n_ind] = Addcov[k][which_ind[j]];
 	  }
 	  /* linear regression */
-	  dqrls_(x, &this_n_ind, &n_col_0, y, &ny, &tol, 
-		 coef, resid, qty, &k, jpvt, qraux, work);
+	  F77_CALL(dqrls)(x, &this_n_ind, &n_col_0, y, &ny, &tol, 
+			  coef, resid, qty, &k, jpvt, qraux, work);
 	  /* RSS */
 	  lrss0 = 0.0;
 	  for(j=0; j<this_n_ind; j++)  lrss0 += (resid[j]*resid[j]);
@@ -459,8 +459,8 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  }
 	}
 	/* linear regression of phenotype on QTL genotype probabilities */
-	dqrls_(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
-	       coef, resid, qty, &k, jpvt, qraux, work);
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
+			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
 	Result_int[i2][i] = 0.0;
 	for(j=0; j<this_n_ind; j++) Result_int[i2][i] += (resid[j]*resid[j]);
@@ -506,8 +506,8 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  }
 	}
 	/* linear regression of phenotype on QTL genotype probabilities */
-	dqrls_(x, &this_n_ind, &n_col_f, y, &ny, &tol, 
-	       coef, resid, qty, &k, jpvt, qraux, work);
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_f, y, &ny, &tol, 
+			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
 	Result_full[i2][i] = 0.0;
 	for(j=0; j<this_n_ind; j++) Result_full[i2][i] += (resid[j]*resid[j]);

@@ -1,0 +1,39 @@
+\name{summary.map}
+\alias{summary.map}
+
+\title{Print summary of a genetic map}
+
+\description{
+  Print some summary information about a \code{map} object.
+}
+
+\usage{
+summary.map(object, \dots)
+}
+
+\arguments{
+ \item{object}{An object of class \code{map}, which is a list of
+   vectors (or, for a sex-specific map, 2-row matrices), each specifying
+   the locations of the markers.  The object can also be of class
+   \code{cross}, in which case the function \code{\link[qtl]{pull.map}}
+   is used to extract the genetic map from the object.}
+ \item{\dots}{Ignored at this point.}
+}
+
+\value{
+  An object of class \code{summary.map}, which is a list containing two
+  components: a matrix containing the number of markers, length, and
+  average inter-marker spacing for each chromosome and overall, and a
+  logical value indicating whether the map is sex-specific.
+}
+
+\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+
+\examples{
+data(map10)
+summary(map10)
+}
+
+\seealso{ \code{\link[qtl]{pull.map}}, \code{\link[qtl]{summary.cross}} }
+
+\keyword{print}

@@ -59,11 +59,13 @@ ripple(cross, chr, window=4, method=c("countxo","likelihood"),
 
 \examples{
 data(badorder)
-rip7c <- ripple(badorder, 1, 7)
+rip7c <- ripple(badorder, chr=1, window=3)
 summary(rip7c)
 
-rip2l <- ripple(badorder, 1, 2, method="likelihood")
+\dontrun{
+rip2l <- ripple(badorder, chr=1, window=2, method="likelihood")
 summary(rip2l)
+}
 
 badorder <- switch.order(badorder, 1, rip7c[2,])
 }

@@ -2,9 +2,9 @@
  * 
  * scantwo_em.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -826,14 +826,14 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
   /*      work1[k+j*nparm1] = work1[j+k*nparm1];                */
 
   /* solve work1 * beta = work2 for beta */
-  dpoco_(work1, &nparm1, &nparm1, &rcond, param, &info);
+  F77_CALL(dpoco)(work1, &nparm1, &nparm1, &rcond, param, &info);
   if(fabs(rcond) < TOL || info != 0) { /* error! */
     warning("X'X matrix is singular.\n");
     *error_flag = 1;
   }
   else {
     for(j=0; j<nparm1; j++) param[j] = work2[j];
-    dposl_(work1, &nparm1, &nparm1, param);
+    F77_CALL(dposl)(work1, &nparm1, &nparm1, param);
 
     /* calculate residual SD */
     param[nparm1] = 0.0;

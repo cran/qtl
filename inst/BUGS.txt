@@ -10,6 +10,32 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 0.97 bugs:
+
+    1. In read.cross.qtlcart, it seems to print out the number of
+       individuals as the number of phenotypes read. (A problem with
+       "nrow" rather than "ncol".)  [Fixed in version 0.98.]
+
+>>  2. In read.cross for the mapmaker format, when one uses a mapmaker
+       map file, if a marker in that map file is indicated as unlinked
+       (not placed on a chromosome), the data are read incorrectly.
+
+    3. In plot.scantwo, if the chromosomes are given in a different
+       order, they are re-ordered to the standard one in the plot, but
+       the chromosome labels and lines are not.  An even weirder thing
+       happens in plot.scanone.  [Fixed in version 0.98.]
+
+    4. calc.errorlod dies for the X chromosome in an
+       intercross. [Fixed in version 0.98.]
+
+    5. In read.cross for the mapmaker format, an error results if a
+       marker name is listed on a line without any genotype data.
+       [Fixed in version 0.98.]
+
+    6. Bug in read.cross for the QTL Cartographer format when there is
+       exactly one individual. [Fixed in version 0.98.]
+
+
 Version 0.96 bugs:
 
     1. Bug in summary.cross: when there are duplicate marker names, it
@@ -36,9 +62,10 @@ Version 0.96 bugs:
     7. fitqtl: doesn't work when you give only one qtl. [Fixed in
        version 0.97.]
    
-
->>  8. scanone: when model="binary" and method="mr", a warning message
-       should be displayed, and method="em" should be used.  
+    8. scanone: when model="binary" and method="mr", a warning message
+       should be displayed, and method="em" should be used.  [This
+       isn't really a bug; the software does do the binary trait
+       analysis with just the single marker genotype information.]
 
 
 Version 0.95 bugs:
@@ -72,9 +99,9 @@ Version 0.94 bugs:
 
 Version 0.93 bugs:
 
->>  1. There is a bug in summary.scanone for the case where several
+    1. There is a bug in summary.scanone for the case where several
        positions jointly share the maximum LOD score...all are given;
-       it'd be best to just pick one.
+       it'd be best to just pick one. [Fixed in version 0.98.]
 
     2. In ripple, error if window < 2. [Fixed in version 0.94.]
 
@@ -207,11 +234,13 @@ Version 0.83 bugs:
 
 Version 0.81 bugs:
 
->>  1. I often getting the following warning message when reading data
+    1. I often getting the following warning message when reading data
        with read.cross in "karl" format:
        
          "no finite arguments to min/max; returning extreme. in: 
           max(..., na.rm = na.rm)"
+       [But who ever uses the "karl" format?  I've not fixed this, 
+        but it's not worth emphasizing.]
 
     2. read.cross.karl can give an error when it's trying to
        determine the number (and thus autosomal/sex-linked status) of

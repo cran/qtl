@@ -30,57 +30,46 @@ OBTAINING R/QTL
 INSTALLATION OF R AND R/QTL (Windows)
 
   1. The Windows version of R is distributed as a single file,
-     SetupR.exe.  Install R by executing this file.  We recommend
-     installing R in "c:\R" rather than "c:\Program Files\R".  Why
-     didn't Microsoft use "Programs" rather than "Program files"?
+     with a name something like rw1081.exe.  Install R by executing
+     this file.  We recommend installing R in "c:\R" rather than
+     "c:\Program Files\R".  Why didn't Microsoft use "Programs" rather
+     than "Program files"? 
 
-  2. To install R/qtl, you may do one of the following:
+  2. To install R/qtl, download the file "qtl.97-21.zip" (or the
+     equivalent) and then do one of the following:
 
      a. Start R.  Select (on the menu bar) "Packages" and then
         "Install package from local zip file...".  Find the file
-        "qtl.zip" on your hard drive, and click "Open".
+        "qtl_0.97-21.zip" on your hard drive, and click "Open".
 
-     b. Unzip the "qtl.zip" file into the directory $RHOME\library
-        (where $RHOME is something like c:\R\rw1051).  Note that this
-        should create a directory $RHOME\library\qtl containing the R
-        source code and the compiled dll.
+     b. Unzip the "qtl_0.97-21.zip" file into the directory
+        $RHOME\library (where $RHOME is something like c:\R\rw1081).
+        Note that this should create a directory $RHOME\library\qtl
+        containing the R source code and the compiled dll.
 
         Start R and type "link.html.help()" to get the help files for
         the qtl package added to the help indices.
 
 
-INSTALLATION OF R AND R/QTL (MacOS)
+INSTALLATION OF R AND R/QTL (MacOS version 10.2.x and above)
 
-  1. We recommend downloading the "Carbon" version of R.  It may be
-     somewhat slower, but it doesn't require the installation of
-     X-windows.  (At CRAN, download the version that is *not*
-     indicated "Darwin/X11".)
-
-     a. Download the file rm150.sit file (or the equivalent for the
-        most recent version of R).
-
-     b. Use Stuffit Expander to expand the file, to create a folder
-        "rm150". 
-
-     c. Copy the folder that is created to your Applications folder.
-
-     d. Execute R by double clicking on the R icon within the "rm150"
-        folder. 
+  1. Download the file RAqua.dmg and double-click it to mount a
+     "drive" with a name something like "RAqua-1.8.1".  Follow the
+     instructions in the file "ReadMe.txt".
 
   2. To install R/qtl:
 
-     a. Download the file qtl_*.sit
+     a. Download either the compiled version of R/qtl for Mac OSX or
+        the source code. 
 
-     b. Expand the file using Stuffit Expander, creating a folder
-       "qtl". 
+     b. Start R by double-clicking "StartR" in your Applications
+        folder. 
 
-     c. Copy the "qtl" folder to "rm150/library".
-
-     d. Open R and update the links to the help files by either:
-
-         i. Click (on the menu bar) Help -> Link Packages Help
-
-        ii. Type link.html.help()
+     c. From the menu bar, click Packages -> Install from local files
+        and then either "Binary package file" or "Source package file".
+        (To install from source, you may need additional compilers and
+        other tools installed.)  Then find the appropriate file on
+        your drive.
 
 
 INSTALLATION OF R/QTL (Unix)
@@ -94,13 +83,13 @@ INSTALLATION OF R/QTL (Unix)
      a. To install R/qtl in the standard location
         (/usr/local/lib/R/library), type 
 
-            R INSTALL qtl_*.tar.gz
+            R CMD INSTALL qtl_*.tar.gz
 
         You'll probably need to be superuser.
 
      b. To install the package locally, type 
 
-            R INSTALL --library=/home/auser/Rlibs qtl_*.tar.gz
+            R CMD INSTALL --library=/home/auser/Rlibs qtl_*.tar.gz
 
         (where "/home/auser/Rlibs" should be replaced with the
         appropriate directory).  
@@ -115,10 +104,10 @@ INSTALLATION OF R/QTL (Unix)
 GETTING STARTED
 
   Once you start R, you'll need to type "library(qtl)" to load the
-  package.  You can create a file "~/.Rprofile" (Unix), "c:\.Rprofile"
-  (Windows), or "/Applications/rm151/.Rprofile" (MacOS) containing R
-  code to be run whenever you start R.  If you use the R/qtl package
-  regularly, you should place the line "library(qtl)" in such a file.
+  package.  You can create a file "~/.Rprofile" (Unix or MacOS) or
+  "c:\.Rprofile" (Windows) containing R code to be run whenever you
+  start R.  If you use the R/qtl package regularly, you should place
+  the line "library(qtl)" in such a file.
 
   Efficient use of the R/qtl package requires considerable knowledge
   of the R language.  Learning R may require a formidable investment
@@ -133,10 +122,9 @@ GETTING STARTED
   version of the R help pages.  Then click "Packages" -> "qtl".  
 
   In Windows or MacOS, you may gain access to the help documents by
-  clicking "Help" in the menu bar and then "R language (html)".
-  Windows users may wish to place the line "options(htmlhelp=TRUE)" in
-  the file "c:\.Rprofile" (Windows) or "/Applications/rm151/.Rprofile"
-  (MacOS).
+  clicking "Help" in the menu bar and then "R language (html)".  If
+  you include "options(htmlhelp=TRUE)" in your .Rprofile file, use of
+  the html version of the help pages will be automatic.
 
   The help file titled "A starting point" gives a brief walk-through
   of an example analysis, and so is a good place to start.  You may

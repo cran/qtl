@@ -2,12 +2,14 @@
 #
 # effectscan.R
 #
-# copyright (c) 2003, Hao Wu, The Jackson Laboratory
-# last modified Jun, 2003
+# copyright (c) 2003-4, Hao Wu, The Jackson Laboratory
+#                    with modifications by Karl W. Broman
+# last modified Sep, 2004
 # first written Jan, 2003
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
+# Contains: effectscan
 #
 ######################################################################
 
@@ -94,7 +96,7 @@ function(cross, pheno.col=1, chr, ylim, gap=25,
 
   if(missing(ylim)) {
     tmp <- c(addeff, domeff)
-    tmp <- tmp[!is.nan(tmp)]
+    tmp <- tmp[!is.na(tmp)]
     ylim <- range(tmp)
   }
   if(missing(main)) main <- "Effect scan plot"
@@ -113,7 +115,13 @@ function(cross, pheno.col=1, chr, ylim, gap=25,
   }
 
   # draw x axis ticks
-  axis(1, at=xtick, labels=xticklabel)
+  if(nchr(cross)>1) {
+    axis(1, at=xtick, labels=xticklabel)
+  }
+  else {
+    axis(1)
+    title(xlab="Map position (cM)")
+  }
   
   # add tick marker
   a <- par("usr")
@@ -133,3 +141,5 @@ function(cross, pheno.col=1, chr, ylim, gap=25,
   }
 
 }
+
+# end of effectscan.R

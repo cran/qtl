@@ -2,9 +2,9 @@
  * 
  * discan.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2001
+ * last modified Aug, 2004
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -29,7 +29,7 @@
  **********************************************************************/
 
 void R_discan_mr(int *n_ind, int *n_pos, int *n_gen,
-		    int *geno, double *pheno, double *result);
+		    int *geno, int *pheno, double *result);
 
 /**********************************************************************
  * 
@@ -41,7 +41,7 @@ void R_discan_mr(int *n_ind, int *n_pos, int *n_gen,
  **********************************************************************/
 
 void R_discan_im(int *n_ind, int *n_pos, int *n_gen, 
-		 double *genoprob, double *pheno, double *result, 
+		 double *genoprob, int *pheno, double *result, 
 		 int *maxit, double *tol);
 
 /**********************************************************************
@@ -67,7 +67,7 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
  **********************************************************************/
 
 void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
-		  double *pheno, double **Result);
+		  int *pheno, double **Result);
 
 /**********************************************************************
  * 
@@ -101,7 +101,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  **********************************************************************/
 
 void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-	       double *pheno, double **Result, 
+	       int *pheno, double **Result, 
 	       int maxit, double tol, double **work);
 
 /* end of discan.h */
