@@ -2,9 +2,9 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Dec, 2003
+# last modified Jul, 2004
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -34,13 +34,13 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   method <- match.arg(method)
 
   if(method=="imp" && is.na(match("geno", names(qtl))))
-    stop("Imputed genotypes missing from the qtl object; run sim.geno()\n\tbefore creating this object.")
+    stop("You need to run sim.geno() before creating the qtl object.")
   
   # check the input phenotypes and covarariates; drop individuals
   # with missing values.
   keep.ind <- !is.na(pheno)
   if(!is.null(covar)) { # loop thru covarariates
-    for(i in 1:dim(covar)[2])
+    for(i in 1:ncol(covar))
       keep.ind <- keep.ind & (!is.na(covar[,i]))
   }
   # if there IS missing data, do some subset
@@ -66,7 +66,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     n.covar <- 0
   }
   else {
-    n.covar <- dim(covar)[2]
+    n.covar <- ncol(covar)
   }
   
   # if formula is missing, build one
@@ -115,7 +115,6 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
             # return variables
             lod=as.double(0), # LOD score
             df=as.integer(0), # degree of freedom
-
             PACKAGE="qtl")
   }
 
@@ -285,7 +284,6 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
                 # return variables
                 lod=as.double(0), # LOD score
                 df=as.integer(0), # degree of freedom
-                
                 PACKAGE="qtl")
       }
 
@@ -401,7 +399,7 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 
   # reorganize formula.mtx according to formula.idx
   # remove the first row (for y)
-  formula.mtx <- formula.mtx[2:dim(formula.mtx)[1],]
+  formula.mtx <- formula.mtx[2:nrow(formula.mtx),]
   # rearrange the rows according to formula.idx if there's more than one row
   if(length(formula.idx) > 1)
     formula.mtx <- formula.mtx[order(formula.idx),]

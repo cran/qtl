@@ -2,14 +2,15 @@
 #
 # write.cross.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
 #                       and Hao Wu, The Jackson Laboratory
-# last modified Feb, 2003
+# last modified Sep, 2004
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
-# Contains: write.cross, write.cross.mm, write.cross.csv, write.cross.gary
+# Contains: write.cross, write.cross.mm, write.cross.csv,
+#           write.cross.gary, fixX4write
 #           [See qtlcart_io.R for write.cross.qtlcart]
 #
 ######################################################################
@@ -24,14 +25,28 @@
 write.cross <-
 function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, digits=5)
 {
-  match.arg <- match.arg(format)
-  if(missing(chr)) chr <- 1:nchr(cross)
+  format <- match.arg(format)
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
 
-  if(format=="csv") write.cross.csv(cross,filestem,chr,digits)
-  else if(format=="mm") write.cross.mm(cross,filestem,chr,digits)
-  else if(format=="qtlcart") write.cross.qtlcart(cross, filestem, chr)
-  else write.cross.gary(cross, chr, digits)
+  # revise X data
+  chrtype <- sapply(cross$geno,class)
+  crosstype <- class(cross)[1]
+  if((crosstype=="bc" || crosstype=="f2" || crosstype=="f2ss") &&
+     any(chrtype=="X")) {
+    sexpgm <- getsex(cross)
+    sex <- sexpgm$sex
+    pgm <- sexpgm$pgm
+    for(i in which(chrtype=="X")) 
+      cross$geno[[i]]$data <- fixX4write(cross$geno[[i]]$data,sex,pgm,crosstype)
+  }
+
+  if(format=="csv") write.cross.csv(cross,filestem,digits)
+  else if(format=="mm") write.cross.mm(cross,filestem,digits)
+  else if(format=="qtlcart") write.cross.qtlcart(cross, filestem)
+  else write.cross.gary(cross, digits)
 }
+
+
 
 
 ######################################################################
@@ -45,11 +60,8 @@ function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, di
 ######################################################################
 
 write.cross.mm <-
-function(cross, filestem="data", chr, digits=5)
+function(cross, filestem="data", digits=5)
 {
-  if(!missing(chr)) 
-    cross <- subset(cross,chr=chr)
-
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
   n.phe <- nphe(cross)
@@ -118,7 +130,10 @@ function(cross, filestem="data", chr, digits=5)
     if(nchar(pn) < mlpn)
       pn <- paste(pn, paste(rep(" ", mlpn-nchar(pn)),collapse=""),sep="")
 
-    x <- as.character(round(cross$pheno[,i],digits))
+    if(!is.factor(cross$pheno[,i]))
+      x <- as.character(round(cross$pheno[,i],digits))
+    else
+      x <- as.character(cross$pheno[,i])
     x[is.na(x)] <- "-"
 
     if(n.ind < 10)
@@ -167,10 +182,8 @@ function(cross, filestem="data", chr, digits=5)
 ######################################################################
 
 write.cross.csv <-
-function(cross, filestem="data", chr, digits=5)
+function(cross, filestem="data", digits=5)
 {
-  if(!missing(chr)) cross <- subset(cross,chr=chr)
-
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
   n.phe <- nphe(cross)
@@ -194,6 +207,10 @@ function(cross, filestem="data", chr, digits=5)
   }
   if(any(is.na(geno))) geno[is.na(geno)] <- "-"
   pheno <- matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind)
+  # factors: should be character by the levels rather than something like "1", "2", etc.
+  for(i in 1:nphe(cross)) 
+    if(is.factor(cross$pheno[,i])) pheno[,i] <- as.character(cross$pheno[,i])
+  
   if(any(is.na(pheno))) pheno[is.na(pheno)] <- "-"
   data <- cbind(pheno,geno)
   colnames(data) <- c(colnames(cross$pheno),
@@ -233,10 +250,8 @@ function(cross, filestem="data", chr, digits=5)
 ######################################################################
 
 write.cross.gary <-
-function(cross, chr, digits)
+function(cross, digits)
 {
-  if(!missing(chr)) cross <- subset(cross,chr=chr)
-  
   # local variables
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
@@ -249,9 +264,9 @@ function(cross, chr, digits)
   for(i in 1:n.chr) {
     # the name for this chromosome
     chrname <- names(cross$geno[i])
-    # convert to number
-    if(chrname=="X") chrname <- 20
-    else chrname <- as.numeric(chrname)
+    # convert to number (why?)
+#    if(chrname=="X") chrname <- 20
+#    else chrname <- as.numeric(chrname)
     chrid <- c(chrid, rep(chrname, n.mar[i]))
   }
   write.table(chrid, file="chrid.dat", quote=F, row.names=F,
@@ -280,6 +295,9 @@ function(cross, chr, digits)
 
   # phenotype
   pheno <- matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind)
+  for(i in 1:nphe(cross)) 
+    if(is.factor(cross$pheno[,i])) pheno[,i] <- as.character(cross$pheno[,i])
+
   write.table(pheno, file="pheno.dat", quote=F, row.names=F,
               col.names=F, sep="\t", na="-999")
   # phenotype names
@@ -289,6 +307,43 @@ function(cross, chr, digits)
 }
                           
 
-  
+######################################################################
+# fixX4write
+######################################################################
+
+fixX4write <-
+function(geno,sex,pgm,crosstype)
+{
+  # males
+  if(!is.null(sex) & any(sex==1)) { 
+    temp <- geno[sex==1,,drop=FALSE]
+    temp[temp==2] <- 3
+    geno[sex==1,] <- temp
+  }
+
+  if(crosstype == "f2" || crosstype=="f2ss") {
+
+    # females
+    if(!is.null(pgm)) {
+      if(!is.null(sex) & any(sex==0)) {
+        if(any(pgm==1)) {
+          temp <- geno[sex==0 & pgm==1,,drop=FALSE]
+          temp[temp==1] <- 3
+          geno[sex==0 & pgm==1,] <- temp
+        }
+      }
+      else { # assume all females
+        if(any(pgm==1)) {
+          temp <- geno[pgm==1,,drop=FALSE]
+          temp[temp==1] <- 3
+          geno[pgm==1,] <- temp
+        }
+      }
+    }
+
+  }
+      
+  geno
+}
 
 # end of write.cross.R 

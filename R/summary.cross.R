@@ -3,13 +3,13 @@
 # summary.cross.R
 #
 # copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# last modified Nov, 2003
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: summary.cross, print.summary.cross, nind, nchr, nmar,
-#           totmar, nphe, nmissing
+#           totmar, nphe, nmissing, print.cross
 #
 ######################################################################
 
@@ -122,7 +122,7 @@ function(object,...)
     # Missing genotype category on autosomes?
     if(sum(!is.na(Geno) & Geno==2) == 0 ||
        sum(!is.na(Geno) & Geno==1) == 0) {
-      warn <- paste("Strange genotype pattern on chr", chr, ".")
+      warn <- paste("Strange genotype pattern on chr ", chr, ".", sep="")
       warning(warn)
     }
   }
@@ -150,14 +150,16 @@ function(object,...)
     }
 
     # Missing genotype category on autosomes?
-    dat <- NULL
+    dat <- NULL; flag <- 0
     for(i in 1:n.chr) {
-      if(class(object$geno[[i]]) != "X") 
+      if(class(object$geno[[i]]) != "X") {
         dat <- cbind(dat,object$geno[[i]]$data)
+        flag <- 1
+      }
     }
-    if(sum(!is.na(dat) & dat==2) == 0 ||
-       sum(!is.na(dat) & dat==1) == 0 ||
-       sum(!is.na(dat) & dat==3) == 0)
+    if(flag && (sum(!is.na(dat) & dat==2) == 0 ||
+               sum(!is.na(dat) & dat==1) == 0 ||
+               sum(!is.na(dat) & dat==3) == 0))
       warning("Strange genotype pattern.")
   }
 
@@ -187,7 +189,7 @@ function(object,...)
 print.summary.cross <-
 function(x,...)
 {
-  cat("\n")
+#  cat("\n")
   if(x$type=="f2") cat("    F2 intercross\n\n")
   else if(x$type=="f2ss") cat("    F2 intercross w/ sex-specific maps\n\n")
   else if(x$type=="bc") cat("    Backcross\n\n")
@@ -201,11 +203,12 @@ function(x,...)
   cat("    Percent phenotyped: ", round((1-x$missing.phe)*100,1), "\n\n")
   cat("    No. chromosomes: ", x$n.chr,"\n")
   cat("    Total markers:   ", sum(x$n.mar), "\n")
-  cat("    No. markers:     ", x$n.mar, "\n\n")
+  cat("    No. markers:     ", x$n.mar, "\n")
   cat("    Percent genotyped: ", round((1-x$missing.gen)*100,1), "\n")
   cat("    Genotypes (%):     ", 
       paste(names(x$typing.freq),round(x$typing.freq*100,1),sep=":", collapse="  "),
-      "\n\n")
+      "\n")
+#  cat("\n")
 }
 
 
@@ -293,5 +296,20 @@ function(cross,which=c("ind","mar"))
 
   n.missing
 }
+
+
+# "print" method for cross object
+#
+# to avoid ever printing the entire object, print just a little
+#     warning message and then the summary
+print.cross <-
+function(x, ...)
+{
+  cat("  This is an object of class \"cross\".\n")
+  cat("  It is too complex to print, so we provide just this summary.\n")
+  print(summary(x))
+  return(summary(x))
+}
+
 
 # end of summary.cross.R

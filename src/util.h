@@ -2,13 +2,13 @@
  * 
  * util.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
- *                     and Hao Wu, The Jackson Laboratory 
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
- * 
- * last modified Nov, 2001
+ *
+ * last modified Aug, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -18,9 +18,9 @@
  * These are utility functions, mostly for the HMM engine.
  *
  * Other functions: addlog, subtrlog, reorg_geno, reorg_genoprob,
- *                  reorg_pairprob,
+ *                  reorg_pairprob, allocate_int,
  *                  allocate_alpha, reorg_draws, allocate_double,
- *                  sample_int, allocate_imatrix, allocate_dmatrix,
+ *                  sample_int, allocate_imatrix, allocate_dmatrix
  *                  reorg_errlod, double_permute, random_int
  *                  wtaverage
  *
@@ -33,7 +33,7 @@
  * Calculate addlog(a,b) = log[exp(a) + exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.
+ * in R's math library.   
  *
  **********************************************************************/
 
@@ -46,7 +46,7 @@ double addlog(double a, double b);
  * Calculate subtrlog(a,b) = log[exp(a) - exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.
+ * in R's math library.  
  *
  **********************************************************************/
 
@@ -91,7 +91,10 @@ void reorg_genoprob(int n_ind, int n_pos, int n_gen,
  * quintuply indexed array rather than a single long vector
  *
  * Afterwards, pairprob indexed like 
- *    Pairprob[gen2][gen1][pos2][pos1][ind] with pos2 > pos1
+ *    Pairprob[gen1][gen2][pos1][pos2][ind] with pos2 > pos1
+ * 
+ * You *must* refer to cases with pos2 > pos1, as cases with
+ * pos2 <= pos1 point off into the ether.
  *
  * Allocation done by R_alloc, so that R does the cleanup.
  *
@@ -141,6 +144,18 @@ void reorg_draws(int n_ind, int n_pos, int n_draws,
  **********************************************************************/
 
 void allocate_double(int n, double **vector);
+
+/**********************************************************************
+ * 
+ * allocate_int
+ *
+ * Allocate space for a vector of ints
+ *
+ * Allocation done by R_alloc, so that R does the cleanup.
+ *
+ **********************************************************************/
+
+void allocate_int(int n, int **vector);
 
 /**********************************************************************
  * 
@@ -229,6 +244,5 @@ int random_int(int low, int high);
  *********************************************************************/
 
 double wtaverage(double *LOD, int n_draws);
-
 
 /* end of util.h */

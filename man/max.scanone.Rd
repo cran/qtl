@@ -34,6 +34,7 @@ max.scanone(\dots, chr, na.rm=TRUE)
 
 \examples{
 data(listeria)
+\dontshow{listeria <- subset(listeria,chr=c(5,13))}
 listeria <- calc.genoprob(listeria, step=2.5)
 out <- scanone(listeria, model="2part")
 # Maximum peak for LOD(p,mu)

@@ -55,9 +55,8 @@ sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0,
 
 \examples{
 data(fake.f2)
-fake.f2 <- sim.geno(fake.f2, step=2, off.end=5)
-\testonly{data(fake.bc)}
-\testonly{fake.bc <- sim.geno(fake.bc, step=0, off.end=0)}
+\dontshow{fake.f2 <- subset(fake.f2, chr=18:19)}
+fake.f2 <- sim.geno(fake.f2, step=2, n.draws=8)
 }
 
 \seealso{ \code{\link[qtl]{calc.genoprob}},

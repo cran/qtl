@@ -8,7 +8,7 @@
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Jun, 2003
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -231,8 +231,8 @@ double nullRss(double *pheno, double *weights, int n_ind,
   k = 0;
 
   /* fit linear regression model */
-  dqrls_(x0, &n_ind, &ncolx0, pheno, &ny, &tol, coef0, resid0,
-	 qty0, &k, jpvt0, qraux0, work0);
+  F77_CALL(dqrls)(x0, &n_ind, &ncolx0, pheno, &ny, &tol, coef0, resid0,
+		  qty0, &k, jpvt0, qraux0, work0);
   
   /* calculate the null RSS */
   for (i=0,rss0=0.0; i<n_ind; i++) 
@@ -300,8 +300,8 @@ double altRss(double *pheno, double *weights, int n_ind, int n_gen,
   ny = 1;
 
   /* call Fortran function to fit the linear regression model */
-  dqrls_(x, &n_ind, &ncolx, pheno, &ny, &tol, coef, resid,
-	 qty, &k, jpvt, qraux, work);
+  F77_CALL(dqrls)(x, &n_ind, &ncolx, pheno, &ny, &tol, coef, resid,
+		  qty, &k, jpvt, qraux, work);
 
   /* calculate RSS */
   for(i=0, rss=0.0; i<n_ind; i++)

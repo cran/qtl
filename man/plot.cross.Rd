@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.cross(x, auto.layout=TRUE, \dots)
+plot.cross(x, auto.layout=TRUE, pheno, \dots)
 }
 
 \arguments{
@@ -17,6 +17,8 @@ plot.cross(x, auto.layout=TRUE, \dots)
    \code{\link[qtl]{read.cross}} for details.}
  \item{auto.layout}{If TRUE, \code{par(mfrow)} is set so that all plots
    fit within one figure.}
+ \item{pheno}{Vector of numbers or character strings corresponding to
+   phenotypes that should be plotted.} 
  \item{\dots}{Ignored at this point.}
 }
 
@@ -46,6 +48,6 @@ plot(fake.bc)
   \code{\link[base]{hist}}, \code{\link[base]{barplot}},
   \code{\link[base]{table}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian Yandell }
 
 \keyword{hplot}

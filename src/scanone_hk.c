@@ -2,9 +2,9 @@
  * 
  * scanone_hk.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -124,8 +124,8 @@ void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
     for(k=0; k<n_addcov; k++) 
       x[j+(k+1)*n_ind] = Addcov[k][j];
   }
-  dqrls_(x, &n_ind, &ncol0, pheno, &ny, &tol, coef, resid,
-	 qty, &k, jpvt, qraux, work);
+  F77_CALL(dqrls)(x, &n_ind, &ncol0, pheno, &ny, &tol, coef, resid,
+	          qty, &k, jpvt, qraux, work);
   rss0 = 0.0;
   for(j=0; j<n_ind; j++)  rss0 += (resid[j]*resid[j]);
   Null model is now done in R ********************/
@@ -149,8 +149,8 @@ void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
     }
 
     /* linear regression of phenotype on QTL genotype probabilities */
-    dqrls_(x, &n_ind, &ncol, pheno, &ny, &tol, coef, resid,
-	   qty, &k, jpvt, qraux, work);
+    F77_CALL(dqrls)(x, &n_ind, &ncol, pheno, &ny, &tol, coef, resid,
+		    qty, &k, jpvt, qraux, work);
 
     /* RSS */
     Result[0][i] = 0.0;

@@ -2,9 +2,9 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
 #                       and Karl W. Broman, Johns Hopkins University
-# last modified Jun, 2003
+# last modified Jul, 2004
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,11 +26,11 @@ scanqtl <-
 
   # check the input covariate, if any
   if(!missing(covar)) {
-    if(dim(covar)[1] != nind(cross))
+    if(nrow(covar) != nind(cross))
       stop("Input covariate has wrong size")
   }
   # check the input pheno.col
-  if(pheno.col>dim(cross$pheno)[2])
+  if(pheno.col>ncol(cross$pheno))
     stop("Wrong phenotype column number")
   
   method <- match.arg(method)
@@ -98,7 +98,7 @@ scanqtl <-
         stop(err)
       }
       if(!("draws" %in% names(cross$geno[[1]]))) # there's no draw in input cross object
-        stop("There's no draws field in input cross object")
+        stop("You need to first run sim.geno().")
       # make genetic map
       map <- create.map(cross$geno[[i.chr]]$map,
                         attr(cross$geno[[i.chr]]$draws,"step"),

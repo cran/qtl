@@ -43,6 +43,6 @@ find.marker(listeria, 5, 28)
 find.marker(listeria, c(1, 5, 13), c(81, 28, 26))
 }
 
-\seealso{ \code{\link[qtl]{plot.pxg}} }
+\seealso{ \code{\link[qtl]{find.flanking}}, \code{\link[qtl]{plot.pxg}} }
 
 \keyword{manip}

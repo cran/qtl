@@ -2,8 +2,8 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Jul, 2004
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -39,18 +39,22 @@ function(cross, error.prob=0.01,
   n.mar <- nmar(cross)
   type <- class(cross)[1]
   
-  if(type=="bc" || type=="risib" || type=="riself")
-    cfunc <- "calc_errorlod_bc"
-  else if(type=="f2") cfunc <- "calc_errorlod_f2"
-  else if(type=="4way") cfunc <- "calc_errorlod_4way"
-  else {
-    err <- paste("calc.errorlod not available for cross type",
-                  type,".")
-    stop(err)
-  }
-  
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
+
+    chr.type <- class(cross$geno[[i]])
+    if(type=="bc" || type=="risib" || type=="riself")
+      cfunc <- "calc_errorlod_bc"
+    else if(type=="f2") {
+      if(chr.type=="A") cfunc <- "calc_errorlod_f2"
+      else cfunc <- "calc_errorlod_bc"
+    }
+    else if(type=="4way") cfunc <- "calc_errorlod_4way"
+    else {
+      err <- paste("calc.errorlod not available for cross type",
+                   type,".")
+      stop(err)
+    }
 
     # skip chromosomes with only 1 marker
     if(n.mar[i] < 2) next
@@ -77,6 +81,7 @@ function(cross, error.prob=0.01,
          
       Pr <- cross$geno[[i]]$prob
       u <- grep("^loc\-*[0-9]+",colnames(Pr))
+
       if(length(u) > 0) Pr <- Pr[,-u,]
     }
     

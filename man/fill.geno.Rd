@@ -43,6 +43,7 @@ fill.geno(cross, method=c("imp","argmax"), error.prob=0,
 
 \examples{
 data(hyper)
+\dontshow{hyper <- subset(hyper,chr=18:19)}
 out.mr <- scantwo(fill.geno(hyper,method="argmax"), method="mr")
 plot(out.mr)
 }

@@ -59,8 +59,9 @@ plot.info(x, chr, method=c("both","entropy","variance"), \dots)
 
 \examples{
 data(hyper)
+\dontshow{hyper <- subset(hyper,chr=1:4)}
 hyper <- calc.genoprob(hyper, step=2.5, off.end=5)
-plot.info(hyper,chr=c(1,4,6,7,15))
+plot.info(hyper,chr=c(1,4))
 
 # save the results and view maximum missing info on each chr
 info <- plot.info(hyper)

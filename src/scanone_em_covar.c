@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2003
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -131,8 +131,8 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       x[i+(j+1)*n_ind] = Addcov[j][i];
   }
   j=0;
-  dqrls_(x, &n_ind, &ncol0, pheno, &ny, &regtol, coef,
-	 resid, qty, &k, jpvt, qraux, work);
+  F77_CALL(dqrls)(x, &n_ind, &ncol0, pheno, &ny, &regtol, coef,
+	          resid, qty, &k, jpvt, qraux, work);
   sigma0 = llik0 = 0.0;
   for(i=0; i<n_ind; i++) sigma0 += (resid[i] * resid[i]);
   sigma0 = sqrt(sigma0/(double)n_ind);
@@ -323,14 +323,14 @@ void mstep_em_covar(int n_ind, int n_gen, double **Addcov, int n_addcov,
   /*      work1[k+j*nparm1] = work1[j+k*nparm1];                */
 
   /* solve work1 * beta = work2 for beta */
-  dpoco_(work1, &nparm1, &nparm1, &rcond, param, &info);
+  F77_CALL(dpoco)(work1, &nparm1, &nparm1, &rcond, param, &info);
   if(fabs(rcond) < TOL || info != 0) { /* error! */
     warning("X'X matrix is singular.");
     *error_flag = 1;
   }
   else {
     for(j=0; j<nparm1; j++) param[j] = work2[j];
-    dposl_(work1, &nparm1, &nparm1, param);
+    F77_CALL(dposl)(work1, &nparm1, &nparm1, param);
 
     /* calculate residual SD */
     param[nparm1] = 0.0;

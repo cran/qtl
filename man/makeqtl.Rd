@@ -61,7 +61,8 @@ data(fake.f2)
 qc <- c(1, 6, 13)
 qp <- c(25.8, 33.6, 18.63)
 fake.f2 <- subset(fake.f2, chr=qc)
-fake.f2 <- sim.geno(fake.f2, n.draws=64, step=2, err=0.001)
+\dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
+fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)
 qtl <- makeqtl(fake.f2, qc, qp)
 }
 

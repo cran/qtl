@@ -14,8 +14,9 @@
 \usage{
 read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
            file, genfile, mapfile, phefile, chridfile, mnamesfile,
-           pnamesfile, sep=",", na.strings=c("-","NA"),
-           genotypes=c("A","H","B","D","C"), estimate.map=TRUE)
+           pnamesfile, na.strings=c("-","NA"),
+           genotypes=c("A","H","B","D","C"), estimate.map=TRUE,
+           convertXdata=TRUE, \dots)
 }
 
 \arguments{
@@ -35,25 +36,32 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
   \item{mnamesfile}{File with marker names (\code{gary} format only).}
   \item{pnamesfile}{File with phenotype names (\code{gary} format
     only).}
-  \item{sep}{The field separator (\code{csv} format only).  This is
-    generally \code{","}, but could be any other character (such as
-    \code{"\\t"} for tab), as long as that character does not appear in
-    any of the records.}  
   \item{na.strings}{A vector of strings which are to be interpreted as
-    missing values (\code{csv} format only).  These are interpreted
-    globally for the entire file, so missing value codes in phenotypes
-    must not be valid genotypes, and vice versa.}
+    missing values (\code{csv} format and \code{gary} only).  For the
+    \code{csv} format, these are interpreted globally for the entire
+    file, so missing value codes in phenotypes must not be valid
+    genotypes, and vice versa. For the \code{gary} format, these are
+    used only for the phenotype data.} 
   \item{genotypes}{A vector of character strings specifying the genotype
     codes (\code{csv} format only).  Generally this is a vector of
     length 5, with the elements corresponding to AA, AB, BB, not AA 
     (i.e., AB or  BB), and not BB (ie, AB or BB).  \bold{Note}: Pay
     careful attention to the third and fourth of these; the order of
-    these can be confusing!  These five character strings are converted
-    to (1,2,3,5,4) in the \code{cross} object that is returned.} 
+    these can be confusing.}
   \item{estimate.map}{For formats \code{csv}, \code{qtx}, \code{mm}, and
     \code{gary} only: if TRUE and marker positions are not included in
     the input files, the genetic map is estimated using the function 
-    \code{\link[qtl]{est.map}}.}   
+    \code{\link[qtl]{est.map}}.}
+  \item{convertXdata}{If TRUE, any X chromosome genotype data is
+    converted to the internal standard, using columns \code{sex} and
+    \code{pgm} in the phenotype data if they available or by inference
+    if they are not.  If FALSE, the X chromsome data is read as is.}  
+  \item{\dots}{Additional arguments, passed to the function
+    \code{\link[base]{read.table}} in the case that
+    \code{format="csv"}.  In particular, one may use the argument
+    \code{sep} to specify the field separator (the default is a comma)
+    and \code{dec} to specify the character used for the decimal point
+    (the default is a period).}
 }
 
 \value{
@@ -103,34 +111,34 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
 \section{X chromosome}{
   \bold{The genotypes for the X chromosome require special care!}
 
-  Any X chromosome genotype data should be coded like an
-  autosome in a backcross, with genotypes A and H.
-
-  The phenotype data should contain a column named "sex" which indicates
-  the sex of each individual, either coded as 0=female and 1=male, or as
-  a factor with levels female/male or f/m.  Case will be ignored both in
-  the name and in the factor levels.  If no such phenotype column is
-  included, it will be assumed that all individuals are of the same sex.
+  The phenotype data should contain a column named \code{"sex"} which
+  indicates the sex of each individual, either coded as 0=female and
+  1=male, or as a factor with levels female/male or f/m.  Case will be
+  ignored both in the name and in the factor levels.  If no such
+  phenotype column is included, it will be assumed that all individuals
+  are of the same sex.
 
   In the case of an intercross, the phenotype data may also contain a
-  column names "pgm" (for "paternal grandmother") indicating the
+  column names \code{"pgm"} (for ``paternal grandmother'') indicating the
   direction of the cross.  It should be coded as 0/1 with 0 indicating
   the cross (AxB)x(AxB) or (BxA)x(AxB) and 1 indicating the cross
   (AxB)x(BxA) or (BxA)x(BxA).  If no such phenotype column is included,
   it will be assumed that all individuals come from the same direction
   of cross. 
 
-  In a backcross, females should be coded 1=AA and 2=AB, while males
-  should be coded 1=A and 2=B (hemizygous).
-
-  In an intercross, males should be coded as 1=A and 2=B (hemizygous),
-  which females should be coded as 1=AA and 2=AB for pgm=0, and 1=BB and
-  2=AB for pgm=1.
+  The internal storage of X chromosome data is quite different from that
+  of autosomal data.  Males are coded 1=AA and 2=BB; females with pgm==0
+  are coded 1=AA and 2=AB; and females with pgm==1 are coded 1=BB and
+  2=AB.  If the argument \code{convertXdata} is TRUE, conversion to this
+  format is made automatically; if FALSE, no conversion is done, 
+  \code{\link[qtl]{summary.cross}} will likely return a warning, and
+  most analyses will not work properly.
 }
 
 \section{CSV format}{
-  The input file is a text file with a specified field delimiter
-  (\code{sep}) (a comma is recommended).
+  The input file is a comma-delimited text file (a different field
+  separator may be specified via the argument \code{sep} which will be passed
+  to the function \code{\link[base]{read.table}}).
 
   The first line should contain the phenotype names followed by the
   marker names.  \bold{At least one phenotype must be included}; for
@@ -270,7 +278,8 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
 }
 
 \examples{
-\dontrun{# comma-delimited format
+\dontrun{
+# comma-delimited format
 dat1 <- read.cross("csv", dir="Mydata", file="mydata.csv")
 
 # Mapmaker format

@@ -10,8 +10,9 @@
 
 \usage{
 plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
-             xlim, ylim, lty=c(1,2,3), col="black", lwd=2, add=FALSE,
-             gap=25, main, mtick = c("line", "triangle"), \dots)
+             xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
+             add=FALSE, gap=25, main, mtick = c("line", "triangle"),
+             \dots)
 }			    
 
 \arguments{
@@ -57,13 +58,13 @@ plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
 
 \examples{
 data(fake.f2)
+\dontshow{fake.f2 <- subset(fake.f2, chr=c(1,13))}
 fake.f2 <- calc.genoprob(fake.f2,step=2.5)
 out.mr <- scanone(fake.f2, method="mr")
-out.em <- scanone(fake.f2, chr=c(1,13), method="em")
+out.em <- scanone(fake.f2, method="em")
 plot(out.mr)
-plot(out.mr, out.em, chr=c(1,13))
-plot(out.mr, out.em, , c(1,13), lty=1, col=c("violetred","black"))
-out.hk <- scanone(fake.f2, chr=c(1,13), method="hk")
+plot(out.mr, out.em, chr=c(1,13), lty=1, col=c("violetred","black"))
+out.hk <- scanone(fake.f2, method="hk")
 plot(out.hk, chr=c(1,13), add=TRUE, col="slateblue")
 }
 

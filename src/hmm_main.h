@@ -2,9 +2,9 @@
  * 
  * hmm_main.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Oct, 2003
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -19,6 +19,9 @@
  **********************************************************************/
 
 #define TOL    1.0e-12
+#define LN_05  -0.6931471805599453 /* natural log of 0.5 */
+#define LN_025 -1.3862943611198906 /* natural log of 0.25 */
+#define LN_2    0.6931471805599453 /* natural log of 2 */
 
 /**********************************************************************
  * 

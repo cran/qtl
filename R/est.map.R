@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2004
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -90,13 +90,17 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
     # genotype data
     gen <- cross$geno[[i]]$data
     gen[is.na(gen)] <- 0
+
+    # remove individuals that have less than one typed marker
+    o <- apply(gen,1,function(a) sum(a!=0)>1)
+    gen <- gen[o,,drop=FALSE]
     
     # recombination fractions
     if(one.map) {
       # recombination fractions
       rf <- mf(diff(cross$geno[[i]]$map))
       if(type=="risib" || type=="riself")
-        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)))
+        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),class(cross$geno[[i]]))
       rf[rf < 1e-14] <- 1e-14
     }
     else {
@@ -119,7 +123,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
     # call the C function
     if(one.map) {
       z <- .C(cfunc,
-              as.integer(n.ind),         # number of individuals
+              as.integer(nrow(gen)),         # number of individuals
               as.integer(n.mar[i]),      # number of markers
               as.integer(gen),           # genotype data
               rf=as.double(rf),          # recombination fractions
@@ -131,14 +135,15 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
               PACKAGE="qtl")
 
       if(type=="riself" || type=="risib") 
-        z$rf <- adjust.rf.ri(z$rf, substr(type, 3, nchar(type)), expand=FALSE)
+        z$rf <- adjust.rf.ri(z$rf, substr(type, 3, nchar(type)),
+                             class(cross$geno[[i]]), expand=FALSE)
       newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),imf(z$rf)))
       names(newmap[[i]]) <- names(cross$geno[[i]]$map)
       attr(newmap[[i]],"loglik") <- z$loglik
     }
     else {
       z <- .C(cfunc,
-              as.integer(n.ind),         # number of individuals
+              as.integer(nrow(gen)),         # number of individuals
               as.integer(n.mar[i]),      # number of markers
               as.integer(gen),           # genotype data
               rf=as.double(rf),          # recombination fractions

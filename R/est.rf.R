@@ -2,13 +2,13 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Jul, 2004
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: est.rf, plot.rf
+# Contains: est.rf, plot.rf, checkrf
 #
 ######################################################################
 
@@ -67,6 +67,8 @@ function(cross, maxit=4000, tol=1e-4)
 
   cross$rf <- matrix(z$rf,ncol=n.mar)
   dimnames(cross$rf) <- list(mar.names,mar.names)
+
+  checkrf(cross, 3)
   cross
 }
 
@@ -138,6 +140,45 @@ function(x, chr, which=c("both","lod","rf"), ...)
   else if(which=="rf") title(main="Recombination fractions")
   else title("Pairwise recombination fractions and LOD scores")
   
+}
+
+######################################################################
+# check for apparent errors in the recombination fractions
+######################################################################
+checkrf <-
+function(cross, threshold=3)
+{
+  rf <- cross$rf
+  n.mar <- nmar(cross)
+  map <- pull.map(cross)
+  n <- ncol(rf)
+  mnam <- colnames(rf)
+  whpos <- unlist(lapply(map,function(a) 1:length(a)))
+  whchr <- rep(names(map),sapply(map,length))
+
+  # first check whether a locus has "significant" pairwise recombination
+  #     with rf > 0.5
+  for(i in 1:n) {
+    if(i == 1) {
+      lod <- rf[1,-1]
+      r <- rf[-1,1]
+    }
+    else if(i == n) {
+      lod <- rf[-n,n]
+      r <- rf[n,-n]
+    }
+    else {
+      lod <- c(rf[1:(i-1),i],rf[i,(i+1):n])
+      r <- c(rf[i,1:(i-1)],rf[(i+1):n,i])
+    }
+
+    # if rf > 1/2 and LOD > threshold for more than two other markers
+    if(sum(!is.na(lod) & !is.na(r) & lod > threshold & r > 0.5) >= 2)
+      warning("Genotypes potentially switched for marker ", mnam[i],
+          paste(" (",whpos[i],")",sep=""), " on chr ", whchr[i], "\n")
+    
+  }
+
 }
 
 # end of est.rf.R

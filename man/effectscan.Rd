@@ -27,8 +27,7 @@ effectscan(cross, pheno.col=1, chr, ylim, gap=25,
   \item{col}{Line colors.}
   \item{lty}{Line types.}
   \item{lwd}{Line widths.}
-  \item{mtick}{Tick mark type for markers. "line" for line and
-    "triangle" for upward triangles.}
+  \item{mtick}{Tick mark type for markers.}
   \item{main}{Figure title.}
   \item{add.legend}{A logical value to indicate add legend or not.}
   \item{\dots}{Passed to the function \code{\link[base]{plot}} when it
@@ -42,7 +41,6 @@ data(fake.f2)
 effectscan(fake.f2, ylim=c(-6,3))
 # on first 4 chromosomes, use triangle as marker ticks
 effectscan(fake.f2, chr=1:4, ylim=c(-6,3), mtick="triangle")
-
 }
 
 \author{Hao Wu, \email{hao@jax.org}}

@@ -2,13 +2,13 @@
  * 
  * util.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Jun, 2003
+ * last modified Aug, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -18,7 +18,7 @@
  * These are utility functions, mostly for the HMM engine.
  *
  * Other functions: addlog, subtrlog, reorg_geno, reorg_genoprob,
- *                  reorg_pairprob
+ *                  reorg_pairprob, allocate_int
  *                  allocate_alpha, reorg_draws, allocate_double,
  *                  sample_int, allocate_imatrix, allocate_dmatrix
  *                  reorg_errlod, double_permute, random_int
@@ -43,8 +43,7 @@
  * Calculate addlog(a,b) = log[exp(a) + exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.  I'm having trouble getting access to this
- * function in Windows, so for now I just use log(1+x) there.
+ * in R's math library.   
  *
  **********************************************************************/
 
@@ -52,11 +51,7 @@ double addlog(double a, double b)
 {
   if(b > a + THRESH) return(b);
   else if(a > b + THRESH) return(a);
-#ifdef WIN32
-  else return(a + log(1.0 + exp(b-a)));
-#else 
   else return(a + log1p(exp(b-a)));
-#endif
 }
 		       
 /**********************************************************************
@@ -66,19 +61,14 @@ double addlog(double a, double b)
  * Calculate subtrlog(a,b) = log[exp(a) - exp(b)]
  *
  * This makes use of the function log1p(x) = log(1+x) provided
- * in R's math library.  I'm having trouble getting access to this
- * function in Windows, so for now I just use log(1+x) there.
+ * in R's math library.  
  *
  **********************************************************************/
 
 double subtrlog(double a, double b)
 {
   if(a > b + THRESH) return(a);
-#ifdef WIN32
-  else return(a + log(1.0 - exp(b-a)));
-#else 
   else return(a + log1p(-exp(b-a)));
-#endif
 }
 
 /**********************************************************************
@@ -258,6 +248,21 @@ void reorg_draws(int n_ind, int n_pos, int n_draws,
 void allocate_double(int n, double **vector)
 {
   *vector = (double *)R_alloc(n, sizeof(double));
+}
+
+/**********************************************************************
+ * 
+ * allocate_int
+ *
+ * Allocate space for a vector of ints
+ *
+ * Allocation done by R_alloc, so that R does the cleanup.
+ *
+ **********************************************************************/
+
+void allocate_int(int n, int **vector)
+{
+  *vector = (int *)R_alloc(n, sizeof(int));
 }
 
 /**********************************************************************

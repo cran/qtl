@@ -30,7 +30,7 @@ max.scantwo(\dots, na.rm=TRUE)
 
 \examples{
 data(fake.f2)
-fake.f2 <- calc.genoprob(fake.f2, step=5)
+fake.f2 <- calc.genoprob(fake.f2, step=10)
 out.2dim <- scantwo(fake.f2, method="hk", chr=c(1,6,13))
 max(out.2dim)
 }

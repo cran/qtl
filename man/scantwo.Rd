@@ -14,7 +14,6 @@
 scantwo(cross, chr, pheno.col=1,
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"), 
         addcovar=NULL, intcovar=NULL, weights=NULL,
-        x.treatment=c("simple","full"),
         run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
         trace=TRUE, n.perm)
 }
@@ -34,12 +33,6 @@ scantwo(cross, chr, pheno.col=1,
    Viterbi algorithm (\code{"mr-argmax"}).}
  \item{addcovar}{Additive covariates.}
  \item{intcovar}{Interactive covariates (interact with QTL genotype).}
- \item{x.treatment}{How to treat the X-chromosome.  Simple: hemizygous
-   males are equivalent to homozygous females.  Full: hemizygous males
-   are treated differently from homozygous females.  Note that columns
-   \code{"sex"} and \code{"pgm"} in the phenotype data are needed; see
-   the section on the X chromosome in the help file for
-   \code{\link[qtl]{read.cross}}.} 
  \item{weights}{Optional weights of individuals.  Should be either NULL
    or a vector of length n.ind containing positive weights.}
  \item{run.scanone}{If TRUE, run the function \code{\link[qtl]{scanone}}
@@ -99,9 +92,19 @@ scantwo(cross, chr, pheno.col=1,
   \code{scantwo} is called repeatedly.
 }
 
+\section{X chromosome}{
+The X chromosome must be treated specially in QTL mapping.
+
+As in \code{\link[qtl]{scanone}}, if both males and females are
+included, male hemizygotes are allowed to be different from female
+homozygotes, and the null hypothesis must be changed in order to ensure
+that sex- or pgm-differences in the phenotype do not results in spurious
+linkage to the X chromosome.  
+}
+
 \value{
   If \code{n.perm} is missing, the function returns a list with 
-  class \code{"scantwo"} and containing two components.  The first
+  class \code{"scantwo"} and containing three components.  The first
   component is a matrix of dimension [tot.pos x tot.pos] whose upper
   triangle contains the epistasis LOD scores and whose lower triangle
   contains the joint LOD scores.  If \code{run.scanone=TRUE}, the
@@ -109,8 +112,13 @@ scantwo(cross, chr, pheno.col=1,
   second component of the output is a data.frame indicating the
   locations at which the two-QTL LOD scores were calculated.  The first
   column is the chromosome identifier, the second column is the position
-  in cM, and the third column is a 1/0 indicator for ease in later
-  pulling out only the equally spaced positions.
+  in cM, the third column is a 1/0 indicator for ease in later
+  pulling out only the equally spaced positions, and the fourth column
+  indicates whether the position is on the X chromosome or not.  The
+  final component is a version of the results of
+  \code{\link[qtl]{scanone}} including sex and/or cross direction as
+  additive covariates, which is needed for a proper calculation of
+  conditional LOD scores.
 
   If \code{n.perm} is specified, the function returns a matrix with two
   columns, containing the maximum joint and epistasis LOD scores, across
@@ -147,11 +155,12 @@ scantwo(cross, chr, pheno.col=1,
 
 \examples{
 data(fake.f2)
+\dontshow{fake.f2 <- subset(fake.f2, chr=18:19)}
 fake.f2 <- calc.genoprob(fake.f2, step=10)
 out.2dim <- scantwo(fake.f2, method="hk")
 plot(out.2dim)
 
-\testonly{permo.2dim <- scantwo(fake.f2, method="hk", n.perm=3)
+\dontshow{permo.2dim <- scantwo(fake.f2, method="hk", n.perm=2)
 }\dontrun{permo.2dim <- scantwo(fake.f2, method="hk", n.perm=1000)
 }apply(permo.2dim,2,quantile,0.95)
 

@@ -50,23 +50,6 @@ plot.missing(hyper, reorder=TRUE)
 
 # A marker on c14 has no data; remove it
 hyper <- drop.nullmarkers(hyper)
-
-# Genome scan with normal model
-hyper <- calc.genoprob(hyper, step=2.5)
-out <- scanone(hyper)
-summary(out,3)
-
-# Non-parametric genome scan
-out.np <- scanone(hyper, model="np")
-summary(out.np,3)
-plot(out.np,out,chr=c(1,4),lty=1,col=c("blue","black"))
-
-# Two-dimensional genome scan, using Haley-Knott regression
-# Here we just do c1 and c4, and on a more coarse grid.
-hyper.coarse <- calc.genoprob(hyper, step=5)
-out2 <- scantwo(hyper.coarse, method="hk", chr=c(1,4))
-plot(out2)
-summary(out2,c(8,0,0))
 }
 
 \seealso{ \code{\link[qtl]{fake.bc}}, \code{\link[qtl]{fake.f2}},

@@ -2,8 +2,8 @@
 #
 # calc.genoprob.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2004
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -96,7 +96,7 @@ function(cross, step=0, off.end=0, error.prob=0,
       map <- create.map(cross$geno[[i]]$map,step,temp.offend)
       rf <- mf(diff(map))
       if(type=="risib" || type=="riself")
-        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)))
+        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),class(cross$geno[[i]]))
       rf[rf < 1e-14] <- 1e-14
 
       # new genotype matrix with pseudomarkers filled in

@@ -21,8 +21,9 @@ geno.table(cross)
 \value{
   A matrix containing, for each marker, the number of individuals with
   each possible genotype, as well as the number that were not typed.
-  The last column gives P-values from chi-square tests of Mendelian
-  segregation.  
+  The first column gives the chromosome ID, and the last column gives
+  P-values from chi-square tests of Mendelian segregation.  In the case
+  of partially informative genotypes, P-values are not provided.
 }
 
 \examples{

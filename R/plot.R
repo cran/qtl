@@ -2,8 +2,9 @@
 #
 # plot.R
 #
-# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2000-4, Karl W Broman, Johns Hopkins University
+#       [modifications of plot.cross from Brian Yandell]
+# last modified Jul, 2004
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -14,7 +15,7 @@
 ######################################################################
 
 plot.missing <-
-function(x,chr,reorder=FALSE,main="Missing genotypes",...) 
+function(x, chr, reorder=FALSE, main="Missing genotypes", ...) 
 {
   cross <- x
   if(!missing(chr)) cross <- subset(cross,chr=chr)
@@ -29,7 +30,12 @@ function(x,chr,reorder=FALSE,main="Missing genotypes",...)
   o <- 1:nrow(Geno)
   if(reorder) {
     # if reorder is a number, use the corresponding phenotype
-    if(is.numeric(reorder)) o <- order(cross$pheno[,reorder])
+    if(is.numeric(reorder)) {
+      if(reorder < 1 || reorder > nphe(cross)) 
+        stop("reorder should be TRUE, FALSE, or an integer between 1 and", nphe(cross))
+
+      o <- order(cross$pheno[,reorder])
+    }
 
     # otherwise, order according to the sum of the phenotypes
     else o <- order(apply(cross$pheno,1,sum))
@@ -69,7 +75,7 @@ function(x,chr,reorder=FALSE,main="Missing genotypes",...)
   n.mar <- nmar(cross)
   n.chr <- nchr(cross)
   a <- c(0.5,cumsum(n.mar)+0.5)
-#  abline(v=a)
+
   # the following makes the lines go slightly above the plotting region
   b <- par("usr")
   segments(a,b[3],a,b[4]+diff(b[3:4])*0.02)
@@ -282,34 +288,37 @@ function(x,map2,horizontal=FALSE,...)
 
 
 plot.cross <-
-function(x,auto.layout=TRUE,...)
+function (x, auto.layout = TRUE, pheno, ...) 
 {
-  
   old.yaxt <- par("yaxt")
   old.mfrow <- par("mfrow")
-  on.exit(par(yaxt=old.yaxt,mfrow=old.mfrow))
+  on.exit(par(yaxt = old.yaxt, mfrow = old.mfrow))
 
   n.phe <- nphe(x)
+  if(missing(pheno)) pheno <- 1:n.phe
+  n.plot = length(pheno) + 2
 
   # automatically choose row/column structure for the plots
-  if(auto.layout) { 
-    nr <- ceiling(sqrt(n.phe+2))
-    nc <- ceiling((n.phe+2)/nr)
-    par(mfrow=c(nr,nc))
+  if(auto.layout) {
+    nr <- ceiling(sqrt(n.plot))
+    nc <- ceiling((n.plot)/nr)
+    par(mfrow = c(nr, nc))
   }
 
   plot.missing(x)
   plot.map(x)
-  for(i in 1:n.phe) {
-    if(!is.numeric(x$pheno[,i])) {
-      par(yaxt="s")
-      barplot(table(x$pheno[,i]),xlab=colnames(x$pheno)[i],
-              ylab="", main=colnames(x$pheno)[i],col="white")
+
+  if( is.numeric(pheno) )
+    pheno = names(x$pheno)[pheno]
+
+  for(i in pheno) {
+    if(!is.numeric(x$pheno[[i]])) {
+      par(yaxt = "s")
+      barplot(c(table(x$pheno[[i]])), axes = FALSE, xlab = i, ylab = "",
+              main = i, col = "white")
     }
-    else 
-      hist(x$pheno[,i],breaks=round(sqrt(nrow(x$pheno))+5),
-           xlab=colnames(x$pheno)[i],prob=TRUE, ylab="",
-           main=colnames(x$pheno)[i], yaxt="n")
+    else hist(x$pheno[[i]], breaks = round(sqrt(nrow(x$pheno)) + 5),
+              xlab = i, prob = TRUE, ylab = "", main = i, yaxt = "n")
   }
   invisible()
 }
@@ -409,7 +418,7 @@ function(x, chr, ind, horizontal=FALSE, cutoff=3.5, min.sep=2, cex=1.2, ...)
 
     if(any(errors)) {
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
-      points(x,ind,pch=0,col=color[6],cex=cex+0.3)
+      points(x,ind,pch=0,col=color[6],cex=cex+0.4,lwd=2)
     }
 
   }
@@ -457,7 +466,7 @@ function(x, chr, ind, horizontal=FALSE, cutoff=3.5, min.sep=2, cex=1.2, ...)
 
     if(any(errors)) {
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
-      points(ind,y,pch=0,col=color[6],cex=cex+0.3)
+      points(ind,y,pch=0,col=color[6],cex=cex+0.4,lwd=2)
     }
   }
   invisible()
@@ -469,7 +478,6 @@ function(x, chr, ind, horizontal=FALSE, cutoff=3.5, min.sep=2, cex=1.2, ...)
 #            genotype data.
 #
 ######################################################################
-
 plot.info <-
 function(x,chr,method=c("both","entropy","variance"),...)
 {
@@ -501,7 +509,8 @@ function(x,chr,method=c("both","entropy","variance"),...)
                as.double(cross$geno[[i]]$prob),
                info1=as.double(rep(0,n.pos)),
                info2=as.double(rep(0,n.pos)),
-               as.integer(method))
+               as.integer(method),
+               PACKAGE="qtl")
 
     if(method != 1) { # rescale entropy version
       if(n.gen==3) maxent <- 1.5*log(2)
@@ -524,8 +533,8 @@ function(x,chr,method=c("both","entropy","variance"),...)
                     "Missing information"=info$info2)
     w <- names(map)
     o <- grep("^loc\-*[0-9]+",w)
-    if(length(o) > 0) 
-      w[o] <- paste(w[o],names(cross$geno)[i],sep=".c")
+    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(z) <- w
     results <- rbind(results, z)
   }
@@ -561,91 +570,210 @@ function(x,chr,method=c("both","entropy","variance"),...)
   invisible(results)
 }
 
-# Plot phenotypes against the genotypes at a marker
-plot.pxg <-
-function(x, marker, pheno.col=1, jitter=1, infer=TRUE, ...)
-{
-  oldlas <- par("las")
-  on.exit(par(las=oldlas))
-  par(las=1)
 
+# plot phenotypes against one or more markers
+plot.pxg <-
+function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE, 
+         pch, ylab, ...) 
+{
   cross <- x
   type <- class(cross)[1]
 
-  # find chromosome containing the marker
-  o <- sapply(cross$geno,function(a,b)
-              !is.na(match(b,colnames(a$data))),marker)
-  if(!any(o)) {
-    err <- paste("Marker",marker,"not found")
+  if(missing(pch)) pch <- par("pch")
+  if(missing(ylab)) ylab <-  colnames(cross$pheno)[pheno.col] 
+
+  oldlas <- par("las")
+  on.exit(par(las = oldlas))
+  par(las = 1)
+
+  # find chromosome containing the markers
+  o <- sapply(cross$geno, function(a, b) !is.na(match(b, colnames(a$data))), 
+              marker)
+  if(length(marker)==1) o <- matrix(o,nrow=1)
+  if(!all(apply(o,1,any))) {
+    oo <- apply(o,1,any)
+    err <- paste("Marker", marker[!oo], "not found")
     stop(err)
   }
-
+  n.mark <- length(marker)
+  o <- apply(o, 1, which)
   chr <- names(cross$geno)[o]
-  cross <- subset(cross, chr)
 
-  chrtype <- class(cross$geno[[1]])
+  cross <- subset(cross, chr)
+  map <- pull.map(cross)
+  pos <- NULL
+  for(i in seq(length(chr))) pos[i] <- map[[chr[i]]][marker[i]]
+  chrtype <- sapply(cross$geno, class)
 
   # if X chromosome and backcross or intercross, get sex/direction data
-  if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+  if(any(chrtype == "X") && (type == "bc" || type == "f2" || 
+            type == "f2ss")) 
     sexpgm <- getsex(cross)
+  else sexpgm <- NULL
 
   # number of possible genotypes
-  gen.names <- getgenonames(type, chrtype, "full", sexpgm)
-  n.gen <- length(gen.names)
+  gen.names <- list()
+  for(i in seq(length(chr)))
+    gen.names[[i]] <- getgenonames(type, chrtype[i], "standard", sexpgm)
+  n.gen <- sapply(gen.names, length)
 
   jitter <- jitter/10
-  if(n.gen==2) jitter <- jitter*0.75
-  
+  if(any(n.gen == 2)) jitter <- jitter * 0.75
+
+  # function to determine whether genotype is fully known
+  tempf <-
+    function(x, type)
+      {
+        tmp <- is.na(x)
+        if(type=="f2" || type=="f2ss") tmp[!is.na(x) & x>3] <- TRUE
+        if(type=="4way") tmp[!is.na(x) & x>4] <- TRUE
+        tmp
+      }
+
   # if infer=TRUE, fill in genotype data by a single imputation
   if(infer) {
-    which.missing <- rep(0,nind(cross))
-    which.missing[is.na(cross$geno[[1]]$data[,marker])] <- 1
-    cross <- fill.geno(cross, method="imp")
+    which.missing <- tempf(cross$geno[[chr[1]]]$data[, marker[1]],type)
+    if(n.mark > 1) 
+      for(i in 2:n.mark)
+        which.missing <- which.missing | tempf(cross$geno[[chr[i]]]$data[,marker[i]],type)
+    which.missing <- as.numeric(which.missing)
+
+    cross <- fill.geno(cross, method = "imp")
   }
+  else which.missing <- rep(1,nind(cross))
 
   # data to plot
-  x <- cross$geno[[1]]$data[,marker]
-  y <- cross$pheno[,pheno.col]
-  u <- runif(nind(cross),-jitter, jitter)
+  x <- cross$geno[[chr[1]]]$data[, marker[1]]
+  if(n.mark > 1) 
+    for(i in 2:n.mark)
+      x <- cbind(x, cross$geno[[chr[i]]]$data[, marker[i]])
+  else x <- as.matrix(x)
+  y <- cross$pheno[, pheno.col]
 
-  if(!infer) {
-    if(type == "f2" || type=="f2ss") # replace C's and D's with NA's
-      x[x>3] <- NA
-    if(type == "4way") # similarly for 4-way cross
-      x[x>4] <- NA
+  if(!infer) { # replace partially informative genotypes with NAs
+    if(type == "f2" || type == "f2ss") x[x > 3] <- NA
+    if(type == "4way") x[x > 4] <- NA
   }
 
   # in case of X chromosome, recode some genotypes
-  if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss")) 
-    x <- as.numeric(fixXdata(type, "full", sexpgm, geno=as.matrix(x)))
+  if(any(chrtype == "X") && (type == "bc" || type == "f2" || 
+           type == "f2ss")) {
+    ix = seq(n.mark)[chrtype == "X"]
+    for(i in ix)
+      x[, i] <- as.numeric(reviseXdata(type, "standard", sexpgm,
+                                       geno = as.matrix(x[, i])))
+  }
+
+  # save all of the data, returned invisibly
+  data <- as.data.frame(x)
+  names(data) <- marker
+  for(i in marker) data[[i]] <- ordered(data[[i]])
+  data$pheno <- y
+  data$inferred <- which.missing
+
+  # re-code the multi-marker genotypes
+  if(n.mark > 1) {
+    for(i in 2:n.mark)
+      x[, 1] <- n.gen[i] * (x[, 1] - 1) + x[, i]
+  }
+  x <- x[, 1]
+
+  # amount of jitter 
+  u <- runif(nind(cross), -jitter, jitter)
+  r <- (1 - 2 * jitter)/2
 
   # create plot
-  r <- (1-2*jitter)/2
-  plot(x+u,y,xlab="Genotype",ylab=colnames(cross$pheno)[pheno.col],
-       main=marker,xlim=c(1-r+jitter,n.gen+r+jitter),xaxt="n")
-  abline(v=1:n.gen,col="gray",lty=3)
+  plot(x + u, y, xlab = "Genotype", ylab = ylab, type = "n", 
+       main = "", xlim = c(1 - r + jitter, prod(n.gen) + r + 
+                    jitter), xaxt = "n")
+
+  # marker names at top
+  mtext(paste(marker, collapse = "\n"), , 0.5, cex = max(2/n.mark, 
+                                                 0.75))
+#  mtext(paste("ch", chr, ":", round(pos,1), "cM", sep = "", collapse = "\n"), 
+#        , 0.5, adj = 0, cex = max(2/n.mark, 0.75))
+
+  abline(v = 1:prod(n.gen), col = "gray", lty = 3)
+
+  if(length(pch) == 1) 
+    pch = rep(pch, length(x))
   if(infer) {
-    points((x+u)[which.missing==1],y[which.missing==1],col="red")
-    points((x+u)[which.missing==0],y[which.missing==0])
+    points((x + u)[which.missing == 1], y[which.missing == 
+                     1], col = "red", pch = pch[which.missing == 1])
+    points((x + u)[which.missing == 0], y[which.missing == 
+                     0], pch = pch[which.missing == 0])
   }
-  else points(x+u,y)
+  else points(x + u, y, pch = pch)
+  sux = sort(unique(x))
 
   # add confidence intervals
-  me <- tapply(y,x,mean,na.rm=TRUE)
-  se <- tapply(y,x,function(a) sd(a,na.rm=TRUE)/sqrt(sum(!is.na(a))))
-  segments(1:n.gen+jitter*2,me,1:n.gen+jitter*4,me,lwd=2,col="blue")
-  segments(1:n.gen+jitter*3,me-se,1:n.gen+jitter*3,me+se,lwd=2,col="blue")
-  segments(1:n.gen+jitter*2.5,me-se,1:n.gen+jitter*3.5,me-se,lwd=2,col="blue")
-  segments(1:n.gen+jitter*2.5,me+se,1:n.gen+jitter*3.5,me+se,lwd=2,col="blue")
+  me <- se <- array(NA, prod(n.gen))
+  me[sux] <- tapply(y, x, mean, na.rm = TRUE)
+  se[sux] <- tapply(y, x, function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
+  cols <- "blue"
+  if(n.gen[n.mark] == 3) 
+    cols <- c("blue", "purple", "red")
+  else if(n.gen[n.mark] == 2) 
+    cols <- c("blue", "red")
+  segments(seq(prod(n.gen)) + jitter * 2, me, seq(prod(n.gen)) + 
+           jitter * 4, me, lwd = 2, col = cols)
+  segments(seq(prod(n.gen)) + jitter * 3, me - se, seq(prod(n.gen)) + 
+           jitter * 3, me + se, lwd = 2, col = cols)
+  segments(seq(prod(n.gen)) + jitter * 2.5, me - se, seq(prod(n.gen)) + 
+           jitter * 3.5, me - se, lwd = 2, col = cols)
+  segments(seq(prod(n.gen)) + jitter * 2.5, me + se, seq(prod(n.gen)) + 
+           jitter * 3.5, me + se, lwd = 2, col = cols)
 
   # add genotypes below
   u <- par("usr")
-  segments(1:n.gen,u[3],1:n.gen,u[3]-diff(u[3:4])*0.015,xpd=TRUE)
-  text(1:n.gen,u[3]-diff(u[3:4])*0.05,gen.names,xpd=TRUE)
+  segments(1:prod(n.gen), u[3], 1:prod(n.gen), u[3] - diff(u[3:4]) * 
+           0.015, xpd = TRUE)
+  if(n.mark == 1) 
+    tmp <- gen.names[[1]]
+  else {
+    tmp <- array(gen.names[[n.mark]], c(prod(n.gen), n.mark))
+    for(i in (n.mark - 1):1) {
+      tmpi <- rep(gen.names[[i]], rep(prod(n.gen[(i + 1):n.mark]), 
+                                      n.gen[i]))
+      if(i > 1) 
+        tmpi <- rep(tmpi, prod(n.gen[1:(i - 1)]))
+      tmp[, i] <- tmpi
+    }
+    tmp <- apply(tmp, 1, function(x) paste(x, collapse = "\n"))
+  }
+  text(1:prod(n.gen), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
+       cex = max(0.5, 1.5/n.mark))
 
-  p.value <- anova(aov(y~x,subset=(which.missing==0)))[1,5]
+  # calculate return values?
+  if(any(which.missing == 0)) 
+    p.value <- anova(aov(y ~ x, subset = (which.missing == 
+                                          0)))[1, 5]
+  else p.value <- NA
   names(p.value) <- NULL
-  invisible(list(p.value=p.value,data=cbind(geno=x,pheno=y,inferred=which.missing)))
+  tmp <- options(warn = -1)
+  form <- formula(paste("y ~", paste(marker, collapse = "*")))
+  if(any(is.na(me)) & n.mark > 2) {
+    formadd <- formula(paste("y ~", paste(marker, collapse = "+")))
+    fit <- aov(formadd, data, subset = (data$inferred == 
+                                        0))
+    full <- aov(form, data, subset = (data$inferred == 0))
+  }
+  else fit <- aov(form, data, subset = (data$inferred == 0))
+  tbl <- anova(fit, type = "marginal")
+  options(tmp)
+  p.value <- round(tbl$P[-nrow(tbl)], 4)
+  tmp = summary.lm(fit)
+  Rsq = tmp$r.sq
+  fstat = tmp$fstatistic
+  p.value = c(pf(fstat[1], fstat[2], fstat[3], lower = FALSE), 
+    p.value)
+  names(p.value) <- c("overall", dimnames(tbl)[[1]][-nrow(tbl)])
+  if(any(is.na(me)) & n.mark > 2) {
+    p.value["inter"] <- round(anova(fit, full)$P[2], 4)
+    fit = full
+  }
+  invisible(list(Rsq = Rsq, p.value = p.value, me = me, se = se, 
+                 fit = fit, data = data))
 }
 
 # end of plot.R

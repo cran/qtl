@@ -2,8 +2,9 @@
 #
 # util.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+#     [find.pheno and find.flanking from Brian Yandell]
+# last modified Sep, 2004
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -12,10 +13,11 @@
 #           convert.cross, clean, drop.nullmarkers
 #           drop.markers, geno.table, mf.k, mf.h, imf.k, imf.h
 #           mf.cf, imf.cf, mf.m, imf.m, convert2ss, switch.order
-#           subset.cross, fill.geno, check.covar
-#           pull.chr (deprecated), find.marker, adjust.rf.ri,
-#           getsex, getgenonames, fixXdata, pull.geno, lodint,
-#           makeSSmap, comparecrosses
+#           subset.cross, fill.geno, check.covar, find.marker,
+#           adjust.rf.ri, pull.geno, lodint, makeSSmap,
+#           comparecrosses, movemarker, summary.map,
+#           print.summary.map, convert.scanone, find.pheno,
+#           find.flanking
 #
 ######################################################################
 
@@ -33,7 +35,6 @@ function(cross)
   a <- lapply(cross$geno,function(a) { b <- a$map; class(b) <- class(a); b })
   class(a) <- "map"
   a
-  
 }
 
 ######################################################################
@@ -63,10 +64,8 @@ function(cross, map)
     mnames <- unlist(lapply(cross$geno, function(a) names(a$map)))
     mnames2 <- unlist(lapply(map, function(a) names(a)))
   }
-  else {
-    err <- paste("Cross type", type, "not yet supported.")
-    stop(err)
-  }
+  else 
+    stop("Cross type ", type, " not yet supported.")
 
   # check that things line up properly
   if(n.chr != n.chr2)
@@ -75,7 +74,7 @@ function(cross, map)
     stop("Chromosome names don't match.")
   if(any(n.mar != n.mar2))
     stop("Number of markers don't match.")
-  if(any(mnames != mnames2))
+  if(any(mnames != mnames2)) 
     stop("Marker names don't match.")
 
   # proceed if no errors
@@ -229,7 +228,6 @@ function(map, step, off.end)
 convert.cross <-
 function(cross)   
 {
-  require(qtl)
   nchr <- length(cross$map)
   geno <- vector("list",nchr)
   nmar <- c(0,cumsum(sapply(cross$map,length)))
@@ -430,10 +428,8 @@ function(cross,markers)
     }
   }
 
-  if(any(!found)) {
-    warn <- paste("Markers not found:", paste(markers[!found],collapse=" "))
-    warning(warn)
-  }
+  if(any(!found)) 
+    warning("Markers not found: ", paste(markers[!found],collapse=" "))
 
   cross$geno <- cross$geno[keep.chr]
 
@@ -473,10 +469,7 @@ function(cross)
     gen.names <- c("AC","BC","AD","BD","AC/AD","BC/BD",
                    "AC/BC","AD/BD","AC/BD","AD/BC")
   }
-  else {
-    err <- paste("Unknown cross type:",type)
-    stop(err)
-  }
+  else stop("Unknown cross type: ",type)
     
   res <- lapply(cross$geno, function(a,ngen) {
                 a <- a$data; a[is.na(a)] <- 0
@@ -485,7 +478,7 @@ function(cross)
   results <- NULL
   for(i in 1:length(res)) 
     results <- rbind(results,t(res[[i]]))
-  colnames(results) <- c("NA",gen.names)
+  colnames(results) <- c("missing",gen.names)
   rownames(results) <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
 
   pval <- rep(NA,nrow(results))
@@ -532,7 +525,7 @@ function(cross)
     results <- cbind(results, P.value=pval)
   }   
 
-  results
+  data.frame(chr=rep(names(cross$geno),nmar(cross)),results)
 }
     
 # map functions
@@ -662,16 +655,15 @@ function(x, chr, ind, ...)
   # pull out relevant chromosomes
   if(!missing(chr)) {
     if(is.logical(chr)) {
-      if(length(chr) != n.chr) {
-        err <- paste("If logical, chr argument must have length", n.chr)
-        stop(err)
-      }
-      chr <- (1:n.chr)[chr]
+      if(length(chr) != n.chr) 
+        stop("If logical, chr argument must have length ", n.chr)
+      chr <- sort((1:n.chr)[chr])
     }
         
     if(is.numeric(chr)) {
       # if all negative numbers, convert to positive
-      if(all(chr < 1)) chr <- (1:n.chr)[chr]
+      if(all(chr < 1)) chr <- sort((1:n.chr)[chr])
+      else chr <- sort(chr)
         
       if(any(chr < 1 | chr > n.chr))
         stop("Chromosome numbers out of range.")
@@ -680,7 +672,7 @@ function(x, chr, ind, ...)
       if(any(is.na(match(chr,names(x$geno)))))
         stop("Not all chromosome names found.")
       # convert to numeric
-      chr <- match(chr,names(x$geno))
+      chr <- sort(match(chr,names(x$geno)))
     }
 
     if(!is.na(match("rf",names(x)))) { # pull out part of rec fracs
@@ -698,10 +690,8 @@ function(x, chr, ind, ...)
 
   if(!missing(ind)) {
     if(is.logical(ind)) {
-      if(length(ind) != n.ind) {
-        err <- paste("If logical, ind argument must have length", n.ind)
-        stop(err)
-      }
+      if(length(ind) != n.ind) 
+        stop("If logical, ind argument must have length ", n.ind)
       ind <- (1:n.ind)[ind]
     }
         
@@ -738,11 +728,11 @@ function(x, chr, ind, ...)
   x
 }
 
-pull.chr <-
-function(cross, chr) {
-  warning("pull.chr is deprecated; use subset.cross.")
-  subset.cross(cross, chr)
-}
+#pull.chr <-
+#function(cross, chr) {
+#  warning("pull.chr is deprecated; use subset.cross.")
+#  subset.cross(cross, chr)
+#}
 
 
 ######################################################################
@@ -986,6 +976,39 @@ function(cross, method=c("imp","argmax"), error.prob=0,
 checkcovar <-
 function(cross, pheno.col, addcovar, intcovar)
 {
+  chrtype <- sapply(cross$geno, class)
+
+  # drop individuals whose sex or pgm is missing if X chr is included
+  if(any(chrtype=="X")) {
+    sexpgm <- getsex(cross)
+    keep <- rep(TRUE,nind(cross))
+    flag <- 0
+    if(!is.null(sexpgm$sex)) {
+      if(any(is.na(sexpgm$sex))) {
+        keep[is.na(sexpgm$sex)] <- FALSE
+        flag <- 1
+      }
+    }
+    if(!is.null(sexpgm$pgm)) {
+      if(any(is.na(sexpgm$pgm))) {
+        keep[is.na(sexpgm$pgm)] <- FALSE
+        flag <- 1
+      }
+    }
+    if(flag) {
+      warning("Dropping ", sum(!keep), " individuals with missing sex or pgm.\n")
+      cross <- subset(cross, ind=keep)
+      if(!is.null(addcovar)) {
+        if(!is.matrix(addcovar)) addcovar <- addcovar[keep]
+        else addcovar <- addcovar[keep,]
+      }
+      if(!is.null(intcovar)) {
+        if(!is.matrix(intcovar)) intcovar <- intcovar[keep]
+        else intcovar <- intcovar[keep,]
+      }
+    }
+  }
+
   # check phenotypes
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
   if(pheno.col < 1 || pheno.col > nphe(cross))
@@ -1046,7 +1069,7 @@ function(cross, pheno.col, addcovar, intcovar)
       addcovar <- addcovar[!wh,,drop=FALSE]
       if(!is.null(intcovar)) intcovar <- intcovar[!wh,,drop=FALSE]
       n.ind <- nind(cross)
-      warning("Dropping individuals with missing covariates")
+      warning("Dropping ", sum(wh), " individuals with missing covariates.\n")
     }
   }
 
@@ -1055,7 +1078,7 @@ function(cross, pheno.col, addcovar, intcovar)
     if(is.null(addcovar)) {
       addcovar <- intcovar
       n.addcovar <- n.intcovar
-      warning("addcovar forced to contain all columns of intcovar")
+      warning("addcovar forced to contain all columns of intcovar\n")
     }
     else {
       wh <- 1:n.intcovar
@@ -1120,401 +1143,26 @@ function(cross, chr, pos)
 
 # expand recombination fractions for RI lines
 adjust.rf.ri <-
-function(r, type=c("self","sib"), expand=TRUE)
+function(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 {
   # type of RI lines
   type <- match.arg(type)
+  chrtype <- match.arg(chrtype)
 
   if(type=="self") {
     if(expand) return(r*2/(1+2*r))
     else return(r/2/(1-r))
   }
   else {
-    if(expand) return(r*4/(1+6*r))
-    else return(r/(4-6*r))
-  }
-}
-
-# get sex and pgm columns from phenotype data
-getsex <-
-function(cross)
-{
-  phe.names <- names(cross$pheno)
-
-  sex.column <- grep("^[Ss][Ee][Xx]$", phe.names)
-  pgm.column <- grep("^[Pp][Gg][Mm]$", phe.names)
-
-  if(length(sex.column)==0) { # no sex included
-    sex <- NULL
-  }
-  else {
-    temp <- cross$pheno[,sex.column[1]]
-    if(is.numeric(temp)) {
-      if(any(!is.na(temp) & temp != 0 & temp != 1)) {
-        warning("Sex column should be coded as 0=female 1=male; sex ignored.")
-        sex <= NULL
-      }
-      else sex <- temp
+    if(chrtype=="A") { # autosome / sib mating
+      if(expand) return(r*4/(1+6*r))
+      else return(r/(4-6*r))
     }
-    else {
-      if(!is.factor(temp)) temp <- as.factor(temp)
-
-      if(length(levels(temp)) != 2) {
-        warning("Sex column should be coded as a two-level factor; sex ignored.")
-        sex <- NULL
-      }
-      else { # is a factor with two levels
-        lev <- levels(temp)
-        if(length(grep("^[Ff]",lev))>0 &&
-           length(males <- grep("^[Mm]",lev))>0) {
-          temp <- as.character(temp)
-          sex <- rep(0,length(temp))
-          sex[is.na(temp)] <- NA
-          sex[!is.na(temp) & temp==lev[males]] <- 1
-        }
-        else 
-          warning("Don't understand levels in sex column; sex ignored.")
-      }
+    else { # X chromosome/ sib mating
+      if(expand) return(8/3*r/(1+4*r))
+      else return(3/8*r/(1-1.5*r))
     }
   }
-
-  if(length(pgm.column)==0) { # no sex included
-    pgm <- NULL
-  }
-  else {
-    temp <- cross$pheno[,pgm.column[1]]
-    if(!is.numeric(temp))
-      temp <- as.numeric(as.character(pgm))
-    if(any(!is.na(temp) & temp != 0 & temp != 1)) {
-      warning("pgm column should be coded as 0/1; pgm ignored.")
-      pgm <- NULL
-    }
-    else pgm <- temp
-  }
-
-  list(sex=sex,pgm=pgm)
-}
-          
-
-
-# get names of genotypes
-getgenonames <-
-function(type=c("f2","bc","f2ss","riself","risib","4way"),
-         chrtype=c("A","X"), x.treatment=c("simple","full"),
-         sexpgm)
-{  
-  type <- match.arg(type)
-  chrtype <- match.arg(chrtype)
-  x.treatment <- match.arg(x.treatment)
-
-  if(type == "f2" || type=="f2ss") {
-    if(chrtype == "A")  # autosomal
-      gen.names <- c("AA","AB","BB")
-    else { # X chromsome
-      if(length(sexpgm$sex)>0) {
-        if(length(sexpgm$pgm)>0) {
-          if(x.treatment=="simple") 
-            gen.names <- c("AA","AB","BB")
-          else {
-            gen.names <- c("AA","AB","BB","AY","BY")
-          }
-        }
-        else { # no pgm
-          if(x.treatment=="simple") 
-            gen.names <- c("AA","AB","BB")
-          else 
-            gen.names <- c("AA","AB","AY","BY")
-        }
-      }
-      else { # no sex
-        if(length(sexpgm$pgm)>0) 
-          gen.names <- c("AA","AB","BB")
-        else
-          gen.names <- c("AA","AB")
-      }
-    }
-  }
-  else if(type == "bc") {
-    if(chrtype=="X" && length(sexpgm$sex)>0) {
-      if(x.treatment=="simple") 
-        gen.names <- c("AA","AB","BB")
-      else
-        gen.names <- c("AA","AB","AY","BY")
-    }
-    else gen.names <- c("AA","AB")
-  }
-  else if(type == "riself" || type=="risib") 
-    gen.names <- c("AA","BB")
-  else if(type == "4way") 
-    gen.names <- c("AC","BC","AD","BD")
-  else {
-    err <- paste("Cross type", type, "not supported.")
-    stop(err)
-  }
-
-  gen.names
-}
-
-# revise genotype data, probabilities or imputations for the X chromosome
-fixXdata <-
-function(type=c("f2ss","f2","bc"), x.treatment=c("simple","full"),
-         sexpgm, geno, prob, draws, pairprob)
-{
-  type <- match.arg(type)
-  x.treatment <- match.arg(x.treatment)
-
-  sex <- sexpgm$sex
-  pgm <- sexpgm$pgm
-
-  if(!missing(geno)) {
-    if(type == "f2" || type=="f2ss") {
-      if(length(sex)>0) {
-        if(length(pgm)>0) {
-          if(x.treatment=="simple") {
-            w <- geno[sex==1,,drop=FALSE]
-            w[!is.na(w) & w==2] <- 3
-            geno[sex==1,] <- w
-            
-            w <- geno[sex==0 & pgm==1,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            geno[sex==0 & pgm==1,] <- w
-          }
-          else  {
-            w <- geno[sex==1,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 4
-            w[!is.na(w) & w==2] <- 5
-            geno[sex==1,] <- w
-            
-            w <- geno[sex==0 & pgm==1,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            geno[sex==0 & pgm==1,] <- w
-          }
-        }
-        else { # no pgm
-          if(x.treatment=="simple") {
-            w <- geno[sex==1,,drop=FALSE]
-            w[!is.na(w) & w==2] <- 3
-            geno[sex==1,] <- w
-          }
-          else {
-            w <- geno[sex==1,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            w[!is.na(w) & w==2] <- 4
-            geno[sex==1,] <- w
-          }
-        }
-      }
-      else { # no sex; assume all females
-        if(length(pgm)>0) { 
-          w <- geno[pgm==1,,drop=FALSE]
-          w[!is.na(w) & w==1] <- 3
-          geno[pgm==1,] <- w
-        }
-        # else leave unchanged
-      }
-    } # end f2
-    else { # backcross
-      if(length(sex)>0) {
-        if(x.treatment=="simple") {
-          w <- geno[sex==1,,drop=FALSE]
-          w[!is.na(w) & w==2] <- 3
-          geno[sex==1,] <- w
-        }
-        else {
-          w <- geno[sex==1,,drop=FALSE]
-          w[!is.na(w) & w==1] <- 3
-          w[!is.na(w) & w==2] <- 4
-          geno[sex==1,] <- w
-        }
-      }
-      # else leave unchanged
-    } # end backcross
-    return(geno)
-  } # end if(!missing(geno))
-
-  else if(!missing(prob)) {
-    n.gen <- length(getgenonames(type,"X",x.treatment,sexpgm))
-    newdim <- dim(prob)
-    newdim[3] <- n.gen
-    newprob <- array(0,dim=newdim)
-    
-    if(type == "f2" || type=="f2ss") {
-      if(length(sex)>0) {
-        if(length(pgm)>0) {
-          if(x.treatment=="simple") {
-            newprob[sex==1,,c(1,3)] <- prob[sex==1,,]
-            newprob[sex==0 & pgm==0,,1:2] <- prob[sex==0 & pgm==0,,]
-            newprob[sex==0 & pgm==1,,c(3,2)] <- prob[sex==0 & pgm==1,,]
-          }
-          else  {
-            newprob[sex==1,,4:5] <- prob[sex==1,,]
-            newprob[sex==0 & pgm==0,,1:2] <- prob[sex==0 & pgm==0,,]
-            newprob[sex==0 & pgm==1,,c(3,2)] <- prob[sex==0 & pgm==1,,]
-          }
-        }
-        else { # no pgm
-          if(x.treatment=="simple") {
-            newprob[sex==1,,c(1,3)] <- prob[sex==1,,]
-            newprob[sex==0,,1:2] <- prob[sex==0,,]
-          }
-          else {
-            newprob[sex==1,,3:4] <- prob[sex==1,,]
-            newprob[sex==0,,1:2] <- prob[sex==0,,]
-          }
-        }
-      }
-      else { # no sex; assume all females
-        if(length(pgm)>0) { 
-            newprob[pgm==0,,1:2] <- prob[pgm==0,,]
-            newprob[pgm==1,,c(3,2)] <- prob[pgm==1,,]
-        }
-        else newprob <- prob
-      }
-    } # end f2
-    else { # backcross
-      if(length(sex)>0) {
-        if(x.treatment=="simple") {
-          newprob[sex==1,,c(1,3)] <- prob[sex==1,,]
-          newprob[sex==0,,1:2] <- prob[sex==0,,]
-        }
-        else {
-          newprob[sex==1,,3:4] <- prob[sex==1,,]
-          newprob[sex==0,,1:2] <- prob[sex==0,,]
-        }
-      }
-      else newprob <- prob
-    } # end backcross
-    
-    attr(newprob,"error.prob") <- attr(prob,"error.prob")
-    attr(newprob,"step") <- attr(prob,"step")
-    attr(newprob,"off.end") <- attr(prob,"off.end")
-    attr(newprob,"map.function") <- attr(prob,"map.function")
-    return(newprob)
-  }
-
-  else if(!missing(draws)) {
-    if(type == "f2" || type=="f2ss") {
-      if(length(sex)>0) {
-        if(length(pgm)>0) {
-          if(x.treatment=="simple") {
-            w <- draws[sex==1,,,drop=FALSE]
-            w[!is.na(w) & w==2] <- 3
-            draws[sex==1,,] <- w
-            
-            w <- draws[sex==0 & pgm==1,,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            draws[sex==0 & pgm==1,,] <- w
-          }
-          else  {
-            w <- draws[sex==1,,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 4
-            w[!is.na(w) & w==2] <- 5
-            draws[sex==1,,] <- w
-            
-            w <- draws[sex==0 & pgm==1,,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            draws[sex==0 & pgm==1,,] <- w
-          }
-        }
-        else { # no pgm
-          if(x.treatment=="simple") {
-            w <- draws[sex==1,,,drop=FALSE]
-            w[!is.na(w) & w==2] <- 3
-            draws[sex==1,,] <- w
-          }
-          else {
-            w <- draws[sex==1,,,drop=FALSE]
-            w[!is.na(w) & w==1] <- 3
-            w[!is.na(w) & w==2] <- 4
-            draws[sex==1,,] <- w
-          }
-        }
-      }
-      else { # no sex; assume all females
-        if(length(pgm)>0) { 
-          w <- draws[pgm==1,,,drop=FALSE]
-          w[!is.na(w) & w==1] <- 3
-          draws[pgm==1,,] <- w
-        }
-        # else leave unchanged
-      }
-    } # end f2
-    else { # backcross
-      if(length(sex)>0) {
-        if(x.treatment=="simple") {
-          w <- draws[sex==1,,,drop=FALSE]
-          w[!is.na(w) & w==2] <- 3
-          draws[sex==1,,] <- w
-        }
-        else {
-          w <- draws[sex==1,,,drop=FALSE]
-          w[!is.na(w) & w==1] <- 3
-          w[!is.na(w) & w==2] <- 4
-          draws[sex==1,,] <- w
-        }
-      }
-      # else leave unchanged
-    } # end backcross
-    return(draws)
-  }
-
-  else if(!missing(pairprob)) {
-    n.gen <- length(getgenonames(type,"X",x.treatment,sexpgm))
-    newdim <- dim(pairprob)
-    newdim[3:4] <- n.gen
-    newpairprob <- array(0,dim=newdim)
-    
-    if(type == "f2" || type=="f2ss") {
-      if(length(sex)>0) {
-        if(length(pgm)>0) {
-          if(x.treatment=="simple") {
-            newpairprob[sex==1,,c(1,3),c(1,3)] <- pairprob[sex==1,,,]
-            newpairprob[sex==0 & pgm==0,,1:2,1:2] <- pairprob[sex==0 & pgm==0,,,]
-            newpairprob[sex==0 & pgm==1,,c(3,2),c(3,2)] <- pairprob[sex==0 & pgm==1,,,]
-          }
-          else  {
-            newpairprob[sex==1,,4:5,4:5] <- pairprob[sex==1,,,]
-            newpairprob[sex==0 & pgm==0,,1:2,1:2] <- pairprob[sex==0 & pgm==0,,,]
-            newpairprob[sex==0 & pgm==1,,c(3,2),c(3,2)] <- pairprob[sex==0 & pgm==1,,,]
-          }
-        }
-        else { # no pgm
-          if(x.treatment=="simple") {
-            newpairprob[sex==1,,c(1,3),c(1,3)] <- pairprob[sex==1,,,]
-            newpairprob[sex==0,,1:2,1:2] <- pairprob[sex==0,,,]
-          }
-          else {
-            newpairprob[sex==1,,3:4,3:4] <- pairprob[sex==1,,,]
-            newpairprob[sex==0,,1:2,1:2] <- pairprob[sex==0,,,]
-          }
-        }
-      }
-      else { # no sex; assume all females
-        if(length(pgm)>0) { 
-            newpairprob[pgm==0,,1:2,1:2] <- pairprob[pgm==0,,,]
-            newpairprob[pgm==1,,c(3,2),c(3,2)] <- pairprob[pgm==1,,,]
-        }
-        else newpairprob <- pairprob
-      }
-    } # end f2
-    else { # backcross
-      if(length(sex)>0) {
-        if(x.treatment=="simple") {
-          newpairprob[sex==1,,c(1,3),c(1,3)] <- pairprob[sex==1,,,]
-          newpairprob[sex==0,,1:2,1:2] <- pairprob[sex==0,,,]
-        }
-        else {
-          newpairprob[sex==1,,3:4,3:4] <- pairprob[sex==1,,,]
-          newpairprob[sex==0,,1:2,1:2] <- pairprob[sex==0,,,]
-        }
-      }
-      else newpairprob <- pairprob
-    } # end backcross
-    
-    return(newpairprob)
-  }
-
-  else stop("Need to specify geno, prob, draws, or pairprob")
 }
 
 ######################################################################
@@ -1537,14 +1185,26 @@ lodint <-
 function(results, chr, drop=1.5)
 {
   results <- results[results[,1]==chr,]
-  w <- (1:nrow(results))[results[,3] == max(results[,3])]
-  o <- range((1:nrow(results))[results[,3] > max(results[,3])-drop])
-  if(o[1] > 1) o[1] <- o[1]-1
-  if(o[2] < nrow(results)) o[2] <- o[2]+1
+
+  if(all(is.na(results[,3]))) return(NULL)
+
+  maxlod <- max(results[,3],na.rm=TRUE)
+  w <- which(!is.na(results[,3]) & results[,3] == maxlod)
+  o <- range(which(!is.na(results[,3]) & results[,3] > maxlod-drop))
+
+  if(length(o)==0) o <- c(1,nrow(results))
+
+  else {
+    if(o[1] > 1) o[1] <- o[1]-1
+    if(o[2] < nrow(results)) o[2] <- o[2]+1
+  }
+
   results <- results[c(o[1],w,o[2]),]
   class(results) <- c("scanone","data.frame")
+
   results
 }
+
 
 ######################################################################
 # makeSSmap: convert a genetic map, or the genetic maps in a cross
@@ -1578,7 +1238,7 @@ function(cross)
 #                 and phenotypes
 ######################################################################
 comparecrosses <-
-function(cross1, cross2)
+function(cross1, cross2, tol=1e-5)
 {
   # both are of class "cross"
   if(is.na(match("cross", class(cross1)))) 
@@ -1601,20 +1261,28 @@ function(cross1, cross2)
 
   mnames1 <- unlist(lapply(cross1$geno, function(a) colnames(a$data)))
   mnames2 <- unlist(lapply(cross2$geno, function(a) colnames(a$data)))
-  if(any(mnames1 != mnames2))
-    stop("Markers names do not match.")
+  if(any(mnames1 != mnames2)) {
+#    stop("Markers names do not match.")
+    for(i in 1:nchr(cross1)) 
+      if(any(colnames(cross1$geno[[i]]$data) != colnames(cross2$geno[[i]]$data)))
+        stop("Marker names on chr ", names(cross1$geno)[i], " don't match.")
+  }
+
 
   chrtype1 <- sapply(cross1$geno, class)
   chrtype2 <- sapply(cross2$geno, class)
   if(any(chrtype1 != chrtype2))
     stop("Chromosome types (autosomal vs X) do not match.")
 
-  for(i in 1:nchr(cross1)) 
-    if(any(cross1$geno[[i]]$map != cross2$geno[[i]]$map)) {
-      err <- paste("Genetic maps for chromosome",
-                   names(cross1$geno)[i], "do not match.")
-      stop(err)
-    }
+  for(i in 1:nchr(cross1)) {
+    if(any(abs(diff(cross1$geno[[i]]$map) - diff(cross2$geno[[i]]$map)) > tol))
+      stop("Genetic maps for chromosome ", names(cross1$geno)[i],
+           " do not match.")
+      
+    if(abs(cross1$geno[[i]]$map[1] - cross2$geno[[i]]$map[1]) > tol)
+      warning("Initial marker positions for chromosome ", names(cross1$geno)[i],
+              " do not match.")
+  }
 
   if(nind(cross1) != nind(cross2))
     stop("Number of individuals do not match.")
@@ -1623,11 +1291,9 @@ function(cross1, cross2)
     g1 <- cross1$geno[[i]]$data
     g2 <- cross2$geno[[i]]$data
     if(any((is.na(g1) & !is.na(g2)) | (!is.na(g1) & is.na(g2)) |
-           (!is.na(g1) & !is.na(g2) & g1!=g2))) {
-      err <- paste("Genotype data for chromosome",
-                   names(cross1$geno)[i], "do not match.")
-      stop(err)
-    }
+           (!is.na(g1) & !is.na(g2) & g1!=g2))) 
+      stop("Genotype data for chromosome ", names(cross1$geno)[i],
+           " do not match.")
   }
 
   if(nphe(cross1) != nphe(cross2))
@@ -1639,15 +1305,301 @@ function(cross1, cross2)
   for(i in 1:nphe(cross1)) {
     phe1 <- cross1$pheno[,i]
     phe2 <- cross2$pheno[,i]
-    if(any((is.na(phe1) & !is.na(phe2)) | (!is.na(phe1) & is.na(phe2)) |
-           (!is.na(phe1) & !is.na(phe2) & phe1!=phe2))) {
-      err <- paste("Data for phenotype",
-                   names(cross1$pheno)[i], "do not match.")
-      stop(err)
+    if(is.numeric(phe1) & is.numeric(phe2)) {
+      if(any((is.na(phe1) & !is.na(phe2)) | (!is.na(phe1) & is.na(phe2)) |
+             (!is.na(phe1) & !is.na(phe2) & abs(phe1-phe2) > tol))) {
+        stop("Data for phenotype ", names(cross1$pheno)[i],
+             " do not match.")
+      }
+    }
+    else {
+      if(any((is.na(phe1) & !is.na(phe2)) | (!is.na(phe1) & is.na(phe2)) |
+             (!is.na(phe1) & !is.na(phe2) &
+              as.character(phe1) != as.character(phe2)))) {
+        stop("Data for phenotype ", names(cross1$pheno)[i], " do not match.")
+      }
     }
   }
 
   cat("\tCrosses are identical.\n")
+}
+
+
+######################################################################
+# move marker
+# Move a marker to a new chromosome...placed at the end
+######################################################################
+movemarker <-
+function(cross, marker, newchr, newpos)
+{
+  cross <- clean(cross)
+  mnames <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
+  chr <- rep(names(cross$geno),nmar(cross))
+  pos <- unlist(lapply(cross$geno,function(a) 1:ncol(a$data)))
+  wh <- match(marker, mnames)
+
+  # Marker found precisely once?
+  if(is.na(wh)) stop(marker, " not found.\n")
+  if(length(wh) > 1) stop(marker, " found multiple times.\n")
+
+  if(is.na(match(newchr,names(cross$geno))))
+    stop("Chromosome ", newchr, " not found.\n")
+
+  chr <- chr[wh]
+  pos <- pos[wh]
+
+  # pull out genotype data
+  g <- cross$geno[[chr]]$data[,pos]
+
+  # delete marker
+  if(nmar(cross)[chr] == 1)  # it's the only marker on that chromosome, so drop the chromosome
+    cross$geno <- cross$geno[-match(chr,names(cross$geno))]
+  else {
+    cross$geno[[chr]]$data <- cross$geno[[chr]]$data[,-pos,drop=FALSE]
+    if(is.matrix(cross$geno[[chr]]$map))
+      cross$geno[[chr]]$map <- cross$geno[[chr]]$map[,-pos,drop=FALSE]
+    else
+      cross$geno[[chr]]$map <- cross$geno[[chr]]$map[-pos]
+  }
+
+  if(missing(newpos)) {
+    # add marker to end of new chromosome
+    n.mar <- nmar(cross)[newchr]
+    cross$geno[[newchr]]$data <- cbind(cross$geno[[newchr]]$data,g)
+    colnames(cross$geno[[newchr]]$data)[n.mar+1] <- marker
+  
+    if(is.matrix(cross$geno[[newchr]]$map)) {
+      cross$geno[[newchr]]$map <- cbind(cross$geno[[newchr]]$map,
+                                        cross$geno[[newchr]]$map[,n.mar]+10)
+      colnames(cross$geno[[newchr]]$map)[n.mar+1] <- marker
+    }
+    else {
+      cross$geno[[newchr]]$map <- c(cross$geno[[newchr]]$map,
+                                    cross$geno[[newchr]]$map[n.mar]+10)
+      names(cross$geno[[newchr]]$map)[n.mar+1] <- marker
+    }
+  }
+  else {
+    # add marker to the specified position
+    dat <- cross$geno[[newchr]]$data
+    map <- cross$geno[[newchr]]$map
+
+    if(length(newpos) != 1)
+      stop("newpos should be a single number.")
+
+    if(is.matrix(map)) { # sex-specific maps
+      wh <- which(map[1,] < newpos)
+      if(length(wh) == 0) { # place in first spot
+        map <- cbind(c(newpos,map[2,1]-(map[1,1]-newpos)),map)
+        colnames(map)[1] <- marker
+      }
+      else {
+        wh <- max(wh)
+        if(wh == ncol(map)) { # place at end of chromosome
+          map <- cbind(map,c(newpos,map[2,ncol(map)]+(newpos-map[1,ncol(map)])))
+          colnames(map)[ncol(map)] <- marker
+        }
+        else {
+          left <- map[,wh]
+          right <- map[,wh+1]
+          newpos2 <- (newpos-left[1])/(right[1]-left[1])*(right[2]-left[2])+left[2]
+          map <- cbind(map[,1:wh], c(newpos,newpos2), map[,-(1:wh)])
+          colnames(map)[wh+1] <- marker
+        }
+      }
+    }
+    else {
+      wh <- which(map < newpos)
+      if(length(wh) == 0) { # place in first position
+        map <- c(newpos,map)
+        names(map)[1] <- marker
+      }
+      else {
+        wh <- max(wh)
+        if(wh == length(map)) { # place in last position
+          map <- c(map,newpos)
+          names(map)[length(map)] <- marker
+        }
+        else {
+          map <- c(map[1:wh],newpos,map[-(1:wh)])
+          names(map)[wh+1] <- marker
+        }
+      }
+    }
+    cross$geno[[newchr]]$map <- map
+
+    if(length(wh)==0) { # place marker in first position
+      dat <- cbind(g, dat)
+      colnames(dat)[1] <- marker
+    }
+    else if(wh == ncol(dat)) { # place marker in last position
+      dat <- cbind(dat, g)
+      colnames(dat)[ncol(dat)] <- marker
+    }
+    else { # place marker in the middle
+      dat <- cbind(dat[,1:wh],g,dat[,-(1:wh)])
+      colnames(dat)[wh+1] <- marker
+    }
+    cross$geno[[newchr]]$data <- dat
+    
+    # make sure the marker names for the data and the genetic map match
+    colnames(cross$geno[[newchr]]$data) <- names(cross$geno[[newchr]]$map)
+  }
+
+  cross
+}
+
+######################################################################
+#
+# summary.map
+#
+# Give a short summary of a genetic map object.
+# 
+######################################################################
+summary.map <- 
+function(object, ...)
+{
+  map <- object
+  if(length(class(map))>1 && class(map)[2] == "cross") # a cross object
+    map <- pull.map(map)
+  
+  n.chr <- length(map)
+  chrnames <- names(map)
+  if(is.matrix(map[[1]])) { # sex-specific map
+    sexsp <- TRUE
+    n.mar <- sapply(map,ncol)
+    tot.mar <- sum(n.mar)
+    fmap <- lapply(map,function(a) a[1,])
+    mmap <- lapply(map,function(a) a[2,])
+
+    len.f <- sapply(fmap,function(a) diff(range(a)))
+    len.m <- sapply(mmap,function(a) diff(range(a)))
+    avesp.f <- sapply(fmap,function(a) mean(diff(a)))
+    avesp.m <- sapply(mmap,function(a) mean(diff(a)))
+    totlen.f <- sum(len.f)
+    totlen.m <- sum(len.m)
+
+    tot.avesp.f <- mean(unlist(lapply(fmap,diff)))
+    tot.avesp.m <- mean(unlist(lapply(mmap,diff)))
+                    
+    output <- rbind(cbind(n.mar,len.f,len.m,avesp.f,avesp.m),
+                    c(tot.mar,totlen.f,totlen.m,tot.avesp.f,tot.avesp.m))
+    dimnames(output) <- list(c(chrnames,"overall"),
+                             c("n.mar","length.female","length.male",
+                               "ave.spacing.female","ave.spacing.male"))
+  }                   
+  else {
+    sexsp=FALSE
+    n.mar <- sapply(map,length)
+    len <- sapply(map,function(a) diff(range(a)))
+    tot.mar <- sum(n.mar)
+
+    len <- sapply(map,function(a) diff(range(a)))
+    avesp <- sapply(map,function(a) mean(diff(a)))
+    totlen <- sum(len)
+    tot.avesp <- mean(unlist(lapply(map,diff)))
+                    
+    output <- rbind(cbind(n.mar,len,avesp),
+                    c(tot.mar,totlen,tot.avesp))
+    dimnames(output) <- list(c(chrnames,"overall"),
+                             c("n.mar","length","ave.spacing"))
+
+  }
+
+  output <- list(summarytable=output,sexsp=sexsp)
+  class(output) <- "summary.map"
+  output
+}
+
+
+######################################################################
+#
+# print.summary.map
+#
+# Print out the result of summary.map()
+# 
+######################################################################
+print.summary.map <-
+function(x, ...)  
+{
+  if(x[[2]]) cat("Sex-specific map\n\n")
+  else cat("Sex-averaged map\n\n")
+
+  x <- x[[1]]
+  x <- apply(x,2,round,1)
+  print(x)
+}
+  
+######################################################################
+#
+# convert.scanone
+#
+# Convert scanone output from the format for R/qtl ver 0.97 to
+# that for R/qtl ver 0.98
+# (previously, inter-maker locations named loc*.c*; now c*.loc*)
+#
+######################################################################
+convert.scanone <-
+function(output)
+{  
+  rn <- rownames(output)
+  o <- grep("^loc\-*[0-9]+(\.[0-9]+)*\.c[0-9A-Za-z]+$", rn)
+  if(length(o) > 0) {
+    temp <- rn[o]
+    temp <- strsplit(temp,"\\.")
+    temp <- sapply(temp, function(a)
+                   paste(a[c(length(a),1:(length(a)-1))],collapse="."))
+    rownames(output)[o] <- temp
+  }
+  output
+}
+            
+######################################################################
+# find.pheno
+#
+# utility to get pheno number given pheno name
+######################################################################
+find.pheno <-
+function( cross,  pheno )
+  seq( ncol( cross$pheno ))[match(pheno,names(cross$pheno))]
+
+######################################################################
+# find.flanking
+#
+# utility to get flanking and/or closest marker to chr and pos
+######################################################################
+find.flanking <-
+function( cross, chr, pos)
+{
+  map = pull.map(cross)
+
+  if(is.matrix(map[[1]]) && nrow(map[[1]]) > 1) 
+    stop("This function works only for crosses with sex-averaged maps.")
+
+  if(length(chr) == 1 && length(pos) > 1) {
+    chr <- rep(chr,length(pos))
+  }
+
+  marker = NULL
+  for (i in seq(length(chr))) {
+    tmp = map[[chr[i]]]-pos[i]
+    m = names(map[[chr[i]]])
+    left = sum(tmp < 0)
+    at = sum(tmp == 0)
+    right = sum(tmp > 0)
+    f <- if (at > 0)
+      left+at[c(1,length(at))]
+    else {
+      if (right > 0)
+        c(left,left+at+1)
+      else
+        c(left,left+at)
+    }
+    marker = rbind(marker,m[f[c(1:2,order(abs(tmp[f]))[1])]])
+  }
+  dimnames(marker) <- list(paste("chr",chr,":",pos,sep=""),
+                           c("left","right","close"))
+  as.data.frame(marker)
 }
 
 

@@ -30,6 +30,7 @@ chromosome 7 at position 40 cM on the female map.
 
 \examples{
 data(fake.4way)
+\dontshow{fake.4way <- subset(fake.4way,chr=c(2,7))}
 plot(fake.4way)
 summary(fake.4way)
 

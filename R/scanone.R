@@ -2,8 +2,8 @@
 #
 # scanone.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Sep, 2004
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -27,21 +27,18 @@ scanone <-
 function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
-         x.treatment=c("simple","full"),
          upper=FALSE, ties.random=FALSE,
          start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
 {
-  if(length(method)==1 && method=="im") # warning in case old terminology is used
-    warning("Method \"im\" is now called \"em\"; running method \"imp\".")
   model <- match.arg(model)
   method <- match.arg(method)
-  x.treatment <- match.arg(x.treatment)
 
   if(!missing(chr)) cross <- subset(cross, chr)
+  if(missing(n.perm)) n.perm <- 0
 
   # check phenotypes and covariates; drop individuals with missing values
   # in case of permutation test, only do checks once
-  if(missing(n.perm) || n.perm > 0) {
+  if(n.perm >= 0) {
     temp <- checkcovar(cross, pheno.col, addcovar, intcovar)
     cross <- temp[[1]]
     pheno <- temp[[2]]
@@ -61,25 +58,26 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   n.ind <- nind(cross)
   type <- class(cross)[1]
 
-  if(missing(n.perm) || n.perm == 0) { # not in the midst of permutations
+  # if n.perm specified, do a permutation test
+  if(n.perm>0) {
+    return(scanone.perm(cross, pheno.col, model, method, addcovar,
+                        intcovar, weights, upper, ties.random,
+                        start, maxit, tol, n.perm, trace))
+  }
+
+  # fill in missing genotypes with imputed values
+  if(n.perm==0) { # not in the midst of permutations
     if(method=="mr-argmax")
       cross <- fill.geno(cross,method="argmax")
     if(method=="mr-imp")
       cross <- fill.geno(cross,method="imp")
   }
 
-  # if n.perm specified, do a permutation test
-  if(!missing(n.perm) && n.perm>0) {
-    return(scanone.perm(cross, pheno.col, model, method, addcovar,
-                        intcovar, weights, x.treatment, upper, ties.random,
-                        start, maxit, tol, n.perm, trace))
-  }
-
   # weights for model="normal"
   if(is.null(weights))
     weights <- rep(1, nind(cross))
   else if(model != "normal")
-    warning("weights used on for normal model.")
+    warning("weights used only for normal model.")
   if(length(weights) != nind(cross))
     stop("weights should either be NULL or a vector of length n.ind")
   if(any(weights) <= 0)
@@ -93,7 +91,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       warning("Methods imp and hk not available for binary model; using em")
       method <- "em"
     }
-    return(discan(cross,pheno.col, method, x.treatment, maxit, tol))
+    return(discan(cross,pheno.col, method, maxit, tol))
   }
   else if(model=="2part") {
     if(n.addcovar > 0 || n.intcovar > 0)
@@ -102,11 +100,11 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       warning("Only em method is available for the two-part model")
       method <- "em"
     }
-    return(vbscan(cross, pheno.col, x.treatment, upper, method, maxit, tol))
+    return(vbscan(cross, pheno.col, upper, method, maxit, tol))
   }
   else if(model=="np") {
     if(n.addcovar > 0 || n.intcovar > 0)
-      warning("Covariates ignored for non-parametric interval mapping..")
+      warning("Covariates ignored for non-parametric interval mapping.")
     if(method!="em") {
       warning("Method argument ignored for non-parametric interval mapping.")
       method <- "em"
@@ -149,22 +147,21 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     else sexpgm <- NULL
 
     # get genotype names
-    gen.names <- getgenonames(type,chrtype,x.treatment,sexpgm)
+    gen.names <- getgenonames(type,chrtype,"full",sexpgm)
     n.gen <- length(gen.names)
 
     # starting values for interval mapping
     if(method=="em" && model=="normal") {
       this.start <- rep(0,n.gen+1)
       if(std.start == 0) {
-        if(length(start) < n.gen+1) {
-          err <- paste("Length of start argument should be 0, 1 or", n.gen+1)
-          stop(err)
-        }
+        if(length(start) < n.gen+1) 
+          stop("Length of start argument should be 0, 1 or ", n.gen+1)
         this.start <- c(start[1:n.gen],start[length(start)])
       }
     }
 
     # pull out reconstructed genotypes (mr)
+    # or imputations (imp)
     # or genotype probabilities (em or hk)
     if(method=="mr" || method=="mr-imp" || method=="mr-argmax") {
       newgeno <- cross$geno[[i]]$data
@@ -174,10 +171,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       if(type=="f2" || type=="f2ss") newgeno[newgeno>3] <- 0
       if(type=="4way") newgeno[newgeno>4] <- 0
 
-      # Fix up X chromosome
+      # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
-         newgeno <- fixXdata(type, x.treatment, sexpgm,
-                             geno=newgeno)
+         newgeno <- reviseXdata(type, "full", sexpgm, geno=newgeno)
 
       n.pos <- ncol(newgeno)
       map <- cross$geno[[i]]$map
@@ -198,10 +194,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       n.pos <- ncol(draws)
       n.draws <- dim(draws)[3]
 
-      # Fix up X chromosome
+      # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
-         draws <- fixXdata(type, x.treatment, sexpgm,
-                           draws=draws)
+         draws <- reviseXdata(type, "full", sexpgm, draws=draws)
 
       map <- create.map(cross$geno[[i]]$map,
                         attr(cross$geno[[i]]$draws,"step"),
@@ -221,10 +216,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       genoprob <- cross$geno[[i]]$prob
       n.pos <- ncol(genoprob)
 
-      # Fix up X chromosome
+      # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
-         genoprob <- fixXdata(type, x.treatment, sexpgm,
-                              prob=genoprob)
+         genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
 
       map <- create.map(cross$geno[[i]]$map,
                         attr(cross$geno[[i]]$prob,"step"),
@@ -234,18 +228,6 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         map <- map[1,]
       }
       else marnam <- names(map)
-    }
-
-    if(i==1 & (method=="hk" || method=="em")) { # get null log10 likelihood
-      if(n.addcovar > 0)
-        resid0 <- lm(pheno ~ addcovar, weights=weights^2)$resid
-      else 
-        resid0 <- lm(pheno ~ 1, weights=weights^2)$resid
-      if(method=="hk") nllik0 <- (n.ind/2)*log10(sum((resid0*weights)^2))
-      else {
-        sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
-        nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
-      }
     }
 
     # call the C function
@@ -348,20 +330,91 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       
     w <- marnam
     o <- grep("^loc\-*[0-9]+",w)
-    if(length(o) > 0) 
-      w[o] <- paste(w[o],names(cross$geno)[i],sep=".c")
+    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(z) <- w
     
     z <- as.data.frame(z)
     z <- cbind(chr=rep(names(cross$geno)[i],length(map)),
                pos=as.numeric(map), z)
+    rownames(z) <- w
+
+
+    # get null log10 likelihood
+    if(i==1 & model != "np") {
+      if(n.addcovar > 0)
+        resid0 <- lm(pheno ~ addcovar, weights=weights^2)$resid
+      else 
+        resid0 <- lm(pheno ~ 1, weights=weights^2)$resid
+      if(method=="hk") nllik0 <- (n.ind/2)*log10(sum((resid0*weights)^2))
+      else {
+        sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
+        nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
+      }
+    }
 
     # re-scale with null log10 likel for methods em and hk
     if((method=="em" && model=="normal") || method=="hk") 
       z[,3] <- nllik0 - z[,3]
-    z[is.na(z[,3]),3] <- 0
 
-    rownames(z) <- w
+
+    # get null log10 likelihood for the X chromosome
+    if(chrtype=="X") {
+
+      # determine which covariates belong in null hypothesis
+      temp <- scanoneXnull(type, sexpgm)
+      adjustX <- temp$adjustX
+      dfX <- temp$dfX
+      sexpgmcovar <- temp$sexpgmcovar
+      
+      if(adjustX) {
+        if(model == "np") {
+          sexpgmcovar <- factor(apply(sexpgmcovar,1,paste,collapse=":"))
+          nllikX <- kruskal.test(pheno ~ sexpgmcovar)$stat/(2*log(10))
+          z[,3] <- z[,3] - nllikX
+        }
+        else if(method=="mr") {
+          for(s in 1:ncol(newgeno)) {
+            wh <- newgeno[,s] != 0
+            
+            if(n.addcovar > 0) {
+              residX <- lm(pheno ~ addcovar+sexpgmcovar, weights=weights^2,subset=wh)$resid
+              resid0 <- lm(pheno ~ addcovar, weights=weights^2,subset=wh)$resid
+            }
+            else {
+              residX <- lm(pheno ~ sexpgmcovar, weights=weights^2,subset=wh)$resid
+              resid0 <- lm(pheno ~ 1, weights=weights^2,subset=wh)$resid
+            }
+            nllikX <- (sum(wh)/2)*log10(sum((residX*weights[wh])^2))
+            nllik0 <- (sum(wh)/2)*log10(sum((resid0*weights[wh])^2))
+
+            # rescale LOD score
+            z[s,3] <- z[s,3] + nllikX - nllik0
+          }
+        }
+        else {
+          if(n.addcovar > 0) {
+            outX <- lm(pheno ~ addcovar+sexpgmcovar, weights=weights^2)
+            residX <- outX$resid
+            # perhaps revise the dfX, if some columns got dropped
+            dfX <- dfX - (ncol(sexpgmcovar)+n.addcovar - (outX$rank-1))
+          }
+          else 
+            residX <- lm(pheno ~ sexpgmcovar, weights=weights^2)$resid
+
+          if(method=="hk") nllikX <- (n.ind/2)*log10(sum((residX*weights)^2))
+          else {
+            sigX <- sqrt(sum((residX*weights)^2)/n.ind)
+            nllikX <- -sum(dnorm(residX,0,sigX/weights,log=TRUE))/log(10)
+          }
+          # rescale LOD score
+          z[,3] <- z[,3] + nllikX - nllik0
+        }
+      }
+    }
+
+    # replace missing or negative LODs with 0
+    z[is.na(z[,3]) | z[,3]<0, 3] <- 0
 
     # if different number of columns from other chromosomes,
     #     expand to match
@@ -375,16 +428,16 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         dimnames(newresults) <- list(rownames(results), cnz)
         newresults[,cnr] <- results
         results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+        for(s in 2:ncol(results))
+          if(is.factor(results[,s])) results[,s] <- as.numeric(results[,s])
       }
       else if(all(!is.na(wh.zr))) {
         newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=ncol(results)))
         dimnames(newz) <- list(rownames(z), cnr)
         newz[,cnz] <- z
         z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
+        for(s in 2:ncol(z))
+          if(is.factor(z[,s])) z[,s] <- as.numeric(z[,s])
       }
       else {
         newnames <- c(cnr, cnz[is.na(wh.zr)])
@@ -393,20 +446,24 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         dimnames(newresults) <- list(rownames(results), newnames)
         newresults[,cnr] <- results
         results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+        for(s in 2:ncol(results))
+          if(is.factor(results[,s])) results[,s] <- as.numeric(results[,s])
         
         newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=length(newnames)))
         dimnames(newz) <- list(rownames(z), newnames)
         newz[,cnz] <- z
         z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
+        for(s in 2:ncol(z))
+          if(is.factor(z[,s])) z[,s] <- as.numeric(z[,s])
       }
     }
 
     results <- rbind(results,z)
-  }
+  } # end loop over chromosomes
+
+  # sort the later columns
+  neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
+  results <- results[,neworder]
 
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method
@@ -424,7 +481,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
 plot.scanone <- 
 function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
-         lty=c(1,2,3),col="black",lwd=2,add=FALSE,gap=25,
+         lty=1,col=c("black","blue","red"),lwd=2,add=FALSE,gap=25,
          main, mtick=c("line", "triangle"), ...)
 {
   mtick <- match.arg(mtick)
@@ -436,7 +493,16 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   if(!missing(x3) && length(dim(x3))!=2)
     stop("Argument x3 must be a matrix or data.frame.")
 
-  if(length(lodcolumn)<3) lodcolumn <- rep(lodcolumn,3)[1:3]
+  if(length(lodcolumn)==1) 
+    lodcolumn <- rep(lodcolumn,3)[1:3]
+  else if(length(lodcolumn)==2) {
+    if(missing(x2)) x2 <- x
+    lodcolumn <- lodcolumn[c(1,2,3)]
+  }
+  else {
+    if(missing(x2)) x2 <- x
+    if(missing(x3)) x3 <- x
+  }
 
   second <- third <- TRUE
   if(missing(x2) && missing(x3)) 
@@ -455,14 +521,21 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   if(length(col)==1) col <- rep(col,3)
 
   # pull out desired chromosomes
-  if(missing(chr))
+  if(missing(chr) || length(chr)==0) 
     chr <- unique(as.character(out[,1]))
-
-  if(length(chr) == 0) chr <- sort(unique(out[,1]))
   else if(all(chr < 0)) { 
     a <- sort(unique(out[,1]))
     chr <- a[-match(-chr,a)]
   }
+
+  u <- is.na(match(chr,unique(out[,1])))
+  if(all(u))
+    stop("Chromosome(s) to plot were not matched to those in the scanone output.")
+  else if(any(u)) {
+    warning(paste("Chromosome(s)",chr[u],"were not found.",sep=" "))
+    chr <- chr[!u]
+  }
+
   out <- out[!is.na(match(out[,1],chr)),]
   if(second) out2 <- out2[!is.na(match(out2[,1],chr)),]
   if(third) out3 <- out3[!is.na(match(out3[,1],chr)),]
@@ -474,19 +547,21 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
  }
 
   # beginning and end of chromosomes
-  temp <- grep("^loc\-*[0-9]+",rownames(out))
+  temp <- grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",rownames(out))
   if(length(temp)==0) temp <- out
   else temp <- out[-temp,]
   begend <- matrix(unlist(tapply(temp[,2],temp[,1],range)),ncol=2,byrow=TRUE)
+  rownames(begend) <- unique(out[,1])
+  begend <- begend[as.character(chr),,drop=FALSE]
   len <- begend[,2]-begend[,1]
 
   # locations to plot start of each chromosome
   start <- c(0,cumsum(len+gap))-c(begend[,1],0)
 
   maxx <- sum(len+gap)-gap
-  maxy <- max(out[,3])
-  if(second) maxy <- max(c(maxy,out2[,3]))
-  if(third) maxy <- max(c(maxy,out3[,3]))
+  maxy <- max(out[,3],na.rm=TRUE)
+  if(second) maxy <- max(c(maxy,out2[,3]),na.rm=TRUE)
+  if(third) maxy <- max(c(maxy,out3[,3]),na.rm=TRUE)
 
   # graphics parameters
   old.xpd <- par("xpd")
@@ -561,7 +636,8 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
     # plot lines or triangles at marker positions
     if(incl.markers && !add) {
       nam <- dimnames(out)[[1]][out[,1]==chr[i]]
-      wh.genoprob <- (seq(along=nam))[grep("^loc\-*[0-9]+",nam)]
+#      wh.genoprob <- (seq(along=nam))[grep("^loc\-*[0-9]+",nam)]
+      wh.genoprob <- (seq(along=nam))[grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",nam)]
       if(length(wh.genoprob)==0) wh.genoprob <- seq(along=nam)
       else wh.genoprob <- (seq(along=nam))[-wh.genoprob]
       pos <- out[out[,1]==chr[i],2][wh.genoprob]+start[i]
@@ -590,15 +666,11 @@ scanone.perm <-
 function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
-         x.treatment=c("simple","full"),
          upper=FALSE, ties.random=FALSE,
          start=NULL, maxit=4000, tol=1e-4, n.perm=1000, trace=TRUE)
 {
-  if(method=="im") # warning in case old terminology is used
-    warning("Method \"im\" is now called \"em\"; running method \"imp\".")
   method <- match.arg(method)
   model <- match.arg(model)
-  x.treatment <- match.arg(x.treatment)
 
   if(model!="normal" && (!is.null(addcovar) || !is.null(intcovar))) {
     warning("Use of covariates not available for method np")
@@ -642,7 +714,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
     if(!is.null(intcovar)) intcovarp <- intcovar[o,,drop=FALSE]
     if(!is.null(weights)) weights <- weights[o]
     tem <- scanone(cross,,pheno.col,model,method,addcovarp,
-                   intcovarp,weights,x.treatment,upper,ties.random,start,
+                   intcovarp,weights,upper,ties.random,start,
                    maxit,tol,n.perm= -1)
     if(model=="2part")
       res[i,] <- apply(tem[,3:5], 2, max,na.rm=TRUE)
@@ -662,28 +734,38 @@ summary.scanone <-
 function(object,threshold=0,...)
 {
     
+  # first, pick off the maximum from each chromosome
+  # this is made complicated to avoid returning multiple rows
+  #     from any one chromosome
   out <- lapply(split(object,object[,1]),
-                   function(b) b[b[,3]==max(b[,3]),])
+                   function(b) {
+                     d <- which(b[,3]==max(b[,3]))
+                     if(length(d) > 1) d <- median(d)
+                     b[d,] }) 
   results <- out[[1]]
   if(length(out) > 1)
     for(i in 2:length(out))
       results <- rbind(results,out[[i]])
   class(results) <- c("summary.scanone","data.frame")
-  if(!any(results[,3] >= threshold)) {
-    cat("    There were no LOD peaks above the threshold.\n")
-    invisible()
-  }
-  else return(results[results[,3] >= threshold,])
+
+  results[results[,3] >= threshold,]
 }
 
 # print output of summary.scanone
 print.summary.scanone <-
 function(x,...)
 {
-  x[,-(1:2)] <- round(data.frame(x[,-(1:2)]),6)
-  cat("\n")
-  print.data.frame(x,digits=2)
-  cat("\n")
+
+  if(nrow(x) == 0) {
+    cat("    There were no LOD peaks above the threshold.\n")
+  }
+
+  else {
+    x[,-(1:2)] <- round(data.frame(x[,-(1:2)]),6)
+    cat("\n")
+    print.data.frame(x,digits=2)
+    cat("\n")
+  }
 }
 
 # pull out maximum LOD peak, genome-wide
