@@ -1,0 +1,214 @@
+
+Library qtl
+============
+
+Version 0.85, 10/29/2001:
+
+  Tried to fix up some of the plot.* and summary.* functions so that I
+  don't get warning messages in "R CMD check".	
+
+  Fixed a few minor problems in the help files.
+
+  Updated the a.starting.point() help file.
+
+  Fixed a couple of problems in marker order in the hyper data.
+
+  Added plot.info() for plotting the proportion of missing information
+  in the genotype data.
+
+  Fixed bug in plot.scanone() that led to problems in overlaying LOD
+  curves using add=TRUE.  Added an argument, gap, to specify the
+  distance between chromosomes.
+
+  Fixed bug in print.summary.scanone() that resulted in an error when
+  there was just one chromosome with LOD above the specified
+  threshold.
+
+
+Version 0.84, 10/10/2001:
+
+  Fixed slight error in sim.cross(); marker genotypes were removed
+  rather than qtl genotypes.  We now use the function drop.qtlgeno()
+  to do this.
+
+  Changed anova method in scanone() to use observed genotypes.
+  Individuals with missing or partially missing genotypes are dropped.  
+
+  Added haley-knott regression method to scanone(). 
+
+  Added a function ripple() for comparing marker orders for a single
+  chromosome, looking at all permutations of a sliding window of
+  markers.  Also added switch.order() to switch the order of markers
+  on a specified chromosome.
+
+  Removed null markers from listeria data.
+
+  Fixed bugs in read.cross.mm() and write.cross.mm().
+
+  Added csv and mapmaker format files to sample data directory.
+
+  Allow specification of starting value is scanone and vbscan
+
+  Added a document "rqtltour.pdf" describing the package and giving a
+  couple of examples.
+
+
+Version 0.83, 09/23/2001:
+
+  Fixed a very slight bug in summary.scanone().
+
+  Changed the argument "which.chr" in plot.scanone() to simply "chr".
+
+  Added a "chr" argument to plot.missing().
+
+
+Version 0.82, 09/20/2001:
+
+  Added write.cross.csv(), for writing data in comma-delimited format.
+  Changed write.mm() to write.cross.mm() and added write.cross() as a
+  wrapper to these two functions. 
+
+  All functions that use map functions now allow use of the
+  Carter-Falconer map function.
+
+  Changed remove.markers(), remove.nullmarkers(), and remove.qtlgeno()
+  to drop.markers(), drop.nullmarkers() and drop.qtlgeno().
+
+  Revised plot.rf() so that missing values appear in gray.
+
+  Added read.cross.gary(), to read data in Gary's format, and
+  read.cross.csv(), to read data in comma-delimited format.
+
+  Fixed the bugs in read.cross.mm(); see BUGS.txt.
+
+  Fixed summary.cross() so that it checks marker names in the data and
+  the map.
+
+  Added summary.scanone(), giving a summary of the output of
+  scanone(). 
+
+  Added possibility of F2 intercross with sex-specific maps.  Use
+  class "f2ss" rather than "f2."  This is in the testing stage.
+  The only revised functions, at this point, are est.map() and
+  calc.genoprob().
+
+  Added a function convert2ss() to convert a cross object from "f2"
+  to "f2ss" format.
+
+
+Version 0.81, 09/16/2001:
+
+  plot.scanone can now plot three scanone outputs, and includes an
+  "add" argument for adding additional outputs to a current plot.
+
+  Replaced 1e-10 with 1e-14 as tolerance value for error probability
+  and minimum map distance.
+
+  Changed the "min.d" argument in plot.geno() to "min.sep", taken to
+  be a percent of the chromosome length.
+
+  Added Carter-Falconer map function: mf.cf() and imf.cf().  Note that
+  there is no closed-form version of mf.cf(), and so I use the R
+  function uniroot().
+
+  Fixed a slight error in replace.map().
+
+  In est.map, calculate the log likelihood at the end; this is saved
+  as an attribute, "loglik" for each chromosome's map.  If the "print"
+  argument is used, print the loglik, too.
+
+  Made error.prob=0 the default for the functions argmax.geno(), 
+  calc.genoprob(), est.map(), and sim.geno().
+
+  Fixed the file permissions for many of the files, so that they are
+  readable by all users.
+
+
+Version 0.80, 08/07/2001:
+
+  Eliminated the map component of the results of calc.genoprob,
+  argmax.geno, and sim.geno.  Since we are now including attributes
+  "error.prob," "step," and "off.end," we can just use create.map() to
+  recreate the map each time, without having to carry it along.
+
+  Changed the name of plot.geno() to plot.missing() and plot.chr() to
+  plot.geno().  
+
+  Added vbscan() and vbscan.perm() to perform the analysis described
+  in V Boyartchuk et al. (2001), for a phenotype where some
+  individuals have some quantitative phenotype, while for others it is
+  undefined.  (Examples: the size of a lesion, where some individuals
+  exhibit no lesion; time-to-death after an infection, where some
+  individuals recover from the infection.)
+
+
+Version 0.79, 07/27/2001:
+
+  Added map functions (and inversion map functions) for Haldane and
+  Kosambi, so that I'm not re-creating them all of the time within
+  functions. 
+
+  Added a function plot.chr() to plot genotypes for a specific
+  chromosome, with likely errors (as determined by calc.errorlod() or
+  find.errors()) highlighted.
+
+  Added a warning to the help file for argmax.geno.  The results
+  greatly depend on the value of the step argument, and may not be
+  terribly trustworthy.  Also, if several sequences (of underlying
+  genotypes) are all most likely, our method of randomly choosing
+  among them is not right...recombination events are too far to the
+  right.
+
+
+Version 0.78, 07/24/2001:
+
+  Fixed a small bug in create.map(), which is used by
+  calc.genoprob().  An error occurred in the case of a genetic
+  map with equally spaced markers, when the argument "step" was set to
+  be exactly the inter-marker distance.
+
+  Modified calc.genoprob(), calc.argmax(), sim.geno() and
+  calc.errorlod() so that their corresponding components have 
+  attributes "error.prob", "step" and "off.end" (only "error.prob" for
+  calc.errorlod()), specifying the corresponding values used in the
+  calculations.  Modified calc.errorlod() to re-run calc.genoprob() if
+  the error.prob attribute is different from the corresponding
+  argument. 
+
+
+Version 0.77, 06/22/2001:
+
+  Fixed a small bug in sim.cross(), where dimnames of error component
+  was wrong, when simulating genotyping errors with a QTL present.
+
+
+Version 0.76, 05/17/2001:
+
+  This is a totally revised version of the package.  Most
+  importantly, the data structure for a cross has completely
+  changed.  The function convert.cross is included, for converting
+  data from the old structure to the new one.  See the help file for
+  read.cross for a description of the new data structure.  
+
+  The main hidden Markov model engine has been rewritten, to make
+  things more flexible and general.  We've now implemented the Viterbi
+  algorithm, in the function argmax.geno, to calculate the most likely
+  sequence of underlying genotypes, given the observed marker data,
+  and we've fixed the calculation of the Lincoln and Lander error LOD
+  scores.  The analysis of phase-known four-way crosses is now
+  possible.
+
+  The "singlescan" function (to do a genome scan with a single QTL
+  model) is now called "scanone" (to save a few keystrokes).  Note
+  that this function does not yet allow the use of covariates.  We'll
+  add that feature in the near future.  
+
+  Saunak Sen and I are now working together on this project, and so
+  things will begin to progress more quickly (we hope).
+
+
+
+copyright (c) 2001, Karl W Broman, Johns Hopkins University
+Licensed under the GNU General Public License version 2 (June, 1991)
+
+http://biosun01.biostat.jhsph.edu/~kbroman/software/qtl.html
