@@ -10,7 +10,7 @@
 
 \usage{
 plot.geno(x, chr, ind, horizontal=FALSE, cutoff=3.5,
-          min.sep=2, cex=1.3, \dots) 
+          min.sep=2, cex=1.2, \dots) 
 }			    
 
 \arguments{

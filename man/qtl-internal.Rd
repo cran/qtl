@@ -91,7 +91,7 @@ read.cross.csv(dir, file, sep=",", na.strings=c("-","NA"),
                genotypes=c("A","H","B","D","C"),
                estimate.map=TRUE)
 read.cross.gary(dir, genfile, mnamesfile, chridfile, phefile,
-                pnamesfile, mapfile,estimate.map=TRUE)
+                pnamesfile, mapfile,estimate.map)
 read.cross.karl(dir, genfile, mapfile, phefile)
 read.cross.mm(dir, rawfile, mapfile, estimate.map=TRUE)
 read.cross.qtlcart(dir, crofile, mapfile)

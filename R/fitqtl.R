@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-3, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jun, 2003
+# last modified Dec, 2003
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -464,9 +464,9 @@ print.summary.fitqtl <- function(x, ...)
   if("result.drop" %in% names(x)) {
     cat("Drop one QTL at a time ANOVA table: \n")
     cat("----------------------------------  \n")
-    # use print.coefmat instead of print.data.frame
+    # use printCoefmat instead of print.data.frame
     # make sure the last column is P value
-    print.coefmat(x$result.drop, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
+    printCoefmat(x$result.drop, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
     cat("\n")
   }
 

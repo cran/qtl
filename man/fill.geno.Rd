@@ -11,7 +11,7 @@
 
 \usage{
 fill.geno(cross, method=c("imp","argmax"), error.prob=0,
-          map.function=c("haldane","kosambi","c-f"))
+          map.function=c("haldane","kosambi","c-f","morgan"))
 }
 
 \arguments{

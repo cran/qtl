@@ -1,11 +1,11 @@
-argmax.geno             Reconstruct underlying genotypes
 A starting point        Introductory comments
+argmax.geno             Reconstruct underlying genotypes
 badorder                An intercross with misplaced markers
 bristle3                Data on bristle number in Drosophila
 bristleX                Data on bristle number in Drosophila
+c.cross                 Combine data for QTL experiments
 calc.errorlod           Identify likely genotyping errors
 calc.genoprob           Calculate conditional genotype probabilities
-c.cross                 Combine data for QTL experiments
 clean                   Remove derived data
 comparecrosses          Compare two cross objects.
 convert2ss              Convert an intercross into a form to allow
