@@ -56,6 +56,7 @@ plot(out.em,out.hk,chr=c(2,7))
 
 \seealso{ \code{\link[qtl]{sim.cross}}, \code{\link[qtl]{fake.bc}},
   \code{\link[qtl]{fake.f2}}, \code{\link[qtl]{listeria}},
-  \code{\link[qtl]{hyper}} }
+  \code{\link[qtl]{hyper}},
+  \code{\link[qtl]{bristle3}}, \code{\link[qtl]{bristleX}} }
 
 \keyword{datasets}

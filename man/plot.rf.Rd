@@ -45,6 +45,15 @@ plot.rf(x, chr, which=c("both","lod","rf"), \dots)
 data(badorder)
 badorder <- est.rf(badorder)
 plot.rf(badorder)
+
+# plot just chr 1
+plot.rf(badorder,chr=1)
+
+# plot just the recombination fractions
+plot.rf(badorder,which="rf") 
+
+# plot just the LOD scores, and just for chr 2 and 3
+plot.rf(badorder,which="lod")
 }
 
 \seealso{ \code{\link[qtl]{est.rf}}, \code{\link[base]{image}},

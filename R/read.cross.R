@@ -3,16 +3,16 @@
 # read.cross.R
 #
 # copyright (c) 2000-2002, Karl W Broman, Johns Hopkins University
-# last modified Feb, 2002
-# first written Aug, 2000 
+# last modified August, 2002
+# first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
-# Contains: read.cross, read.cross.karl, read.cross.mm,
-#           read.cross.gary, read.cross.csv
+# Contains: read.cross, read.cross.karl, read.cross.mm, read.maps.mm
+#           read.cross.gary, read.cross.csv, read.cross.qtx
+#           [See qtlcart_io.R for read.cross.qtlcart]
 #
 ######################################################################
-
 
 ######################################################################
 #
@@ -21,16 +21,27 @@
 ######################################################################
 
 read.cross <-
-function(format=c("csv","mm","gary","karl"),dir=".",file,
-         genfile,mapfile,phefile,chridfile,mnamesfile,pnamesfile,
-         sep=",",na.strings="-",genotypes=c("A","H","B","C","D"),
-         estimate.map=FALSE)
+function(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
+         file, genfile,mapfile,phefile,chridfile,mnamesfile,pnamesfile,
+         sep=",",na.strings=c("-","NA"),genotypes=c("A","H","B","D","C"),
+         estimate.map=TRUE)
 {
   format <- match.arg(format)
-  
+
   if(format=="csv") { # comma-delimited format
     cross <- read.cross.csv(dir,file,sep,na.strings,genotypes,
                             estimate.map)
+  }
+  else if(format=="qtx") { # Mapmanager QTX format
+    cross <- read.cross.qtx(dir,file,estimate.map)
+  }
+  else if(format=="qtlcart") { # QTL Cartographer format
+    # if missing mapfile but genfile is specified,
+    #     use genfile as the map file.
+    if(missing(mapfile) && !missing(genfile))
+      mapfile <- genfile
+
+    cross <- read.cross.qtlcart(dir, file, mapfile)
   }
   else if(format=="karl") { # karl's format
     # if missing file names, use standard ones
@@ -48,7 +59,7 @@ function(format=c("csv","mm","gary","karl"),dir=".",file,
 
     cross <- read.cross.mm(dir,file,mapfile,estimate.map)
   }
-  if(format=="gary") { # gary's format
+  else if(format=="gary") { # gary's format
     # if missing file names, use the standard ones
     if(missing(genfile)) genfile <- "geno.dat"
     if(missing(mnamesfile)) mnamesfile <- "mnames.txt"
@@ -60,6 +71,51 @@ function(format=c("csv","mm","gary","karl"),dir=".",file,
     cross <- read.cross.gary(dir,genfile,mnamesfile,chridfile,
                              phefile,pnamesfile,mapfile)
   }
+
+  estimate.map <- cross[[2]]
+  cross <- cross[[1]]
+
+  # check X chromosome genotype data
+  chrtype <- sapply(cross$geno,class)
+  if(any(chrtype=="X")) {
+    for(i in (1:length(chrtype))[chrtype=="X"]) {
+      dat <- cross$geno[[i]]$data
+      if(all(is.na(dat) | dat==1 | dat==3)) {
+        dat[!is.na(dat) & dat==3] <- 2
+        cross$geno[[i]]$data <- dat
+      }
+      else if(all(is.na(dat) | dat==2 | dat==3)) {
+        dat[!is.na(dat) & dat==3] <- 2
+        cross$geno[[i]]$data <- dat
+      }
+    }
+  }
+
+  # check autosomal data for a backcross
+  if(class(cross)[1]=="bc" && any(chrtype=="A")) {
+    for(i in (1:length(chrtype))[chrtype=="A"]) {
+      dat <- cross$geno[[i]]$data
+      if(all(is.na(dat) | dat==2 | dat==3)) {
+        dat[!is.na(dat) & dat==3] <- 2
+        cross$geno[[i]]$data <- dat
+      }
+    }
+  }
+
+  # re-estimate map?
+  if(estimate.map) {
+    cat(" --Estimating genetic map\n")
+    newmap <- est.map(cross)
+    cross <- replace.map(cross, newmap)
+  }
+
+  # store genotype data as integers
+  for(i in 1:nchr(cross))
+    storage.mode(cross$geno[[i]]$data) <- "integer"
+
+  # run checks
+  summary(cross)
+
   cross
 }
 
@@ -75,21 +131,17 @@ function(format=c("csv","mm","gary","karl"),dir=".",file,
 ######################################################################
 
 read.cross.karl <-
-function(dir,genfile,mapfile,phefile)  
+function(dir,genfile,mapfile,phefile)
 {
-  # create file names 
+  # create file names
   if(missing(genfile)) genfile <- "gen.txt"
   if(missing(mapfile)) mapfile <- "map.txt"
   if(missing(phefile)) phefile <- "phe.txt"
 
-  if(!missing(dir)) {
-    # remove ending "/" if it exists
-    n <- nchar(dir)
-    if(substr(dir,n,n) == "/")
-      dir <- substr(dir,0,n-1)
-    genfile <- paste(dir,genfile, sep="/")
-    mapfile <- paste(dir,mapfile, sep="/")
-    phefile <- paste(dir,phefile, sep="/")
+  if(!missing(dir) && dir != "") {
+    genfile <- file.path(dir, genfile)
+    mapfile <- file.path(dir, mapfile)
+    phefile <- file.path(dir, phefile)
   }
 
   # read data
@@ -153,16 +205,16 @@ function(dir,genfile,mapfile,phefile)
     else {
       chr.num <- table(chr.num)
     }
-  
+
     m <- max(chr.num)
-    if(m > sum(chr.num)/2 && m > 1) 
+    if(m > sum(chr.num)/2 && m > 1)
       names(g)[i] <- names(chr.num)[chr.num==m][1]
 
     if(names(g)[i] == "X" || names(g)[i] == "x") class(g[[i]]) <- "X"
     else class(g[[i]]) <- "A"
   }
 
-  # check that data dimensions match 
+  # check that data dimensions match
   n.mar1 <- sapply(g,function(a) ncol(a$data))
   n.mar2 <- sapply(g,function(a) length(a$map))
   n.phe <- ncol(pheno)
@@ -184,7 +236,7 @@ function(dir,genfile,mapfile,phefile)
   cat("\t", n.phe, " phenotypes\n");
 
   # add phenotype names, if missing
-  if(is.null(colnames(pheno))) 
+  if(is.null(colnames(pheno)))
     dimnames(pheno) <- list(NULL, paste("phenotype", 1:n.phe,sep=""))
 
   # determine map type: f2 or bc or 4way?
@@ -201,18 +253,16 @@ function(dir,genfile,mapfile,phefile)
   else max.gen <- 10
 
   u <- unique(geno)
-  if(any(!is.na(u) & (u > max.gen | u < 1))) 
+  if(any(!is.na(u) & (u > max.gen | u < 1)))
     stop(paste("There are stange values in the genotype data :",
                paste(u,collapse=":"), "."))
 
   cross$pheno <- as.data.frame(cross$pheno)
-  
-  # put cross through summary.cross to check that every is okay
-  temp <- summary(cross)
 
-  cross
+  # return cross + indicator of whether to run est.map
+  list(cross,FALSE)
 }
-  
+
 
 ######################################################################
 #
@@ -230,18 +280,14 @@ function(dir,genfile,mapfile,phefile)
 ######################################################################
 
 read.cross.mm <-
-function(dir,rawfile,mapfile,estimate.map=FALSE)
+function(dir,rawfile,mapfile,estimate.map=TRUE)
 {
   # create file names
   if(missing(mapfile)) stop("Missing mapfile.")
   if(missing(rawfile)) stop("Missing rawfile.")
-  if(!missing(dir)) {
-    # remove ending "/" if it exists
-    n <- nchar(dir)
-    if(substring(dir,n,n) == "/")
-      dir <- substring(dir,0,n-1)
-    mapfile <- paste(dir, mapfile, sep="/")
-    rawfile <- paste(dir, rawfile, sep="/")
+  if(!missing(dir)  && dir != "") {
+    mapfile <- file.path(dir, mapfile)
+    rawfile <- file.path(dir, rawfile)
   }
 
   # count lines in rawfile
@@ -250,15 +296,25 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
 
   # read map file
   map <- read.table(mapfile,header=FALSE,colClasses="character",blank=FALSE)
+  fixmap <- TRUE
+  if(ncol(map) > 3) { # special maps format
+    maps <- read.maps.mm(mapfile)
+    chr <- rep(names(maps),sapply(maps,length))
+    markers <- marnames <- unlist(lapply(maps,names))
+    includes.pos <- TRUE
+    fixmap <- FALSE
+  }
 
-  # remove any rows lacking a chromosome ID
-  o <- (1:nrow(map))[map[,1]==""]
-  if(length(o) > 0) map <- map[-o,]
+  if(fixmap) { # my map format: 2 or 3 column table
+    # remove any rows lacking a chromosome ID
+    o <- (1:nrow(map))[map[,1]==""]
+    if(length(o) > 0) map <- map[-o,]
 
-  # remove any leading *'s from the marker names
-  g <- grep("^*",map[,2],extended=FALSE)
-  if(length(g) > 0) 
-    map[g,2] <- substr(map[g,2],2,nchar(map[g,2]))
+    # remove any leading *'s from the marker names
+    g <- grep("^*",map[,2],extended=FALSE)
+    if(length(g) > 0)
+      map[g,2] <- substr(map[g,2],2,nchar(map[g,2]))
+  }
 
   # begin reading/parsing the genotype data
   cur.mar <- 0
@@ -304,7 +360,7 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
 
         wh <- rep(0,length(std.symb))
         fixed <- rep(0,length(OLD.symb))
-        for(j in 1:length(std.symb)) 
+        for(j in 1:length(std.symb))
           if(!is.na(match(std.symb[j], OLD.symb)))
             wh[j] <- match(std.symb[j],OLD.symb)
         for(j in 1:length(std.symb))
@@ -341,7 +397,7 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
 
         if(cur.mar > n.mar) { # now reading phenotypes
           cur.phe <- cur.phe+1
-          if(cur.phe > n.phe) next 
+          if(cur.phe > n.phe) next
           phenames[cur.phe] <- substring(a[1],2)
           p <- a[-1]
           p[p=="-"] <- NA
@@ -390,17 +446,19 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
   dimnames(pheno) <- list(NULL, phenames)
   # done reading the raw file
 
-  # parse map file
-  if(ncol(map) == 3) {
-    includes.pos <- TRUE
-    # make positions numeric rather than character
-    map[,3] <- as.numeric(map[,3]) 
-  }
-  else includes.pos <- FALSE
+  if(fixmap) { # my map format: 2 or 3 column table
+    # parse map file
+    if(ncol(map) == 3) {
+      includes.pos <- TRUE
+      # make positions numeric rather than character
+      map[,3] <- as.numeric(map[,3])
+    }
+    else includes.pos <- FALSE
 
-  chr <- as.character(map[,1])
-  markers <- map[,2]
-  if(includes.pos) pos <- map[,3]
+    chr <- as.character(map[,1])
+    markers <- map[,2]
+    if(includes.pos) pos <- map[,3]
+  }
 
   Geno <- vector("list",length(unique(chr)))
   names(Geno) <- unique(chr)
@@ -408,16 +466,28 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
   for(i in unique(chr)) {
     mar <- markers[chr == i]
 
-    # create map
-    if(includes.pos) map <- pos[chr == i]
-    else map <- seq(0,by=5,length=length(mar))
-    names(map) <- mar
-    
+    if(fixmap) { # my map format: 2 or 3 column table
+      # create map
+      if(includes.pos) {
+        map <- pos[chr == i]
+
+        # reorder markers?
+        if(any(diff(map)<0)) {
+          o <- order(map)
+          map <- map[o]
+          mar <- mar[o]
+        }
+      }
+      else map <- seq(0,by=5,length=length(mar))
+      names(map) <- mar
+    }
+    else map <- maps[[i]]
+
     # pull out genotype data
     o <- match(mar,marnames)
     if(any(is.na(o))) {
       stop(paste("Cannot find markers in genotype data: ",
-           paste(mar[is.na(o)],collapse=" "), ".",sep=""))
+                 paste(mar[is.na(o)],collapse=" "), ".",sep=""))
     }
 
     if(length(o)==1) data <- matrix(geno[,o],ncol=1)
@@ -432,22 +502,59 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
     else class(Geno[[i]]) <- "A"
   }
 
-
   cross <- list(geno=Geno,pheno=pheno)
   class(cross) <- c(type,"cross")
 
-  if(estimate.map || !includes.pos) {
-    cat(" --Estimating genetic map\n")
-    newmap <- est.map(cross)
-    cross <- replace.map(cross,newmap)
-  }
+  if(estimate.map && !includes.pos) estmap <- TRUE
+  else estmap <- FALSE
 
   cross$pheno <- as.data.frame(cross$pheno)
 
-  # put cross through summary.cross to check that every is okay
-  temp <- summary(cross)
+  # return cross + indicator of whether to run est.map
+  list(cross,estmap)
+}
 
-  cross
+######################################################################
+#
+# read.maps.mm: Read genetic map for a special Mapmaker format
+# Written by Brian S Yandell; modified by Karl W Broman
+#
+######################################################################
+read.maps.mm <-
+function( mapsfile )
+{
+  if (missing(mapsfile)) stop("Missing mapsfile.")
+
+  ## find where everything is
+  f <- scan(mapsfile, what = "", blank.lines.skip = FALSE, sep = "\n",
+            quiet = TRUE)
+  start <- pmatch( paste( "*", c("OrderInfo","Classes","Chromosomes",
+                                 "Assignments and Placements" ), ":", sep = "" ), f )
+
+  ## marker names
+  f <- scan( mapsfile, what = c("",rep(0,9)), skip = start[1],
+            nlines = start[2] - start[1] - 1,
+            blank.lines.skip = FALSE, quiet = TRUE)
+  markers <- substring( f[ seq( 1, length( f ), by = 10 ) ], 2 )
+
+  ## distances
+  f <- scan( mapsfile, what = "", skip = start[3],
+            nlines = start[4] - start[3] - 1,
+            blank.lines.skip = FALSE, quiet = TRUE)
+  chr <- grep( "^*", f, extended = FALSE )
+  chrom <- substring( f[chr], 2 )
+  nmark <- as.integer( f[ 1 + chr ] )
+  chr <- c( chr[-1], 1 + length( f ))
+  lo <- chr - 2 * nmark + 2
+  hi <- chr - nmark
+  map <- list()
+  imark <- c( 0, cumsum( nmark ))
+  for( i in seq( along = chrom )) {
+    tmp <- cumsum( c(0,imf.h(as.numeric( f[ lo[i]:hi[i] ] ))))
+    names( tmp ) <- markers[ imark[i] + seq( nmark[i] ) ]
+    map[[ chrom[i] ]] <- tmp
+  }
+  map
 }
 
 
@@ -462,7 +569,7 @@ function(dir,rawfile,mapfile,estimate.map=FALSE)
 read.cross.gary <-
 function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
 {
-  # create file names 
+  # create file names
   if(missing(genfile)) genfile <- "geno.dat"
   if(missing(mnamesfile)) mnamesfile <- "mnames.txt"
   if(missing(chridfile)) chridfile <- "chrid.dat"
@@ -470,17 +577,13 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
   if(missing(pnamesfile)) pnamesfile <- "pnames.txt"
   if(missing(mapfile)) mapfile <- "markerpos.txt"
 
-  if(!missing(dir)) {
-    # remove ending "/" if it exists
-    n <- nchar(dir)
-    if(substr(dir,n,n) == "/")
-      dir <- substr(dir,0,n-1)
-    genfile <- paste(dir,genfile, sep="/")
-    mnamesfile <- paste(dir,mnamesfile, sep="/")
-    chridfile <- paste(dir,chridfile, sep="/")
-    phefile <- paste(dir,phefile, sep="/")
-    pnamesfile <- paste(dir,pnamesfile, sep="/")
-    mapfile <- paste(dir,mapfile, sep="/")
+  if(!missing(dir) && dir != "") {
+    genfile <- file.path(dir, genfile)
+    mnamesfile <- file.path(dir, mnamesfile)
+    chridfile <- file.path(dir, chridfile)
+    phefile <- file.path(dir, phefile)
+    pnamesfile <- file.path(dir, pnamesfile)
+    mapfile <- file.path(dir, mapfile)
   }
 
   # read data
@@ -522,7 +625,7 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
         }
       }
     }
-    
+
     names(temp.map) <- mnames[chr==uchr[i]]
 
     # pull out appropriate portion of genotype data
@@ -531,13 +634,13 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
     colnames(data) <- names(temp.map)
 
     geno[[i]] <- list(data=data,map=temp.map)
-    if(uchr[i] == "X" || uchr[i] == "x") 
+    if(uchr[i] == "X" || uchr[i] == "x")
       class(geno[[i]]) <- "X"
     else class(geno[[i]]) <- "A"
   }
   colnames(pheno) <- pnames
 
-  # check that data dimensions match 
+  # check that data dimensions match
   n.mar1 <- sapply(geno,function(a) ncol(a$data))
   n.mar2 <- sapply(geno,function(a) length(a$map))
   n.phe <- ncol(pheno)
@@ -570,18 +673,16 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
   else max.gen <- 2
 
   u <- unique(allgeno)
-  if(any(!is.na(u) & (u > max.gen | u < 1))) 
+  if(any(!is.na(u) & (u > max.gen | u < 1)))
     stop(paste("There are stange values in the genotype data :",
                paste(sort(u),collapse=":"), "."))
 
   cross$pheno <- as.data.frame(cross$pheno)
 
-  # put cross through summary.cross to check that every is okay
-  temp <- summary(cross)
-
-  cross
+  # return cross + indicator of whether to run est.map
+  list(cross,FALSE)
 }
-  
+
 
 ######################################################################
 #
@@ -592,22 +693,20 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile)
 ######################################################################
 
 read.cross.csv <-
-function(dir,file,sep=",",na.strings="-",genotypes=c("A","H","B","C","D"),
-         estimate.map=FALSE)
+function(dir, file, sep=",", na.strings=c("-","NA"),
+         genotypes=c("A","H","B","D","C"), estimate.map=TRUE)
 {
-  # create file names 
+  # create file names
   if(missing(file)) file <- "data.csv"
 
-  if(!missing(dir)) {
-    # remove ending "/" if it exists
-    n <- nchar(dir)
-    if(substr(dir,n,n) == "/")
-      dir <- substr(dir,0,n-1)
-    file <- paste(dir,file, sep="/")
+  if(!missing(dir) && dir != "") {
+    file <- file.path(dir, file)
   }
 
   # read data
-  data <- read.table(file,sep=sep,na.strings=na.strings,colClasses="character")
+  data <- read.table(file, sep=sep, na.strings=na.strings,
+                     colClasses="character", fill=TRUE,
+                     blank.lines.skip=TRUE)
 
   # determine number of phenotypes based on initial blanks in row 2
   n <- ncol(data)
@@ -621,29 +720,36 @@ function(dir,file,sep=",",na.strings="-",genotypes=c("A","H","B","C","D"),
   n.phe <- max((1:n)[temp])
 
   # Is map included?  yes if first n.phe columns in row 3 are all blank
-  if(all(data[3,1:n.phe]=="")) map.included <- TRUE
+  if(all(!is.na(data[3,1:n.phe]) & data[3,1:n.phe]=="")) map.included <- TRUE
   else map.included <- FALSE
 
   # replace empty cells with NA
   data <- sapply(data,function(a) { a[!is.na(a) & a==""] <- NA; a })
 
   # pull apart phenotypes, genotypes and map
-  pheno <- as.data.frame(data[-(1:3),1:n.phe,drop=FALSE])
-  colnames(pheno) <- data[1,1:n.phe]
   mnames <- data[1,-(1:n.phe)]
+  if(any(is.na(mnames)))  stop("There are missing marker names.")
   chr <- data[2,-(1:n.phe)]
-  if(map.included) map <- as.numeric(data[3,-(1:n.phe)])
+  if(any(is.na(chr))) stop("There are missing chromosome IDs.")
+  if(map.included) {
+    map <- as.numeric(data[3,-(1:n.phe)])
+    nondatrow <- 3 # last non-data row
+  }
   else { # if map not included, plug in a dummy map
     map <- split(rep(0,length(chr)),chr)[unique(chr)]
     map <- unlist(lapply(map,function(a) seq(0,length=length(a),by=5)))
     names(map) <- NULL
+    nondatrow <- 2 # last non-data row
   }
+  if(any(is.na(map))) stop("There are missing marker positions.")
+  pheno <- as.data.frame(data[-(1:nondatrow),1:n.phe,drop=FALSE])
+  colnames(pheno) <- data[1,1:n.phe]
   if(length(genotypes) > 0)  # convert genotype data
-    allgeno <- matrix(match(data[-(1:3),-(1:n.phe)],genotypes),
-                      ncol=ncol(data)-n.phe,nrow=nrow(data)-3)
+    allgeno <- matrix(match(data[-(1:nondatrow),-(1:n.phe)],genotypes),
+                      ncol=ncol(data)-n.phe)
   else
-    allgeno <- matrix(as.numeric(data[-(1:3),-(1:n.phe)]),
-                      ncol=ncol(data)-n.phe,nrow=nrow(data)-3)
+    allgeno <- matrix(as.numeric(data[-(1:nondatrow),-(1:n.phe)]),
+                      ncol=ncol(data)-n.phe)
 
   # Fix up phenotypes
   sw2numeric <-
@@ -674,12 +780,12 @@ function(dir,file,sep=",",na.strings="-",genotypes=c("A","H","B","C","D"),
     colnames(data) <- names(temp.map)
 
     geno[[i]] <- list(data=data,map=temp.map)
-    if(uchr[i] == "X" || uchr[i] == "x") 
+    if(uchr[i] == "X" || uchr[i] == "x")
       class(geno[[i]]) <- "X"
     else class(geno[[i]]) <- "A"
   }
 
-  # check that data dimensions match 
+  # check that data dimensions match
   n.mar1 <- sapply(geno,function(a) ncol(a$data))
   n.mar2 <- sapply(geno,function(a) length(a$map))
   n.phe <- ncol(pheno)
@@ -714,21 +820,193 @@ function(dir,file,sep=",",na.strings="-",genotypes=c("A","H","B","C","D"),
   else max.gen <- 10
 
   u <- unique(allgeno)
-  if(any(!is.na(u) & (u > max.gen | u < 1))) 
+  if(any(!is.na(u) & (u > max.gen | u < 1)))
     stop(paste("There are stange values in the genotype data :",
                paste(sort(u),collapse=":"), "."))
 
-  # estimate genetic map
-  if(estimate.map || !map.included) {
-    cat(" --Estimating genetic map\n")
-    newmap <- est.map(cross)
-    cross <- replace.map(cross,newmap)
+  # check that markers are in proper order
+  #     if not, fix up the order
+  for(i in 1:n.chr) {
+    if(any(diff(cross$geno[[i]]$map)<0)) {
+      o <- order(cross$geno[[i]]$map)
+      cross$geno[[i]]$map <- cross$geno[[i]]$map[o]
+      cross$geno[[i]]$data <- cross$geno[[i]]$data[,o,drop=FALSE]
+    }
   }
 
-  # put cross through summary.cross to check that every is okay
-  temp <- summary(cross)
+  # estimate genetic map
+  if(estimate.map && !map.included) estmap <- TRUE
+  else estmap <- FALSE
 
-  cross
+  # return cross + indicator of whether to run est.map
+  list(cross,estmap)
 }
-  
+
+######################################################################
+#
+# read.cross.qtx
+#
+# read data in Map Manager QTX format
+#
+######################################################################
+
+read.cross.qtx <-
+function(dir, file, estimate.map=TRUE)
+{
+  if(!missing(dir) && dir != "") {
+    file <- file.path(dir, file)
+  }
+
+
+  # This is a revised version of match which gives *all* matches
+  # of x within the table
+  mymatch <-
+    function(x, table)
+      {
+        if(length(x) > 1) x <- x[1] # ignore any but the first element of x
+
+        if(!any(x==table)) return(NA)
+        seq(along=table)[x==table]
+      }
+
+  # read file into a big vector, each item one line
+  cat(" --Read the following data:\n")
+  x <- scan(file,what=character(0),sep="\n",quiet=TRUE)
+
+  genoabbrev <- unlist(strsplit(x[9],""))
+  if(length(genoabbrev) < 8)  # just in case, fill out to 8 chars
+    genoabbrev <- c(genoabbrev,rep("H",8-length(genoabbrev)))
+  myabbrev <- c(0,1,3,2,5,4,2,2)
+  ugeno <- NULL
+
+  # individuals
+  ind.beg <- match("{pgy", x) # there should be just one
+  ind.end <- match("}pgy", x)
+  n.ind <- as.numeric(x[ind.beg+1])
+  ind <- x[(ind.beg+2):(ind.end-1)]
+  if(length(ind) != n.ind)
+    stop("Problem with individual IDs ({pgy}).")
+  cat(paste("\t", n.ind, "  individuals\n",sep=""))
+
+  # determine if individuals can be viewed as numbers
+  g <- grep("^[0-9\.]+$", ind)
+  if(length(g) == n.ind)
+    ind <- as.numeric(as.character(ind))
+
+  # phenotypes
+  phe.beg <- mymatch("{trt",x)
+  phe.end <- mymatch("}trt",x)
+  pheno <- NULL
+  if(!is.na(phe.beg[1])) { # at least one phenotype
+    pheno <- vector("list",length(phe.beg))
+    names(pheno) <- paste(phe.beg)
+    for(i in 1:length(phe.beg)) {
+      z <- x[phe.beg[i]:phe.end[i]]
+      names(pheno)[i] <- z[2]
+      vals.beg <- match("{tvl", z)+1 # there should be just one match
+      vals.end <- match("}tvl", z)-1
+      pheno[[i]] <- as.numeric(unlist(strsplit(z[vals.beg[1]:vals.end[1]]," ")))
+    }
+    pheno <- cbind(as.data.frame(pheno),ind=ind)
+    cat(paste("\t", length(pheno), "  phenotypes\n",sep=""))
+  }
+  else {
+    pheno <- data.frame(ind=ind)
+    cat(paste("\t", 0, "  phenotypes\n",sep=""))
+  }
+
+  # chromosomes
+  chr.beg <- mymatch("{chx",x)
+  chr.end <- mymatch("}chx",x)
+
+  if(is.na(chr.beg[1])) # no genotype data
+    stop("There appears to be no genotype data!")
+  geno <- vector("list", length(chr.beg))
+  names(geno) <- paste(chr.beg)
+  has.loci <- rep(TRUE,length(chr.beg))
+  map.offset <- rep(0,length(chr.beg))
+
+  cat(paste("\t", length(chr.beg), "  chromosomes\n",sep=""))
+
+  for(i in 1:length(chr.beg)) {
+    z <- x[chr.beg[i]:chr.end[i]]
+    names(geno)[i] <- z[2]
+    map.offset <- as.numeric(z[5])
+
+    # loci
+    loc.beg <- mymatch("{lox",z)
+    loc.end <- mymatch("}lox",z)
+    if(all(is.na(loc.beg))) {
+      has.loci[i] <- FALSE
+      next
+    }
+    data <- matrix(ncol=length(loc.beg),nrow=n.ind)
+    colnames(data) <- paste(loc.beg)
+    has.geno <- rep(TRUE,length(loc.beg))
+    for(j in 1:length(loc.beg)) {
+      zz <- z[loc.beg[j]:loc.end[j]]
+      colnames(data)[j] <- zz[2]
+      geno.beg <- match("{sdp",zz)+1 # should be just one match
+      geno.end <- match("}sdp",zz)-1
+      if(all(is.na(geno.beg))) { # no genotype data
+        has.geno[j] <- FALSE
+        next
+      }
+      dat <- unlist(strsplit(paste(zz[geno.beg[1]:geno.end[1]],collapse=""),""))
+
+      data[,j] <- myabbrev[match(dat,genoabbrev)]
+    } # end loop over loci
+
+    # replace 0's with NA's
+    data[!is.na(data) & data==0] <- NA
+
+    # remove columns with no data
+    data <- data[,has.geno,drop=FALSE]
+
+    # temporary map
+    map <- seq(0,length=ncol(data),by=5)+map.offset
+    names(map) <- colnames(data)
+    geno[[i]] <- list(data=data,map=map)
+    if(length(grep("[Xx]", names(geno)[i]))>0) # X chromosome
+      class(geno[[i]]) <- "X"
+    else class(geno[[i]]) <- "A"
+  } # end loop over chromosomes
+
+  # unique genotypes
+  for(i in 1:length(geno)) {
+    ugeno <- unique(c(ugeno,unique(geno[[i]]$data)))
+    ugeno <- ugeno[!is.na(ugeno)]
+  }
+
+  if(length(ugeno)==2) { # backcross
+    # Fix if coded as A:B rather than A:H (RI lines)
+    if(all(ugeno==1 || ugeno==3)) {
+      for(i in 1:length(geno))
+        geno[[i]]$data[geno[[i]]$data == 3] <- 2
+    }
+    # Fix if coded as H:B rather than A:H (other backcross)
+    else if(all(ugeno==2 || ugeno==3)) {
+      for(i in 1:length(geno))
+        geno[[i]]$data[geno[[i]]$data == 3] <- 1
+    }
+
+    type <- "bc"
+    for(i in 1:length(geno))
+      geno[[i]]$data[geno[[i]]$data > 2] <- 1
+  }
+  else type <- "f2"
+
+  totmar <- sum(sapply(geno,function(a) ncol(a$data)))
+  cat(paste("\t", totmar, "  total markers\n",sep=""))
+
+  cross <- list(geno=geno,pheno=pheno)
+  class(cross) <- c(type,"cross")
+
+  if(estimate.map) estmap <- TRUE
+  else estmap <- FALSE
+
+  # return cross + indicator of whether to run est.map
+  list(cross,estmap)
+}
+
 # end of read.cross.R

@@ -1,50 +1,64 @@
-A starting point         Introductory comments
-argmax.geno              Reconstruct underlying genotypes
-badorder                 An intercross with misplaced markers
-c.cross                  Combine data for QTL experiments
-calc.errorlod            Identify likely genotyping errors
-calc.genoprob            Calculate conditional genotype probabilities
-clean                    Remove derived data
-convert2ss               Convert an intercross into a form to allow sex-
-                         specific maps
-drop.markers             Drop a set of markers
-drop.nullmarkers         Drop markers without any genotype data
-est.map                  Estimate genetic maps
-est.rf                   Estimate pairwise recombination fractions
-fake.4way                Simulated data for a 4-way cross
-fake.bc                  Simulated data for a backcross
-fake.f2                  Simulated data for an F2 intercross
-fill.geno                Fill holes in genotype data
-geno.table               Create table of genotype distributions
-hyper                    Data on hypertension
-listeria                 Data on Listeria monocytogenes susceptibility
-plot.cross               Plot various features of a cross object
-plot.errorlod            Plot grid of error LOD values
-plot.geno                Plot observed genotypes, flagging likely errors
-plot.info                Plot the proportion of missing genotype
-                         information
-plot.map                 Plot genetic map
-plot.missing             Plot grid of missing genotypes
-plot.rf                  Plot recombination fractions
-plot.scanone             Plot LOD curves
-plot.scantwo             Plot LOD scores for a two-dimensional genome
-                         scan
-pull.map                 Pull out the genetic map from a cross
-qtl-internal             Internal qtl functions
-read.cross               Read data for a QTL experiment
-replace.map              Replace the genetic map of a cross
-ripple                   Compare marker orders
-scanone                  Genome scan with a single QTL model
-scantwo                  Two-dimensional genome scan with a two-QTL model
-sim.cross                Simulate a QTL experiment
-sim.geno                 Simulate genotypes given observed marker data
-sim.map                  Simulate a genetic map
-subset.cross             Subsetting data for QTL experiment
-summary.cross            Print summary of QTL experiment
-summary.ripple           Print summary of ripple results
-summary.scanone          Summarize the results of a genome scan
-summary.scantwo          Summarize the results of a two-dimensional
-                         genome scan
-switch.order             Switch the order of markers on a chromosome
-top.errorlod             List genotypes with large error LOD scores
-write.cross              Write data for a QTL experiment to a file
+A starting point        Introductory comments
+argmax.geno             Reconstruct underlying genotypes
+badorder                An intercross with misplaced markers
+bristle3                Data on bristle number in Drosophila
+bristleX                Data on bristle number in Drosophila
+c.cross                 Combine data for QTL experiments
+calc.errorlod           Identify likely genotyping errors
+calc.genoprob           Calculate conditional genotype probabilities
+clean                   Remove derived data
+convert2ss              Convert an intercross into a form to allow
+                        sex-specific maps
+drop.markers            Drop a set of markers
+drop.nullmarkers        Drop markers without any genotype data
+effectplot              Plot phenotype means against genotypes at one
+                        or two markers.
+est.map                 Estimate genetic maps
+est.rf                  Estimate pairwise recombination fractions
+fake.4way               Simulated data for a 4-way cross
+fake.bc                 Simulated data for a backcross
+fake.f2                 Simulated data for an F2 intercross
+fill.geno               Fill holes in genotype data
+find.marker             Find marker closest to a specified position
+fitqtl                  Fit a multiple QTL model
+geno.table              Create table of genotype distributions
+hyper                   Data on hypertension
+listeria                Data on Listeria monocytogenes susceptibility
+makeqtl                 Make a qtl object
+map10                   An example genetic map
+max.scanone             Maximum peak in genome scan
+max.scantwo             Maximum peak in two-dimensional genome scan
+plot.cross              Plot various features of a cross object
+plot.errorlod           Plot grid of error LOD values
+plot.geno               Plot observed genotypes, flagging likely errors
+plot.info               Plot the proportion of missing genotype
+                        information
+plot.map                Plot genetic map
+plot.missing            Plot grid of missing genotypes
+plot.pxg                Plot phenotypes versus marker genotypes.
+plot.rf                 Plot recombination fractions
+plot.scanone            Plot LOD curves
+plot.scantwo            Plot LOD scores for a two-dimensional genome
+                        scan
+pull.map                Pull out the genetic map from a cross
+qtl-internal            Internal qtl functions
+read.cross              Read data for a QTL experiment
+replace.map             Replace the genetic map of a cross
+ripple                  Compare marker orders
+scanone                 Genome scan with a single QTL model
+scanqtl                 General QTL scan
+scantwo                 Two-dimensional genome scan with a two-QTL
+                        model
+sim.cross               Simulate a QTL experiment
+sim.geno                Simulate genotypes given observed marker data
+sim.map                 Simulate a genetic map
+subset.cross            Subsetting data for QTL experiment
+summary.cross           Print summary of QTL experiment
+summary.fitqtl          Summary of fit of qtl model
+summary.ripple          Print summary of ripple results
+summary.scanone         Summarize the results of a genome scan
+summary.scantwo         Summarize the results of a two-dimensional
+                        genome scan
+switch.order            Switch the order of markers on a chromosome
+top.errorlod            List genotypes with large error LOD scores
+write.cross             Write data for a QTL experiment to a file

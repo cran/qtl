@@ -2,8 +2,8 @@
 #
 # vbscan.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written May, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,10 +21,12 @@
 ######################################################################
 
 vbscan <-
-function(cross, pheno.col=1, upper=FALSE, method="em",
-	 maxit=4000, tol=1e-4)
+function(cross, pheno.col=1, x.treatment=c("simple","full"),
+         upper=FALSE, method="em", maxit=4000, tol=1e-4)
 {
   method <- match.arg(method)
+  type <- class(cross)[1]
+  x.treatment <- match.arg(x.treatment)
 
   # check arguments are okay
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
@@ -53,8 +55,10 @@ function(cross, pheno.col=1, upper=FALSE, method="em",
   # The following line is included since .C() doesn't accept Infs
   y[y == -Inf | y == Inf] <- 99999
 
+  n.chr <- nchr(cross)
   results <- NULL
-  for(i in 1:length(cross$geno)) {
+
+  for(i in 1:n.chr) {
     # make sure inferred genotypes or genotype probabilities are available
     if(is.na(match("prob",names(cross$geno[[i]])))) {
       cat(" -Calculating genotype probabilities\n")
@@ -63,7 +67,18 @@ function(cross, pheno.col=1, upper=FALSE, method="em",
 
     n.pos <- dim(cross$geno[[i]]$prob)[2]
     n.ind <- length(y)
-    n.gen <- dim(cross$geno[[i]]$prob)[3]
+
+    chrtype <- class(cross$geno[[i]])
+    if(chrtype=="X") sexpgm <- getsex(cross)
+    else sexpgm <- NULL
+
+    gen.names <- getgenonames(type,chrtype,x.treatment,sexpgm)
+    n.gen <- length(gen.names)
+
+    # Update X chromosome
+    if(chrtype=="X" && (type=="f2" || type=="f2ss" || type=="bc"))
+      cross$geno[[i]]$prob <- fixXdata(type, x.treatment, sexpgm,
+                                       prob=cross$geno[[i]]$prob)
 
     z <- .C("R_vbscan",
             as.integer(n.pos),
@@ -92,33 +107,54 @@ function(cross, pheno.col=1, upper=FALSE, method="em",
     rownames(res) <- w
     
     colnames(res) <- c("chr","pos","lod","lod.p","lod.mu",
-                       paste("pi",c("AA","AB","BB")[1:n.gen]),
-                       paste("mu",c("AA","AB","BB")[1:n.gen]),
-                       "sigma")
+                       paste("pi",gen.names,sep="."),
+                       paste("mu",gen.names,sep="."), "sigma")
 
-    # the following is for the case where there is a sex chromosome
-    if(!is.null(results) && ncol(results) != ncol(res)) {
-      if(ncol(results) > ncol(res)) {
-        o <- match(colnames(res),colnames(results))
-        missing <- (1:ncol(results))[-o]
-        temp <- as.data.frame(matrix(ncol=ncol(results),nrow=nrow(res)))
-        colnames(temp) <- colnames(results)
-        rownames(temp) <- rownames(res)
-        temp[,o] <- res
-        res <- temp
+    z <- res
+
+    # if different number of columns from other chromosomes,
+    #     expand to match
+    if(!is.null(results) && ncol(z) != ncol(results)) {
+      cnz <- colnames(z)
+      cnr <- colnames(results)
+      wh.zr <- match(cnz,cnr)
+      wh.rz <- match(cnr,cnz)
+      if(all(!is.na(wh.rz))) {
+        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=ncol(z)))
+        dimnames(newresults) <- list(rownames(results), cnz)
+        newresults[,cnr] <- results
+        results <- newresults
+        for(i in 2:ncol(results))
+          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+      }
+      else if(all(!is.na(wh.zr))) {
+        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=ncol(results)))
+        dimnames(newz) <- list(rownames(z), cnr)
+        newz[,cnz] <- z
+        z <- newz
+        for(i in 2:ncol(z))
+          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
       }
       else {
-        o <- match(colnames(results),colnames(res))
-        missing <- (1:ncol(res))[-o]
-        temp <- as.data.frame(matrix(ncol=ncol(res),nrow=nrow(results)))
-        colnames(temp) <- colnames(res)
-        rownames(temp) <- rownames(results)
-        temp[,o] <- results
-        results <- temp
+        newnames <- c(cnr, cnz[is.na(wh.zr)])
+
+        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=length(newnames)))
+        dimnames(newresults) <- list(rownames(results), newnames)
+        newresults[,cnr] <- results
+        results <- newresults
+        for(i in 2:ncol(results))
+          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
+        
+        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=length(newnames)))
+        dimnames(newz) <- list(rownames(z), newnames)
+        newz[,cnz] <- z
+        z <- newz
+        for(i in 2:ncol(z))
+          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
       }
     }
-    
-    results <- rbind(results,res)
+
+    results <- rbind(results, z)
   }
   
   class(results) <- c("scanone","data.frame")

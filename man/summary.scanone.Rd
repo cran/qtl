@@ -38,16 +38,11 @@ out <- scanone(listeria, model="2part")
 # All peaks
 summary(out)
 
-# Peaks for LOD(p,mu)
+# Peaks with LOD(p,mu) > 5
 summary(out, 5)
-
-# peaks for LOD(p)
-summary(out[,-3],3)
-
-# peaks for LOD(mu)
-summary(out[,-(3:4)],3)
 }
 
-\seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{plot.scanone}} }
+\seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{plot.scanone}},
+          \code{\link[qtl]{max.scanone}} }
 
 \keyword{print}

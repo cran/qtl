@@ -70,6 +70,7 @@ summary(out2,c(8,0,0))
 }
 
 \seealso{ \code{\link[qtl]{fake.bc}}, \code{\link[qtl]{fake.f2}},
-  \code{\link[qtl]{fake.4way}}, \code{\link[qtl]{listeria}} } 
+  \code{\link[qtl]{fake.4way}}, \code{\link[qtl]{listeria}},
+  \code{\link[qtl]{bristle3}}, \code{\link[qtl]{bristleX}} } 
 
 \keyword{datasets}

@@ -2,8 +2,8 @@
 #
 # calc.pairprob.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2002
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,7 +26,7 @@
 
 calc.pairprob <-
 function(cross, step=0, off.end=0, error.prob=0, 
-         map.function=c("haldane","kosambi","c-f"))
+         map.function=c("haldane","kosambi","c-f","morgan"))
 {
   if(step==0 && off.end > 0) step <- off.end*2
 
@@ -34,11 +34,15 @@ function(cross, step=0, off.end=0, error.prob=0,
   map.function <- match.arg(map.function)
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
  
-  # don't let error.prob be exactly zero, just in case
+  # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
-
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
   n.ind <- nind(cross)
   n.chr <- nchr(cross)
 
@@ -66,7 +70,7 @@ function(cross, step=0, off.end=0, error.prob=0,
     cfunc <- "calc_pairprob_4way"
     n.gen <- 4
     one.map <- FALSE
-    gen.names <- c("AC","AD","BC","BD")
+    gen.names <- c("AC","BC","AD","BD")
   }
   else stop(paste("calc.pairprob not available for cross type",
                   class(cross)[1], "."))

@@ -8,15 +8,15 @@
 }
 
 \usage{
-write.cross(cross, format=c("csv","mm"), filestem="data",
-            chr, digits=5)
+write.cross(cross, format=c("csv","mm","qtlcart"),
+            filestem="data", chr, digits=5)
 }
 
 \arguments{
   \item{cross}{An object of class \code{cross}. See
     \code{\link[qtl]{read.cross}} for details.}
-  \item{format}{Specifies whether to write the data in comma-delimited
-    or Mapmaker format.}
+  \item{format}{Specifies whether to write the data in comma-delimited,
+    Mapmaker, or QTL Cartographer format.}
   \item{filestem}{A character string giving the first part of the output
     file names (the bit before the dot).  In Windows, use forward
     slashes (\code{"/"}) or double backslashes (\code{"\\\\"}) to
@@ -41,6 +41,14 @@ write.cross(cross, format=c("csv","mm"), filestem="data",
   the genotype and phenotype data, and \code{"file.prep"} will contain
   the necessary code for defining the chromosome assignments, marker
   order, and inter-marker distances.
+
+  QTL Cartographer format: Data is written to two files.    Suppose
+  \code{filestem="file"}.  Then \code{"file.cro"} will contain 
+  the genotype and phenotype data, and \code{"file.map"} will contain
+  the genetic map information.  Note that cross types are converted to
+  QTL Cartographer cross types as follows: riself to RF1, risib to RF2,
+  bc to B1 and f2 to RF2. 
+
 }
 
 
@@ -50,11 +58,14 @@ write.cross(cross, format=c("csv","mm"), filestem="data",
 # comma-delimited format
 write.cross(fake.bc, "csv", "Data/fakebc", c(1,5,13))
 
-# mapmaker format
-write.cross(fake.bc, "mm", "Data/fakebc", c(1,5,13))}
+# Mapmaker format
+write.cross(fake.bc, "mm", "Data/fakebc", c(1,5,13))
+
+# QTL Cartographer format
+write.cross(fake.bc, "qtlcart", "Data/fakebc", c(1,5,13))}
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian S. Yandell}
 
 \seealso{ \code{\link[qtl]{read.cross}} }
 

@@ -2,8 +2,8 @@
 #
 # calc.genoprob.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified June, 2002
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,20 +21,27 @@
 
 calc.genoprob <-
 function(cross, step=0, off.end=0, error.prob=0,
-         map.function=c("haldane","kosambi","c-f"))
+         map.function=c("haldane","kosambi","c-f","morgan"))
 {
   # map function
   map.function <- match.arg(map.function)
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
  
-  # don't let error.prob be exactly zero, just in case
+  # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
 
   n.ind <- nind(cross)
   n.chr <- nchr(cross)
   n.mar <- nmar(cross)
+
+  type <- class(cross)[1]
 
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
@@ -42,7 +49,7 @@ function(cross, step=0, off.end=0, error.prob=0,
     else temp.offend <- off.end
     
     # which type of cross is this?
-    if(class(cross)[1] == "f2") {
+    if(type == "f2") {
       one.map <- TRUE
       if(class(cross$geno[[i]]) == "A") { # autosomal
         cfunc <- "calc_genoprob_f2"
@@ -55,20 +62,26 @@ function(cross, step=0, off.end=0, error.prob=0,
         gen.names <- c("A","H")
       }
     }
-    else if(class(cross)[1] == "bc") {
+    else if(type == "bc") {
       cfunc <- "calc_genoprob_bc"
       n.gen <- 2
       gen.names <- c("A","H")
       one.map <- TRUE
     }
-    else if(class(cross)[1] == "4way") {
+    else if(type == "riself" || type=="risib") {
+      cfunc <- "calc_genoprob_bc"
+      n.gen <- 2
+      gen.names <- c("A","B")
+      one.map <- TRUE
+    }
+    else if(type == "4way") {
       cfunc <- "calc_genoprob_4way"
       n.gen <- 4
       one.map <- FALSE
-      gen.names <- c("AC","AD","BC","BD")
+      gen.names <- c("AC","BC","AD","BD")
     }
     else stop(paste("calc.genoprob not available for cross type",
-                    class(cross)[1], "."))
+                    type, "."))
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -79,6 +92,8 @@ function(cross, step=0, off.end=0, error.prob=0,
       # recombination fractions
       map <- create.map(cross$geno[[i]]$map,step,temp.offend)
       rf <- mf(diff(map))
+      if(type=="risib" || type=="riself")
+        rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)))
       rf[rf < 1e-14] <- 1e-14
 
       # new genotype matrix with pseudomarkers filled in

@@ -11,7 +11,7 @@
 sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
           error.prob=0, missing.prob=0, partial.missing.prob=0,
           keep.qtlgeno=TRUE, keep.errorind=TRUE,
-	  map.function=c("haldane","kosambi","c-f"))
+	  map.function=c("haldane","kosambi","c-f","morgan"))
 }
 
 \arguments{
@@ -32,7 +32,8 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
    included in the output.}
  \item{keep.errorind}{If TRUE, and if \code{error.prob > 0}, the
    identity of genotyping errors will be included in the output.}
- \item{map.function}{The map function to use when converting genetic
+ \item{map.function}{Indicates whether to use the Haldane, Kosambi, 
+   Carter-Falconer, or Morgan map function when converting genetic
    distances into recombination fractions.}
 }
 

@@ -2,9 +2,9 @@
  * 
  * hmm_bc.c
  * 
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, 2002, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Mar, 2002
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -46,7 +46,7 @@ double emit_bc(int obs_gen, int true_gen, double error_prob)
     if(obs_gen==true_gen) return(log(1.0-error_prob));
     else return(log(error_prob));
   }
-  return(log(-1.0)); /* shouldn't get here */
+  return(0.0); /* shouldn't get here */
 }
 
 double step_bc(int gen1, int gen2, double rf, double junk)

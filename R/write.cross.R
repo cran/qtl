@@ -2,13 +2,14 @@
 #
 # write.cross.R
 #
-# copyright (c) 2000-2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2002, Karl W Broman, Johns Hopkins University
+# last modified August, 2002
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
 # Contains: write.cross, write.cross.mm, write.cross.csv
+#           [See qtlcart_io.R for write.cross.qtlcart]
 #
 ######################################################################
 
@@ -20,13 +21,14 @@
 ######################################################################
 
 write.cross <-
-function(cross, format=c("csv","mm"), filestem="data", chr, digits=5)
+function(cross, format=c("csv","mm","qtlcart"), filestem="data", chr, digits=5)
 {
   match.arg <- match.arg(format)
   if(missing(chr)) chr <- 1:nchr(cross)
 
   if(format=="csv") write.cross.csv(cross,filestem,chr,digits)
-  else write.cross.mm(cross,filestem,chr,digits)
+  else if(format=="mm") write.cross.mm(cross,filestem,chr,digits)
+  else write.cross.qtlcart(cross, filestem, chr)
 }
 
 
@@ -53,8 +55,9 @@ function(cross, filestem="data", chr, digits=5)
   n.mar <- nmar(cross)
   
   type <- class(cross)[1]
+  if(type=="riself" || type=="risib") type <- "bc"
   if(type != "f2" && type != "bc")
-    stop("write.cross.mm only works for intercross and backcross data.")
+    stop("write.cross.mm only works for intercross, backcross and RI data.")
 
   # write genotype and phenotype data
   file <- paste(filestem, ".raw", sep="")
@@ -114,13 +117,13 @@ function(cross, filestem="data", chr, digits=5)
       pn <- paste(pn, paste(rep(" ", mlpn-nchar(pn)),collapse=""),sep="")
 
     x <- as.character(round(cross$pheno[,i],digits))
-    x[x=="NA"] <- "-"
+    x[is.na(x)] <- "-"
 
     if(n.ind < 10)
       write(paste(pn, paste(x,collapse="")), file, append=TRUE)
     else {
       lo <- seq(1,n.ind-1,by=10)
-      hi <- c(lo[-1]+1,n.ind)
+      hi <- c(lo[-1]-1,n.ind)
       for(k in seq(along=lo)) {
         if(k==1) write(paste(pn,paste(x[lo[k]:hi[k]],collapse=" ")),file,append=TRUE)
         else write(paste(paste(rep(" ", mlpn),collapse=""),
@@ -140,15 +143,16 @@ function(cross, filestem="data", chr, digits=5)
     else write(line, file, append=TRUE)
 
     mn <- names(cross$geno[[i]]$map)
-    dis <- round(diff(cross$geno[[i]]$map),2)
-    dis <- paste("=", dis, sep="")
-    write(paste(paste("sequence", mn[1]), paste(dis,mn[-1],collapse=" ")),
+#    dis <- round(diff(cross$geno[[i]]$map),2)
+#    dis <- paste("=", dis, sep="")
+#    write(paste(paste("sequence", mn[1]), paste(dis,mn[-1],collapse=" ")),
+#          file, append=TRUE)
+    write(paste(paste("sequence", mn[1]), paste(mn[-1],collapse=" ")),
           file, append=TRUE)
 
     write(paste("anchor", cname), file, append=TRUE)
-    
-
-  }
+    write(paste("framework", cname), file, append=TRUE)
+  } 
 
 } 
 
@@ -172,8 +176,8 @@ function(cross, filestem="data", chr, digits=5)
   n.mar <- nmar(cross)
   
   type <- class(cross)[1]
-  if(type != "f2" && type != "bc")
-    stop("write.cross.csv only works for intercross and backcross data.")
+  if(type != "f2" && type != "bc" && type != "riself" && type != "risib")
+    stop("write.cross.csv only works for intercross, backcross and RI data.")
 
   file <- paste(filestem, ".csv", sep="")
   
@@ -186,8 +190,10 @@ function(cross, filestem="data", chr, digits=5)
       alleles[match(cross$geno[[i]]$data,1:5)]
     firstmar <- firstmar + n.mar[i]
   }
-  geno[geno=="NA"] <- "-"
-  data <- cbind(matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind),geno)
+  if(any(is.na(geno))) geno[is.na(geno)] <- "-"
+  pheno <- matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind)
+  if(any(is.na(pheno))) pheno[is.na(pheno)] <- "-"
+  data <- cbind(pheno,geno)
   colnames(data) <- c(colnames(cross$pheno),
                       unlist(lapply(cross$geno, function(a) colnames(a$data))))
   chr <- rep(names(cross$geno),n.mar)

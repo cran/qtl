@@ -52,7 +52,7 @@ plot.info(x, chr, method=c("both","entropy","variance"), \dots)
 }  
 
 \value{
-  A \code{data.frame} with class \code{scanone} and columns the
+  An object with class \code{scanone}: a data.frame with columns the
   chromosome IDs and cM positions followed by the entropy and/or
   variance version of the missing information.
 }

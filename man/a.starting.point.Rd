@@ -17,9 +17,9 @@
     at the R archive (\url{http://cran.r-project.org}).
 
     \item Use the \code{\link[base]{help.start}} function to start the
-    html version of the R help.  In Windows, you may wish to use
-    \code{options(htmlhelp=TRUE)} to get easy access to the html version
-    of the help files; this could be included in a
+    html version of the R help.  In Windows or MacOS, you may wish to
+    use \code{options(htmlhelp=TRUE)} to get easy access to the html
+    version of the help files; this could be included in a
     \code{\link[base:Startup]{.First}} function or
     \code{\link[base:Startup]{.Rprofile}} file.
 
@@ -33,7 +33,7 @@
     package, \file{rqtltour.pdf}.
 
     \item Download the latest version of R/qtl from
-    \url{http://biosun01.biostat.jhsph.edu/~kbroman/qtl}.
+    \url{http://www.biostat.jhsph.edu/~kbroman/qtl}.
   }
 }
 
@@ -183,9 +183,16 @@ exceeds a specified threshold.
 \code{summary(out.hk, 3)} \cr
 \code{summary(out.imp, 3)}
 
+The function \code{\link[qtl]{max.scanone}} returns the maximum LOD
+score, genome-wide.
+
+\code{max(out.em)} \cr
+\code{max(out.hk)} \cr
+\code{max(out.imp)}
+
 One may also use \code{\link[qtl]{scanone}} to perform a permutation
 test to get a genome-wide LOD significance threshold.  This will take
-some time, so maybe now is a good time to go for a cup of coffee.  
+some time.
 
 \code{operm.hk <- scanone(hyper, method="hk", n.perm=100)} \cr
 \code{quantile(operm.hk, 0.95)}
@@ -199,7 +206,7 @@ wish you had used this if R crashes.
 The function \code{\link[qtl]{scantwo}} performs a two-dimensional
 genome scan with a two-QTL model.  Methods \code{"em"}, \code{"hk"} and
 \code{"imp"} are all available.  \code{\link[qtl]{scantwo}} is
-considerably slower than \code{link[qtl]{scanone}}, and can require a
+considerably slower than \code{\link[qtl]{scanone}}, and can require a
 great deal of memory.  Thus, you may wish to create a version of
 \code{hyper} for a more coarse grid.
 
@@ -220,7 +227,7 @@ lower triangle contains joint LOD scores.
 \code{plot(out2.imp)}
 
 The function \code{\link[qtl]{summary.scantwo}} lists the interesting
-aspects of the output.  One provides three LOD thresholds: for the joint
+aspects of the output.  You must provide three LOD thresholds: for the joint
 LOD, epistasis LOD, and conditional, single-QTL LOD scores.  The locus
 pairs giving the highest joint LOD for each pair of chromosomes are
 inspected, and those whose LOD score exceed the joint LOD threshold and
@@ -230,6 +237,11 @@ conditional single-QTL LODs exceed their threshold, are printed.
 \code{summary(out2.em, c(8, 3, 3))} \cr
 \code{summary(out2.em, c(0, 1000, 4))} \cr
 \code{summary(out2.em, c(0, 4, 1000))}
+
+The function \code{\link[qtl]{max.scantwo}} returns the maximum joint
+and interaction LODs for a two-dimensional genome scan.
+
+\code{max(out2.em)}
 
 Permutation tests may also performed with \code{\link[qtl]{scantwo}};
 it may take a few days of CPU time.  The output is a matrix with two
@@ -250,14 +262,17 @@ two-dimensional genome scan, for each simulation replicate.
   quantitative traits using RFLP linkage maps.  \emph{Genetics}
   \bold{121}, 185--199.
 
+  Lincoln, S. E. and Lander, E. S. (1992) Systematic detection of
+  errors in genetic linkage data.  \emph{Genomics} \bold{14}, 604--610.
+
   Sen, S. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
 
 \note{
   Also see the package BQTL (Bayesian QTL mapping toolkit) by
-  Charles C. Berry.  His package gave me the idea to have this "A
-  starting point" help page.
+  Charles C. Berry.  His package gave me the idea to have this ``A
+  starting point'' help page.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

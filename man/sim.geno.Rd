@@ -12,7 +12,7 @@
 
 \usage{
 sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0, 
-         map.function=c("haldane","kosambi","c-f"))
+         map.function=c("haldane","kosambi","c-f","morgan"))
 }
 
 \arguments{
@@ -26,9 +26,9 @@ sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0,
    chromosome to which the genotype simulations will be carried.}
  \item{error.prob}{Assumed genotyping error rate used in the calculation
    of the penetrance Pr(observed genotype | true genotype).}
- \item{map.function}{Indicates whether to use the Haldane, Kosambi or
-   Carter-Falconer map function when converting genetic distances into
-   recombination fractions.}
+ \item{map.function}{Indicates whether to use the Haldane, Kosambi, 
+   Carter-Falconer, or Morgan map function when converting genetic
+   distances into recombination fractions.}
 }
 
 \details{

@@ -21,7 +21,7 @@
   X chromosome, with one phenotype.
 
   The phenotype is the survival time (in hours) following infection.
-  Mice with phenotype 264.0 hours may be considered to have recovered
+  Mice with phenotype 264 hours may be considered to have recovered
   from the infection. See the references below.  
 }
 
@@ -64,11 +64,12 @@ summary(out, 4)
 
 # Plot LOD curves for interesting chromosomes
 #     (The two-part model gives three LOD scores)
-plot(out, out[,-3], out[,-(3:4)], chr=c(1,5,6,13,15),
+plot(out, out, out, chr=c(1,5,6,13,15), lodcolumn=3:5,
      lty=1, col=c("black","red","blue"))
 }
 
 \seealso{ \code{\link[qtl]{fake.bc}}, \code{\link[qtl]{fake.f2}},
-  \code{\link[qtl]{fake.4way}}, \code{\link[qtl]{hyper}} }
+  \code{\link[qtl]{fake.4way}}, \code{\link[qtl]{hyper}},
+  \code{\link[qtl]{bristle3}}, \code{\link[qtl]{bristleX}} }
 
 \keyword{datasets}

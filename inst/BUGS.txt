@@ -10,6 +10,61 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 0.95 bugs:
+
+>>  1. scantwo is not working well for the EM algorithm, in the case
+       of the X chromosome
+
+>>  2. I suspect that the treatment of the X chromosome is still not
+       correct for scanone and scantwo.  I think the null model needs
+       to take sex into account.
+
+    3. In read.cross for format "csv", if not all lines have equal
+       numbers of fields, a somewhat cryptic error message is given.
+       Similarly, if there are missing values in the marker names,
+       chromosome IDs, or marker poisitons, there are very cryptic
+       error messages.  (Thanks to Leo Schalkwyk for reporting this
+       error.) [Fixed in version 0.96.]  
+
+
+Version 0.94 bugs:
+
+    1. There was a bug in read.cross; the order of "C" and "D" in the
+       genotypes argument needed to be reversed.  [Fixed in version
+       0.95.] 
+
+    2. For read.cross with format="csv", if there is a missing
+       phenotype in the first individual (and a genetic map is not
+       included) the function halts with an error. [Fixed in version
+       0.95.] 
+
+
+Version 0.93 bugs:
+
+>>  1. There is a bug in summary.scanone for the case where several
+       positions jointly share the maximum LOD score...all are given;
+       it'd be best to just pick one.
+
+    2. In ripple, error if window < 2. [Fixed in version 0.94.]
+
+    3. Make sure error.prob and similar arguments are always between 0
+       and 1 (e.g., in sim.cross and est.map) [Fixed in version 0.94.]
+
+
+Version 0.92 bugs:
+
+    1. There was a problem with read.cross with format="csv";
+       if the marker positions were missing, the first individual was
+       skipped.  [Fixed in version 0.93.]
+
+    2. Should use file.path() in the read.cross and write.cross
+       functions.  [Fixed in version 0.93.]
+
+    3. sim.cross gives incorrect results when the specified QTLs are
+       not in order by chromosome.  The QTLs are reordered, but their
+       effects are not.  [Fixed in version 0.93.]
+
+
 Version 0.91 bugs:
 
     1. There was a problem with read.cross with method="csv" in R
@@ -21,10 +76,13 @@ Version 0.91 bugs:
 
 Version 0.90 bugs:
 
->>  1. The X chromosome is not treated properly in either read.cross
+    1. The X chromosome is not treated properly in either read.cross
        or, most importantly, in scanone and scantwo.  I should have
        written this down some time ago, as this bug has been known for
-       a long time. 
+       a long time. [Fixed in version 0.95, except for EM in scantwo.
+       For now, we just use Haley-Knott regression in place of EM, if
+       there is X chromosome data and multiple sexes and/or cross
+       directions.] 
 
 
 Version 0.88 bugs:
@@ -41,7 +99,7 @@ Version 0.88 bugs:
 
 >>  3. scantwo with method EM can give interactive LOD scores < 0.
        This is a multiple modes problem.  In my experience so far,
-       this only occurs at uninteresting loci, and so probably so not
+       this only occurs at uninteresting loci, and so probably is not
        a big deal.  It'd be best to have some automatic selection of
        multiple starting points, at least as an option.
 

@@ -69,6 +69,7 @@ summary(out.2dim,c(0,1000,2))
 summary(out.2dim,c(0,3,1000))
 }
 
-\seealso{ \code{\link[qtl]{scantwo}}, \code{\link[qtl]{plot.scantwo}} }
+\seealso{ \code{\link[qtl]{scantwo}}, \code{\link[qtl]{plot.scantwo}},
+          \code{\link[qtl]{max.scantwo}} }
 
 \keyword{print}

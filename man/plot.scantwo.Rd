@@ -54,9 +54,9 @@ plot.scantwo(x, chr, incl.markers=FALSE, zlim,
 \examples{
 data(fake.f2)
 fake.f2 <- calc.genoprob(fake.f2, step=10)
-out.2dim <- scantwo(fake.f2, method="hk", chr=c(1,6,13))
+out.2dim <- scantwo(fake.f2, method="hk", chr=c(1,8,13,14))
 plot(out.2dim)
-plot(out.2dim, zlim=c(7.5,7.5))
+plot(out.2dim, zlim=c(14,7))
 }
 
 \seealso{ \code{\link[qtl]{scantwo}},

@@ -11,9 +11,10 @@
 
 \usage{
 scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
-        method=c("em","imp","hk","mr"), addcov=NULL, intcov=NULL,
-        upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000, tol=1e-4,
-        n.perm, trace=TRUE)
+        method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
+        addcovar=NULL, intcovar=NULL, x.treatment=c("simple","full"),
+        upper=FALSE, ties.random=FALSE,
+        start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -26,10 +27,19 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
    binary traits, a two-part model or non-parametric.}
  \item{method}{Indicates whether to use the EM algorithm, 
    imputation, Haley-Knott regression, or marker regression.  Not all
-   methods are available for all models.}
- \item{addcov}{Additive covariates; allowed only for the normal model.}
- \item{intcov}{Interactive covariates (interact with QTL genotype);
+   methods are available for all models.  Marker regression is performed
+   either by dropping individuals with missing genotypes (\code{"mr"}),
+   or by first filling in missing data using a single imputation
+   (\code{"mr-imp"}) or by the Viterbi algorithm (\code{"mr-argmax"}).}
+ \item{addcovar}{Additive covariates; allowed only for the normal model.}
+ \item{intcovar}{Interactive covariates (interact with QTL genotype);
    allowed only for the normal model.}
+ \item{x.treatment}{How to treat the X-chromosome.  Simple: hemizygous
+   males are equivalent to homozygous females.  Full: hemizygous males
+   are treated differently from homozygous females.  Note that columns
+   \code{"sex"} and \code{"pgm"} in the phenotype data are needed; see
+   the section on the X chromosome in the help file for
+   \code{\link[qtl]{read.cross}}.} 
  \item{upper}{Used only for the two-part model; if true, the
    ``undefined'' phenotype is the maximum observed phenotype; otherwise,
    it is the smallest observed phenotype.} 
@@ -256,7 +266,7 @@ out.2p <- scanone(listeria, model="2part", upper=TRUE)
 summary(out.2p, 5)
 
 # Plot all three LOD scores together
-plot(out.2p[,-3], out.2p[,-(3:4)], out.2p, lty=1, chr=c(1,5,13),
+plot(out.2p, out.2p, out.2p, lodcolumn=c(4,5,3), lty=1, chr=c(1,5,13),
      col=c("red","blue","black"))
 
 # Permutation test
@@ -276,7 +286,7 @@ out.bin <- scanone(listeria, pheno.col=2, model="binary")
 summary(out.bin, 3)
 
 # Plot LOD for binary model with LOD(p) from 2-part model
-plot(out.bin, out.2p[,-3], lty=1, col=c("black", "red"),
+plot(out.bin, out.2p, lodcolumn=c(3,4), lty=1, col=c("black", "red"),
      chr=c(1,5,13))
 
 # Permutation test
@@ -297,14 +307,16 @@ out.nocovar <- scanone(fake.bc)
 # genome scans with covariates
 ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]
-out.covar <- scanone(fake.bc, pheno.col=1, addcov=ac, intcov=ic)
+out.covar <- scanone(fake.bc, pheno.col=1,
+                     addcovar=ac, intcovar=ic)
 summary(out.nocovar,3)
 summary(out.covar,3)
 plot(out.covar,out.nocovar,chr=c(2,5,10))
 }
 
-\seealso{ \code{\link[qtl]{plot.scanone}},
+\seealso{ \code{\link[qtl]{plot.scanone}}, 
   \code{\link[qtl]{summary.scanone}}, \code{\link[qtl]{scantwo}},
-  \code{\link[qtl]{calc.genoprob}}, \code{\link[qtl]{sim.geno}} } 
+  \code{\link[qtl]{calc.genoprob}}, \code{\link[qtl]{sim.geno}},
+  \code{\link[qtl]{max.scanone}} } 
 
 \keyword{models}

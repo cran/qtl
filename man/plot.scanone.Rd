@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.scanone(x, x2, x3, chr, incl.markers=TRUE, ylim,
+plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE, ylim,
              lty=c(1,2,3), col="black", lwd=2, add=FALSE,
              gap=25, main, \dots)
 }			    
@@ -26,6 +26,8 @@ plot.scanone(x, x2, x3, chr, incl.markers=TRUE, ylim,
   \item{x3}{data.frame for a third genome scan (optional)}
   \item{chr}{Vector specifying which chromosomes to plot. (The
     chromosomes must be specified by name.)}
+  \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
+    columns of the input should be plotted (generally column 3).}
   \item{incl.markers}{Indicate whether to plot line segments at the
   marker locations.}
   \item{ylim}{Limits for y-axis (optional).}
@@ -54,12 +56,12 @@ plot.scanone(x, x2, x3, chr, incl.markers=TRUE, ylim,
 data(fake.f2)
 fake.f2 <- calc.genoprob(fake.f2,step=2.5)
 out.mr <- scanone(fake.f2, method="mr")
-out.im <- scanone(fake.f2, chr=c(1,13), method="em")
+out.em <- scanone(fake.f2, chr=c(1,13), method="em")
 plot(out.mr)
-plot(out.mr, out.im, chr=c(1,13))
-plot(out.mr, out.im, , c(1,13), lty=1, col=c("violetred","black"))
+plot(out.mr, out.em, chr=c(1,13))
+plot(out.mr, out.em, , c(1,13), lty=1, col=c("violetred","black"))
 out.hk <- scanone(fake.f2, chr=c(1,13), method="hk")
-plot(out.hk, , , c(1,13), add=TRUE, col="slateblue")
+plot(out.hk, chr=c(1,13), add=TRUE, col="slateblue")
 }
 
 \seealso{ \code{\link[qtl]{scanone}},

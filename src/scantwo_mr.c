@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, 2002, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Apr, 2002
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -103,7 +103,7 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
   int n_col_0, n_col_a, n_col_f, n_gen_sq, *which_ind;
   double *work, *x, *qty, *qraux, *coef, *resid, tol, lrss0, *y;
-  double lrss0_allind;
+  double lrss0_allind=0.0;
 
   /* tolerance for linear regression */
   tol = TOL;
@@ -344,7 +344,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
   int n_col_0, n_col_a, n_col_f, n_gen_sq, *which_ind;
   double *work, *x, *qty, *qraux, *coef, *resid, tol, lrss0, *y;
-  double lrss0_allind;
+  double lrss0_allind=0.0;
 
   /* tolerance for linear regression */
   tol = TOL;

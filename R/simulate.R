@@ -2,8 +2,8 @@
 #
 # simulate.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2001
+# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2002
 # first written April, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -105,10 +105,21 @@ sim.cross <-
 function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
          error.prob=0, missing.prob=0, partial.missing.prob=0,
          keep.qtlgeno=TRUE, keep.errorind=TRUE,
-         map.function=c("haldane","kosambi","c-f"))
+         map.function=c("haldane","kosambi","c-f","morgan"))
 {
   type <- match.arg(type)
   map.function <- match.arg(map.function)
+
+  # don't let error.prob be exactly zero (or >1)
+  if(error.prob < 1e-50) error.prob <- 1e-50
+  if(error.prob > 1) {
+    error.prob <- 1-1e-50
+    warning("error.prob shouldn't be > 1!")
+  }
+
+  # sort the model matrix
+  if(!is.null(model) && is.matrix(model)) 
+    model <- model[order(model[,1],model[,2]),]
 
   if(type=="bc")
     cross <- sim.cross.bc(map,model,n.ind,error.prob,missing.prob,
@@ -137,6 +148,10 @@ function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
   }
   if(keep.qtlgeno) cross$qtlgeno <- qtlgeno
 
+  # store genotype data as integers
+  for(i in 1:nchr(cross))
+    storage.mode(cross$geno[[i]]$data) <- "integer"
+
   cross
 }
 
@@ -153,6 +168,7 @@ function(map,model,n.ind,error.prob,missing.prob,
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
 
   if(any(sapply(map,is.matrix)))
@@ -301,6 +317,7 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
 
   if(any(sapply(map,is.matrix)))
@@ -508,6 +525,7 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
 
   if(!all(sapply(map,is.matrix)))
