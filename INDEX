@@ -1,6 +1,8 @@
++.scanone               Arithmetic Operators for genome scan results
 A starting point        Introductory comments
 argmax.geno             Reconstruct underlying genotypes
 badorder                An intercross with misplaced markers
+bayesint                Bayesian probability interval
 bristle3                Data on bristle number in Drosophila
 bristleX                Data on bristle number in Drosophila
 c.cross                 Combine data for QTL experiments
@@ -8,6 +10,7 @@ calc.errorlod           Identify likely genotyping errors
 calc.genoprob           Calculate conditional genotype probabilities
 clean                   Remove derived data
 comparecrosses          Compare two cross objects.
+comparegeno             Compare individuals' genotype data
 convert.scanone         Convert output from scanone for R/qtl version
                         0.98
 convert2ss              Convert an intercross into a form to allow
@@ -63,12 +66,14 @@ scantwo                 Two-dimensional genome scan with a two-QTL
 sim.cross               Simulate a QTL experiment
 sim.geno                Simulate genotypes given observed marker data
 sim.map                 Simulate a genetic map
+strip.partials          Strip partially informative genotypes
 subset.cross            Subsetting data for QTL experiment
 summary.cross           Print summary of QTL experiment
 summary.fitqtl          Summary of fit of qtl model
 summary.map             Print summary of a genetic map
 summary.ripple          Print summary of ripple results
-summary.scanone         Summarize the results of a genome scan
+summary.scanone         Summarize the results of one or several
+                        one-QTL genome scans
 summary.scantwo         Summarize the results of a two-dimensional
                         genome scan
 switch.order            Switch the order of markers on a chromosome

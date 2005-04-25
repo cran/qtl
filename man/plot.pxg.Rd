@@ -9,7 +9,7 @@
 
 \usage{
 plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
-         pch , ylab, \dots)
+         pch , ylab, main, \dots)
 }			    
 
 \arguments{
@@ -25,6 +25,8 @@ plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
     typed at the specified marker are plotted.}
   \item{pch}{Plot symbol.}
   \item{ylab}{Label for y-axis.}
+  \item{main}{Main title for the plot.  If missing, the names of the
+    markers are used.}
   \item{\dots}{Ignored at this point.}
 }
 
@@ -38,19 +40,10 @@ plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
 }
 
 \value{
-  Returns a list with six components.
-  \item{Rsq}{R-square, or explained variation.}
-  \item{p.value}{Vector of p-values corresponding to an overall test of
-    a difference between the genotype-specific phenotypic means, and
-    marker main effects and interactions, if there is more than one
-    marker. If there are multiple markers and some missing genotypes,
-    interactions are collapsed into one component labeled \code{inter}.}
-  \item{me}{Means by marker.}
-  \item{se}{Standard errors by marker.}
-  \item{fit}{The \code{aov} fit.}
-  \item{data}{Matrix with at least three columns: the genotypes at each
-    marker, the phenotypes, and a 0/1 indicator with 1's corresponding
-    to inferred genotypes.}
+A data.frame with initial columns the marker genotypes, then the
+phenotype data, then a column indicating whether any of the marker
+genotypes were inferred (1=at least one genotype inferred, 0=none were
+inferred). 
 }
 
 \examples{

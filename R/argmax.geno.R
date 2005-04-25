@@ -2,8 +2,8 @@
 #
 # argmax.geno.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified Mar, 2005
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -66,6 +66,10 @@ function(cross, step=0, off.end=0, error.prob=0,
     else if(type == "f2ss") {
       cfunc <- "argmax_geno_f2ss"
       one.map <- FALSE
+    }
+    else if(type == "cc") {
+      cfunc <- "argmax_geno_cc"
+      one.map <- TRUE
     }
     else {
       err <- paste("argmax.geno not available for cross type",

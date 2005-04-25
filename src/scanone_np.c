@@ -52,7 +52,7 @@ void R_scanone_np(int *n_ind, int *n_pos, int *n_gen,
  * 
  * scanone_np
  *
- * Performs genotype scan using a non-parametric version of 
+ * Performs genome scan using a non-parametric version of 
  * interval mapping.  (The multipoint genotype probabilities have
  * already been calculated in calc.genoprob).
  * 

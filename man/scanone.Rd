@@ -14,7 +14,7 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
         upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
-        tol=1e-4, n.perm, trace=TRUE)
+        tol=1e-4, n.perm, verbose)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -31,9 +31,10 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
    either by dropping individuals with missing genotypes (\code{"mr"}),
    or by first filling in missing data using a single imputation
    (\code{"mr-imp"}) or by the Viterbi algorithm (\code{"mr-argmax"}).}
- \item{addcovar}{Additive covariates; allowed only for the normal model.}
+ \item{addcovar}{Additive covariates; allowed only for the normal and
+   binary models.}
  \item{intcovar}{Interactive covariates (interact with QTL genotype);
-   allowed only for the normal model.}
+   allowed only for the normal and binary models.}
  \item{weights}{Optional weights of individuals.  Should be either NULL
    or a vector of length n.ind containing positive weights.  Used only
    in the case \code{model="normal"}}
@@ -55,7 +56,7 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{n.perm}{If specified, a permutation test is performed rather than
    an analysis of the observed data.  This argument defines the number
    of permutation replicates.}
- \item{trace}{In the case \code{n.perm} is specified, display
+ \item{verbose}{In the case \code{n.perm} is specified, display
    information about the progress of the permutation tests.}
 }
 
@@ -236,6 +237,10 @@ for a sex difference in the phenotype.
   designs for the detection of linkage between marker loci and
   quantitative loci in crosses between inbred lines.
   \emph{Theor. Appl. Genet.} \bold{47}, 35--39. 
+
+  Xu, S., and Atchley, W.R. (1996) Mapping quantitative trait loci for
+  complex binary diseases using line crosses. \emph{Genetics}
+  \bold{143}, 1417--1424.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu}; Hao Wu,

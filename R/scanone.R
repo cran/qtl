@@ -2,8 +2,8 @@
 #
 # scanone.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Sep, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -28,11 +28,16 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
          upper=FALSE, ties.random=FALSE,
-         start=NULL, maxit=4000, tol=1e-4, n.perm, trace=TRUE)
+         start=NULL, maxit=4000, tol=1e-4, n.perm, verbose)
 {
   model <- match.arg(model)
   method <- match.arg(method)
 
+  if(missing(verbose)) {
+    if(!missing(n.perm) && n.perm > 0) verbose <- TRUE
+    else verbose <- FALSE
+  }
+    
   if(!missing(chr)) cross <- subset(cross, chr)
   if(missing(n.perm)) n.perm <- 0
 
@@ -62,7 +67,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   if(n.perm>0) {
     return(scanone.perm(cross, pheno.col, model, method, addcovar,
                         intcovar, weights, upper, ties.random,
-                        start, maxit, tol, n.perm, trace))
+                        start, maxit, tol, n.perm, verbose))
   }
 
   # fill in missing genotypes with imputed values
@@ -74,24 +79,27 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   }
 
   # weights for model="normal"
-  if(is.null(weights))
-    weights <- rep(1, nind(cross))
-  else if(model != "normal")
-    warning("weights used only for normal model.")
-  if(length(weights) != nind(cross))
-    stop("weights should either be NULL or a vector of length n.ind")
-  if(any(weights) <= 0)
-    stop("weights should be entirely positive")
-  weights <- sqrt(weights)
+  if(model != "normal") {
+    if(!is.null(weights) && !all(weights==1)) 
+      warning("weights used only for normal model.")
+  }
+  else {
+    if(is.null(weights))
+      weights <- rep(1, nind(cross))
+    else 
+      if(length(weights) != nind(cross))
+        stop("weights should either be NULL or a vector of length n.ind")
+    if(any(weights) <= 0)
+      stop("weights should be entirely positive")
+    weights <- sqrt(weights)
+  }
 
   if(model=="binary") {
-    if(n.addcovar > 0 || n.intcovar > 0)
-      warning("Covariates ignored for the binary model.")
     if(method=="imp" || method=="hk") {
       warning("Methods imp and hk not available for binary model; using em")
       method <- "em"
     }
-    return(discan(cross,pheno.col, method, maxit, tol))
+    return(discan(cross, pheno, method, addcovar, intcovar, maxit, tol, verbose))
   }
   else if(model=="2part") {
     if(n.addcovar > 0 || n.intcovar > 0)
@@ -141,10 +149,21 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
   # scan genome one chromosome at a time
   for(i in 1:n.chr) {
-
     chrtype <- class(cross$geno[[i]])
-    if(chrtype=="X") sexpgm <- getsex(cross)
-    else sexpgm <- NULL
+    if(chrtype=="X") {
+      sexpgm <- getsex(cross)
+      ac <- revisecovar(sexpgm,addcovar)
+      n.ac <- ifelse(is.null(ac),0,ncol(ac))
+      ic <- revisecovar(sexpgm,intcovar)
+      n.ic <- ifelse(is.null(ic),0,ncol(ic))
+    }
+    else {
+      sexpgm <- NULL
+      ac <- addcovar
+      n.ac <- n.addcovar
+      ic <- intcovar
+      n.ic <- n.intcovar
+    }
 
     # get genotype names
     gen.names <- getgenonames(type,chrtype,"full",sexpgm)
@@ -237,10 +256,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.integer(newgeno),       # genotype data
-              as.double(addcovar),       # additive covariates
-              as.integer(n.addcovar),
-              as.double(intcovar),       # interactive covariates
-              as.integer(n.intcovar),
+              as.double(ac),       # additive covariates
+              as.integer(n.ac),
+              as.double(ic),       # interactive covariates
+              as.integer(n.ic),
               as.double(pheno),          # phenotype data
               as.double(weights),        # weights
               result=as.double(rep(0,n.pos*(n.gen+2))),
@@ -253,10 +272,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.integer(n.gen),
               as.integer(n.draws),
               as.integer(draws),
-              as.double(addcovar),
-              as.integer(n.addcovar),
-              as.double(intcovar),
-              as.integer(n.intcovar),
+              as.double(ac),
+              as.integer(n.ac),
+              as.double(ic),
+              as.integer(n.ic),
               as.double(pheno),
               as.double(weights),
               result=as.double(rep(0,n.pos)),
@@ -270,10 +289,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.double(genoprob),       # genotype probabilities
-              as.double(addcovar),         # additive covariates
-              as.integer(n.addcovar),
-              as.double(intcovar),         # interactive covariates
-              as.integer(n.intcovar), 
+              as.double(ac),         # additive covariates
+              as.integer(n.ac),
+              as.double(ic),         # interactive covariates
+              as.integer(n.ic), 
               as.double(pheno),          # phenotype data
               as.double(weights),
               result=as.double(rep(0,n.pos*(n.gen+2))),
@@ -285,10 +304,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.integer(n.pos),         # number of markers
               as.integer(n.gen),         # number of possible genotypes
               as.double(genoprob),       # genotype probabilities
-              as.double(addcovar),
-              as.integer(n.addcovar),
-              as.double(intcovar),
-              as.integer(n.intcovar),
+              as.double(ac),
+              as.integer(n.ac),
+              as.double(ic),
+              as.integer(n.ic),
               as.double(pheno),          # phenotype data
               as.double(weights),
               result=as.double(rep(0,n.pos*(n.gen+2))),
@@ -296,7 +315,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.double(this.start),
               as.integer(maxit),
               as.double(tol),
-              as.integer(0), # debugging trace off 
+              as.integer(0), # debugging verbose off 
               PACKAGE="qtl")
 
     else if(model=="np")  # non-parametric interval mapping
@@ -316,14 +335,15 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
     z <- matrix(z$result,nrow=n.pos)
 
+
     # interval mapping without covariates:
     #   rescale log likelihood
-    if(method!="imp" && n.addcovar > 0)
+    if(method!="imp" && n.ac > 0)
       z <- z[,1,drop=FALSE]
     if(model == "np" && !ties.random)
       z <- z/correct  # correct for ties
 
-    if(n.addcovar==0 && n.intcovar==0 && method != "imp"
+    if(n.ac==0 && n.ic==0 && method != "imp"
        && model != "np") 
       colnames(z) <- c("lod",gen.names,"sigma")
     else colnames(z) <- c("lod")
@@ -339,11 +359,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
                pos=as.numeric(map), z)
     rownames(z) <- w
 
-
     # get null log10 likelihood
     if(i==1 & model != "np") {
-      if(n.addcovar > 0)
-        resid0 <- lm(pheno ~ addcovar, weights=weights^2)$resid
+      if(n.ac > 0)
+        resid0 <- lm(pheno ~ ac, weights=weights^2)$resid
       else 
         resid0 <- lm(pheno ~ 1, weights=weights^2)$resid
       if(method=="hk") nllik0 <- (n.ind/2)*log10(sum((resid0*weights)^2))
@@ -377,9 +396,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
           for(s in 1:ncol(newgeno)) {
             wh <- newgeno[,s] != 0
             
-            if(n.addcovar > 0) {
-              residX <- lm(pheno ~ addcovar+sexpgmcovar, weights=weights^2,subset=wh)$resid
-              resid0 <- lm(pheno ~ addcovar, weights=weights^2,subset=wh)$resid
+            if(n.ac > 0) {
+              residX <- lm(pheno ~ ac+sexpgmcovar, weights=weights^2,subset=wh)$resid
+              resid0 <- lm(pheno ~ ac, weights=weights^2,subset=wh)$resid
             }
             else {
               residX <- lm(pheno ~ sexpgmcovar, weights=weights^2,subset=wh)$resid
@@ -393,11 +412,11 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
           }
         }
         else {
-          if(n.addcovar > 0) {
-            outX <- lm(pheno ~ addcovar+sexpgmcovar, weights=weights^2)
+          if(n.ac > 0) {
+            outX <- lm(pheno ~ ac+sexpgmcovar, weights=weights^2)
             residX <- outX$resid
             # perhaps revise the dfX, if some columns got dropped
-            dfX <- dfX - (ncol(sexpgmcovar)+n.addcovar - (outX$rank-1))
+            dfX <- dfX - (ncol(sexpgmcovar)+n.ac - (outX$rank-1))
           }
           else 
             residX <- lm(pheno ~ sexpgmcovar, weights=weights^2)$resid
@@ -462,8 +481,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   } # end loop over chromosomes
 
   # sort the later columns
-  neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
-  results <- results[,neworder]
+  if(ncol(results) > 3) {
+    neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
+    results <- results[,neworder]
+  }
 
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method
@@ -544,7 +565,7 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   if(length(chr) == 1) {
     gap <- 0
     onechr <- TRUE 
- }
+  }
 
   # beginning and end of chromosomes
   temp <- grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",rownames(out))
@@ -556,7 +577,9 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   len <- begend[,2]-begend[,1]
 
   # locations to plot start of each chromosome
-  start <- c(0,cumsum(len+gap))-c(begend[,1],0)
+  if(!onechr) 
+    start <- c(0,cumsum(len+gap))-c(begend[,1],0)
+  else start <- 0
 
   maxx <- sum(len+gap)-gap
   maxy <- max(out[,3],na.rm=TRUE)
@@ -571,7 +594,10 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
 
   # make frame of plot
   if(missing(ylim)) ylim <- c(0,maxy)
-  if(missing(xlim)) xlim <- c(0,maxx)
+  if(missing(xlim)) {
+    if(onechr) xlim <- c(0,max(out[,2]))
+    else xlim <- c(0,maxx)
+  }
   
   if(!add) {
     if(onechr) {
@@ -654,6 +680,9 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   # draw the axis
   if(!add && !onechr) 
     axis(1, at=xtick, labels=xticklabel)
+
+  invisible()
+
 }
 
 ######################################################################
@@ -667,7 +696,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
          upper=FALSE, ties.random=FALSE,
-         start=NULL, maxit=4000, tol=1e-4, n.perm=1000, trace=TRUE)
+         start=NULL, maxit=4000, tol=1e-4, n.perm=1000, verbose=TRUE)
 {
   method <- match.arg(method)
   model <- match.arg(model)
@@ -686,9 +715,9 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
   if(model=="2part") res <- matrix(ncol=3,nrow=n.perm)
   else res <- 1:n.perm
 
-  if(trace) { # if trace, print out a tracing information
+  if(verbose) { # if verbose, print out a tracing information
     # rnd: how often to print tracing information
-    if(trace > 1) rnd <- 1
+    if(verbose > 1) rnd <- 1
     else {
       if(n.perm >= 1000) rnd <- 20
       else if(n.perm >= 100) rnd <- 5
@@ -702,7 +731,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
     cross <- fill.geno(cross,method="argmax")
 
   for(i in 1:n.perm) {
-    if(trace && i/rnd == round(i/rnd))
+    if(verbose && i/rnd == round(i/rnd))
       cat("Permutation", i, "\n")
 
     # impute genotypes for method "mr-imp"
@@ -729,26 +758,168 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
   res
 }
 
-# give, for each chromosome, the position with the maximum LOD
-summary.scanone <-
-function(object,threshold=0,...)
+##################################################################
+# summarize one or more scanone results for given thresholds
+##################################################################
+summary.scanone <- function(..., threshold=0)
 {
-    
-  # first, pick off the maximum from each chromosome
-  # this is made complicated to avoid returning multiple rows
-  #     from any one chromosome
-  out <- lapply(split(object,object[,1]),
-                   function(b) {
-                     d <- which(b[,3]==max(b[,3]))
-                     if(length(d) > 1) d <- median(d)
-                     b[d,] }) 
-  results <- out[[1]]
-  if(length(out) > 1)
-    for(i in 2:length(out))
-      results <- rbind(results,out[[i]])
-  class(results) <- c("summary.scanone","data.frame")
+  # take the input objects
+  object <- list(...)
 
-  results[results[,3] >= threshold,]
+  # if last thing in "..." is a number, take it as the threshold
+  if(length(object) > 1 && missing(threshold) && is.numeric(object[[length(object)]])) {
+    threshold <- object[[length(object)]]
+    object <- object[-length(object)]
+  }
+
+  n.scanone <- length(object)
+  
+  ### data checking ... need to be more thorough
+  # all scans need to be for the same chromosomes and markers, etc.
+  if(n.scanone > 1) {
+    chr <- object[[1]]$chr
+    for(i in 2:n.scanone)
+      if(length(object[[i]]$chr) != length(chr))
+        stop("All scan results need to be for the same chromosomes and markers")
+  }
+
+  ### start to summarize
+  # single scan result, this is easier
+  if(n.scanone == 1) { # for a single scanone result, produce a longer summary
+    object <- object[[1]]
+    # pick off the maximum from each chromosome
+    # this is made complicated to avoid returning multiple rows
+    #     from any one chromosome
+    out <- lapply(split(object,object[,1]),
+                  function(b) {
+                    d <- which(b[,3]==max(b[,3]))
+                    if(length(d) > 1) d <- median(d)
+                    b[d,] }) 
+    results <- out[[1]]
+    if(length(out) > 1)
+      for(i in 2:length(out))
+        results <- rbind(results,out[[i]])
+    # deal with threshold ...
+    # for one scanone result, threshold can be either a single value
+    # or a vector corresponding to different significance levels
+    # find the ones above threshold
+    threshold <- sort(as.vector(threshold))
+    n.sig <- length(threshold)
+    # take the peaks
+    idx <- which(results[,3] >= min(threshold))
+    lod <- results[idx,3]
+    results <- results[idx,]
+    if(n.sig > 1) {
+      # make significance code
+      Sig <- rep("", length(idx))
+      for(i in 1:length(idx)) {
+        for(j in 1:n.sig) {
+          if(lod[i]>threshold[j])
+            Sig[i] <- paste(Sig[i],"*", sep="")
+        }
+      }
+      results <- cbind(results, Sig)
+    }
+  }
+  
+  else { # multiple scanone results, report only chr, pos and lod
+    #### deal with threshold ...
+    # threshold should be a matrix where each row corresponds to a significance level
+    # and each column corresponds to a scan result
+    if(length(threshold) == 1) {
+      # if threshold is a single value, make it a one row matrix 
+      threshold <- matrix(rep(threshold, n.scanone), nrow=1)
+    }
+    else if(is.vector(threshold)) {
+      # it's a vector. I assume it's for different scan results with one sig level
+      if(length(threshold) != n.scanone)
+        stop("The input threshold vector has wrong length")
+      # convert to a one row matrix
+      threshold <- matrix(threshold, nrow=1)
+    }
+    else if(is.matrix(threshold)) {
+      # it's a matrix, rows are for sig levels and columns are for scan results
+      # if it has one column, I assume the same threshold value will apply
+      # to all scan results
+      if(dim(threshold)[2] ==1)
+        threshold <- matrix(rep(threshold, n.scanone), ncol=n.scanone)
+      else if(dim(threshold)[2] != n.scanone)
+        stop("The input threshold matrix has wrong dimension")
+      # threshold should be in ascending order
+      threshold <- apply(threshold, 2, sort)
+    }
+    else { # shouldn't come here
+      stop("Wrong threshold")
+    }
+    
+    # number of significance levels
+    n.sig <- dim(threshold)[1]
+    
+    results <- NULL
+    # chr and pos for the scan results
+    chrpos <- object[[1]][c("chr","pos")]
+    # put all lod scores together
+    lod <- object[[1]]["lod"]
+    for(i in 2:n.scanone)
+      lod <- cbind(lod, object[[i]][,"lod"])
+    # split chrpos and lod by chromosome
+    chrpos.chr <- split(chrpos, chrpos[,"chr"])
+    lod.chr <- split(lod,chrpos[,"chr"])
+  
+    # loop through the chromosomes - I could do this using lapply
+    # but I'd rather use a loop for readability
+    for(i in 1:length(lod.chr)) {
+      ### find the peaks in this chromosome
+      idx.peak <- NULL
+      for(j in 1:n.scanone) {
+        lodj <- lod.chr[[i]][,j]
+        maxlodj <- max(lodj)
+        # if this one didn't exceed any threshold, go to next one
+        if(maxlodj < min(threshold[,j]))
+          next;
+        idx <- which(lodj==maxlodj)
+        if(length(idx)>1) {
+          # multiple peaks with the same lod,
+          # pick one with the maximum total lod for all traits
+          lod.tmp <- matrix(lod.chr[[i]][idx,-j], nrow=length(idx))
+          lod.sum <- apply(lod.tmp, 1, sum)
+          idx <- idx[which(lod.sum==max(lod.sum))]
+        }
+        idx.peak <- c(idx.peak, idx)
+      }
+      if(length(idx.peak) == 0) # no LOD exceed threshold on this chromosome, go to next one
+        next
+      else if(length(idx.peak) >= 1) { # if several scanone results peaked at the same position
+        idx.peak <- unique(idx.peak)
+      #  result <- rbind(result, lod.chr[[i]][idx.peak,])
+      }
+      # make summary information for this chromosome
+      # -- this part of code is awkward because I need to add significance code...
+      
+      for(nn in 1:length(idx.peak)) {
+        summary.tmp <- chrpos.chr[[i]][idx.peak[nn],]
+        for(j in 1:n.scanone) {
+          lod.tmp <- lod.chr[[i]][idx.peak[nn],j] # lod score for this scanresult on this peak
+          # make sig code
+          Sig <- ""
+          for(k in 1:n.sig) {
+            if(lod.tmp > threshold[k,j])
+              Sig <- paste(Sig, "*", sep="")
+          }
+          summary.tmp <- cbind(summary.tmp, lod.tmp, Sig)
+        }
+        # make results
+        results <- rbind(results, summary.tmp)
+      }
+    }
+    # column names for summary result
+    colnames(results) <- c("chr", "pos",
+                          paste(rep(c("lod","Sig"), n.scanone), rep(1:n.scanone,each=2), sep=""))
+  }
+
+  # return 
+  class(results) <- c("summary.scanone","data.frame")
+  results
 }
 
 # print output of summary.scanone
@@ -761,7 +932,10 @@ function(x,...)
   }
 
   else {
-    x[,-(1:2)] <- round(data.frame(x[,-(1:2)]),6)
+    # find the column number of significance code
+    idx.sig <- grep("Sig",colnames(x))
+    # round the doubles
+    x[,-c(1,2,idx.sig)] <- round(data.frame(x[,-c(1:2,idx.sig)]),6)
     cat("\n")
     print.data.frame(x,digits=2)
     cat("\n")
@@ -776,7 +950,7 @@ function(..., chr, na.rm=TRUE)
   if(missing(chr)) {
     maxlod <- max(dots[,3],na.rm=TRUE)
     dots <- dots[!is.na(dots[,3]) & dots[,3]==maxlod,]
-    return(summary.scanone(dots,0))
+    return(summary.scanone(dots,threshold=0))
   }
   else {
     res <- NULL
@@ -786,7 +960,7 @@ function(..., chr, na.rm=TRUE)
       temp <- temp[!is.na(temp[,3]) & temp[,3]==maxlod,]
       res <- rbind(res,temp)
     }
-    return(summary.scanone(res,0))
+    return(summary.scanone(res,threshold=0))
   }
 }
 

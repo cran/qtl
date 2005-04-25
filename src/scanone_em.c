@@ -2,9 +2,9 @@
  * 
  * scanone_em.c
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Nov, 2004
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -43,7 +43,7 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
 		  double *intcov, int *n_intcov, double *pheno,
 		  double *weights,
 		  double *result, int *std_start, double *start,
-		  int *maxit, double *tol, int *trace)
+		  int *maxit, double *tol, int *verbose)
 {
   double ***Genoprob, **Result, **work, **Addcov, **Intcov;
 
@@ -68,7 +68,7 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
   else { /* interval mapping with covariates */
     scanone_em_covar(*n_ind, *n_pos, *n_gen, Genoprob, Addcov,
 		     *n_addcov, Intcov, *n_intcov, pheno, weights,
-		     result, *maxit, *tol, *trace);
+		     result, *maxit, *tol, *verbose);
   }
 }
 
@@ -76,7 +76,7 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
  * 
  * scanone_em
  *
- * Performs genotype scan using interval mapping.  (The multipoint
+ * Performs genome scan using interval mapping.  (The multipoint
  * genotype probabilities have already been calculated in 
  * calc.genoprob)
  * 

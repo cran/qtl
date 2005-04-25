@@ -10,12 +10,23 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
+o Documentation for scanone() and scantwo() regarding the X chromosome.
+
+o geno.table(): the X chromosome needs special treatment.
+
+o P-values from geno.table() when an intercross has some dominant
+  markers.  
+
+o Deal more cleanly with missing values in the output to scantwo.
+  Make the warning message more clear, and perhaps don't automatically 
+  set them to 0.
+
+o Incorporate the DIRECT algorithm stuff from Hao
+
+o Add attributes regarding degrees of freedom and null log10lik
+  to the output of scanone and scantwo.
+
 o Revise the a.starting.point a bit.
-
-o Look at the README.txt file again.
-
-o X chromosome in scanone and scantwo when sex and/or pgm
-  are included as covariates.
 
 o Revise the documentation regarding the new version of plot.scantwo. 
 
@@ -29,8 +40,8 @@ o Bug in the warning message regarding switched genotypes in est.rf?
 
 o Allow no p-values in summary.scantwo
 
-o Add the ability to include covariates in scanone for a binary
-  phenotype, using a logistic link function.
+o Documentation on how to do thresholds a la Gary's method for
+  scantwo.  
 
 o LOD thresholds for X chromosome in scanone/two.
 
@@ -41,20 +52,18 @@ o Add an example regarding the X chromosome to the help files for
 
 o Go through makeqtl, fitqtl, scanqtl carefully.
 
-o Incorporate Steffen Moeller's code for connecting to ensembl and for
-  making pictures of QTL locations.
-
 o Ensure consistency in use of chromosome numbers vs names/IDs when
   plotting results of genome scans, subsetting crosses, and so forth
   (sometimes #'s taken as indices and sometimes as names).
-
-o P-values from geno.table() when an intercross has some dominant
-  markers.  Also: the X chromosome needs special treatment.
 
 o Documentation on RI lines.
 
 
 MEDIUM TERM:
+
+o Pull out results for an interval.
+
+o Function to calculate variance due to QTL
 
 o Modify the map expansion for RI lines for the X chromosome.
   [really need to add additional functions for mapping, as
@@ -64,8 +73,6 @@ o Modify the map expansion for RI lines for the X chromosome.
 
 o Incorporate the code from Brian Yandell, Fei Zou and Amy Jin on
   semi-parametric QTL mapping methods.
-
-o Implement the DIRECT algorithm for doing the pair scan more quickly.
 
 o Allow use of individual IDs; a column "id" or "ID" in the phenotype
   data.  We could refer to these in functions like top.errorlod.
@@ -90,8 +97,6 @@ o effectscan: if one chromosome, plot map positions on the x-axis
   rather than the chromosome ID.
 
 o Add appropriate functions to analyze advanced intercrosses (AILs). 
-
-o Analysis of binary traits in scantwo.
 
 o Analysis of binary traits by imputation
 

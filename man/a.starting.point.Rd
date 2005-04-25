@@ -10,7 +10,6 @@
   \itemize{
     \item In order to use the R/qtl package, you must type (within R)
     \code{library(qtl)}.  You may wish to include this in a
-    \code{\link[base:Startup]{.First}} function or
     \code{\link[base:Startup]{.Rprofile}} file. 
 
     \item Documention and several tutorials are available
@@ -20,7 +19,6 @@
     html version of the R help.  In Windows or MacOS, you may wish to
     use \code{options(htmlhelp=TRUE)} to get easy access to the html
     version of the help files; this could be included in a
-    \code{\link[base:Startup]{.First}} function or
     \code{\link[base:Startup]{.Rprofile}} file.
 
     \item Type \code{library(help=qtl)} to get a list of the functions
@@ -112,7 +110,7 @@ the same numbers of chromosomes and markers per chromosome).  The
 function \code{\link[qtl]{replace.map}} map be used to replace the
 genetic map in a cross with a new one.
 
-\code{newmap <- est.map(hyper, error.prob=0.01, trace=TRUE)} \cr
+\code{newmap <- est.map(hyper, error.prob=0.01, verbose=TRUE)} \cr
 \code{plot.map(hyper, newmap)} \cr
 \code{hyper <- replace.map(hyper, newmap)}
 

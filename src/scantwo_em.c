@@ -2,9 +2,9 @@
  * 
  * scantwo_em.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2003
+ * last modified Apr, 2005
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -16,7 +16,7 @@
  *
  * Contains: R_scantwo_1chr_em, scantwo_1chr_em, 
  *           R_scantwo_2chr_em, scantwo_2chr_em,
- *           scantwo_em_estep, scantwo_em_mstep
+ *           scantwo_em_estep, scantwo_em_mstep, scantwo_em_loglik
  *  
  **********************************************************************/
 
@@ -44,7 +44,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights, double *result,
-		       int *maxit, double *tol, int *trace)
+		       int *maxit, double *tol, int *verbose)
 {
   double **Result, **Addcov, **Intcov, *****Pairprob;
 
@@ -57,7 +57,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 
   scantwo_1chr_em(*n_ind, *n_pos, *n_gen, Pairprob, 
 		  Addcov, *n_addcov, Intcov, *n_intcov, 
-		  pheno, weights, Result, *maxit, *tol, *trace);
+		  pheno, weights, Result, *maxit, *tol, *verbose);
 }
 
 /**********************************************************************
@@ -100,7 +100,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * tol          Tolerance for determining convergence of EM
  *
- * trace        If >0, print any messages when errors occur
+ * verbose        If >0, print any messages when errors occur
  *                 >1, print out log likelihoods at end of EM
  *                     and check that log likelihood doesn't go down
  *                 >2, print out initial and final log likelihoods
@@ -112,7 +112,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     double *weights,
-		     double **Result, int maxit, double tol, int trace)
+		     double **Result, int maxit, double tol, int verbose)
 {
   int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
@@ -177,28 +177,17 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 			 oldparam, m, work1, work2, &error_flag);
 
 	if(error_flag) {
-	  if(trace) 
+	  if(verbose>1) 
 	    Rprintf("   [%3d %3d] %1d: Initial model had error.\n",
 		    i1+1, i2+1, m+1);
 	}
 	else { /* only proceed if there's no error */
-	  if(trace>1) { /* print initial log likelihood */
-	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
-			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, oldparam, m, 0);
-	    oldllik = 0.0;
-	    temp=0.0;
-	    for(j=0; j<n_ind; j++) {
-	      temp=0.0;
-	      for(k1=0; k1<n_gen; k1++)
-		for(k2=0; k2<n_gen; k2++)
-		  temp += Wts12[k1][k2][j];
-	      oldllik += log(temp);
-	    }
-	    if(trace>2) 
-	      Rprintf("   [%3d %3d] %1d %9.3lf\n", 
-		      i1+1, i2+1, m+1, oldllik/log(10));
-	  }
+	  oldllik = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
+				      Wts1, Wts2, Addcov, n_addcov, Intcov, 
+				      n_intcov, pheno, weights, oldparam, m);
+	  if(verbose>2) 
+	    Rprintf("   [%3d %3d] %1d %9.3lf\n", 
+		    i1+1, i2+1, m+1, oldllik);
 	
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
@@ -210,41 +199,31 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 			     Wts2, param, m, work1, work2, &error_flag);
 	    if(error_flag) {
 	      flag=0;
-	      if(trace)
+	      if(verbose>1)
 		Rprintf("   [%3d %3d] %1d %4d: Error in mstep\n",
 			i1+1, i2+1, m+1, r+1);
 	      break;
 	    }
 
-	    if(trace>1) { /* print log likelihood */
-	      scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
-			       Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			       n_intcov, pheno, weights, param, m, 0);
-	      llik[m] = 0.0;
-	      temp=0.0;
-	      for(j=0; j<n_ind; j++) {
-		temp=0.0;
-		for(k1=0; k1<n_gen; k1++)
-		  for(k2=0; k2<n_gen; k2++)
-		    temp += Wts12[k1][k2][j];
-		llik[m] += log(temp);
-	      }
-	      if(trace>2) 
+	    llik[m] = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
+					Wts1, Wts2, Addcov, n_addcov, Intcov, 
+					n_intcov, pheno, weights, param, m);
+	    if(verbose>1) { /* print log likelihood */
+	      if(verbose>2) 
 		Rprintf("   [%3d %3d] %1d %4d %9.6lf\n", 
-			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik)/log(10));
+			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik));
 	      if(llik[m] < oldllik-tol) 
 		Rprintf("** [%3d %3d] %1d %4d %9.6lf **\n",
-			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik)/log(10));
+			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik));
 
-	      oldllik = llik[m];
-
-	      if(trace>3) { /* print parameters */
+	      if(verbose>3) { /* print parameters */
 		for(j=0; j<n_col[m]; j++) 
 		  Rprintf(" %7.3lf", param[j]);
 		Rprintf("\n");
 	      }
 	    }
 	    
+#ifdef UNDEFINED
 	    /* check for convergence */
 	    flag = 0;
 	    for(j=0; j<n_col[m]+1; j++) {
@@ -255,39 +234,40 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	      }
 	    }
 	    if(!flag) break;
+#endif
+
+	    flag = 1;
+	    /* use log likelihood only to check for convergence */
+	    if(llik[m]-oldllik < tol) { 
+	      flag = 0; 
+	      break; 
+	    }
+
+	    oldllik = llik[m];
 	    for(j=0; j<n_col[m]+1; j++) oldparam[j] = param[j];
 
 	  } /* loop over EM iterations */
 	  nit[m] = r+1;
 	  if(flag) {
-	    if(trace)
+	    if(verbose>1)
 	      Rprintf("** [%3d %3d] %1d Didn't converge! **\n",
 		      i1+1, i2+1, m+1);
 	    warning("Didn't converge!\n");
 	  }
 
+#ifdef UNDEFINED
 	  if(!error_flag) { /* skip if there was an error */
 	    /* calculate log likelihood */
-	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
-			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, param, m, 0);
-	    llik[m] = 0.0;
-	    temp=0.0;
-	    for(j=0; j<n_ind; j++) {
-	      temp=0.0;
-	      for(k1=0; k1<n_gen; k1++)
-		for(k2=0; k2<n_gen; k2++)
-		  temp += Wts12[k1][k2][j];
-	      llik[m] += log(temp);
-	    }
-	    llik[m] /= log(10.0);
+	    llik[m] = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
+					Wts1, Wts2, Addcov, n_addcov, Intcov, 
+					n_intcov, pheno, weights, param, m);
 	  }
-	  else llik[m] = NA_REAL;
+#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 
 
-      if(trace>1) { /* print likelihoods */
+      if(verbose>1) { /* print likelihoods */
 	Rprintf("   [%3d %3d]   %4d %4d    %9.6lf", 
 		i1+1, i2+1, nit[0], nit[1], llik[1]-llik[0]);
 	if(llik[1] < llik[0]) Rprintf(" ****");
@@ -316,7 +296,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights,
 		       double *result_full, double *result_int,
-		       int *maxit, double *tol, int *trace)
+		       int *maxit, double *tol, int *verbose)
 {
   double **Result_full, **Result_int, **Addcov, **Intcov;
   double ***Genoprob1, ***Genoprob2;
@@ -334,7 +314,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		  Genoprob1, Genoprob2, Addcov, *n_addcov, 
 		  Intcov, *n_intcov, pheno, weights, 
 		  Result_full, Result_int, 
-		  *maxit, *tol, *trace);
+		  *maxit, *tol, *verbose);
 }
 
 /**********************************************************************
@@ -385,7 +365,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * tol          Tolerance for determining convergence of EM
  *
- * trace        If >0, print any messages when errors occur
+ * verbose        If >0, print any messages when errors occur
  *                 >1, print out log likelihoods at end of EM
  *                     and check that log likelihood doesn't go down
  *                 >2, print out initial and final log likelihoods
@@ -398,7 +378,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double **Addcov, int n_addcov, double **Intcov, 
 		     int n_intcov, double *pheno, double *weights,
 		     double **Result_full, double **Result_int, 
-		     int maxit, double tol, int trace)
+		     int maxit, double tol, int verbose)
 {
   int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
@@ -468,28 +448,17 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 			 oldparam, m, work1, work2, &error_flag);
 
 	if(error_flag) {
-	  if(trace)
+	  if(verbose>1)
 	    Rprintf("   [%3d %3d] %1d: Initial model had error.\n",
 		    i1+1, i2+1, m+1);
 	}
 	else { /* only proceed if there's no error */
-	  if(trace>1) { /* print initial log likelihood */
-	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
-			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, oldparam, m, 0);
-	    oldllik = 0.0;
-	    temp=0.0;
-	    for(j=0; j<n_ind; j++) {
-	      temp=0.0;
-	      for(k1=0; k1<n_gen1; k1++)
-		for(k2=0; k2<n_gen2; k2++)
-		  temp += Wts12[k1][k2][j];
-	      oldllik += log(temp);
-	    }
-	    if(trace>2)
-	      Rprintf("   [%3d %3d] %1d %9.3lf\n", 
-		      i1+1, i2+1, m+1, oldllik/log(10));
-	  }
+	  oldllik = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
+				      Wts1, Wts2, Addcov, n_addcov, Intcov, 
+				      n_intcov, pheno, weights, oldparam, m);
+	  if(verbose>2)
+	    Rprintf("   [%3d %3d] %1d %9.3lf\n", 
+		    i1+1, i2+1, m+1, oldllik);
 	
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
@@ -501,41 +470,31 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 			     Wts2, param, m, work1, work2, &error_flag);
 	    if(error_flag) {
 	      flag=0;
-	      if(trace)
+	      if(verbose>1)
 		Rprintf("   [%3d %3d] %1d %4d: Error in mstep\n",
 			i1+1, i2+1, m+1, r+1);
 	      break;
 	    }
 
-	    if(trace>1) { /* print log likelihood */
-	      scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
-			       Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			       n_intcov, pheno, weights, param, m, 0);
-	      llik[m] = 0.0;
-	      temp=0.0;
-	      for(j=0; j<n_ind; j++) {
-		temp=0.0;
-		for(k1=0; k1<n_gen1; k1++)
-		  for(k2=0; k2<n_gen2; k2++)
-		    temp += Wts12[k1][k2][j];
-		llik[m] += log(temp);
-	      }
-	      if(trace>2)
+	    llik[m] = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
+				       Wts1, Wts2, Addcov, n_addcov, Intcov, 
+				       n_intcov, pheno, weights, param, m);
+	    if(verbose>1) { /* print log likelihood */
+	      if(verbose>2)
 		Rprintf("   [%3d %3d] %1d %4d %9.6lf\n", 
-			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik)/log(10));
+			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik));
 	      if(llik[m] < oldllik-tol) 
 		Rprintf("** [%3d %3d] %1d %4d %9.6lf **\n",
-			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik)/log(10));
+			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik));
 
-	      oldllik = llik[m];
-
-	      if(trace>3) { /* print parameters */
+	      if(verbose>3) { /* print parameters */
 		for(j=0; j<n_col[m]; j++) 
 		  Rprintf(" %7.3lf", param[j]);
 		Rprintf("\n");
 	      }
 	    }
 	    
+#ifdef UNDEFINED
 	    /* check for convergence */
 	    flag = 0;
 	    for(j=0; j<n_col[m]+1; j++) {
@@ -546,39 +505,42 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	      }
 	    }
 	    if(!flag) break;
+#endif
+
+	    flag = 1;
+	    /* use log likelihood only to check for convergence */
+	    if(llik[m]-oldllik < tol) { 
+	      flag = 0; 
+	      break; 
+	    }
+
 	    for(j=0; j<n_col[m]+1; j++) oldparam[j] = param[j];
+	    oldllik = llik[m];
+
+
 
 	  } /* loop over EM iterations */
 	  nit[m] = r+1;
 	  if(flag) {
-	    if(trace)
+	    if(verbose>1)
 	      Rprintf("** [%3d %3d] %1d Didn't converge! **\n",
 		      i1+1, i2+1, m+1);
 	    warning("Didn't converge!\n");
 	  }
 
+#ifdef UNDEFINED
 	  if(!error_flag) { /* skip if there was an error */
 	    /* calculate log likelihood */
-	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
-			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, param, m, 0);
-	    llik[m] = 0.0;
-	    temp=0.0;
-	    for(j=0; j<n_ind; j++) {
-	      temp=0.0;
-	      for(k1=0; k1<n_gen1; k1++)
-		for(k2=0; k2<n_gen2; k2++)
-		  temp += Wts12[k1][k2][j];
-	      llik[m] += log(temp);
-	    }
-	    llik[m] /= log(10.0);
+	    llik[m] = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
+					Wts1, Wts2, Addcov, n_addcov, Intcov, 
+					n_intcov, pheno, weights, param, m);
 	  }
-	  else llik[m] = NA_REAL;
+#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 
 
-      if(trace>1) { /* print likelihoods */
+      if(verbose>1) { /* print likelihoods */
 	Rprintf("   [%3d %3d]    %4d %4d    %9.6lf", 
 		i1+1, i2+1, nit[0], nit[1], llik[1]-llik[0]);
 	if(llik[1] < llik[0]) Rprintf(" ****");
@@ -983,6 +945,30 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
     } /* end rescale */
       
   } /* end loop over individuals */
+}
+
+double scantwo_em_loglik(int n_ind, int n_gen1, int n_gen2, double ***Probs,
+			 double ***Wts12, double **Wts1, double **Wts2, 
+			 double **Addcov, int n_addcov, double **Intcov,
+			 int n_intcov, double *pheno, double *weights,
+			 double *param, int full_model)
+{
+  double loglik, temp;
+  int j, k1, k2;
+  
+  scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
+		   Wts1, Wts2, Addcov, n_addcov, Intcov, 
+		   n_intcov, pheno, weights, param, full_model, 0);
+
+  loglik=0.0;
+  for(j=0; j<n_ind; j++) {
+    temp=0.0;
+    for(k1=0; k1<n_gen1; k1++)
+      for(k2=0; k2<n_gen2; k2++)
+	temp += Wts12[k1][k2][j];
+    loglik += log10(temp);
+  }
+  return(loglik);
 }
 
 /* end of scantwo_em.c */

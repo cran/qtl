@@ -41,7 +41,7 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  * 
  * scanone_imp
  *
- * Performs genotype scan using the pseudomarker algorithm (imputation) 
+ * Performs genome scan using the pseudomarker algorithm (imputation) 
  * method of Sen and Churchill (2001).
  * 
  * n_ind        Number of individuals

@@ -2,13 +2,13 @@
  * 
  * util.h
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
  *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Aug, 2004
+ * last modified Mar, 2005
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -21,8 +21,9 @@
  *                  reorg_pairprob, allocate_int,
  *                  allocate_alpha, reorg_draws, allocate_double,
  *                  sample_int, allocate_imatrix, allocate_dmatrix
- *                  reorg_errlod, double_permute, random_int
- *                  wtaverage
+ *                  reorg_errlod, double_permute, int_permute, 
+ *                  random_int
+ *                  wtaverage, comparegeno, R_comparegeno
  *
  **********************************************************************/
 
@@ -36,7 +37,6 @@
  * in R's math library.   
  *
  **********************************************************************/
-
 double addlog(double a, double b);
 		       
 /**********************************************************************
@@ -49,7 +49,6 @@ double addlog(double a, double b);
  * in R's math library.  
  *
  **********************************************************************/
-
 double subtrlog(double a, double b);
 
 /**********************************************************************
@@ -64,7 +63,6 @@ double subtrlog(double a, double b);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void reorg_geno(int n_ind, int n_pos, int *geno, int ***Geno);
 
 /**********************************************************************
@@ -79,7 +77,6 @@ void reorg_geno(int n_ind, int n_pos, int *geno, int ***Geno);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void reorg_genoprob(int n_ind, int n_pos, int n_gen, 
 		    double *genoprob, double ****Genoprob);
 
@@ -99,7 +96,6 @@ void reorg_genoprob(int n_ind, int n_pos, int n_gen,
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void reorg_pairprob(int n_ind, int n_pos, int n_gen, 
 		    double *pairprob, double ******Pairprob);
 
@@ -114,7 +110,6 @@ void reorg_pairprob(int n_ind, int n_pos, int n_gen,
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void allocate_alpha(int n_pos, int n_gen, double ***alpha);
 
 /**********************************************************************
@@ -129,7 +124,6 @@ void allocate_alpha(int n_pos, int n_gen, double ***alpha);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void reorg_draws(int n_ind, int n_pos, int n_draws, 
 		 int *draws, int ****Draws);
 
@@ -142,7 +136,6 @@ void reorg_draws(int n_ind, int n_pos, int n_draws,
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void allocate_double(int n, double **vector);
 
 /**********************************************************************
@@ -154,7 +147,6 @@ void allocate_double(int n, double **vector);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void allocate_int(int n, int **vector);
 
 /**********************************************************************
@@ -166,7 +158,6 @@ void allocate_int(int n, int **vector);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void allocate_dmatrix(int n_row, int n_col, double ***matrix);
 
 /**********************************************************************
@@ -178,7 +169,6 @@ void allocate_dmatrix(int n_row, int n_col, double ***matrix);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void allocate_imatrix(int n_row, int n_col, int ***matrix);
 
 /**********************************************************************
@@ -188,7 +178,6 @@ void allocate_imatrix(int n_row, int n_col, int ***matrix);
  * Make a single draw from (1, ..., n) with probs (p_0, ..., p_(n-1))
  *
  **********************************************************************/
-
 int sample_int(int n, double *p);
 
 /**********************************************************************
@@ -202,7 +191,6 @@ int sample_int(int n, double *p);
  * Allocation done by R_alloc, so that R does the cleanup.
  *
  **********************************************************************/
-
 void reorg_errlod(int n_ind, int n_mar, double *errlod, double ***Errlod);
 
 /**********************************************************************
@@ -219,8 +207,23 @@ void reorg_errlod(int n_ind, int n_mar, double *errlod, double ***Errlod);
  *   len   = length of the vector
  *
  **********************************************************************/
+void double_permute(double *array, int len);
 
-void double_permute(double *array, long len);
+/**********************************************************************
+ * 
+ * int_permute
+ *
+ *   This function randomly permutes a vector of int
+ *   
+ * Input:
+ * 
+ *   array = vector of int; on output, it contains a random 
+ *           permutation of the input vector
+ *
+ *   len   = length of the vector
+ *
+ **********************************************************************/
+void int_permute(int *array, int len);
 
 /**********************************************************************
  * 
@@ -235,14 +238,32 @@ void double_permute(double *array, long len);
  *    high
  *
  **********************************************************************/
-
 int random_int(int low, int high);
 
 /**********************************************************************
  * wtaverage
  * calculate the weight average of the LOD scores
  *********************************************************************/
-
 double wtaverage(double *LOD, int n_draws);
+
+
+/**********************************************************************
+ * comparegeno
+ * 
+ * Count number of matches in the genotypes for all pairs of
+ * individuals.
+ *
+ * Input:
+ *   
+ **********************************************************************/
+void comparegeno(int **Geno, int n_ind, int n_mar, 
+		 int **N_Match, int **N_Missing);
+
+/**********************************************************************
+ * R_comparegeno: wrapper for R
+ **********************************************************************/
+void R_comparegeno(int *geno, int *n_ind, int *n_mar, 
+		   int *n_match, int *n_missing);
+
 
 /* end of util.h */

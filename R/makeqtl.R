@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jul, 2004
+# last modified Nov, 2004
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -90,7 +90,7 @@ makeqtl <-
       # if everything is all right, take the genotype
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
 
-      ### Fix up X chromsome here, and relace stuff below ###
+      ### Fix up X chromsome here, and replace stuff below ###
 
       # get the number of genotypes for this marker
       if(type == "f2") {
@@ -116,13 +116,12 @@ makeqtl <-
   }
   
   if("prob" %in% names(cross$geno[[1]])) { # prob is there
-    # take out the genotype probabilities
-    ngens <- dim(cross$geno[[1]]$prob)[3]
     # initialize prob matrix
-    prob <- array(rep(0,n.ind*n.pos*ngens),
-                  dim=c(n.ind, n.pos, ngens))
+    prob <- vector("list",n.pos)
+
     # locate the marker
     for(i in 1:n.pos) {
+
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
       if(length(i.chr) == 0) { # no this chromosome in cross
@@ -130,10 +129,12 @@ makeqtl <-
         stop(err)
       }
       i.pos <- pos[i] # marker position
+
       # locate this marker (given chromosome and position)
       marker.idx <- locatemarker(cross$geno[[i.chr]]$map, i.pos, i.chr, flag="prob")
+
       # take genoprob
-      prob[,i,] <- cross$geno[[i.chr]]$prob[,marker.idx,]
+      prob[[i]] <- cross$geno[[i.chr]]$prob[,marker.idx,]
 
       ### Fix up X chromsome here ###
     }
@@ -221,7 +222,7 @@ replaceqtl <-
     marker.idx <- locatemarker(cross$geno[[by.chr]]$map,
                                 by.pos, by.chr, "prob")
     # replace genoprob
-    qtl$prob[,replace,] <- cross$geno[[by.chr]]$prob[,marker.idx,]
+    qtl$prob[[replace]] <- cross$geno[[by.chr]]$prob[,marker.idx,]
   }
 
   # done

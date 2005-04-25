@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.geno(x, chr, ind, horizontal=FALSE, cutoff=3.5,
+plot.geno(x, chr, ind, horizontal=TRUE, cutoff=3.5,
           min.sep=2, cex=1.2, \dots) 
 }			    
 

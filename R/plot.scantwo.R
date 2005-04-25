@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-4, Karl W Broman, Johns Hopkins University,
 #                       Hao Wu and Brian Yandell
-# last modified Sep, 2004
+# last modified Nov, 2004
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -219,6 +219,8 @@ function(x, chr, incl.markers = FALSE, zlim,
     segments(u[1], yloc.rev, u[1] - xlen.mar/4, yloc.rev, xpd = TRUE)
     text(u[1] - xlen.mar/3, yloc.rev, as.character(yloc), xpd = TRUE, adj = 1)
   }
+
+  invisible()
 }
 
 ######################################################################

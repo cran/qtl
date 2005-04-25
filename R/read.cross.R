@@ -2,8 +2,8 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2003
+# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2005
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -224,16 +224,22 @@ function(cross)
       femalegeno0 <- Xgeno[sexpgm$sex==0 & sexpgm$pgm==0,]
       femalegeno1 <- Xgeno[sexpgm$sex==0 & sexpgm$pgm==1,]
 
-      if(any(!is.na(femalegeno0) & femalegeno0==3) &&
-         !(any(!is.na(femalegeno1) & femalegeno1==3))) {
+      if((any(!is.na(femalegeno0) & femalegeno0==3) ||
+          any(!is.na(femalegeno1) & femalegeno1==1)) &&
+         !any(!is.na(femalegeno0) & femalegeno0==1) &&
+         !any(!is.na(femalegeno1) & femalegeno1==3)) {
                                           # appear to switched the "pgm" values
         warning(" --The 0/1 values for \"pgm\" appear to be switched; switching back.")
         sexpgm$pgm[sexpgm$pgm==1] <- 2
         sexpgm$pgm[sexpgm$pgm==0] <- 1
         sexpgm$pgm[sexpgm$pgm==2] <- 0
+        cross$pheno$pgm[cross$pheno$pgm==1] <- 2
+        cross$pheno$pgm[cross$pheno$pgm==0] <- 1
+        cross$pheno$pgm[cross$pheno$pgm==2] <- 0
+
         temp <- femalegeno0
         femalegeno0 <- femalegeno1
-        femalegeno1 <- femalegeno0
+        femalegeno1 <- temp
       }
       if(any(!is.na(femalegeno0) & femalegeno0==3)) {
         n.omit <- sum(!is.na(femalegeno0) & femalegeno0==3)

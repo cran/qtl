@@ -2,14 +2,15 @@
 #
 # xchr.R
 #
-# copyright (c) 2004, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2004
+# copyright (c) 2005, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2005
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: Utilities for dealing with the X chromosome.
 #           getsex, getgenonames, reviseXdata, scanoneXnull
+#           revisecovar
 #           [See also fixXgeno.bc & fixXgeno.f2 in read.cross.R]
 #
 ######################################################################
@@ -641,6 +642,7 @@ function(type, sexpgm)
   pgm <- sexpgm$pgm
 
   if(type == "f2ss") type <- "f2"
+  if(type == "risib" || type=="riself") type <- "bc"
 
   ### first figure out sex/pgm pattern
 
@@ -708,6 +710,28 @@ function(type, sexpgm)
 
   list(adjustX=adjustX, dfX=dfX, sexpgmcovar=sexpgmcovar,
        sexpgmcovar.alt=sexpgmcovar.alt)
+}
+
+######################################################################
+# revisecovar
+#
+# Drop sex and pgm as covariates for the X chromosome.
+######################################################################
+revisecovar <-
+function(sexpgm, covar)
+{
+  if(is.null(covar)) return(covar)
+  covar <- as.matrix(covar)
+
+  X <- cbind(1,sexpgm$sex,sexpgm$pgm, sexpgm$sex*sexpgm$pgm)
+  nc <- ncol(X)
+  keep <- rep(TRUE,ncol(covar))
+  for(i in 1:ncol(covar)) {
+    if(qr(cbind(X,covar[,i]))$rank <= nc)
+      keep[i] <- FALSE
+  }
+  if(!any(keep)) return(NULL)
+  covar[,keep,drop=FALSE]
 }
 
 # end of xchr.R

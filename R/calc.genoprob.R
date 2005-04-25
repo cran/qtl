@@ -2,8 +2,8 @@
 #
 # calc.genoprob.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified mAR, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -79,6 +79,12 @@ function(cross, step=0, off.end=0, error.prob=0,
       n.gen <- 4
       one.map <- FALSE
       gen.names <- c("AC","BC","AD","BD")
+    }
+    else if(type=="cc") {
+      cfunc <- "calc_genoprob_cc"
+      n.gen <- 8
+      one.map <- TRUE
+      gen.names <- LETTERS[1:8]
     }
     else {
       err <- paste("calc.genoprob not available for cross type",

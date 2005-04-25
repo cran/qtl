@@ -3,7 +3,7 @@
 # est.rf.R
 #
 # copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2004
+# last modified Nov, 2004
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -139,7 +139,8 @@ function(x, chr, which=c("both","lod","rf"), ...)
   if(which=="lod") title(main="Pairwise LOD scores")
   else if(which=="rf") title(main="Recombination fractions")
   else title("Pairwise recombination fractions and LOD scores")
-  
+
+  invisible()
 }
 
 ######################################################################

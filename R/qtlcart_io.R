@@ -2,9 +2,9 @@
 #
 # qtlcart_io.R
 #
-# copyright (c) 2002-4, Brian S. Yandell
+# copyright (c) 2002-5, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Sep, 2004
+# last modified Apr, 2005
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -98,9 +98,9 @@ function (file)
   chroms <- scan(file, list(1, ""), skip = tmp[2], nlines = nchrom, 
                  blank.lines.skip = FALSE, quiet = TRUE)[[2]]
   map <- list()
+  n.markers <- table(markers[[1]])
   for (i in seq(nchrom)) {
-    tmp <- cumsum(position[!is.na(position[, i]), i])
-    tmp <- tmp[-length(tmp)]
+    tmp <- cumsum(position[1:n.markers[i],i])
     names(tmp) <- markers[[3]][i == markers[[1]]]
     map[[chroms[i]]] <- tmp
   }

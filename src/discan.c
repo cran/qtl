@@ -77,7 +77,7 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
  * 
  * discan_mr
  *
- * Performs genotype scan using marker regression for a dichotomous trait
+ * Performs genome scan using marker regression for a dichotomous trait
  * 
  * n_ind        Number of individuals
  *
@@ -144,7 +144,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  * 
  * discan_im
  *
- * Performs genotype scan using interval mapping.  (The multipoint
+ * Performs genome scan using interval mapping.  (The multipoint
  * genotype probabilities have already been calculated in 
  * calc.genoprob)
  * 

@@ -2,9 +2,9 @@
  * 
  * hmm_4way.c
  * 
- * copyright (c) 2001, 2002, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  * 
- * last modified Mar, 2002
+ * last modified Nov, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -215,11 +215,11 @@ void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_4way(int *n_ind, int *n_mar, int *geno, double *rf1, double *rf2,
 		  double *error_prob, double *loglik, int *maxit, 
-		  double *tol, int *sexsp, int *trace)
+		  double *tol, int *sexsp, int *verbose)
 {
   est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
 	  init_4way, emit_4way, step_4way, nrec_4way1, nrec_4way2, 
-	  loglik, *maxit, *tol, *sexsp, *trace);
+	  loglik, *maxit, *tol, *sexsp, *verbose);
 }
 
 void argmax_geno_4way(int *n_ind, int *n_pos, int *geno, 

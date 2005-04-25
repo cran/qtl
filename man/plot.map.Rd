@@ -7,7 +7,7 @@
   Plot genetic map of marker locations for all chromosomes.
 }
 
-\usage{plot.map(x, map2, horizontal=FALSE, \dots)}
+\usage{plot.map(x, map2, horizontal=FALSE, shift=TRUE, \dots)}
 
 \arguments{
   \item{x}{A list whose components are vectors of marker locations.  A
@@ -19,6 +19,8 @@
     given, a comparison of the two genetic maps is plotted.}
   \item{horizontal}{Specifies whether the chromosomes should be
     plotted horizontally.}
+  \item{shift}{If TRUE, shift the first marker on each chromosome to be
+    at 0 cM.}
   \item{\dots}{Ignored at this point.}
 }
 

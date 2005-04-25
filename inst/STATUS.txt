@@ -1,10 +1,122 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
 Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
+
+Version 0.99, 4/25/2005:
+
+Major changes:
+
+  scanone() now allows additive and interactive covariates in the
+  case model="binary" (that is, for a binary trait).  This uses
+  a logit link.
+
+  scantwo() now allows analysis of binary traits (model="binary"),
+  for method="em" only. 
+
+  Added a few new utility functions: bayesint() for calculating
+  Bayesian probability intervals [cf lodint()], compareGeno for
+  comparing individuals' genotypes, and strip.partials()
+  for removing partially informative genotypes.
+
+  Added +.scanone() and -.scanone() for adding and subtracting the
+  output of scanone()
+
+  Revised summary.scanone() and print.summary.scanone() so that it can
+  summarize the result of multiple scanone() results together.
+
+  Added code (the function sim.cc) for simulating the "Collaborative
+  Cross" (8-way RILs) and for calculating QTL genotype probabilities
+  and identifying the most likely genotypes (using Viterbi) with SNP
+  data on such lines.
+
+Minor changes:
+
+  Revised plot.scanone() so that when one chromosome is plotted, it
+  starts whereever the first marker on the chromosome was placed, and
+  not necessarily at 0.  
+
+  Revised plot.map() so that shifting chromosomes so that the first
+  marker is at 0 cM is optional.  (Use shift=FALSE to not do such a 
+  shift.)
+
+  Fixed the issue regarding use of sex and/or pgm as covariates for
+  the X chromosome; such covariates are dropped just for the X
+  chromosome.  
+
+  Revised plot.pxg() so that it no longer returns Rsq, fit and so
+  forth.  I've gone back to returning just information about the data
+  that are plotted.  I added an argument "main" in the case one wishes
+  to use a plot title different from the default.
+
+  Changed the default for plot.geno from horizontal=FALSE to
+  horizontal=TRUE.
+
+  switch.order() no longer resets the location of the first marker on
+  the chromosome to 0 cM, but retains the offset from the original
+  map. 
+
+  Changed "trace" as an argument to "verbose", to avoid clashes with
+  the built-in R function trace()
+
+  Revised summary.cross() to check the class of chromosomes (the 
+  components in cross$geno); they should each have class "A" or "X".
+
+  Revised subset.cross() so that it won't produce duplicate
+  chromosomes, and to treat missing values in the ind argument.
+
+  Fixed a slight bug in fitqtl() regarding the drop one analysis
+  when there is just one QTL.
+
+  There was a slight bug in plot.pxg() regarding the X chromosome.
+
+  Fixed a bug in scanone() regarding the X chromosome for RILs.
+
+  Fixed a slight, silly bug in est.map() for sex-specific maps, in
+  which the location of the initial marker was randomized.
+
+  Revised plot.scanone(), plot.scantwo(), and other plotting functions
+  so that they don't show their NULL return values.
+
+  Fixed a bug in makeqtl() regarding the X chromosome if there are
+  genotype probabilities.
+
+  Revised the internal checkcovar() function to check that the chosen
+  phenotype for scanone(), scantwo(), etc., is numeric.  Previously,
+  an rather uninformative error message was given.
+
+  Modified the convergence criterion for scantwo() by the EM
+  algorithm; we now just look at the log likelihood, and not at the
+  parameters.
+  
+  Fixed a bug in read.map.qtlcart().
+
+  Fixed bugs in scanone and scantwo for method="imp", for the case
+  that one has exactly one imputation.  Fixed a memory-overwrite
+  problem in scanone() with method="imp".
+
+  Fixed a bug in fixXgeno.f2; a slight error that shows up in the case
+  the pgm values are switched.
+
+  Added code to simulate Collaborative Cross data and to do
+  calc.genoprob() and argmax.geno() on such data, though none of this
+  is documented yet.
+
+  movemarker() now updates the results of est.rf, calc.genoprob,
+  calc.errorlod, sim.geno, argmax.geno, if they are available.
+  (est.rf is simply re-run; the others are re-run for just the
+  relevant chromosomes).
+
+  calc.errorlod had neglected to include the map function as an
+  attribute.  This is now fixed.
+
+  Revised scantwo with method="em" so that it prints the verbose
+  warning messages only if the verbose argument is > 1.  With
+  verbose=TRUE, only the chromosomes are printed.
+
 
 Version 0.98, 9/11/2004:
 

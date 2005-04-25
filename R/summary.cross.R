@@ -2,8 +2,8 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2003
+# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# last modified Nov, 2004
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -27,9 +27,14 @@ function(object,...)
   type <- class(object)[1]
 
   if(type != "f2" && type != "f2ss" && type != "bc" && type != "4way" &&
-     type != "riself" && type != "risib") {
+     type != "riself" && type != "risib" && type != "cc") {
     err <- paste("Cross type", type, "is not suppoted.")
     stop(err)
+  }
+
+  if(type=="cc") {
+    cat("A Collaborative cross\n")
+    return(NULL)
   }
 
   # combine genotype data into one big matrix
@@ -175,6 +180,16 @@ function(object,...)
   # make sure the genotype data are matrices rather than data frames
   if(any(sapply(object$geno, function(a) is.data.frame(a$data))))
     warning("The $data objects should be simple matrices, not data frames.")
+
+  # make sure each chromosome has class "A" or "X"
+  chr.class <- sapply(object$geno, class)
+  if(!all(chr.class == "A" | chr.class == "X"))
+    warning("Each chromosome should have class \"A\" or \"X\".")
+  chr.nam <- names(object$geno)
+  if(any(chr.class=="A" & (chr.nam=="X" | chr.nam=="x"))) {
+    wh <- which(chr.nam=="X" | chr.nam=="x")
+    warning("Chromosome \"", chr.nam[wh], "\" has class \"A\" but probably should have class \"X\".")
+  }
 
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,

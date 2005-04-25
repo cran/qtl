@@ -8,6 +8,8 @@
 \alias{create.map}
 \alias{discan}
 \alias{dropqtl}
+\alias{effectplot.getmark}
+\alias{effectplot.calmeanse}
 \alias{fixX4write}
 \alias{fixXgeno.bc}
 \alias{fixXgeno.f2}
@@ -40,6 +42,7 @@
 \alias{read.map.qtlcart}
 \alias{read.maps.mm}
 \alias{replaceqtl}
+\alias{revisecovar}
 \alias{reviseXdata}
 \alias{ripple.perm1}
 \alias{ripple.perm2}
@@ -47,9 +50,11 @@
 \alias{scanone.perm}
 \alias{scanoneXnull}
 \alias{scantwo.perm}
+\alias{sim.cc}
 \alias{sim.cross.4way}
 \alias{sim.cross.bc}
 \alias{sim.cross.f2}
+\alias{sim.ril}
 \alias{subset.scantwo}
 \alias{vbscan}
 \alias{write.cross.csv}
@@ -72,8 +77,9 @@ checkcovar(cross, pheno.col, addcovar, intcovar)
 checkrf(cross, threshold)
 convert.cross(cross)
 create.map(map, step, off.end)
-discan(cross, pheno.col=1, method=c("em","mr"),
-       maxit=4000, tol=1e-4)
+discan(cross, pheno, method=c("em","mr"),
+       addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
+       verbose=FALSE)
 dropqtl(qtl, drop)
 fixX4write(geno,sex,pgm,crosstype)
 fixXgeno.bc(cross)
@@ -112,6 +118,7 @@ read.cross.qtx(dir, file, estimate.map=TRUE)
 read.map.qtlcart(file)
 read.maps.mm(mapsfile)
 replaceqtl(cross, qtl, replace, by.chr, by.pos, by.name, map)
+revisecovar(sexpgm, covar)
 reviseXdata(type=c("f2ss","f2","bc"), expandX=c("simple","standard","full"),
             sexpgm, geno, prob, draws, pairprob)
 ripple.perm1(n)
@@ -121,19 +128,22 @@ scanone.perm(cross, pheno.col=1, model=c("normal","binary","2part","np"),
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
              addcovar=NULL, intcovar=NULL, weights=NULL,
              upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
-             tol=1e-4, n.perm=1000, trace=TRUE)
+             tol=1e-4, n.perm=1000, verbose=TRUE)
 scanoneXnull(type, sexpgm)
 scantwo.perm(cross, pheno.col=1,
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
+             model=c("normal","binary"),
              addcovar=NULL, intcovar=NULL, weights=NULL,
-             incl.markers=FALSE, maxit=4000, tol=1e-4, trace=FALSE,
+             incl.markers=FALSE, maxit=4000, tol=1e-4, verbose=FALSE,
              n.perm=1000)
+sim.cc(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
 sim.cross.4way(map, model, n.ind, error.prob, missing.prob,
                partial.missing.prob, keep.errorind, map.function)
 sim.cross.bc(map, model, n.ind, error.prob, missing.prob,
              keep.errorind, map.function)
 sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
              partial.missing.prob, keep.errorind, map.function)
+sim.ril(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
 subset.scantwo(x, chr, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
        tol=1e-4)

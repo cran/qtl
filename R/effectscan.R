@@ -140,6 +140,7 @@ function(cross, pheno.col=1, chr, ylim, gap=25,
            col=col[1:2], cex=1, xjust=0.5)
   }
 
+  invisible()
 }
 
 # end of effectscan.R

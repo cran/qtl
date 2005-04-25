@@ -12,10 +12,11 @@
 
 \usage{
 scantwo(cross, chr, pheno.col=1,
-        method=c("em","imp","hk","mr","mr-imp","mr-argmax"), 
+        method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
+        model=c("normal","binary"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
         run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
-        trace=TRUE, n.perm)
+        verbose=TRUE, n.perm)
 }
 
 \arguments{
@@ -31,6 +32,8 @@ scantwo(cross, chr, pheno.col=1,
    individuals with missing genotypes (\code{"mr"}), or by first filling
    in missing data using a single imputation (\code{"mr-imp"}) or by the
    Viterbi algorithm (\code{"mr-argmax"}).}
+ \item{model}{The phenotypic model: the usual normal model or a model for
+   binary traits.}
  \item{addcovar}{Additive covariates.}
  \item{intcovar}{Interactive covariates (interact with QTL genotype).}
  \item{weights}{Optional weights of individuals.  Should be either NULL
@@ -43,8 +46,8 @@ scantwo(cross, chr, pheno.col=1,
    only with method \code{"em"}.}
  \item{tol}{Tolerance value for determining convergence in the EM
    algorithm; used only with method \code{"em"}.}
- \item{trace}{If TRUE, display information about the progress of
-   calculations.  For method \code{"em"}, if \code{trace} is an integer
+ \item{verbose}{If TRUE, display information about the progress of
+   calculations.  For method \code{"em"}, if \code{verbose} is an integer
    above 1, further details on the progress of the algorithm will be
    displayed.}
  \item{n.perm}{If specified, a permutation test is performed rather than
@@ -166,6 +169,7 @@ plot(out.2dim)
 
 # covariates
 data(fake.bc)
+\dontshow{fake.bc <- subset(fake.bc, chr=16:17)}
 fake.bc <- calc.genoprob(fake.bc, step=10)
 ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]

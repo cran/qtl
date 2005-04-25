@@ -11,7 +11,7 @@
 \usage{
 est.map(cross, error.prob=0,
         map.function=c("haldane","kosambi","c-f","morgan"), maxit=4000,
-        tol=1e-4, sex.sp=TRUE, trace=FALSE)
+        tol=1e-4, sex.sp=TRUE, verbose=FALSE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -25,7 +25,7 @@ est.map(cross, error.prob=0,
  \item{tol}{Tolerance for determining convergence.}
  \item{sex.sp}{Indicates whether to estimate sex-specific maps; this is 
  used only for the 4-way cross.}
- \item{trace}{Logical; indicates whether to print initial and final
+ \item{verbose}{Logical; indicates whether to print initial and final
    estimates of the recombination fractions for each chromosome.}
 }
 

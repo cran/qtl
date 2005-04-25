@@ -2,9 +2,9 @@
  * 
  * hmm_bc.h
  * 
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Nov, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -39,7 +39,7 @@ void sim_geno_bc(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_bc(int *n_ind, int *n_mar, int *geno, double *rf, 
 		double *error_prob, double *loglik, int *maxit, 
-		double *tol, int *trace);
+		double *tol, int *verbose);
 
 void argmax_geno_bc(int *n_ind, int *n_pos, int *geno, 
 		   double *rf, double *error_prob, int *argmax);

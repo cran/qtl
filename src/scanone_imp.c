@@ -2,13 +2,13 @@
  * 
  * scanone_imp.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
  *
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Dec, 2003
+ * last modified Jan, 2005
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -69,7 +69,7 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  * 
  * scanone_imp
  *
- * Performs genotype scan using the pseudomarker algorithm (imputation) 
+ * Performs genome scan using the pseudomarker algorithm (imputation) 
  * method of Sen and Churchill (2001).
  * 
  * n_ind        Number of individuals
@@ -179,9 +179,12 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
       meanLOD = sum / (n_draws-2*idx); 
 
       /* calculate the variance of newLOD */
-      for(k=idx,sums=0.0; k<n_draws-idx; k++) 
-	sums += (LOD[k]-meanLOD) * (LOD[k]-meanLOD);
-      varLOD = sums/(n_draws-2*idx-1);
+      if(n_draws > 2*idx+1) {
+        for(k=idx,sums=0.0; k<n_draws-idx; k++) 
+	  sums += (LOD[k]-meanLOD) * (LOD[k]-meanLOD);
+        varLOD = sums/(n_draws-2*idx-1);
+      }
+      else varLOD = 0.0;
 
       /* The return value */
       result[i] = meanLOD + log(10.0)*0.5*varLOD;
@@ -292,19 +295,20 @@ double altRss(double *pheno, double *weights, int n_ind, int n_gen,
 
   /* point to rest of workspace */
   jpvt = iwork;
-  work = dwork + n_ind*ncolx;
-  qty = work + 2*ncolx;
-  qraux = qty + n_ind;
-  coef = qraux + ncolx;
-  resid = qraux+ncolx;
+  work = dwork + n_ind*ncolx; /* length 2*ncolx */
+  qty = work + 2*ncolx; /* length n_ind */
+  qraux = qty + n_ind; /* length ncolx */
+  coef = qraux + ncolx; /* length ncolx */
+  resid = coef + ncolx; /* length n_ind */
   ny = 1;
+
 
   /* call Fortran function to fit the linear regression model */
   F77_CALL(dqrls)(x, &n_ind, &ncolx, pheno, &ny, &tol, coef, resid,
 		  qty, &k, jpvt, qraux, work);
 
   /* calculate RSS */
-  for(i=0, rss=0.0; i<n_ind; i++)
+  for(i=0, rss=0.0; i<n_ind; i++) 
     rss += resid[i]*resid[i];
 
   /* return rss */

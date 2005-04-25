@@ -2,9 +2,9 @@
  * 
  * hmm_main.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2001
+ * last modified Nov, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -317,7 +317,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
 	     double stepf(int, int, double, double), 
 	     double nrecf1(int, int), double nrecf2(int, int), 
 	     double *loglik, int maxit, double tol, int sexsp, 
-	     int trace)
+	     int verbose)
 {
   int i, j, j2, v, v2, it, flag=0, **Geno;
   double s, **alpha, **beta, **gamma, *cur_rf, *cur_rf2;
@@ -331,7 +331,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
   allocate_double(n_mar-1, &cur_rf);
   allocate_double(n_mar-1, &cur_rf2);
 
-  if(trace) {
+  if(verbose) {
     /* print initial estimates */
     Rprintf("      "); 
     for(j=0; j<n_mar-1; j++) Rprintf("%.3lf ", rf[j]);
@@ -457,7 +457,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
     *loglik += curloglik;
   }
 
-  if(trace) {
+  if(verbose) {
     /* print final estimates */
     Rprintf(" %4d ", it+1);
     for(j=0; j<n_mar-1; j++) Rprintf("%.3lf ", rf[j]);

@@ -2,9 +2,9 @@
  * 
  * hmm_main.h
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2003
+ * last modified Nov, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -21,6 +21,7 @@
 #define TOL    1.0e-12
 #define LN_05  -0.6931471805599453 /* natural log of 0.5 */
 #define LN_025 -1.3862943611198906 /* natural log of 0.25 */
+#define LN_0125  -2.0794415416798357 /* natural log of 0.125 */
 #define LN_2    0.6931471805599453 /* natural log of 2 */
 
 /**********************************************************************
@@ -161,7 +162,7 @@ void sim_geno(int n_ind, int n_pos, int n_gen, int n_draws,
  * 
  * sexsp        Indicates whether sex-specific maps should be estimated
  *
- * trace         Indicates whether to print initial and final rec fracs
+ * verbose         Indicates whether to print initial and final rec fracs
  *
  **********************************************************************/
 
@@ -174,7 +175,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
 	     double stepf(int, int, double, double), 
 	     double nrecf1(int, int), double nrecf2(int, int), 
 	     double *loglik, int maxit, double tol, int sexsp, 
-	     int trace);
+	     int verbose);
 
 
 /**********************************************************************

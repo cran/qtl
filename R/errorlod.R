@@ -2,8 +2,8 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified Apr, 2005
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -106,6 +106,7 @@ function(cross, error.prob=0.01,
     # attribute set to the error.prob value used, for later
     #     reference.
     attr(cross$geno[[i]]$errorlod,"error.prob") <- error.prob
+    attr(cross$geno[[i]]$errorlod,"map.function") <- map.function
   }
 
   cross
@@ -183,6 +184,7 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 
   title(main="Genotyping error LOD scores")
 
+  invisible()
 }
 
 
