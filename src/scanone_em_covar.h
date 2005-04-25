@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Nov, 2004
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -23,7 +23,7 @@
  * 
  * scanone_em_covar
  *
- * Performs genotype scan using interval mapping in the presence of
+ * Performs genome scan using interval mapping in the presence of
  * covariates.  (The multipoint genotype probabilities have already 
  * been calculated in calc.genoprob)
  * 
@@ -50,14 +50,14 @@
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * result       Result vectro of length n_pos; upon return, contains 
+ * result       Result vector of length n_pos; upon return, contains 
  *              the LOD scores.
  *
  * maxit        Maximum number of iterations in the EM algorithm
  *
  * tol          Tolerance for determining convergence in EM
  *
- * trace        If 1, print out log likelihood at each iteration
+ * verbose        If 1, print out log likelihood at each iteration
  *
  **********************************************************************/
 
@@ -65,7 +65,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 		      double ***Genoprob, double **Addcov, int n_addcov,
 		      double **Intcov, int n_intcov, double *pheno, 
 		      double *weights,
-		      double *result, int maxit, double tol, int trace);
+		      double *result, int maxit, double tol, int verbose);
 
 /**********************************************************************
  * 

@@ -10,6 +10,17 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 0.98 bugs:
+
+    1. makeqtl() dies if the cross object contains QTL genotype
+       probabilities and one seeks a QTL on the X chromosome. [Fixed
+       in version 0.99.]
+
+    2. scanone gives incorrect results for the X chromosome with
+       method="imp", when sex is included as an additive or
+       interactive covariate. [Fixed in version 0.99.]
+
+
 Version 0.97 bugs:
 
     1. In read.cross.qtlcart, it seems to print out the number of
@@ -44,9 +55,9 @@ Version 0.96 bugs:
     2. Bug in read.cross: problem if a phenotype has values like "1x2".
        [Fixed in version 0.97.]
 
->>  3. Bug in scanone for X chromosome with EM algorithm when there is
+    3. Bug in scanone for X chromosome with EM algorithm when there is
        a "sex" column in the phenotype data but all individuals have
-       the same sex.
+       the same sex.  [Fixed in version 0.98.]
 
     4. There's likely an error in write.cross.qtlcart.  See 
        the line with "lo <- seq(1,n.ind-1,by=40)"
@@ -73,7 +84,7 @@ Version 0.95 bugs:
 >>  1. scantwo is not working well for the EM algorithm, in the case
        of the X chromosome
 
->>  2. I suspect that the treatment of the X chromosome is still not
+    2. I suspect that the treatment of the X chromosome is still not
        correct for scanone and scantwo.  I think the null model needs
        to take sex into account.
 

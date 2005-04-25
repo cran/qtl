@@ -2,9 +2,9 @@
  * 
  * scantwo_em.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Dec, 2004
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -16,7 +16,7 @@
  *
  * Contains: R_scantwo_1chr_em, scantwo_1chr_em, 
  *           R_scantwo_2chr_em, scantwo_2chr_em,
- *           scantwo_em_estep, scantwo_em_mstep
+ *           scantwo_em_estep, scantwo_em_mstep, scantwo_em_loglik
  *  
  **********************************************************************/
 
@@ -33,7 +33,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights, double *result,
-		       int *maxit, double *tol, int *trace);
+		       int *maxit, double *tol, int *verbose);
 
 /**********************************************************************
  * 
@@ -75,7 +75,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * tol          Tolerance for determining convergence of EM
  *
- * trace        If >0, print any messages when errors occur
+ * verbose        If >0, print any messages when errors occur
  *                 >1, print out log likelihoods at end of EM
  *                     and check that log likelihood doesn't go down
  *                 >2, print out initial and final log likelihoods
@@ -87,7 +87,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     double *weights,
-		     double **Result, int maxit, double tol, int trace);
+		     double **Result, int maxit, double tol, int verbose);
 
 /**********************************************************************
  * 
@@ -104,7 +104,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights,
 		       double *result_full, double *result_int,
-		       int *maxit, double *tol, int *trace);
+		       int *maxit, double *tol, int *verbose);
 
 /**********************************************************************
  * 
@@ -154,7 +154,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * tol          Tolerance for determining convergence of EM
  *
- * trace        If >0, print any messages when errors occur
+ * verbose        If >0, print any messages when errors occur
  *                 >1, print out log likelihoods at end of EM
  *                     and check that log likelihood doesn't go down
  *                 >2, print out initial and final log likelihoods
@@ -167,7 +167,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double **Addcov, int n_addcov, double **Intcov, 
 		     int n_intcov, double *pheno, double *weights,
 		     double **Result_full, double **Result_int, 
-		     int maxit, double tol, int trace);
+		     int maxit, double tol, int verbose);
 
 /**********************************************************************
  * 
@@ -267,6 +267,12 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
 		      double **Addcov, int n_addcov, double **Intcov,
 		      int n_intcov, double *pheno, double *weights, 
 		      double *param, int full_model, int rescale);
+
+double scantwo_em_loglik(int n_ind, int n_gen1, int n_gen2, double ***Probs,
+			 double ***Wts12, double **Wts1, double **Wts2, 
+			 double **Addcov, int n_addcov, double **Intcov,
+			 int n_intcov, double *pheno, double *weights,
+			 double *param, int full_model);
 
 /* end of scantwo_em.h */
 

@@ -60,7 +60,7 @@ void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
  * 
  * scanone_hk
  *
- * Performs genotype scan using the Haley-Knott regression method
+ * Performs genome scan using the Haley-Knott regression method
  * (regressing phenotypes on conditional genotype probabilities; the
  * multipoint genotype probabilities have already been calculated in
  * calc.genoprob)

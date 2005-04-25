@@ -3,7 +3,7 @@
 # est.map.R
 #
 # copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2004
+# last modified Nov, 2004
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,7 +20,7 @@
 
 est.map <- 
 function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan"),
-         maxit=4000, tol=1e-4, sex.sp=TRUE, trace=FALSE)
+         maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=FALSE)
 {
 
   # map function
@@ -105,6 +105,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
     }
     else {
       # randomize the maps a bit
+      orig <- cross$geno[[i]]$map
       cross$geno[[i]]$map <- cross$geno[[i]]$map +
         runif(length(cross$geno[[i]]$map), -0.2, 0.2)
 
@@ -118,7 +119,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
     }
 
 
-    if(trace) cat(paste("Chr ", names(cross$geno)[i], ":\n",sep="")) 
+    if(verbose) cat(paste("Chr ", names(cross$geno)[i], ":\n",sep="")) 
 
     # call the C function
     if(one.map) {
@@ -131,7 +132,7 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
               loglik=as.double(0),       # log likelihood
               as.integer(maxit),
               as.double(tol),
-              as.integer(trace),
+              as.integer(verbose),
               PACKAGE="qtl")
 
       if(type=="riself" || type=="risib") 
@@ -153,13 +154,13 @@ function(cross, error.prob=0, map.function=c("haldane","kosambi","c-f","morgan")
               as.integer(maxit),
               as.double(tol),
               as.integer(temp.sex.sp),
-              as.integer(trace),
+              as.integer(verbose),
               PACKAGE="qtl")
               
       if(!temp.sex.sp) z$rf2 <- z$rf
 
-      newmap[[i]] <- rbind(cumsum(c(min(cross$geno[[i]]$map[1,]),imf(z$rf))),
-                           cumsum(c(min(cross$geno[[i]]$map[2,]),imf(z$rf2))))
+      newmap[[i]] <- rbind(cumsum(c(min(orig[1,]),imf(z$rf))),
+                           cumsum(c(min(orig[2,]),imf(z$rf2))))
       dimnames(newmap[[i]]) <- dimnames(cross$geno[[i]]$map)
       attr(newmap[[i]],"loglik") <- z$loglik
     }

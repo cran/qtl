@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jul, 2004
+# last modified Oct, 2004
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -166,7 +166,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   output$result.full <- result.full
 
   # drop one at a time?
-  if(dropone & p$n.qtl > 1) { 
+  if(dropone &(p$n.qtl+p$n.covar)>1) { 
     # user wants to do drop one term at a time and output anova table
 
     # get the terms etc. for input formula

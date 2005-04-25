@@ -53,7 +53,7 @@ void R_fitqtl_imp(int *n_ind, int *n_qtl, int *n_gen, int *n_draws,
  * 
  * fitqlt_imp
  *
- * Performs general genotype scan using the pseudomarker algorithm 
+ * Performs general genome scan using the pseudomarker algorithm 
  * (imputation) method of Sen and Churchill (2001).
  * 
  * n_ind        Number of individuals

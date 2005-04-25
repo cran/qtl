@@ -2,9 +2,14 @@
 #
 # effectplot.R
 #
-# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jul, 2004
+# 
+# Modified by Hao Wu Feb 2005 for the following:
+# 1. function will take marker, pseudomarker or phenotype as input;
+# 2. separate functions to extract marker genodata given marker names
+# and calculate means and ses;
+# 
 # first written Jul, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -15,7 +20,8 @@
 
 effectplot <-
 function (cross, pheno.col = 1, mname1, mark1, geno1, mname2, 
-          mark2, geno2, main, ylim, add.legend = TRUE) 
+          mark2, geno2, main, ylim, add.legend = TRUE, draw=TRUE, 
+          var.flag=c("pooled","group")) 
 {
   if(!sum(class(cross) == "cross")) 
     stop("The first input variable must be  an object of class cross")
@@ -29,40 +35,26 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
   chrtype1 <- chrtype2 <- "A"
   gennames1 <- gennames2 <- NULL
 
+  ####################################################
+  # get genotype data for markers given marker name
+  # if marker genodata were given, this will be skipped
+  ####################################################
+  
   # Get marker 1 genotype data
   if(missing(mark1)) { # no data given
-    if(missing(mname1)) 
+    if(missing(mname1)) # no marker data or marker name, have to stop
       stop("Either mname1 or mark1 must be specified.")
-
-    # find chromosome containing marker
-    o <- sapply(cross$geno, function(a, b)
-                !is.na(match(b, colnames(a$data))), mname1)
-
-    if(!any(o)) {
-      err <- paste("Marker", mname1, "not found")
-      stop(err)
-    }
-    chr1 <- names(cross$geno)[o]
-    chrtype1 <- class(cross$geno[[chr1]])
-
-    # get genotype data
-    if(!any(colnames(cross$geno[[chr1]]$data) == mname1)) {
-      err <- paste("Marker", mname1, "not found.")
-      stop(err)
-    }
-    mark1 <- cross$geno[[chr1]]$data[, mname1]
-
-    # if X chr and backcross or intercross, get sex/dir data + revise data
-    if(chrtype1 == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
-      sexpgm <- getsex(cross)
-      mark1 <- as.numeric(reviseXdata(type, "standard", sexpgm, 
-                                      geno = as.matrix(mark1)))
-      gennames1 <- getgenonames(type, chrtype1, "standard", sexpgm)
-    }
+    # get marker data according to marker name
+    tmp <- effectplot.getmark(cross, mname1)
+    mark1 <- tmp$mark
+    gennames1 <- tmp$genname
   }
   else {
-    if(length(mark1) != n.ind) 
-      stop("Marker 1 data is the wrong length")
+    # make mark1 a matrix if it's not
+    if(class(mark1) != "matrix")
+      mark1 <- matrix(mark1, ncol=1)
+    if(dim(mark1)[1] != n.ind) 
+      stop("Marker 1 data hass the wrong dimension")
     if(missing(mname1)) 
       mname1 <- "Marker 1"
   }
@@ -70,68 +62,89 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
   # Deal with marker 2
   if(!missing(mname2) || !missing(mark2)) {
     if(missing(mark2)) {
-
-      # find chromosome containing marker
-      o <- sapply(cross$geno, function(a, b)
-                  !is.na(match(b, colnames(a$data))), mname2)
-      if(!any(o)) {
-        err <- paste("Marker", mname2, "not found")
-        stop(err)
-      }
-      chr2 <- names(cross$geno)[o]
-      chrtype2 <- class(cross$geno[[chr2]])
-
-      # get genotype data
-      if(!any(colnames(cross$geno[[chr2]]$data) == mname2)) {
-        err <- paste("Marker", mname2, "not found.")
-        stop(err)
-      }
-      mark2 <- cross$geno[[chr2]]$data[, mname2]
-
-      # if X chr and backcross or intercross, get sex/dir data + revise data
-      if(chrtype2 == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
-        sexpgm <- getsex(cross)
-        mark2 <- as.numeric(reviseXdata(type, "standard", sexpgm, 
-                                        geno = as.matrix(mark2)))
-        gennames2 <- getgenonames(type, chrtype2, "standard", sexpgm)
-      }
+      # get marker data according to marker name
+      tmp <- effectplot.getmark(cross, mname2)
+      mark2 <- tmp$mark
+      gennames2 <- tmp$genname
     }
-    else {
-      if(length(mark2) != n.ind) 
-        stop("Marker 2 data is the wrong length")
+    else { # mark2 data is given
+      # make mark2 a matrix if it's not
+      if(class(mark2) != "matrix")
+      mark2 <- matrix(mark2, ncol=1)
+      if(dim(mark2)[1] != n.ind) 
+        stop("Marker 2 data has the wrong dimension")
       if(missing(mname2)) 
         mname2 <- "Marker 2"
     }
   }
   else mark2 <- NULL
-
+  ### till now, mark1 and mark2 are genotype data in matrix
+  
+  ########################################################
+  # deal with the data - if one of them is a pseudomarker,
+  # make the other one the same number of draws
+  ########################################################
+  # determine number of draws - this part of codes works even if mark2 is NULL
+  ndraws1 <- dim(mark1)[2]
+  if(is.null(mark2))
+    ndraws2 <- 1
+  else
+    ndraws2 <- dim(mark2)[2]
+  
+  # make them the same number of draws
+  if( (ndraws1>1) && (ndraws2>1) ) {
+    # two pseudomarkers, they must have the same number of draws
+    if(ndraws1 != ndraws2)
+      stop("Input two pseudomarkers have different number of draws.")
+    else
+      ndraws <- ndraws1
+  }
+  else if( (ndraws1>1) && (ndraws2==1) ) {
+    # one pm and one typed marker
+    if(!is.null(mark2))
+      mark2 <- matrix(rep(mark2,ndraws1), ncol=ndraws1)
+    ndraws <- ndraws1
+  }
+  else if( (ndraws1==1) && (ndraws2>1) ) {
+    # one pm and one typed marker
+    mark1 <- matrix(rep(mark1,ndraws2), ncol=ndraws2)
+    ndraws <- ndraws2
+  }
+  else # they are all real markers
+    ndraws <- 1
+    
   # drop data for individuals with missing phenotypes or genotypes
-  if(is.null(mark2)) {
-    keepind <- !is.na(pheno) & !is.na(mark1)
-    mark1 <- mark1[keepind]
-    pheno <- pheno[keepind]
-  }
-  else {
-    keepind <- !is.na(pheno) & !is.na(mark1) & !is.na(mark2)
-    mark1 <- mark1[keepind]
-    mark2 <- mark2[keepind]
-    pheno <- pheno[keepind]
-  }
+  tmp <- cbind(pheno, mark1, mark2)
+  keepind <- apply(tmp, 1, function(x) all(!is.na(x)))
+  mark1 <- mark1[keepind,]
+  mark2 <- mark2[keepind,]
+  pheno <- pheno[keepind]
 
-  # adjust marker data and get level names
-  if(!missing(geno1)) {
-    if(length(unique(mark1)) > length(geno1)) 
+  ########################################################
+  # 1. get level names - this part will be executed when
+  # user only input mark without mname and geno
+  # 2. adjust marker data if the input is not numeric
+  ########################################################
+  tmpf <- factor(mark1)
+  if(!missing(geno1)) { # geno1 is given
+    # check if it has the correct length
+    if(length(geno1) < length(levels(tmpf))) 
       stop("geno1 is too short.")
-    mark1 <- as.numeric(factor(mark1), levels = sort(unique(mark1)))
   }
   else {
-    if(!is.null(gennames1)) 
+    # geno1 is not given
+    if(!is.null(gennames1)) # get it from genname1
       geno1 <- gennames1
-    else if(is.factor(mark1)) {
+    else if(is.factor(mark1)) { # or if it's factor, get it from level
       geno1 <- levels(mark1)
       mark1 <- as.numeric(mark1)
     }
-    else {
+    else if(!is.numeric(mark1)) { 
+      # if it's neither factor nor numberic, it must be a string vector
+      # such like c("F","M","F")...
+      geno1 <- levels(tmpf)
+    }
+    else { # otherwise, generate a standard one
       if(type == "bc") 
         geno1 <- c("AA", "AB")
       else if(type == "f2" || type == "f2ss") 
@@ -140,25 +153,37 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
         geno1 <- c("AA", "BB")
       else if(type == "4way") 
         geno1 <- c("AC", "BC", "AD", "BD")
-      if(length(unique(mark1)) > length(geno1)) 
-        geno1 <- c(geno1, rep("?", length(unique(mark1)) - 
+      if(length(levels(tmpf)) > length(geno1)) 
+        geno1 <- c(geno1, rep("?", length(levels(tmpf)) - 
                               length(geno1)))
     }
   }
+  # adjust marker data - if the input is not numeric, convert them into numeric
+  if(!is.numeric(mark1))
+    mark1 <- matrix(as.numeric(tmpf, levels=sort(levels(tmpf))), ncol=ndraws)
+
+  # Now work on mark2
   if(!is.null(mark2)) {
-    if(!missing(geno2)) {
-      if(length(unique(mark2)) > length(geno2)) 
+    tmpf <- factor(mark2)
+    if(!missing(geno2)) { # geno2 is given
+      # check if it has the correct length
+      if(length(geno2) < length(levels(tmpf))) 
         stop("geno2 is too short.")
-      mark2 <- as.numeric(factor(mark2), levels = sort(unique(mark2)))
     }
     else {
-      if(!is.null(gennames2)) 
+      # geno2 is not given
+      if(!is.null(gennames2)) # get it from genname2
         geno2 <- gennames2
-      else if(is.factor(mark2)) {
+      else if(is.factor(mark2)) { # or if it's factor, get it from level
         geno2 <- levels(mark2)
         mark2 <- as.numeric(mark2)
       }
-      else {
+      else if(!is.numeric(mark2)) { 
+        # if it's neither factor nor numberic, it must be a string vector
+        # such like c("F","M","F")...
+        geno2 <- levels(tmpf)
+      }
+      else { # otherwise, generate a standard one
         if(type == "bc") 
           geno2 <- c("AA", "AB")
         else if(type == "f2" || type == "f2ss") 
@@ -167,29 +192,32 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
           geno2 <- c("AA", "BB")
         else if(type == "4way") 
           geno2 <- c("AC", "BC", "AD", "BD")
-        if(length(unique(mark2)) > length(geno2)) 
-          geno2 <- c(geno2, rep("?", length(unique(mark2)) - 
-                                length(geno2)))
+        if(length(levels(tmpf)) > length(geno2)) 
+           geno2 <- c(geno2, rep("?", length(levels(tmpf)) - 
+                                 length(geno2)))
       }
     }
+    # adjust marker data - if the input is not numeric, convert them into numeric
+    if(!is.numeric(mark2))
+      mark2 <- matrix(as.numeric(tmpf, levels=sort(levels(tmpf))), ncol=ndraws)
   }
+  
+  # number of genotypes
   ngen1 <- length(geno1)
   if(!is.null(mark2)) 
     ngen2 <- length(geno2)
 
-  # calculate means and stds for interaction
+  # calculate means and ses
   # and make output object
   # the output will be a data frame. For two-marker case,
   # the rows corresponding to the first marker and the columns
   # corresponding to the second marker
-  result <- NULL
+  result <- effectplot.calmeanse(pheno, mark1, mark2, ndraws, var.flag)
+  means <- result$Means
+  ses <- result$SDs
+  
+  # assign column and row names
   if(is.null(mark2)) {
-    means <- tapply(pheno, mark1, mean, na.rm = TRUE)
-    ses <- tapply(pheno, mark1, function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
-    lo <- means - ses
-    hi <- means + ses
-    # Note: rows are marker 1 and columns are marker 2
-
     if(length(means) != length(geno1)) {
       warning("Number of genotypes is different than length(geno1).")
       if(length(means) < length(geno1)) 
@@ -197,17 +225,10 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       else geno1 <- c(geno1, rep("?", length(means) - length(geno1)))
       ngen1 <- length(geno1)
     }
-    result$Means <- means
     names(result$Means) <- paste(mname1, geno1, sep = ".")
-    result$SDs <- ses
     names(result$SDs) <- paste(mname1, geno1, sep = ".")
   }
   else {
-    means <- tapply(pheno, list(mark1, mark2), mean, na.rm = TRUE)
-    ses <- tapply(pheno, list(mark1, mark2), function(a) sd(a, 
-                                                            na.rm = TRUE)/sqrt(sum(!is.na(a))))
-    lo <- means - ses
-    hi <- means + ses
     if(nrow(means) != length(geno1)) {
       warning("Number of genotypes in marker 1 is different than length(geno1).")
       if(nrow(means) < length(geno1)) 
@@ -222,126 +243,372 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       else geno2 <- c(geno2, rep("?", ncol(means) - length(geno2)))
       ngen2 <- length(geno2)
     }
-    result$Means <- as.data.frame(means)
     rownames(result$Means) <- paste(mname1, geno1, sep = ".")
     colnames(result$Means) <- paste(mname2, geno2, sep = ".")
-    result$SDs <- as.data.frame(ses)
     rownames(result$SDs) <- paste(mname1, geno1, sep = ".")
     colnames(result$SDs) <- paste(mname2, geno2, sep = ".")
   }
 
-  ######### Draw the figure ############
-  # graphics parameters
-  old.xpd <- par("xpd")
-  old.las <- par("las")
-  par(xpd = FALSE, las = 1)
-  on.exit(par(xpd = old.xpd, las = old.las))
+  
+  # calculate lo's and hi's for plot
+  lo <- means - ses
+  hi <- means + ses
 
-  # colors (for case of two markers)
-  if(ngen1 <= 5) 
-    int.color <- c("black", "red", "blue", "orange", "green")[1:ngen1]
-  else int.color <- c("black", rainbow(ngen1 - 1, start = 0, 
-                                       end = 2/3))
-  # plot title
-  if(missing(main)) {
-    if(is.null(mark2)) 
-      main <- paste("Effect plot for", mname1)
-    else main <- paste("Interaction plot for", mname1, "and", 
-                       mname2)
-  }
-
-  # y axis limits
-  if(missing(ylim)) {
-    ylimits <- range(c(lo, means, hi), na.rm = TRUE)
-    ylimits[2] <- ylimits[2] + diff(ylimits) * 0.1
-  }
-  else ylimits <- ylim
-
-  # x axis limits
-  if(is.null(mark2)) { # one marker
-    u <- sort(unique(mark1))
-    d <- diff(u[1:2])
-    xlimits <- c(min(mark1) - d/4, max(mark1) + d/4)
-  }
-  else { # two markers
-    u <- sort(unique(mark2))
-    d <- diff(u[1:2])
-    xlimits <- c(min(mark2) - d/4, max(mark2) + d/4)
-  }
-
-  ## fix of x limits
-  d <- 1
-  xlimits <- c(1 - d/4, length(u) + d/4)
-
-  if(is.null(mark2)) { # single marker
-    # plot the means
-    plot(1:ngen1, means, main = main, xlab = mname1, ylab = names(cross$pheno)[pheno.col], 
-         pch = 1, col = "black", ylim = ylimits, xaxt = "n", 
-         type = "b", xlim = xlimits)
-    # confidence limits
-    for(i in 1:ngen1) {
-      if(!is.na(lo[i]) && !is.na(hi[i])) 
-        lines(c(i, i), c(lo[i], hi[i]), pch = 3, col = "black", 
-              type = "b", lty = 3)
+  ######### Draw the figure if requested ############
+  if(draw) {
+    # graphics parameters
+    old.xpd <- par("xpd")
+    old.las <- par("las")
+    par(xpd = FALSE, las = 1)
+    on.exit(par(xpd = old.xpd, las = old.las))
+    
+    # colors (for case of two markers)
+    if(ngen1 <= 5) 
+      int.color <- c("black", "red", "blue", "orange", "green")[1:ngen1]
+    else int.color <- c("black", rainbow(ngen1 - 1, start = 0, 
+                                         end = 2/3))
+    # plot title
+    if(missing(main)) {
+      if(is.null(mark2)) 
+        main <- paste("Effect plot for", mname1)
+      else main <- paste("Interaction plot for", mname1, "and", 
+                         mname2)
     }
 
-    # X-axis ticks
-    a <- par("usr")
-    ystart <- a[3]
-    yend <- ystart - diff(a[3:4]) * 0.02
-    ytext <- ystart - diff(a[3:4]) * 0.05
-    for(i in 1:ngen1) {
-      lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
-      text(i, ytext, geno1[i], xpd = TRUE)
+    # y axis limits
+    if(missing(ylim)) {
+      ylimits <- range(c(lo, means, hi), na.rm = TRUE)
+      ylimits[2] <- ylimits[2] + diff(ylimits) * 0.1
     }
-  }
-  else { # two markers
-    # plot the first genotype of marker 1
-    plot(1:ngen2, means[1, ], main = main, xlab = mname2, 
-         ylab = names(cross$pheno)[pheno.col], pch = 1, col = int.color[1], 
-         ylim = ylimits, xaxt = "n", type = "b", xlim = xlimits)
-    # confidence limits
-    for(i in 1:ngen2) {
-      if(!is.na(lo[1, i]) && !is.na(hi[1, i])) 
-        lines(c(i, i), c(lo[1, i], hi[1, i]), pch = 3, 
-              col = int.color[1], type = "b", lty = 3)
+    else ylimits <- ylim
+    
+    # x axis limits
+    if(is.null(mark2)) { # one marker
+      u <- sort(unique(as.vector(mark1)))
+      d <- diff(u[1:2])
+      xlimits <- c(min(mark1) - d/4, max(mark1) + d/4)
     }
-    for(j in 2:ngen1) { # for the rest of genotypes for Marker 1
-      lines(1:ngen2, means[j, ], col = int.color[j], pch = 1, 
-            type = "b")
+    else { # two markers
+      u <- sort(unique(as.vector(mark2)))
+      d <- diff(u[1:2])
+      xlimits <- c(min(mark2) - d/4, max(mark2) + d/4)
+    }
+
+    ## fix of x limits
+    d <- 1
+    xlimits <- c(1 - d/4, length(u) + d/4)
+
+    if(is.null(mark2)) { # single marker
+      # plot the means
+      plot(1:ngen1, means, main = main, xlab = mname1, ylab = names(cross$pheno)[pheno.col], 
+           pch = 1, col = "black", ylim = ylimits, xaxt = "n", 
+           type = "b", xlim = xlimits)
       # confidence limits
-      for(i in 1:ngen2) {
-        if(!is.na(lo[j, i]) && !is.na(hi[j, i])) 
-          lines(c(i, i), c(lo[j, i], hi[j, i]), pch = 3, 
-                col = int.color[j], type = "b", lty = 3)
+      for(i in 1:ngen1) {
+        if(!is.na(lo[i]) && !is.na(hi[i])) 
+          lines(c(i, i), c(lo[i], hi[i]), pch = 3, col = "black", 
+                type = "b", lty = 3)
+      }
+
+      # X-axis ticks
+      a <- par("usr")
+      ystart <- a[3]
+      yend <- ystart - diff(a[3:4]) * 0.02
+      ytext <- ystart - diff(a[3:4]) * 0.05
+      for(i in 1:ngen1) {
+        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
+        text(i, ytext, geno1[i], xpd = TRUE)
       }
     }
+    else { # two markers
+      # plot the first genotype of marker 1
+      plot(1:ngen2, means[1, ], main = main, xlab = mname2, 
+           ylab = names(cross$pheno)[pheno.col], pch = 1, col = int.color[1], 
+           ylim = ylimits, xaxt = "n", type = "b", xlim = xlimits)
+      # confidence limits
+      for(i in 1:ngen2) {
+        if(!is.na(lo[1, i]) && !is.na(hi[1, i])) 
+          lines(c(i, i), c(lo[1, i], hi[1, i]), pch = 3, 
+                col = int.color[1], type = "b", lty = 3)
+      }
+      for(j in 2:ngen1) { # for the rest of genotypes for Marker 1
+        lines(1:ngen2, means[j, ], col = int.color[j], pch = 1, 
+              type = "b")
+        # confidence limits
+        for(i in 1:ngen2) {
+          if(!is.na(lo[j, i]) && !is.na(hi[j, i])) 
+            lines(c(i, i), c(lo[j, i], hi[j, i]), pch = 3, 
+                  col = int.color[j], type = "b", lty = 3)
+        }
+      }
 
-    # draw X-axis ticks
-    a <- par("usr")
-    ystart <- a[3]
-    yend <- ystart - diff(a[3:4]) * 0.02
-    ytext <- ystart - diff(a[3:4]) * 0.05
-    for(i in 1:ngen2) {
-      lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
-      text(i, ytext, geno2[i], xpd = TRUE)
+      # draw X-axis ticks
+      a <- par("usr")
+      ystart <- a[3]
+      yend <- ystart - diff(a[3:4]) * 0.02
+      ytext <- ystart - diff(a[3:4]) * 0.05
+      for(i in 1:ngen2) {
+        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
+        text(i, ytext, geno2[i], xpd = TRUE)
+      }
+
+      # add legend
+      if(add.legend) {
+        col <- int.color[1:ngen1]
+        # legend position
+        x.leg <- a[1]*0.25+a[2]*0.75
+        y.leg <- a[4] - diff(a[3:4]) * 0.05
+        y.leg2 <- a[4] - diff(a[3:4]) * 0.03
+        legend(x.leg, y.leg, geno1, lty = 1, pch = 1, col = col, 
+               cex = 1, xjust = 0.5)
+        text(x.leg, y.leg2, mname1)
+      }
     }
+  }
+  
+  return(invisible(result))
+}
 
-    # add legend
-    if(add.legend) {
-      col <- int.color[1:ngen1]
-      u <- sort(unique(mark2))
-      x.leg <- mean(u[ngen2 - (0:1)])
-      y.leg <- a[4] - diff(a[3:4]) * 0.05
-      y.leg2 <- a[4] - diff(a[3:4]) * 0.03
-      legend(x.leg, y.leg, geno1, lty = 1, pch = 1, col = col, 
-             cex = 1, xjust = 0.5)
-      text(x.leg, y.leg2, mname1)
+##############################################
+# function to get genotype data for a marker
+# given marker name
+##############################################
+
+effectplot.getmark <- function (cross, mname) {
+  # cross type
+  type <- class(cross)[1]
+  # return variables
+  mark <- NULL
+  gennames <- NULL
+
+  # determine marker type - it could be a marker, a pseudomarker or a phenotype
+  mar.type <- "none"
+  # regular expression pattern for a pseudomarker names
+  pm.pattern <- "c[0-9,X]*\\.loc*" # pseudomarker names will be like "c1.loc10"
+  if(mname %in% names(cross$pheno)) { # this is a phenotype
+    mar.type <- "pheno"
+    idx.pos <- which(mname==names(cross$pheno))
+  }
+  else if(length(grep(pm.pattern, mname)) > 0) { # the mname is like "c1.loc10", this is a pseudomarker
+    # note that the column names for draws is like "loc10",
+    # so I need to take the part after "." in mname
+    tmp <- unlist(strsplit(mname, "\\."))
+    chr <- substr(tmp[1],2,10000) # this will be like 1 or "X"
+    if( !(chr %in% names(cross$geno)) )
+      stop(paste("Couldn't find marker", mname))
+    mar.type <- "pm"
+    chrtype <- class(cross$geno[[chr]])
+    pm.name <- tmp[2] # this will be like loc10
+    idx.pos <- which(pm.name==colnames(cross$geno[[chr]]$draws))
+    if(length(idx.pos) == 0)
+      stop(paste("Couldn't find marker", mname))
+    else if(length(idx.pos)>1) # take the first one for multiple markers with the same name
+      idx.pos <- idx.pos[1]
+    
+  }
+  else { # this is a real marker name but it could be a observed or imputed 
+    for(i in 1:length(cross$geno)) {
+      if(mname %in% colnames(cross$geno[[i]]$draws)) { # this is a pseudomarker
+        mar.type <- "pm"
+        chr <- i
+        chrtype <- class(cross$geno[[chr]])
+        idx.pos <- which(mname == colnames(cross$geno[[i]]$draws))
+        break
+      }
+      else if(mname %in% colnames(cross$geno[[i]]$data)) { # this is a typed marker
+        mar.type <- "marker"
+        chr <- i
+        chrtype <- class(cross$geno[[i]])
+        idx.pos <- which(mname == colnames(cross$geno[[i]]$data))
+        break
+      }
     }
   }
 
-  return(invisible(result))
+  # if didn't find this marker
+  if(mar.type == "none")
+    stop(paste("Marker", mname, "not found"))
+  
+  # get data from typed marker, pseudomarker or phenotype
+  if(mar.type == "pheno") { # this is a phenotype
+    mark <- cross$pheno[,idx.pos]
+    # the phenotype need to be categorical
+    if(length(unique(mark)) > 5) { # I'm using arbitrary number here
+      stop(paste("The input phenotype", mname, "is not a categorical trait"))
+    }
+    gennames <- sort(unique(mark))
+  }
+  else if(mar.type=="marker") { # this is a real marker
+    mark <- cross$geno[[chr]]$data[, idx.pos]
+    # if X chr and backcross or intercross, get sex/dir data + revise data
+    if(chrtype == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
+      sexpgm <- getsex(cross)
+      mark <- as.numeric(reviseXdata(type, "standard", sexpgm, 
+                                      geno = as.matrix(mark)))
+      gennames <- getgenonames(type, chrtype, "standard", sexpgm)
+    }
+  }
+  
+  else if(mar.type=="pm") { # this is a pseudomarker
+    # get the imputed genotype data for this marker
+    mark <- cross$geno[[chr]]$draws[,idx.pos,]
+
+    # if X chr and backcross or intercross, get sex/dir data + revise data
+    if(chrtype == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
+      sexpgm <- getsex(cross)
+      mark <- reviseXdata(type, "standard", sexpgm, geno=mark)
+      gennames <- getgenonames(type, chrtype, "standard", sexpgm)
+    }
+  }
+
+  else  # none of the above
+    stop(paste("Couldn't find marker", mname))
+  
+  
+  # make mark a matrix if it's not one
+  if(class(mark) != "matrix")
+    mark <- matrix(mark, ncol=1)
+  
+  # return
+  list(mark=mark, gennames=gennames)
 }
+
+##############################################
+# function to calculate the means and ses
+# if ndraws is 1, it's easy
+# if ndraws > 1 (has pseudomarker),
+# loop thru the draws
+##############################################
+effectplot.calmeanse <- function(pheno, mark1, mark2, ndraws, var.flag=c("pooled","group")) {
+  # local variables
+  nind <- length(pheno) 
+  # method to calculate variances for estimated QTL effects
+  var.flag <- match.arg(var.flag)
+  
+  result <- NULL
+  nind <- sum(!is.na(pheno)) # number of individuals
+  
+  if(is.null(mark2)) { # if mark2 is missing
+    if(ndraws > 1) { # more than one draws
+      mark1.level <- levels(as.factor(mark1)) # level for mark1
+      # init 
+      means.all <- matrix(NA, nrow=ndraws, ncol=length(mark1.level))
+      colnames(means.all) <- sort(unique(as.vector(mark1)))
+      vars.all <- matrix(NA, nrow=ndraws, ncol=length(mark1.level))
+      colnames(vars.all) <- sort(unique(as.vector(mark1)))
+      weight <- rep(0, ndraws) # weight for draws
+      # loop thru draws
+      for(i in 1:ndraws) {
+        mark1.tmp <- mark1[,i] # data for current draw
+        # fit a regression - this is used to calculate the weights
+        mark1.factor <- as.factor(mark1.tmp)
+        lm.tmp <- lm(pheno~mark1.factor-1)
+        rss <- sum(lm.tmp$residuals^2)
+        # compute the weight
+        weight[i] <- (-nind/2)*log(rss)
+        # group means
+        means.tmp <- tapply(pheno, mark1.tmp, mean, na.rm = TRUE)
+        # calculate group means and variances
+        if(var.flag=="group") { # use variance in each group
+          vars.tmp <- tapply(pheno, mark1.tmp, function(a) var(a,na.rm = TRUE)/length(a))
+        }
+        else { # use pooled variance
+          vars.tmp <- tapply(mark1.tmp, mark1.tmp, function(a) rss/nind/length(a))
+        }
+        # note that there could be missing categories in draws
+        means.all[i, names(means.tmp)] <- means.tmp
+        vars.all[i, names(vars.tmp)] <- vars.tmp
+      }
+      # average across draws - for vars, it should be
+      # mean of variance plus variance of means
+      weight <- exp(weight-max(weight))
+      means <- apply(means.all, 2, function(a) weighted.mean(a,weight,na.rm=TRUE))
+      meanvar <- apply(vars.all, 2, function(a) weighted.mean(a,weight,na.rm=TRUE)) # mean of vars
+      varmean <- apply(means.all, 2, function(a) weighted.mean((a-mean(a,na.rm=TRUE))^2,weight,na.rm=TRUE)) # var of means
+      # standard error
+      ses <- sqrt(meanvar+varmean)
+    }
+    else { # ndraws is 1
+      means <- tapply(pheno, mark1, mean, na.rm = TRUE)
+      if(var.flag == "group") { # use group variance
+        ses <- tapply(pheno, mark1, function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
+      }
+      else { # use pooled variance
+        mark1.factor <- as.factor(mark1)
+        lm.tmp <- lm(pheno~mark1.factor-1)
+        rss <- sum(lm.tmp$residuals^2)
+        ses <- tapply(mark1, mark1, function(a) sqrt(rss/nind/length(a)))
+      }
+    }
+  }
+  
+  else { # with mark2
+    if(ndraws > 1) {
+      mark1.level <- levels(as.factor(mark1)) # level for mark1
+      mark2.level <- levels(as.factor(mark2)) # level for mark2
+      # init 
+      means.all <- array(NA, c(length(mark1.level), length(mark2.level), ndraws))
+      dimnames(means.all) <- list(sort(unique(as.vector(mark1))), sort(unique(as.vector(mark2))), NULL)
+      vars.all <- array(NA, c(length(mark1.level), length(mark2.level), ndraws))
+      dimnames(vars.all) <- list(sort(unique(as.vector(mark1))), sort(unique(as.vector(mark2))), NULL)
+      weight <- rep(0, ndraws) # weight for draws
+      # loop thru draws
+      for(i in 1:ndraws) {
+        mark1.tmp <- mark1[,i] # data for current draw
+        mark2.tmp <- mark2[,i]
+        # fit a regression - this is used to calculate the weights
+        mark1.factor <- as.factor(mark1.tmp)
+        mark2.factor <- as.factor(mark2.tmp)
+        lm.tmp <- lm(pheno~mark1.factor+mark2.factor+1)
+        rss <- sum(lm.tmp$residuals^2)
+        # compute the weight
+        weight[i] <- (-nind/2)*log(rss)
+        # group means
+        means.tmp <- tapply(pheno, list(mark1.tmp, mark2.tmp), mean, na.rm = TRUE)
+        # calculate group means and variances
+        if(var.flag=="group") { # use variance in each group
+          vars.tmp <- tapply(pheno, list(mark1.tmp,mark2.tmp),
+                             function(a) var(a,na.rm = TRUE)/length(a))
+        }
+        else { # use pooled variance
+          vars.tmp <- tapply(mark1.tmp, list(mark1.tmp,mark2.tmp),
+                             function(a) rss/nind/length(a))
+        }
+        # note that there could be missing categories in draws
+        means.all[dimnames(means.tmp)[[1]], dimnames(means.tmp)[[2]],i] <- means.tmp
+        vars.all[dimnames(vars.tmp)[[1]], dimnames(vars.tmp)[[2]], i] <- vars.tmp
+      }
+      # average across draws - for vars, it should be
+      # mean of variance plus variance of means
+      weight <- exp(weight-max(weight))
+      means <- apply(means.all, c(1,2), function(a) weighted.mean(a,weight,na.rm=TRUE))
+      meanvar <- apply(vars.all, c(1,2), function(a) weighted.mean(a,weight,na.rm=TRUE))
+      varmean <- apply(means.all, c(1,2), function(a) weighted.mean((a-mean(a,na.rm=TRUE))^2,weight,na.rm=TRUE)) # var of means
+      # standard error
+      ses <- sqrt(meanvar+varmean)
+    }
+    else { # ndraws is 1
+      means <- tapply(pheno, list(mark1, mark2), mean, na.rm = TRUE)
+      if(var.flag=="group") { # use group variance
+        ses <- tapply(pheno, list(mark1, mark2), function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
+      }
+      else {# use pooled variance
+        mark1.factor <- as.factor(mark1)
+        mark2.factor <- as.factor(mark2)
+        lm.tmp <- lm(pheno~mark1.factor+mark2.factor-1)
+        rss <- sum(lm.tmp$residuals^2)
+        ses <- tapply(mark1, list(mark1, mark2), function(a) sqrt(rss/nind/length(a)))
+      }
+    }
+  }
+
+  # result
+  result$Means <- means
+  result$SDs <- ses
+  result
+}
+
+
 
 # end of effectplot.R
 

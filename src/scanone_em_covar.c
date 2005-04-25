@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2003
+ * last modified Nov, 2004
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -35,7 +35,7 @@
  * 
  * scanone_em_covar
  *
- * Performs genotype scan using interval mapping in the presence of
+ * Performs genome scan using interval mapping in the presence of
  * covariates.  (The multipoint genotype probabilities have already 
  * been calculated in calc.genoprob)
  * 
@@ -62,14 +62,14 @@
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * result       Result vectro of length n_pos; upon return, contains 
+ * result       Result vector of length n_pos; upon return, contains 
  *              the LOD scores.
  *
  * maxit        Maximum number of iterations in the EM algorithm
  *
  * tol          Tolerance for determining convergence in EM
  *
- * trace        If 1, print out log likelihood at each iteration
+ * verbose        If 1, print out log likelihood at each iteration
  *
  **********************************************************************/
 
@@ -77,7 +77,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 		      double ***Genoprob, double **Addcov, int n_addcov,
 		      double **Intcov, int n_intcov, double *pheno, 
 		      double *weights,
-		      double *result, int maxit, double tol, int trace)
+		      double *result, int maxit, double tol, int verbose)
 {
   int i, j, k, s, flag=0, n_par;
   double **wts, *param, *oldparam, regtol; 
@@ -151,7 +151,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
     
     if(!error_flag) { /* only proceed if there's no error */
 
-      if(trace) {
+      if(verbose) {
 	estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
 		       Intcov, n_intcov, pheno, weights, wts, oldparam, 0);
 	oldllik = 0.0;
@@ -175,7 +175,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
 	  break; 
 	}
 
-	if(trace) {
+	if(verbose) {
 	  estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
 			 Intcov, n_intcov, pheno, weights, wts, param, 0);
 	  llik = 0.0;
@@ -217,7 +217,7 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       }
       else result[i] = NA_REAL;
       
-      if(trace) {
+      if(verbose) {
 	if(error_flag) Rprintf("    %3d NA", i+1);
 	else {
 	  Rprintf("    %3d %12.6lf\n", i+1, result[i]);

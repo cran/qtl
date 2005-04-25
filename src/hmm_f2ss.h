@@ -2,9 +2,9 @@
  * 
  * hmm_f2ss.h
  * 
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Sep, 2001
+ * last modified Nov, 2004
  * first written Sep, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -35,7 +35,7 @@ double nrec_f2ss2(int gen1, int gen2);
 
 void est_map_f2ss(int *n_ind, int *n_mar, int *geno, double *rf1,
 		  double *rf2, double *error_prob, double *loglik,
-		  int *maxit, double *tol, int *junk, int *trace);
+		  int *maxit, double *tol, int *junk, int *verbose);
 
 void argmax_geno_f2ss(int *n_ind, int *n_pos, int *geno, 
 		      double *rf1, double *rf2, 

@@ -4,7 +4,8 @@
 \title{LOD support interval}
 
 \description{
-  Calculate a LOD support interval for a particular chromosomes.
+  Calculate a LOD support interval for a particular chromosome,
+  using output from scanone.
 }
 
 \usage{lodint(results, chr, drop=1.5)}
@@ -32,6 +33,6 @@ lodint(out, 5, 1.5)
 lodint(out, 13, 1.5)
 }
 
-\seealso{ \code{\link[qtl]{scanone}} }
+\seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{bayesint}} }
 
 \keyword{manip}

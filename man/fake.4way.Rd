@@ -39,8 +39,8 @@ fake.4way <- est.rf(fake.4way)
 plot.rf(fake.4way)
 
 # estimate genetic maps
-ssmap <- est.map(fake.4way, trace=TRUE)
-samap <- est.map(fake.4way, sex.sp=FALSE, trace=TRUE)
+ssmap <- est.map(fake.4way, verbose=TRUE)
+samap <- est.map(fake.4way, sex.sp=FALSE, verbose=TRUE)
 plot(ssmap, samap)
 
 # error lod scores

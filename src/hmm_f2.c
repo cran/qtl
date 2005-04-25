@@ -2,9 +2,9 @@
  * 
  * hmm_f2.c
  * 
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2003
+ * last modified Nov, 2004
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -207,11 +207,11 @@ void sim_geno_f2(int *n_ind, int *n_pos, int *n_draws, int *geno,
 
 void est_map_f2(int *n_ind, int *n_mar, int *geno, double *rf, 
 		double *error_prob, double *loglik, int *maxit, 
-		double *tol, int *trace)
+		double *tol, int *verbose)
 {
   est_map(*n_ind, *n_mar, 4, geno, rf, rf, *error_prob, 
 	  init_f2b, emit_f2b, step_f2b, nrec_f2b, nrec_f2b,
-	  loglik, *maxit, *tol, 0, *trace);
+	  loglik, *maxit, *tol, 0, *verbose);
 }
 
 

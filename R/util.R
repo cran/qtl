@@ -2,9 +2,9 @@
 #
 # util.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
 #     [find.pheno and find.flanking from Brian Yandell]
-# last modified Sep, 2004
+# last modified Apr, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -14,10 +14,10 @@
 #           drop.markers, geno.table, mf.k, mf.h, imf.k, imf.h
 #           mf.cf, imf.cf, mf.m, imf.m, convert2ss, switch.order
 #           subset.cross, fill.geno, check.covar, find.marker,
-#           adjust.rf.ri, pull.geno, lodint, makeSSmap,
+#           adjust.rf.ri, pull.geno, lodint, bayesint, makeSSmap,
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, convert.scanone, find.pheno,
-#           find.flanking
+#           find.flanking, strip.partials, comparegeno
 #
 ######################################################################
 
@@ -615,6 +615,11 @@ function(cross, chr, order, error.prob=0,
   #   as they will no longer be meaningful
   cross <- clean(cross)
 
+  if(!is.matrix(cross$geno[[chr]]$map))
+    first <- min(cross$geno[[chr]]$map)
+  else 
+    first <- apply(cross$geno[[chr]]$map,1,min)
+
   # re-order markers
   cross$geno[[chr]]$data <- cross$geno[[chr]]$data[,order,drop=FALSE]
   m <- seq(0,by=5,length=ncol(cross$geno[[chr]]$data))
@@ -635,7 +640,13 @@ function(cross, chr, order, error.prob=0,
   newmap <- est.map(subset(cross,chr=chr),
                     error.prob=error.prob, map.function=map.function)
 
-  cross$geno[[chr]]$map <- newmap[[1]]
+  if(!is.matrix(newmap[[1]]))
+     cross$geno[[chr]]$map <- newmap[[1]] + first
+  else {
+     cross$geno[[chr]]$map[1,] <- newmap[[1]][1,] + first[1]
+     cross$geno[[chr]]$map[2,] <- newmap[[1]][2,] + first[2]
+     rownames(cross$geno[[chr]]$map) <- NULL
+   }
 
   cross
 }
@@ -675,6 +686,11 @@ function(x, chr, ind, ...)
       chr <- sort(match(chr,names(x$geno)))
     }
 
+    if(length(chr) != length(unique(chr))) {
+      chr <- unique(chr)
+      warning("Dropping duplicate chromosomes")
+    }
+
     if(!is.na(match("rf",names(x)))) { # pull out part of rec fracs
       n.mar <- nmar(x)
       n.chr <- n.chr
@@ -690,12 +706,15 @@ function(x, chr, ind, ...)
 
   if(!missing(ind)) {
     if(is.logical(ind)) {
+      ind[is.na(ind)] <- FALSE
       if(length(ind) != n.ind) 
         stop("If logical, ind argument must have length ", n.ind)
       ind <- (1:n.ind)[ind]
     }
         
     if(is.numeric(ind)) {
+      ind <- ind[!is.na(ind)]
+
       # if all negative numbers, convert to positive
       if(all(ind < 1)) ind <- (1:n.ind)[ind]
         
@@ -1013,6 +1032,8 @@ function(cross, pheno.col, addcovar, intcovar)
   if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
   if(pheno.col < 1 || pheno.col > nphe(cross))
     stop("Specified phenotype column is invalid.")
+  if(!is.numeric(cross$pheno[,pheno.col]))
+    stop("Chosen phenotype is not numeric, and needs to be.")
 
   orig.n.ind <- nind(cross)
 
@@ -1207,6 +1228,36 @@ function(results, chr, drop=1.5)
 
 
 ######################################################################
+# bayesint: function to get Bayesian probability interval
+######################################################################
+bayesint <-
+function(results, chr, prob=0.95)
+{
+  results <- results[results[,1]==chr,]
+
+  if(all(is.na(results[,3]))) return(NULL)
+
+  loc <- results[,2]
+  width <- diff(( c(loc[1],loc) + c(loc, loc[length(loc)]) )/ 2)
+
+  area <- 10^results[,3]*width
+  area <- area/sum(area)
+
+  o <- rev(order(results[,3]))
+
+  cs <- o
+  for(i in 1:length(o))
+    cs[i] <- sum(area[min(o[1:i]):max(o[1:i])])
+
+  wh <- min((1:length(loc))[cs >= prob])
+  int <- range(o[1:wh])
+
+  results[c(int[1],o[1],int[2]),]
+}
+
+
+  
+######################################################################
 # makeSSmap: convert a genetic map, or the genetic maps in a cross
 #            object, to be sex-specific (i.e., 2-row matrices)
 ######################################################################
@@ -1332,29 +1383,31 @@ function(cross1, cross2, tol=1e-5)
 movemarker <-
 function(cross, marker, newchr, newpos)
 {
-  cross <- clean(cross)
   mnames <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
   chr <- rep(names(cross$geno),nmar(cross))
   pos <- unlist(lapply(cross$geno,function(a) 1:ncol(a$data)))
-  wh <- match(marker, mnames)
+  oldindex <- match(marker, mnames)
 
   # Marker found precisely once?
-  if(is.na(wh)) stop(marker, " not found.\n")
-  if(length(wh) > 1) stop(marker, " found multiple times.\n")
+  if(is.na(oldindex)) stop(marker, " not found.\n")
+  if(length(oldindex) > 1) stop(marker, " found multiple times.\n")
 
   if(is.na(match(newchr,names(cross$geno))))
     stop("Chromosome ", newchr, " not found.\n")
 
-  chr <- chr[wh]
-  pos <- pos[wh]
+  chr <- chr[oldindex]
+  pos <- pos[oldindex]
 
   # pull out genotype data
   g <- cross$geno[[chr]]$data[,pos]
 
   # delete marker
-  if(nmar(cross)[chr] == 1)  # it's the only marker on that chromosome, so drop the chromosome
+  if(nmar(cross)[chr] == 1)  { # only marker on that chromosome, so drop the chromosome
     cross$geno <- cross$geno[-match(chr,names(cross$geno))]
+    delchr <- TRUE
+  }
   else {
+    delchr <- FALSE
     cross$geno[[chr]]$data <- cross$geno[[chr]]$data[,-pos,drop=FALSE]
     if(is.matrix(cross$geno[[chr]]$map))
       cross$geno[[chr]]$map <- cross$geno[[chr]]$map[,-pos,drop=FALSE]
@@ -1444,6 +1497,63 @@ function(cross, marker, newchr, newpos)
     
     # make sure the marker names for the data and the genetic map match
     colnames(cross$geno[[newchr]]$data) <- names(cross$geno[[newchr]]$map)
+  }
+
+  # update genoprob, errorlod, argmax, draws, rf
+  if(!is.na(match("rf",names(cross)))) {
+    # reorder the recombination fractions
+    #  -- a bit of pain, 'cause we need LODs in upper triangle
+    #     and rec fracs in lower triangle
+    newmar <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
+
+    rf <- cross$rf
+    lods <- rf;lods[lower.tri(rf)] <- t(rf)[lower.tri(rf)]
+    rf[upper.tri(rf)] <- t(rf)[upper.tri(rf)]
+    lods <- lods[newmar,newmar]
+    rf <- rf[newmar,newmar]
+    rf[upper.tri(rf)] <- lods[upper.tri(rf)]
+
+    cross$rf <- rf
+  }
+
+  if(!delchr) thechr <- c(chr,newchr)
+  else thechr <- newchr
+  for(i in thechr) {
+    tempg <- cross$geno[[i]]
+    tempx <- subset(cross, chr=i)
+    if(!is.na(match("prob", names(tempg))))
+      atp <- attributes(tempg$prob) 
+    if(!is.na(match("draws", names(tempg)))) {
+      at <- attributes(listeria$geno[[1]]$draws)
+      tempg$draws <- sim.geno(tempx,
+                              n.draws=at$dim[3],
+                              step=at$step,
+                              off.end=at$off.end,
+                              map.function=at$map.function,
+                              error.prob=at$error.prob)$geno[[1]]$draws
+    }
+    if(!is.na(match("argmax",names(tempg)))) {
+      at <- attributes(listeria$geno[[1]]$argmax)
+      tempg$argmax <- argmax.geno(tempx,
+                                 step=at$step,
+                                 off.end=at$off.end,
+                                 map.function=at$map.function,
+                                 error.prob=at$error.prob)$geno[[1]]$argmax
+    }
+    if(!is.na(match("errorlod",names(tempg)))) {
+      at <- attributes(listeria$geno[[1]]$errorlod)
+      tempg$errorlod <- argmax.geno(tempx,
+                                    map.function=at$map.function,
+                                    error.prob=at$error.prob)$geno[[1]]$errorlod
+    }
+    if(!is.na(match("prob",names(tempg)))) 
+      tempg$prob <- calc.genoprob(tempx,
+                                  step=atp$step,
+                                  off.end=atp$off.end,
+                                  map.function=atp$map.function,
+                                  error.prob=atp$error.prob)$geno[[1]]$prob
+
+    cross$geno[[i]] <- tempg
   }
 
   cross
@@ -1602,6 +1712,64 @@ function( cross, chr, pos)
   as.data.frame(marker)
 }
 
+######################################################################
+# strip.partials
+#
+# Removes partially informative genotypes in an intercross.
+#
+# Input: a cross object; if verbose=TRUE, a statement regarding the
+#        number of genotypes removed is printed.
+######################################################################
+strip.partials <-
+function(cross, verbose=TRUE)
+{
+  type <- class(cross)[1]
+  if(type != "f2") 
+    stop("This is for intercrosses only")
+
+  n.removed <- 0
+  for(i in 1:nchr(cross)) {
+    g <- cross$geno[[i]]$data
+    wh <- !is.na(g) & g>3
+    if(any(wh)) {
+      g[wh] <- NA
+      cross$geno[[i]]$data <- g
+      n.removed <- n.removed + sum(wh)
+    }
+  }
+  if(verbose) {
+    if(n.removed == 0) cat(" --Didn't remove any genotypes.\n")
+    else cat("Removed", n.removed, "genotypes.\n")
+  }
+  cross
+}
+
+######################################################################
+# comparegeno
+######################################################################
+comparegeno <-
+function(cross, what=c("proportion","number"))
+{
+  what <- match.arg(what)
+  g <- pull.geno(cross)
+  g[is.na(g)] <- 0
+  n.ind <- nrow(g)
+  n.mar <- ncol(g)
+  z <- .C("R_comparegeno",
+          as.integer(g),
+          as.integer(n.ind),
+          as.integer(n.mar),
+          n.match=as.integer(rep(0,n.ind^2)),
+          n.missing=as.integer(rep(0,n.ind^2)),
+          PACKAGE="qtl")
+
+  if(what=="number") return(matrix(z$n.match,n.ind,n.ind))
+  else return(matrix(z$n.match/(n.mar-z$n.missing),n.ind,n.ind))
+}
+  
+          
+
 
 # end of util.R
+
 

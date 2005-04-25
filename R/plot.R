@@ -4,7 +4,7 @@
 #
 # copyright (c) 2000-4, Karl W Broman, Johns Hopkins University
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Jul, 2004
+# last modified Nov, 2004
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -95,7 +95,7 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
 }
 
 plot.map <-
-function(x,map2,horizontal=FALSE,...) 
+function(x, map2, horizontal=FALSE, shift=TRUE, ...) 
 {
   map <- x
   # figure out if the input is a cross (containing a map)
@@ -153,7 +153,7 @@ function(x,map2,horizontal=FALSE,...)
        
   if(one.map) {
     n.chr <- length(map)
-    map <- lapply(map, function(a) a-min(a))
+    if(shift) map <- lapply(map, function(a) a-a[1])
     maxlen <- max(unlist(lapply(map,max)))
 
     if(horizontal) {
@@ -211,8 +211,11 @@ function(x,map2,horizontal=FALSE,...)
     if(any(sapply(map,length) != sapply(map2,length)))
       stop("Maps have different numbers of markers.")
 
-    map1 <- lapply(map,function(a) a-a[1])
-    map2 <- lapply(map2,function(a) a-a[1])
+    map1 <- map
+    if(shift) {
+      map1 <- lapply(map1,function(a) a-a[1])
+      map2 <- lapply(map2,function(a) a-a[1])
+    }
 
     n.chr <- length(map1)
     maxloc <- max(c(unlist(lapply(map1,max)),unlist(lapply(map2,max))))
@@ -332,7 +335,7 @@ function (x, auto.layout = TRUE, pheno, ...)
 ######################################################################
 
 plot.geno <-
-function(x, chr, ind, horizontal=FALSE, cutoff=3.5, min.sep=2, cex=1.2, ...)
+function(x, chr, ind, horizontal=TRUE, cutoff=3.5, min.sep=2, cex=1.2, ...)
 {
   cross <- x  
   cross <- subset(cross,chr=chr)
@@ -574,7 +577,7 @@ function(x,chr,method=c("both","entropy","variance"),...)
 # plot phenotypes against one or more markers
 plot.pxg <-
 function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE, 
-         pch, ylab, ...) 
+         pch, ylab, main, ...) 
 {
   cross <- x
   type <- class(cross)[1]
@@ -614,7 +617,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   # number of possible genotypes
   gen.names <- list()
   for(i in seq(length(chr)))
-    gen.names[[i]] <- getgenonames(type, chrtype[i], "standard", sexpgm)
+    gen.names[[i]] <- getgenonames(type, chrtype[i], "full", sexpgm)
   n.gen <- sapply(gen.names, length)
 
   jitter <- jitter/10
@@ -660,7 +663,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
            type == "f2ss")) {
     ix = seq(n.mark)[chrtype == "X"]
     for(i in ix)
-      x[, i] <- as.numeric(reviseXdata(type, "standard", sexpgm,
+      x[, i] <- as.numeric(reviseXdata(type, "full", sexpgm,
                                        geno = as.matrix(x[, i])))
   }
 
@@ -688,11 +691,12 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
                     jitter), xaxt = "n")
 
   # marker names at top
-  mtext(paste(marker, collapse = "\n"), , 0.5, cex = max(2/n.mark, 
-                                                 0.75))
-#  mtext(paste("ch", chr, ":", round(pos,1), "cM", sep = "", collapse = "\n"), 
-#        , 0.5, adj = 0, cex = max(2/n.mark, 0.75))
-
+  if(missing(main))
+    mtext(paste(marker, collapse = "\n"), , 0.5, cex = max(2/n.mark, 
+                                                   0.75))
+  else
+    title(main=main)
+  
   abline(v = 1:prod(n.gen), col = "gray", lty = 3)
 
   if(length(pch) == 1) 
@@ -744,36 +748,39 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   text(1:prod(n.gen), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
        cex = max(0.5, 1.5/n.mark))
 
+  invisible(data)
+
   # calculate return values?
-  if(any(which.missing == 0)) 
-    p.value <- anova(aov(y ~ x, subset = (which.missing == 
-                                          0)))[1, 5]
-  else p.value <- NA
-  names(p.value) <- NULL
-  tmp <- options(warn = -1)
-  form <- formula(paste("y ~", paste(marker, collapse = "*")))
-  if(any(is.na(me)) & n.mark > 2) {
-    formadd <- formula(paste("y ~", paste(marker, collapse = "+")))
-    fit <- aov(formadd, data, subset = (data$inferred == 
-                                        0))
-    full <- aov(form, data, subset = (data$inferred == 0))
-  }
-  else fit <- aov(form, data, subset = (data$inferred == 0))
-  tbl <- anova(fit, type = "marginal")
-  options(tmp)
-  p.value <- round(tbl$P[-nrow(tbl)], 4)
-  tmp = summary.lm(fit)
-  Rsq = tmp$r.sq
-  fstat = tmp$fstatistic
-  p.value = c(pf(fstat[1], fstat[2], fstat[3], lower = FALSE), 
-    p.value)
-  names(p.value) <- c("overall", dimnames(tbl)[[1]][-nrow(tbl)])
-  if(any(is.na(me)) & n.mark > 2) {
-    p.value["inter"] <- round(anova(fit, full)$P[2], 4)
-    fit = full
-  }
-  invisible(list(Rsq = Rsq, p.value = p.value, me = me, se = se, 
-                 fit = fit, data = data))
+#  if(any(which.missing == 0)) 
+#    p.value <- anova(aov(y ~ x, subset = (which.missing == 
+#                                          0)))[1, 5]
+#  else p.value <- NA
+#  names(p.value) <- NULL
+#  tmp <- options(warn = -1)
+#  form <- formula(paste("y ~", paste(marker, collapse = "*")))
+#  if(any(is.na(me)) & n.mark > 2) {
+#    formadd <- formula(paste("y ~", paste(marker, collapse = "+")))
+#    fit <- aov(formadd, data, subset = (data$inferred == 
+#                                        0))
+#    full <- aov(form, data, subset = (data$inferred == 0))
+#  }
+#  else fit <- aov(form, data, subset = (data$inferred == 0))
+#  tbl <- anova(fit, type = "marginal")
+#  options(tmp)
+#  p.value <- round(tbl$P[-nrow(tbl)], 4)
+#  tmp = summary.lm(fit)
+#  Rsq = tmp$r.sq
+#  fstat = tmp$fstatistic
+#  p.value = c(pf(fstat[1], fstat[2], fstat[3], lower = FALSE), 
+#    p.value)
+#  names(p.value) <- c("overall", dimnames(tbl)[[1]][-nrow(tbl)])
+#  if(any(is.na(me)) & n.mark > 2) {
+#    p.value["inter"] <- round(anova(fit, full)$P[2], 4)
+#    fit = full
+#  }
+#  invisible(list(Rsq = Rsq, p.value = p.value, me = me, se = se, 
+#                 fit = fit, data = data))
+
 }
 
 # end of plot.R

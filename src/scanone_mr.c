@@ -62,7 +62,7 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  * 
  * scanone_mr
  *
- * Performs genotype scan using marker regression.
+ * Performs genome scan using marker regression.
  * 
  * n_ind        Number of individuals
  *

@@ -36,7 +36,7 @@ plot.rf(hyper,c(1,4))
 plot.rf(hyper,6)
 plot.missing(hyper,6)
 
-newmap <- est.map(hyper, error.prob=0.01, trace=TRUE)
+newmap <- est.map(hyper, error.prob=0.01, verbose=TRUE)
 plot.map(hyper, newmap)
 
 hyper <- replace.map(hyper, newmap)
@@ -114,7 +114,7 @@ plot.rf(badorder)
 
 plot.rf(badorder, chr=1)
 
-newmap <- est.map(badorder, trace=TRUE)
+newmap <- est.map(badorder, verbose=TRUE)
 plot.map(badorder, newmap)
 
 plot.rf(badorder, chr=2:3)
@@ -125,7 +125,6 @@ badorder$geno[[3]]$map[5]
 badorder <- movemarker(badorder, "D2M937", 3, 48)
 badorder <- movemarker(badorder, "D3M160", 2, 28.8)
 
-badorder <- est.rf(badorder)
 plot.rf(badorder, chr=2:3)
 
 rip1 <- ripple(badorder, chr=1, window=6)

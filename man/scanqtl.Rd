@@ -77,8 +77,10 @@ qc <- c(1, 8, 13)
 fake.f2 <- subset(fake.f2, chr=qc)
 
 # imputate genotypes
-\dontshow{fake.f2 <- subset(fake.f2, ind=1:50)
-fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)}
+\dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
+\dontrun{fake.f2 <- sim.geno(fake.f2, n.draws=64, step=2, err=0.001)
+}\dontshow{fake.f2 <- sim.geno(fake.f2, n.draws=8, step=5, err=0.001)
+}
 
 # 2-dimensional genome scan with additive 3-QTL model
 pos <- list(c(15,35), c(45,65), 28)

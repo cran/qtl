@@ -4,7 +4,7 @@
  *
  * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
  *
- * last modified July, 2004
+ * last modified Nov, 2004
  * first written May, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -67,7 +67,7 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
   loglik0 = 0.0;
   for(i=0; i<n_ind; i++) 
     if(survived[i]) loglik0 += log(pi0);
-    else loglik0 += (log(1.0-pi0)+log(dnorm(pheno[i],mu0,sig0,0)));
+    else loglik0 += (log(1.0-pi0)+dnorm(pheno[i],mu0,sig0,1));
 
   /* begin genome scan */
   for(p=0; p<n_pos; p++) { /* loop over positions */
