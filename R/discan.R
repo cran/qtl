@@ -29,15 +29,9 @@ function(cross, pheno, method=c("em","mr"),
   n.ind <- nind(cross)
   n.chr <- nchr(cross)
   type <- class(cross)[1]
-  if(is.null(addcovar)) {
-    n.addcovar <- 0
-    addcovar <- 0
-  }
+  if(is.null(addcovar)) n.addcovar <- 0
   else n.addcovar <- ncol(addcovar)
-  if(is.null(intcovar)) {
-    n.intcovar <- 0
-    intcovar <- 0
-  }
+  if(is.null(intcovar)) n.intcovar <- 0
   else n.intcovar <- ncol(intcovar)
 
   if(method=="mr" && n.addcovar+n.intcovar>0)  {
@@ -49,16 +43,10 @@ function(cross, pheno, method=c("em","mr"),
   if(any(u != 0 & u != 1))
     stop("Phenotypes must be either 0 or 1.")
 
-  # get null log liklihood
-  if(n.addcovar > 0)
-    nullfit <- glm(pheno ~ addcovar, family=binomial(link=logit))
-  else
-    nullfit <- glm(pheno ~ 1, family=binomial(link=logit))
-  fitted <- nullfit$fitted
-  nullcoef <- nullfit$coef
-  llik0 <- sum(pheno*log10(fitted) + (1-pheno)*log10(1-fitted))
-
   results <- NULL
+
+  llik0 <- c("A"=NA,"X"=NA)
+  nullcoef <- list("A"=NA,"X"=NA)
 
   # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
@@ -77,6 +65,17 @@ function(cross, pheno, method=c("em","mr"),
       n.ac <- n.addcovar
       ic <- intcovar
       n.ic <- n.intcovar
+    }
+
+    # get null log liklihood
+    if(is.na(llik0[chrtype])) {
+      if(n.ac > 0)
+        nullfit <- glm(pheno ~ ac, family=binomial(link=logit))
+      else if(i==1)
+        nullfit <- glm(pheno ~ 1, family=binomial(link=logit))
+      fitted <- nullfit$fitted
+      nullcoef[[chrtype]] <- nullfit$coef
+      llik0[chrtype] <- sum(pheno*log10(fitted) + (1-pheno)*log10(1-fitted))
     }
 
     # get genotype names
@@ -130,9 +129,9 @@ function(cross, pheno, method=c("em","mr"),
 
       if(n.ac + n.ic > 0) {
 
-        start <- rep(nullcoef[1],n.gen)
+        start <- rep(nullcoef[[chrtype]][1],n.gen)
         if(n.ac > 0)
-          start <- c(start, nullcoef[-1])
+          start <- c(start, nullcoef[[chrtype]][-1])
         if(n.ic > 0)
           start <- c(start, rep(0, n.ic*(n.gen-1)))
 
@@ -169,7 +168,7 @@ function(cross, pheno, method=c("em","mr"),
     }
     z <- matrix(z$result,nrow=n.pos)
 
-    if(method == "em") z[,1] <- z[,1] - llik0
+    if(method == "em") z[,1] <- z[,1] - llik0[chrtype]
     z[is.na(z[,1]),1] <- 0
 
     if(n.ac + n.ic > 0)
@@ -200,18 +199,18 @@ function(cross, pheno, method=c("em","mr"),
 
       if(adjustX) { # get LOD-score adjustment
         if(n.ac > 0) 
-          nullfit <- glm(pheno ~ ac+sexpgmcovar,
+          nullfitX <- glm(pheno ~ ac+sexpgmcovar,
                          family=binomial(link=logit))
         else 
-          nullfit <- glm(pheno ~ sexpgmcovar,
+          nullfitX <- glm(pheno ~ sexpgmcovar,
                          family=binomial(link=logit))
-        fitted <- nullfit$fitted
-        llik0X <- sum(pheno*log10(fitted) + (1-pheno)*log10(1-fitted))
+        fittedX <- nullfitX$fitted
+        llik0X <- sum(pheno*log10(fittedX) + (1-pheno)*log10(1-fittedX))
 
         # adjust LOD curve
-        z[,3] <- z[,3] - (llik0X - llik0)
+        z[,3] <- z[,3] - (llik0X - llik0["X"])
       }
-    } 
+    }
 
     # if different number of columns from other chromosomes,
     #     expand to match
@@ -258,6 +257,9 @@ function(cross, pheno, method=c("em","mr"),
     results <- rbind(results, z)
   } # loop over chromosomes
 
+  if(n.addcovar + n.intcovar > 0)
+    results <- results[,1:3]
+  
   if(ncol(results) > 3) {
     # sort the later columns
     neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
@@ -268,7 +270,7 @@ function(cross, pheno, method=c("em","mr"),
   attr(results,"method") <- method
   attr(results,"type") <- type
   attr(results,"model") <- "binary"
-  attr(results,"null.log10.lik") <- llik0
+  attr(results,"null.log10.lik") <- llik0["A"]
   if(adjustX) 
     attr(results,"null.log10.lik.X") <- llik0X
   results

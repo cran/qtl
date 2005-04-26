@@ -13,7 +13,7 @@
 #           convert.cross, clean, drop.nullmarkers
 #           drop.markers, geno.table, mf.k, mf.h, imf.k, imf.h
 #           mf.cf, imf.cf, mf.m, imf.m, convert2ss, switch.order
-#           subset.cross, fill.geno, check.covar, find.marker,
+#           subset.cross, fill.geno, checkcovar, find.marker,
 #           adjust.rf.ri, pull.geno, lodint, bayesint, makeSSmap,
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, convert.scanone, find.pheno,
@@ -1524,7 +1524,7 @@ function(cross, marker, newchr, newpos)
     if(!is.na(match("prob", names(tempg))))
       atp <- attributes(tempg$prob) 
     if(!is.na(match("draws", names(tempg)))) {
-      at <- attributes(listeria$geno[[1]]$draws)
+      at <- attributes(cross$geno[[1]]$draws)
       tempg$draws <- sim.geno(tempx,
                               n.draws=at$dim[3],
                               step=at$step,
@@ -1533,7 +1533,7 @@ function(cross, marker, newchr, newpos)
                               error.prob=at$error.prob)$geno[[1]]$draws
     }
     if(!is.na(match("argmax",names(tempg)))) {
-      at <- attributes(listeria$geno[[1]]$argmax)
+      at <- attributes(cross$geno[[1]]$argmax)
       tempg$argmax <- argmax.geno(tempx,
                                  step=at$step,
                                  off.end=at$off.end,
@@ -1541,7 +1541,7 @@ function(cross, marker, newchr, newpos)
                                  error.prob=at$error.prob)$geno[[1]]$argmax
     }
     if(!is.na(match("errorlod",names(tempg)))) {
-      at <- attributes(listeria$geno[[1]]$errorlod)
+      at <- attributes(cross$geno[[1]]$errorlod)
       tempg$errorlod <- argmax.geno(tempx,
                                     map.function=at$map.function,
                                     error.prob=at$error.prob)$geno[[1]]$errorlod
