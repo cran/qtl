@@ -73,8 +73,13 @@ function(cross, chr, pheno.col=1,
       warning("Only EM algorithm coded for binary traits")
     }
     if(any(chrtype=="X")) {
-      cross <- subset(cross,chr = chrtype!="X")
-      warning("X chromosome is not yet working for binary traits; dropping it.")
+      sexpgm <- getsex(cross)
+      if(!is.null(sexpgm$sex) || !is.null(sexpgm$pgm)) {
+        cross <- subset(cross,chr = chrtype!="X")
+        n.chr <- nchr(cross)
+        n.ind <- nind(cross)
+        warning("X chromosome is not yet working for binary traits; dropping it.")
+      }
     }
     if(!is.null(weights)) {
       weights <- NULL
@@ -145,20 +150,10 @@ function(cross, chr, pheno.col=1,
     # number of possible genotypes for each chromosome
     n.gen <- 1:n.chr
     for(i in 1:n.chr) { 
-      if(chrtype[i]=="X") {
+      if(chrtype[i]=="X") 
         sexpgm <- getsex(cross)
-        ac <- revisecovar(sexpgm,addcovar)
-        n.ac <- ifelse(is.null(ac),0,ncol(ac))
-        ic <- revisecovar(sexpgm,intcovar)
-        n.ic <- ifelse(is.null(ic),0,ncol(ic))
-      }
-      else {
+      else 
         sexpgm <- NULL
-        ac <- addcovar
-        n.ac <- n.addcovar
-        ic <- intcovar
-        n.ic <- n.intcovar
-      }
 
       gen.names <- getgenonames(type, chrtype[i], "full", sexpgm)
       n.gen[i] <- length(gen.names)
@@ -208,20 +203,10 @@ function(cross, chr, pheno.col=1,
     some.dropped <- rep(FALSE,n.chr)
 
     for(i in 1:n.chr) { 
-      if(chrtype[i]=="X") {
+      if(chrtype[i]=="X") 
         sexpgm <- getsex(cross)
-        ac <- revisecovar(sexpgm,addcovar)
-        n.ac <- ifelse(is.null(ac),0,ncol(ac))
-        ic <- revisecovar(sexpgm,intcovar)
-        n.ic <- ifelse(is.null(ic),0,ncol(ic))
-      }
-      else {
+      else 
         sexpgm <- NULL
-        ac <- addcovar
-        n.ac <- n.addcovar
-        ic <- intcovar
-        n.ic <- n.intcovar
-      }
 
       gen.names <- getgenonames(type, chrtype[i], "full", sexpgm)
       n.gen[i] <- length(gen.names)
@@ -301,6 +286,19 @@ function(cross, chr, pheno.col=1,
   # do the 2-dimensional genome scan
   for(i in 1:n.chr) { # loop over the 1st chromosome
     for(j in i:n.chr) { # loop over the 2nd chromosome
+
+      if(chrtype[i]=="X" || chrtype[j]=="X") {
+        ac <- revisecovar(sexpgm,addcovar)
+        n.ac <- ifelse(is.null(ac),0,ncol(ac))
+        ic <- revisecovar(sexpgm,intcovar)
+        n.ic <- ifelse(is.null(ic),0,ncol(ic))
+      }
+      else {
+        ac <- addcovar
+        n.ac <- n.addcovar
+        ic <- intcovar
+        n.ic <- n.intcovar
+      }
 
       # print the current working pair
       if(verbose) cat(paste(" (", names(cross$geno)[i], ",",
@@ -395,7 +393,7 @@ function(cross, chr, pheno.col=1,
           # revise pair probilities for X chromosome
           if(chrtype[i]=="X" && (type=="bc" || type=="f2" || type=="f2ss")) {
             temp <- reviseXdata(type, "full", sexpgm, pairprob=temp)
-            temp[temp==0] <- 1e-5 # << temp fix for problems with X chromosome
+            temp[temp < 1e-5] <- 1e-5 # << temp fix for problems with X chromosome
           }
 
           if(verbose>1) cat("  --Done.\n")
@@ -542,7 +540,7 @@ function(cross, chr, pheno.col=1,
           # revise pair probilities for X chromosome
           if(chrtype[i]=="X" && (type=="bc" || type=="f2" || type=="f2ss")) {
             temp <- reviseXdata(type, "full", sexpgm, pairprob=temp)
-            temp[temp==0] <- 1e-5 # << temp fix for problems with X chromosome
+            temp[temp < 1e-5] <- 1e-5 # << temp fix for problems with X chromosome
           }
 
           if(verbose>1) cat("  --Done.\n")

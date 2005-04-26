@@ -122,16 +122,30 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
 		       double *start, int maxit, double tol, int verbose)
 {
   int i, j, k, kk, s, offset;
-  double jac[n_par*n_par], **Jac, grad[n_par];
-  double wts[n_ind][n_gen];
-  double fit, temp1[n_ind][n_gen], temp2[n_ind][n_gen];
-  double temp1s[n_ind], temp2s[n_ind];
-  double newpar[n_par], curpar[n_par];
+  double *jac, **Jac, *grad;
+  double *temp, **wts;
+  double fit, **temp1, **temp2;
+  double *temp1s, *temp2s;
+  double *newpar, *curpar;
   double newllik, curllik, sum;
   int info, flag;
-  double rcond, junk[n_par];
+  double rcond, *junk;
 
+  /* allocate space */
+  allocate_double(n_par*n_par, &jac);
   reorg_errlod(n_par, n_par, jac, &Jac);
+  allocate_double(n_par, &grad);
+  allocate_double(n_ind*n_gen, &temp);
+  reorg_errlod(n_gen, n_ind, temp, &wts);
+  allocate_double(n_ind*n_gen, &temp);
+  reorg_errlod(n_gen, n_ind, temp, &temp1);
+  allocate_double(n_ind*n_gen, &temp);
+  reorg_errlod(n_gen, n_ind, temp, &temp2);
+  allocate_double(n_ind, &temp1s);
+  allocate_double(n_ind, &temp2s);
+  allocate_double(n_par, &newpar);
+  allocate_double(n_par, &curpar);
+  allocate_double(n_par, &junk);
 
   /* initial wts */
   for(i=0; i<n_ind; i++) 

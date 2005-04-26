@@ -2,10 +2,10 @@
  * 
  * scantwo_binary_em.c
  *
- * copyright (c) 2004, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2004
- * first written Dec, 2001
+ * last modified Apr, 2005
+ * first written Dec, 2004
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
@@ -535,12 +535,24 @@ void scantwo_binary_em_mstep(int n_ind, int n_gen1, int n_gen2,
 			     int n_col, int *error_flag)
 {
   int i, j, j2, k1, k2, s, s2, nparm1, info;
-  double rcond, temp, junk[n_col];
-  double grad[n_col], jac[n_col*n_col], **Jac;
-  double f1[n_gen1][n_gen2][n_ind], f2[n_gen1][n_gen2][n_ind];
-  double fitted[n_gen1][n_gen2];
+  double rcond, temp, *junk;
+  double *grad, *jac, **Jac;
+  double *tf1, ***f1, *tf2, ***f2;
+  double *tfitted, **fitted;
 
+  /* allocate space */
+  allocate_double(n_col, &junk);
+  allocate_double(n_col, &grad);
+  allocate_double(n_col*n_col, &jac);
   reorg_errlod(n_col, n_col, jac, &Jac);
+
+  allocate_double(n_gen1*n_gen2*n_ind, &tf1);
+  allocate_double(n_gen1*n_gen2*n_ind, &tf2);
+  reorg_genoprob(n_ind, n_gen2, n_gen1, tf1, &f1);
+  reorg_genoprob(n_ind, n_gen2, n_gen1, tf2, &f2);
+
+  allocate_double(n_gen1*n_gen2, &tfitted);
+  reorg_errlod(n_gen2, n_gen1, tfitted, &fitted);
 
   *error_flag=0;
 
@@ -954,11 +966,13 @@ double scantwo_binary_em_loglik(int n_ind, int n_gen1, int n_gen2,
 				double **Intcov, int n_intcov, int *pheno,
 				double *param, int full_model)
 {
-  double wts[n_gen1*n_gen2*n_ind], ***Wts;
+  double *wts, ***Wts;
   double loglik, temp;
   int i, k1, k2;
 
-  reorg_genoprob(n_ind, n_gen1, n_gen2, wts, &Wts);
+  /* allocate space */
+  allocate_double(n_gen1*n_gen2*n_ind, &wts);
+  reorg_genoprob(n_ind, n_gen2, n_gen1, wts, &Wts);
 
   scantwo_binary_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts, 
 			  Addcov, n_addcov, Intcov, n_intcov, 

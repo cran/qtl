@@ -480,6 +480,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     results <- rbind(results,z)
   } # end loop over chromosomes
 
+  if(n.addcovar + n.intcovar > 0)
+    results <- results[,1:3]
+  
   # sort the later columns
   if(ncol(results) > 3) {
     neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))

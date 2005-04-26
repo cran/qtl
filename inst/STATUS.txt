@@ -6,7 +6,7 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
-Version 0.99, 4/25/2005:
+Version 0.99, 4/26/2005:
 
 Major changes:
 

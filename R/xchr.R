@@ -715,12 +715,14 @@ function(type, sexpgm)
 ######################################################################
 # revisecovar
 #
-# Drop sex and pgm as covariates for the X chromosome.
+# Drop sex and pgm and their interxn as covariates for the X chr.
 ######################################################################
 revisecovar <-
 function(sexpgm, covar)
 {
-  if(is.null(covar)) return(covar)
+  if(is.null(covar) || (is.null(sexpgm$sex) && is.null(sexpgm$pgm)))
+    return(covar)
+
   covar <- as.matrix(covar)
 
   X <- cbind(1,sexpgm$sex,sexpgm$pgm, sexpgm$sex*sexpgm$pgm)

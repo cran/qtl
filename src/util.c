@@ -8,7 +8,7 @@
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Mar, 2005
+ * last modified Apr, 2005
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -495,8 +495,13 @@ void comparegeno(int **Geno, int n_ind, int n_mar,
 void R_comparegeno(int *geno, int *n_ind, int *n_mar, 
 		   int *n_match, int *n_missing)
 {
-  int *Geno[*n_mar], *N_Match[*n_ind], *N_Missing[*n_ind];
+  int **Geno, **N_Match, **N_Missing;
   int i;
+
+  /* allocate space */
+  Geno = (int **)R_alloc(*n_mar, sizeof(int *));
+  N_Match = (int **)R_alloc(*n_ind, sizeof(int *));
+  N_Missing = (int **)R_alloc(*n_ind, sizeof(int *));
 
   Geno[0] = geno;
   N_Match[0] = n_match;
