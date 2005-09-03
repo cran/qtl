@@ -13,7 +13,7 @@
 }
 
 \usage{
-summary.cross(object, \dots)
+\method{summary}{cross}(object, \dots)
 nind(object)
 nmar(object)
 totmar(object)

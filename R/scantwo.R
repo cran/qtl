@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University,
 #            Hao Wu, and Brian Yandell
-# last modified Mar, 2005
+# last modified Sep, 2005
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -692,6 +692,19 @@ function(cross, chr, pheno.col=1,
 
         if(method=="hk") nllikX <- (n.ind/2)*log10(sum((residX*weights)^2))
         else {
+          if(method=="imp") {
+            if(n.ac > 0) {
+              out0 <- lm(pheno ~ ac, weights=weights^2)
+              resid0 <- out0$resid
+            }
+            else {
+              out0 <- lm(pheno ~ 1, weights=weights^2)
+              resid0 <- out0$resid
+            }
+            
+            sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
+            nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
+          }
           sigX <- sqrt(sum((residX*weights)^2)/n.ind)
           nllikX <- -sum(dnorm(residX,0,sigX/weights,log=TRUE))/log(10)
         }
@@ -908,16 +921,16 @@ function (object, thresholds = c(0, 0, 0),
   # go through each pair of chromosomes
   for(i in 1:n.chr) {
     for(j in i:n.chr) { 
-      tmplod1 <- lod[wh.index[[j]], wh.index[[i]]]
+      tmplod1 <- lod[wh.index[[j]], wh.index[[i]],drop=FALSE]
       if(!is.null(condlod)) {
-        if(i==j) tmpcondlod <- condlod[wh.index[[i]],wh.index[[i]]]
+        if(i==j) tmpcondlod <- condlod[wh.index[[i]],wh.index[[i]],drop=FALSE]
         else {
-          tmpcondlod1 <- condlod[wh.index[[j]],wh.index[[i]]]
-          tmpcondlod2 <- condlod[wh.index[[i]],wh.index[[j]]]
+          tmpcondlod1 <- condlod[wh.index[[j]],wh.index[[i]],drop=FALSE]
+          tmpcondlod2 <- condlod[wh.index[[i]],wh.index[[j]],drop=FALSE]
         }
       }
 
-      if(i != j) tmplod2 <- lod[wh.index[[i]], wh.index[[j]]]
+      if(i != j) tmplod2 <- lod[wh.index[[i]], wh.index[[j]],drop=FALSE]
       else tmplod2 <- tmplod1
       
 
@@ -926,16 +939,24 @@ function (object, thresholds = c(0, 0, 0),
           tri <- lower.tri(tmplod1)
           lod.joint <- max(tmplod1[tri])
           idx <- which(tmplod1 == lod.joint & tri, arr.ind=TRUE)
+          if(!is.matrix(idx)) {
+            cat("problem\n")
+            return(tmplod1)
+          }
         }
         else {
           lod.joint <- max(tmplod1)
           idx <- which(tmplod1 == lod.joint, arr.ind=TRUE)
+          if(!is.matrix(idx)) {
+            cat("problem\n")
+            return(tmplod1)
+          }
         }
-        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),]
+        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),,drop=FALSE]
         idx.row <- idx[1]
         idx.col <- idx[2]
         
-        lod.int <- tmplod2[idx.col, idx.row]
+        lod.int <- tmplod2[idx.col, idx.row,drop=FALSE]
       }
       else { # interaction lod
         if(i == j) {
@@ -947,11 +968,11 @@ function (object, thresholds = c(0, 0, 0),
           lod.int <- max(tmplod2)
           idx <- which(tmplod2 == lod.int)
         }
-        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),]
+        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),,drop=FALSE]
         idx.row <- idx[2]
         idx.col <- idx[1]
         
-        lod.joint <- tmplod1[idx.row, idx.col]
+        lod.joint <- tmplod1[idx.row, idx.col,drop=FALSE]
       }
       
       full.idx.row <- idx.row + wh.index[[j]][1] - 1
@@ -961,12 +982,12 @@ function (object, thresholds = c(0, 0, 0),
       if(lod.joint >= thrfull) {
         if(includes.scanone) {
           if(i==j) {
-            lod.q1 <- tmpcondlod[idx.row,idx.col]
-            lod.q2 <- tmpcondlod[idx.col,idx.row]
+            lod.q1 <- tmpcondlod[idx.row,idx.col,drop=FALSE]
+            lod.q2 <- tmpcondlod[idx.col,idx.row,drop=FALSE]
           }
           else {
-            lod.q1 <- tmpcondlod1[idx.row,idx.col]
-            lod.q2 <- tmpcondlod2[idx.col,idx.row]
+            lod.q1 <- tmpcondlod1[idx.row,idx.col,drop=FALSE]
+            lod.q2 <- tmpcondlod2[idx.col,idx.row,drop=FALSE]
           }
           
           if(lod.int >= thrint || min(c(lod.q1, lod.q2)) >= thrcond) {

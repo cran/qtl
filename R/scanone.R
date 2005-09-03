@@ -3,7 +3,7 @@
 # scanone.R
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2005
+# last modified Sep, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -335,7 +335,6 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
     z <- matrix(z$result,nrow=n.pos)
 
-
     # interval mapping without covariates:
     #   rescale log likelihood
     if(method!="imp" && n.ac > 0)
@@ -375,7 +374,6 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     # re-scale with null log10 likel for methods em and hk
     if((method=="em" && model=="normal") || method=="hk") 
       z[,3] <- nllik0 - z[,3]
-
 
     # get null log10 likelihood for the X chromosome
     if(chrtype=="X") {
@@ -423,10 +421,24 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
           if(method=="hk") nllikX <- (n.ind/2)*log10(sum((residX*weights)^2))
           else {
+            if(method=="imp") {
+              if(n.ac > 0) {
+                out0 <- lm(pheno ~ ac, weights=weights^2)
+                resid0 <- out0$resid
+              }
+              else {
+                out0 <- lm(pheno ~ 1, weights=weights^2)
+                resid0 <- out0$resid
+              }
+              
+              sig0 <- sqrt(sum((resid0*weights)^2)/n.ind)
+              nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
+            }
             sigX <- sqrt(sum((residX*weights)^2)/n.ind)
             nllikX <- -sum(dnorm(residX,0,sigX/weights,log=TRUE))/log(10)
           }
           # rescale LOD score
+          zz <- z
           z[,3] <- z[,3] + nllikX - nllik0
         }
       }
@@ -571,9 +583,10 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   }
 
   # beginning and end of chromosomes
-  temp <- grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",rownames(out))
-  if(length(temp)==0) temp <- out
-  else temp <- out[-temp,]
+#  temp <- grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",rownames(out))
+#  if(length(temp)==0) temp <- out
+#  else temp <- out[-temp,]
+  temp <- out
   begend <- matrix(unlist(tapply(temp[,2],temp[,1],range)),ncol=2,byrow=TRUE)
   rownames(begend) <- unique(out[,1])
   begend <- begend[as.character(chr),,drop=FALSE]

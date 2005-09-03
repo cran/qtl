@@ -9,7 +9,7 @@
 }
 
 \usage{
-max.scantwo(\dots, na.rm=TRUE)
+\method{max}{scantwo}(\dots, na.rm=TRUE)
 }
 
 \arguments{

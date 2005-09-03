@@ -2,9 +2,9 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Nov, 2004
+# last modified Sep, 2005
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -40,6 +40,8 @@ makeqtl <-
 
   # cross type
   type <- class(cross)[1]
+  chrtype <- sapply(cross$geno, class)
+  sexpgm <- getsex(cross)
   
   # check phenotypes
 #  if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
@@ -90,23 +92,12 @@ makeqtl <-
       # if everything is all right, take the genotype
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
 
-      ### Fix up X chromsome here, and replace stuff below ###
-
-      # get the number of genotypes for this marker
-      if(type == "f2") {
-        if(class(cross$geno[[i.chr]]) == "A") # autosomal
-          n.gen[i] <- 3
-        else                             # X chromsome 
-          n.gen[i] <- 2
-      }
-      else if(type == "bc" || type=="riself" || type=="risib") 
-        n.gen[i] <- 2
-      else if(type == "4way") 
-        n.gen[i] <- 4
-      else {
-        err <- paste("makeqtl not available for cross", type)
-        stop(err)
-      }
+      # no. genotypes
+      n.gen[i] <- length(getgenonames(type,chrtype[i.chr],"full",sexpgm))
+      
+      # Fix up X chromsome here
+      if(chrtype[i.chr]=="X")
+        geno[,i,] <- reviseXdata(type,"full",sexpgm,draws=geno[,i,,drop=FALSE])
     }
     # give geno dimension names
     # the 2nd dimension called "Q1", "Q2", etc.

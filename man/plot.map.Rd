@@ -7,7 +7,10 @@
   Plot genetic map of marker locations for all chromosomes.
 }
 
-\usage{plot.map(x, map2, horizontal=FALSE, shift=TRUE, \dots)}
+\usage{
+\method{plot}{map}(x, map2, horizontal=FALSE, shift=TRUE, \dots)
+plot.map(x, map2, horizontal=FALSE, shift=TRUE, \dots)
+}
 
 \arguments{
   \item{x}{A list whose components are vectors of marker locations.  A

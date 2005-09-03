@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.scanone(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
+\method{plot}{scanone}(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
              xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
              add=FALSE, gap=25, main, mtick = c("line", "triangle"),
              \dots)

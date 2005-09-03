@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.cross(x, auto.layout=TRUE, pheno, \dots)
+\method{plot}{cross}(x, auto.layout=TRUE, pheno, \dots)
 }
 
 \arguments{

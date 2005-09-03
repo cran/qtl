@@ -8,7 +8,7 @@
 }
 
 \usage{
-summary.scantwo(object, thresholds = c(0, 0, 0),
+\method{summary}{scantwo}(object, thresholds = c(0, 0, 0),
                 type = c("joint","interaction"), \dots)
 }
 

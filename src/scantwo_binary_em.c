@@ -112,9 +112,9 @@ void scantwo_1chr_binary_em(int n_ind, int n_pos, int n_gen,
 			    double **Intcov, int n_intcov, int *pheno, double *start,
 			    double **Result, int maxit, double tol, int verbose)
 {
-  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
+  int error_flag, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, pardif;
-  double *wts, temp, ***Probs, oldllik=0.0, llik[2];
+  double *wts, ***Probs, oldllik=0.0, llik[2];
 
   n_col[0] = (2*n_gen-1) + n_addcov + 2*(n_gen-1)*n_intcov;
   n_col[1] = n_gen*n_gen + n_addcov + (n_gen*n_gen-1)*n_intcov;
@@ -201,17 +201,6 @@ void scantwo_1chr_binary_em(int n_ind, int n_pos, int n_gen,
 	      }
 	    }
 	    
-#ifdef UNDEFINED
-	    /* check for convergence */
-	    for(j=0; j<n_col[m]; j++) {
-	      if(fabs(param[j]-oldparam[j]) > 
-		 tol*(fabs(oldparam[j])+tol*100.0)) {
-		flag = 1;
-		break;
-	      }
-	    }
-	    if(!flag) break;
-#endif
 	    flag = 1;
 	    /* use log likelihood only to check for convergence */
 	    if(llik[m]-oldllik < tol) { 
@@ -231,14 +220,6 @@ void scantwo_1chr_binary_em(int n_ind, int n_pos, int n_gen,
 	    warning("Didn't converge!\n");
 	  }
 
-#ifdef UNDEFINED
-	  if(!error_flag) { /* skip if there was an error */
-	    /* calculate log likelihood */
-	    llik[m] = scantwo_binary_em_loglik(n_ind, n_gen, n_gen, Probs, 
-					      Addcov, n_addcov, Intcov, 
-					      n_intcov, pheno, param, m);
-	  }
-#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 
@@ -354,9 +335,9 @@ void scantwo_2chr_binary_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 			    double **Result_full, double **Result_int, 
 			    int maxit, double tol, int verbose)
 {
-  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
+  int error_flag, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12;
-  double *wts, temp, ***Probs, oldllik=0.0, llik[2];
+  double *wts, ***Probs, oldllik=0.0, llik[2];
 
   n_col[0] = (n_gen1+n_gen2-1) + n_addcov + (n_gen1+n_gen2-2)*n_intcov;
   n_col[1] = n_gen1*n_gen2 + n_addcov + (n_gen1*n_gen2-1)*n_intcov;
@@ -439,17 +420,6 @@ void scantwo_2chr_binary_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	      }
 	    }
 	    
-#ifdef UNDEFINED
-	    /* check for convergence */
-	    for(j=0; j<n_col[m]; j++) {
-	      if(fabs(param[j]-oldparam[j]) > 
-		 tol*(fabs(oldparam[j])+tol*100.0)) {
-		flag = 1;
-		break;
-	      }
-	    }
-	    if(!flag) break;
-#endif
 	    flag = 1;
 	    /* use log likelihood only to check for convergence */
 	    if(llik[m]-oldllik < tol) { 
@@ -469,14 +439,6 @@ void scantwo_2chr_binary_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	    warning("Didn't converge!\n");
 	  }
 
-#ifdef UNDEFINED
-	  if(!error_flag) { /* skip if there was an error */
-	    /* calculate log likelihood */
-	    llik[m] = scantwo_binary_em_loglik(n_ind, n_gen1, n_gen2, Probs, 
-			     Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, param, m);
-	  }
-#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 
@@ -534,7 +496,7 @@ void scantwo_binary_em_mstep(int n_ind, int n_gen1, int n_gen2,
 			     double *param, int full_model,
 			     int n_col, int *error_flag)
 {
-  int i, j, j2, k1, k2, s, s2, nparm1, info;
+  int i, j, j2, k1, k2, s, s2, info;
   double rcond, temp, *junk;
   double *grad, *jac, **Jac;
   double *tf1, ***f1, *tf2, ***f2;
@@ -808,16 +770,6 @@ void scantwo_binary_em_mstep(int n_ind, int n_gen1, int n_gen2,
     }
   } /* end loop over individuals */
   /* done calculating Jacobian */
-
-
-  /* Copy upper triangle into lower triangle.                   */
-  /* This isn't be needed, since the Fortran functions below    */
-  /* assume a symmetric matrix and use only the upper triangle. */
-#ifdef UNDEFINED
-    for(k1=0; k1<n_col-1; k1++)                                 
-      for(k2=(k1+1); k2<n_col; k2++) 
-	Jac[k1][k2] = Jac[k2][k1]; 
-#endif
 
 
   /* solve work1 * beta = work2 for beta */

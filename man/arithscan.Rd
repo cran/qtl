@@ -10,8 +10,8 @@
 }
 
 \usage{
-scan1+scan2
-scan1-scan2
+\special{scan1+scan2}
+\special{scan1-scan2}
 }
 
 \arguments{

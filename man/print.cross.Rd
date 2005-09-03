@@ -9,7 +9,7 @@
 }
 
 \usage{
-print.cross(x, \dots)
+\method{print}{cross}(x, \dots)
 }
 
 \arguments{

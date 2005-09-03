@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified May, 2005
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -27,13 +27,29 @@ function(cross, maxit=4000, tol=1e-4)
   n.ind <- nind(cross)
   mar.names <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
   
+  type <- class(cross)[1]
+  chrtype <- sapply(cross$geno,class)
+
+  xchrcol <- NULL
+  fixX <- FALSE
   Geno <- NULL
   # create full genotype matrix
-  for(i in 1:n.chr) 
-    Geno <- cbind(Geno,cross$geno[[i]]$data)
+  for(i in 1:n.chr) {
+    temp <- cross$geno[[i]]$data
+
+    # treat X chromosome specially in an intercross
+    if((type=="f2" || type=="f2ss") && chrtype[i]=="X") {
+      fixX <- TRUE
+      if(i != 1) xchrcol <- c(xchrcol,ncol(Geno)+(1:ncol(cross$geno[[i]]$data)))
+      else xchrcol <- 1:ncol(cross$geno[[i]]$data)
+      xchr <- temp
+      xchr[is.na(xchr)] <- 0
+      temp <- reviseXdata(type,"simple",getsex(cross),geno=temp)
+    }
+    Geno <- cbind(Geno,temp)
+  }
 
   # which type of cross is this?
-  type <- class(cross)[1]
   if(type == "f2" || type=="f2ss") 
     cfunc <- "est_rf_f2"
   else if(type == "bc" || type=="risib" || type=="riself") 
@@ -67,6 +83,17 @@ function(cross, maxit=4000, tol=1e-4)
 
   cross$rf <- matrix(z$rf,ncol=n.mar)
   dimnames(cross$rf) <- list(mar.names,mar.names)
+
+  if(fixX) {
+    zz <- .C("est_rf_bc",
+             as.integer(n.ind),
+             as.integer(ncol(xchr)),
+             as.integer(xchr),
+             rf=as.double(rep(0,ncol(xchr)^2)),
+             PACKAGE="qtl")
+    zz <- matrix(zz$rf,ncol=ncol(xchr))
+    cross$rf[xchrcol,xchrcol] <- zz
+  }
 
   checkrf(cross, 3)
   cross

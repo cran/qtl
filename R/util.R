@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
 #     [find.pheno and find.flanking from Brian Yandell]
-# last modified Apr, 2005
+# last modified Sep, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -18,6 +18,7 @@
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, convert.scanone, find.pheno,
 #           find.flanking, strip.partials, comparegeno
+#           qtlversion
 #
 ######################################################################
 
@@ -1152,8 +1153,13 @@ function(cross, chr, pos)
       else {
         x <- names(thismap)[o2]
         n.geno <- apply(cross$geno[[o]]$data[,o2],2,function(a) sum(!is.na(a)))
+
         o2 <- o2[n.geno==max(n.geno)]
-        markers[i] <- names(thismap)[sample(o2,1)]
+        if(length(o2) == 1)
+            markers[i] <- names(thismap)[o2]
+        else
+            markers[i] <- names(thismap)[sample(o2,1)]
+
       }
     }
   }
@@ -1768,7 +1774,12 @@ function(cross, what=c("proportion","number"))
 }
   
           
-
+######################################################################
+# print the installed version of R/qtl
+######################################################################
+qtlversion <-
+function()
+  installed.packages()["qtl","Version"]
 
 # end of util.R
 

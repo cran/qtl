@@ -56,6 +56,7 @@ plot.scantwo            Plot LOD scores for a two-dimensional genome
 print.cross             Print a QTL experiment
 pull.geno               Pull out the genotype data from a cross
 pull.map                Pull out the genetic map from a cross
+qtlversion              Installed version of R/qtl
 read.cross              Read data for a QTL experiment
 replace.map             Replace the genetic map of a cross
 ripple                  Compare marker orders

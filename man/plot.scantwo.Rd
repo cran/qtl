@@ -8,9 +8,9 @@
 }
 
 \usage{
-plot.scantwo(x, chr, incl.markers=FALSE, zlim,
-             lower=c("cond-int","cond-add","joint"), nodiag=TRUE, 
-             contours=FALSE, main, zscale=TRUE,
+\method{plot}{scantwo}(x, chr, incl.markers=FALSE, zlim,
+             lower=c("joint","cond-int","cond-add"), nodiag=TRUE, 
+             contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
              col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
              gamma=1, \dots)
 }			    
@@ -34,6 +34,7 @@ plot.scantwo(x, chr, incl.markers=FALSE, zlim,
     LOD.} 
   \item{main}{An optional title for the plot.}
   \item{zscale}{If TRUE, a color scale is plotted at the right.}
+  \item{point.at.max}{If TRUE, plot an X at the maximum LOD.}
   \item{col.scheme}{Name of color pallet.}
   \item{gamma}{Parameter affecting range of colors when
     \code{col.scheme="gray"} or \code{="redblue"}.}

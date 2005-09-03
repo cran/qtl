@@ -2,9 +2,9 @@
 #
 # plot.R
 #
-# copyright (c) 2000-4, Karl W Broman, Johns Hopkins University
+# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Nov, 2004
+# last modified Aug, 2005
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -589,7 +589,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   on.exit(par(las = oldlas))
   par(las = 1)
 
-  # find chromosome containing the markers
+  # find chromosomes containing the markers
   o <- sapply(cross$geno, function(a, b) !is.na(match(b, colnames(a$data))), 
               marker)
   if(length(marker)==1) o <- matrix(o,nrow=1)
@@ -601,13 +601,16 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   n.mark <- length(marker)
   o <- apply(o, 1, which)
   chr <- names(cross$geno)[o]
+  uchr <- unique(chr)
 
-  cross <- subset(cross, chr)
+  cross <- subset(cross, chr=uchr)
   map <- pull.map(cross)
   pos <- NULL
   for(i in seq(length(chr))) pos[i] <- map[[chr[i]]][marker[i]]
   chrtype <- sapply(cross$geno, class)
-
+  if(length(chr) != length(uchr))
+    chrtype <- chrtype[chr]
+  
   # if X chromosome and backcross or intercross, get sex/direction data
   if(any(chrtype == "X") && (type == "bc" || type == "f2" || 
             type == "f2ss")) 
@@ -616,9 +619,10 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
 
   # number of possible genotypes
   gen.names <- list()
-  for(i in seq(length(chr)))
+  for(i in seq(length(chr))) 
     gen.names[[i]] <- getgenonames(type, chrtype[i], "full", sexpgm)
   n.gen <- sapply(gen.names, length)
+
 
   jitter <- jitter/10
   if(any(n.gen == 2)) jitter <- jitter * 0.75

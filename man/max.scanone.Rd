@@ -9,7 +9,7 @@
 }
 
 \usage{
-max.scanone(\dots, chr, na.rm=TRUE)
+\method{max}{scanone}(\dots, chr, na.rm=TRUE)
 }
 
 \arguments{

@@ -2,9 +2,9 @@
 #
 # plot.scantwo.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University,
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University,
 #                       Hao Wu and Brian Yandell
-# last modified Nov, 2004
+# last modified Sep, 2005
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -17,8 +17,8 @@
 
 plot.scantwo <-
 function(x, chr, incl.markers = FALSE, zlim,
-         lower = c("cond-int", "cond-add", "joint"), nodiag = TRUE,
-         contours = FALSE, main, zscale = TRUE,
+         lower = c("joint", "cond-int", "cond-add"), nodiag = TRUE,
+         contours = FALSE, main, zscale = TRUE, point.at.max=FALSE,
          col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
          gamma = 1, ...)
 {
@@ -41,19 +41,13 @@ function(x, chr, incl.markers = FALSE, zlim,
   }
   else scanoneX <- x$scanoneX
 
-  # deal with bad LOD score values
-  if(any(is.na(lod) | lod < -1e-06 | lod == Inf)) {
-    warning("Some LOD scores NA, Inf or < 0; set to 0")
-    lod[is.na(lod) | lod < 0 | lod == Inf] <- 0
-  }
-
   # if incl.markers is FALSE, drop positions
   #     for which third column of map is 0
   if(!incl.markers && any(map[, 3] == 0)) {
     o <- (map[, 3] == 1)
     lod <- lod[o, o]
     map <- map[o, ]
-    if(!is.null(scanoneX)) scanoneX <- scanoneX[o,]
+    if(!is.null(scanoneX)) scanoneX <- scanoneX[o]
   }
 
   if(all(diag(lod) < 1e-14) && lower != "joint") 
@@ -83,6 +77,12 @@ function(x, chr, incl.markers = FALSE, zlim,
   }
 
   if(nodiag) diag(lod) <- 0
+
+  # deal with bad LOD score values
+  if(any(is.na(lod) | lod < -1e-06 | lod == Inf)) {
+    warning("Some LOD scores NA, Inf or < 0; set to 0")
+    lod[is.na(lod) | lod < 0 | lod == Inf] <- 0
+  }
 
   if(missing(zlim)) { # no given zlim
     # calculate the zlim for interactive and joint
@@ -128,9 +128,28 @@ function(x, chr, incl.markers = FALSE, zlim,
                  cm = cm.colors(256),
                  redblue = rev(rainbow(256, start = 0, end = 2/3,gamma=gamma)))
 
-  image(1:ncol(lod), 1:nrow(lod), lod, ylab = "Chromosome", 
-        xlab = "Chromosome", zlim = c(0, zlim.jnt), col = cols,
-        xaxt = "n", yaxt = "n")
+  if(length(chr) > 1)
+    image(1:ncol(lod), 1:nrow(lod), lod, ylab = "Chromosome", 
+          xlab = "Chromosome", zlim = c(0, zlim.jnt), col = cols,
+          xaxt = "n", yaxt = "n")
+  else
+    image(map[,2], map[,2], lod, ylab = "Position (cM)", 
+          xlab = "Position (cM)", zlim = c(0, zlim.jnt), col = cols)
+          
+
+  # plot point at maximum, if requested
+  if(point.at.max) {
+    temp <- lod
+    temp[upper.tri(temp)] <- -50
+    temp[diag(temp)] <- -50
+    wh <- which(temp == max(temp), arr.ind=TRUE)
+    if(length(chr) > 1)
+      points(wh,rev(wh),pch=4,lwd=2)
+    else {
+      points(map[wh[,1],2],map[wh[,2],2],pch=4,lwd=2,col="blue")
+      points(map[wh[,2],2],map[wh[,1],2],pch=4,lwd=2,col="blue")
+    }
+  }
 
   # add contours if requested
   if(any(contours) > 0) {
@@ -138,35 +157,42 @@ function(x, chr, incl.markers = FALSE, zlim,
       contours = 1.5
     tmp = lod
     tmp[row(lod) < col(lod)] <- NA
-    contour(1:ncol(lod), 1:nrow(lod), tmp, add = TRUE,drawlabels=FALSE,
-            levels = max(tmp,na.rm=TRUE) - contours, col = "blue", lwd = 2)
+    if(length(chr) > 1) 
+      thepos <- 1:ncol(lod)
+    else thepos <- map[,2]
+    contour(thepos, thepos, tmp, add = TRUE,drawlabels=FALSE,
+            levels = max(tmp,na.rm=TRUE) - contours, col = "blue",
+            lwd = 2)
     tmp = lod
     tmp[row(lod) > col(lod)] <- NA
-    contour(1:ncol(lod), 1:nrow(lod), tmp, add = TRUE,drawlabels=FALSE,
+    contour(thepos, thepos, tmp, add = TRUE,drawlabels=FALSE,
             levels = max(tmp,na.rm=TRUE) - contours * zlim.jnt/zlim.int,
             col = "blue", lwd = 2)
   }
 
-  # calculate how many markers in each chromesome
-  n.mar <- NULL
-  for(i in 1:length(chr)) n.mar[i] <- sum(map[, 1] == chr[i])
+  if(length(chr) > 1) {
+    # calculate how many markers in each chromesome
+    n.mar <- NULL
+    for(i in 1:length(chr)) n.mar[i] <- sum(map[, 1] == chr[i])
 
-  # plot lines at the chromosome boundaries
-  wh <- c(0.5, cumsum(n.mar) + 0.5)
-  abline(v = wh, xpd = FALSE)
-  abline(h = wh, xpd = FALSE)
+    # plot lines at the chromosome boundaries
+    if(length(chr) > 1)
+      wh <- c(0.5, cumsum(n.mar) + 0.5)
+    abline(v = wh, xpd = FALSE)
+    abline(h = wh, xpd = FALSE)
 
-  # add chromesome numbers
-  a <- par("usr")
-  for(i in 1:length(n.mar)) {
-    text(mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.025, 
-         chr[i], xpd = TRUE, adj = c(0.5, 1))
-    segments(mean(wh[i + c(0, 1)]), a[3],
-             mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.01, xpd = TRUE)
-    text(a[1] - diff(a[1:2]) * 0.025, mean(wh[i + c(0, 1)]), 
-         chr[i], xpd = TRUE, adj = c(1, 0.5))
-    segments(a[1], mean(wh[i + c(0, 1)]), a[1] - diff(a[1:2]) * 
-             0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
+    # add chromesome numbers
+    a <- par("usr")
+    for(i in 1:length(n.mar)) {
+      text(mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.025, 
+           chr[i], xpd = TRUE, adj = c(0.5, 1))
+      segments(mean(wh[i + c(0, 1)]), a[3],
+               mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.01, xpd = TRUE)
+      text(a[1] - diff(a[1:2]) * 0.025, mean(wh[i + c(0, 1)]), 
+           chr[i], xpd = TRUE, adj = c(1, 0.5))
+      segments(a[1], mean(wh[i + c(0, 1)]), a[1] - diff(a[1:2]) * 
+               0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
+    }
   }
 
   # add title

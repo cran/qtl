@@ -10,7 +10,7 @@
 
 \usage{
 fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
-       dropone=TRUE)
+       dropone=TRUE, get.ests=FALSE)
 }
 \arguments{
  \item{pheno}{Phenotype data (a numeric vector).}
@@ -24,6 +24,8 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
  \item{method}{Indicates whether to use the EM algorithm or  
    imputation. (Only imputation is implemented at this point.)}
  \item{dropone}{If TRUE, do drop-one-term analysis.}
+ \item{get.ests}{If TRUE, return estimated QTL effects and their
+   estimated variance-covariance matrix.}
 }
 
 \details{
@@ -32,27 +34,45 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
   it is dropped, all higher order terms that contain it will also be
   dropped.  The comparison between the new model and the full (input)
   model will be output.
+
+  \bold{The part to get estimated QTL effects is fully working only for
+    the case of autosomes in a backcross or intercross.
+    In other cases the values returned are based on a
+    design matrix that is convenient for calculations but not easily
+    interpreted.}
+
 }
 
 \section{Value}{
-  An object of class \code{fitqtl}. It may contains two fields:
+  An object of class \code{fitqtl}. It may contains as many as three fields:
   \enumerate{
     \item result.full is the ANOVA table as a matrix for the full model
     result. It contains the degree of freedom (df), Sum of squares (SS),
     mean square (MS), LOD score (LOD), percentage of variance explained
     (\%var) and P value (Pvalue).
+
+
     \item result.drop is a drop-one-term ANOVA table as a matrix. It
     contains degrees of freedom (df), Type III sum of squares (Type III
     SS), LOD score(LOD), percentage of variance explained (\%var), F
     statistics (F value),  and P values for chi square (Pvalue(chi2))
     and F distribution (Pvalue(F)).
-    
+
     Note that the degree of freedom, Type III sum of squares, the LOD
     score and the percentage of variance explained are the values
     comparing the full to the sub-model with the term dropped. Also note
     that for imputation method, the percentage of variance explained, the
     the F values and the P values are approximations calculated from the
     LOD score.
+
+    \item ests contains the estimated QTL effects and standard errors.  
+
+  \bold{The part to get estimated QTL effects is fully working only for
+    the case of autosomes in a backcross or intercross.
+    In other cases the values returned are based on a
+    design matrix that is convenient for calculations but not easily
+    interpreted.}
+    
   }
 }
 
