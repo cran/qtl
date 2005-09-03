@@ -71,7 +71,7 @@ void sim_all_ril(int n_chr, int *n_mar, int n_ril, double *map,
 		 int n_str, int m, int include_x, int random_cross,
 		 int *cross, int *ril)
 {
-  int i, j, tot_mar;
+  int i, tot_mar;
   int *par1a, *par1b, *par2a, *par2b;
   int *kid1a, *kid1b, *kid2a, *kid2b;
   int **Par1a, **Par1b, **Par2a, **Par2b;
@@ -164,7 +164,7 @@ void sim_ril(int n_chr, int *n_mar, int tot_mar, double **map, int n_str,
 	     int **Par1a, int **Par1b, int **Par2a, int **Par2b, 
 	     int **Kid1a, int **Kid1b, int **Kid2a, int **Kid2b)
 {
-  int i, j, k, s, flag;
+  int i, j, k, flag;
 
   for(i=0; i<n_str; i++) cross[i] = i+1;
   if(random_cross) int_permute(cross, n_str);

@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-5, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Apr, 2005
+# last modified Jun, 2005
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -90,8 +90,13 @@ function (file)
   b <- grep("|", s, extended = FALSE)
   s <- grep("0", s)
   s <- ceiling((s[length(s)] - b - 1)/nchrom)
-  position <- as.matrix(read.fwf(file, c(1 + b, rep(s, nchrom)), 
-                                 skip = tmp[1] - 1, n = tmp[2])[, -1])
+#  position <- as.matrix(read.fwf(file, c(1 + b, rep(s, nchrom)), 
+#                                 skip = tmp[1] - 1, n = tmp[2])[, -1])
+
+  position <- scan(file, what=character(), sep="\n",
+                         skip = tmp[1] - 1, n = tmp[2], quiet=TRUE)
+  
+
   tmp <- grep("-b", f)
   markers <- scan(file, list(1, 2, ""), skip = tmp[1], nlines = nmarkers, 
                   blank.lines.skip = FALSE, quiet = TRUE)
@@ -99,8 +104,17 @@ function (file)
                  blank.lines.skip = FALSE, quiet = TRUE)[[2]]
   map <- list()
   n.markers <- table(markers[[1]])
+
+  # make sense of "position" 
+  position <- strsplit(position, "\\s+")
+  pos <- matrix(ncol=nchrom,nrow=max(n.markers))
+  for(i in 1:max(n.markers)) {
+    z <- position[[i]][-(1:3)]
+    pos[i,which(n.markers >= i-1)] <- as.numeric(z)
+  }
+
   for (i in seq(nchrom)) {
-    tmp <- cumsum(position[1:n.markers[i],i])
+    tmp <- cumsum(pos[1:n.markers[i],i])
     names(tmp) <- markers[[3]][i == markers[[1]]]
     map[[chroms[i]]] <- tmp
   }

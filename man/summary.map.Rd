@@ -8,7 +8,7 @@
 }
 
 \usage{
-summary.map(object, \dots)
+\method{summary}{map}(object, \dots)
 }
 
 \arguments{

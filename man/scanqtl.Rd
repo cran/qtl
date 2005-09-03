@@ -11,7 +11,7 @@
 
 \usage{
 scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
-        method=c("imp"), incl.markers=FALSE)
+        method=c("imp"), incl.markers=FALSE, verbose=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -30,6 +30,7 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
    imputation. (Only imputation is implemented at this point.)}
  \item{incl.markers}{If FALSE, do calculations only at points on an
    evenly spaced grid.}
+ \item{verbose}{If TRUE, give feedback about progress.}
 }
 
 \details{

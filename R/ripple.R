@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2003
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified Aug, 2005
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -213,12 +213,14 @@ function(x, ...)
   if(is.na(match("obligXO",colnames(x)))) 
     colnames(x)[n-1] <- "    LOD"
 
+  class(x) <- "matrix"
+
   if(nrow(x) > 20) {
-    print.matrix(x[1:20,])
+    print(x[1:20,])
     n <- nrow(x)-20
     cat(paste("... [", n, " additional rows] ...\n",sep=""))
   }
-  else print.matrix(x)
+  else print(x)
 }
 
 ######################################################################

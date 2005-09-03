@@ -8,7 +8,9 @@
   \code{cross} object.
 }
 
-\usage{subset.cross(x, chr, ind, \dots)}
+\usage{
+\method{subset}{cross}(x, chr, ind, \dots)
+}
 
 \arguments{
  \item{x}{An object of class \code{cross}.  See

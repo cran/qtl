@@ -10,12 +10,33 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
-o Documentation for scanone() and scantwo() regarding the X chromosome.
+o Finish off the work to get coefficient estimates by imputation in
+  fitqtl for the X chromosome in BC and F2. 
+
+o Fix scantwo for the case that incl.markers=TRUE, so that positions
+  are not equally spaced, but are according to the genetic map.
 
 o geno.table(): the X chromosome needs special treatment.
 
 o P-values from geno.table() when an intercross has some dominant
   markers.  
+
+o summary.scantwo doesn't work if there's just two positions on a
+  chromosome (or maybe it's for one position).
+
+o Changed default for plot.scantwo to lower="joint"; check that the
+  tutorial reflects this.  
+
+o An NA in the mapmaker data file caused an error in read.cross;
+  the line became too long.  Maybe this is true whenever an item
+  doesn't match what is expected.
+
+o Add sample data to the web site.
+
+o Speed up read.cross.mm; deliver meaningful errors if map/genotypes
+  don't match, and if too many genotypes in a row.
+
+o Documentation for scanone() and scantwo() regarding the X chromosome.
 
 o Deal more cleanly with missing values in the output to scantwo.
   Make the warning message more clear, and perhaps don't automatically 
@@ -60,6 +81,10 @@ o Documentation on RI lines.
 
 
 MEDIUM TERM:
+
+o Data input format with two CSV files: one for phenotypes and one for
+  genotypes.  Also, a CSV format that is the transpose of the current
+  format, for things like RILs with many markers but few individuals.
 
 o Pull out results for an interval.
 
@@ -110,8 +135,6 @@ o Calculate pairwise QTL probabilities by the more simple method,
 
 o Permutation tests with scantwo should include the results comparing
   2 vs 1 QTL.
-
-o Coefficient estimates by imputation in fitqtl.
 
 o MIM for a set of QTLs at specified locations with specified
   interactions (as a new method in fitqtl and scanqtl).

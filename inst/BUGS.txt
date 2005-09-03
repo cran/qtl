@@ -10,6 +10,11 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 0.99 bugs:
+
+>>  1. est.rf() treats the X chromosome in an intercross incorrectly.
+
+
 Version 0.98 bugs:
 
     1. makeqtl() dies if the cross object contains QTL genotype

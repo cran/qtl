@@ -75,7 +75,11 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
   OLD.symb <- c("A","H","B","D","C","-")
 
   flag <- 0
+#  rawdata <- scan(rawfile,what=character(),sep="\n",
+#                  blank.lines.skip=TRUE,quiet=TRUE)
+#  
   for(i in 1:n.lines) {
+#    a <- strsplit(rawdata[[i]],"\\s+",extended=TRUE)[[1]]
     a <- scan(rawfile,what=character(),skip=i-1,nlines=1,
               blank.lines.skip=TRUE,quiet=TRUE)
 

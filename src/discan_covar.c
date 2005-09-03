@@ -128,7 +128,7 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
   double *temp1s, *temp2s;
   double *newpar, *curpar;
   double newllik, curllik, sum;
-  int info, flag;
+  int info;
   double rcond, *junk;
 
   /* allocate space */
@@ -230,13 +230,6 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
       }
     }
 
-    /* copy over triangle */
-#ifdef UNDEFINED
-    for(j=0; j < n_par-1; j++)
-      for(k=j; k<n_par; k++)
-	Jac[k][j] = Jac[j][k];
-#endif
-
     if(verbose > 1) {
         Rprintf("grad: ");
     for(j=0; j<n_par; j++) 
@@ -283,22 +276,6 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
       if(newllik < curllik) Rprintf(" ***");
       Rprintf("\n");
     }
-
-#ifdef UNDEFINED
-    flag = 0;
-    for(j=0; j<n_par; j++) {
-      if(fabs(newpar[j] - curpar[j]) > tol) {
-	flag = 1;
-	break;
-      }
-    }
-    if(flag == 0) { /* converged */
-      if(!verbose) 
-	newllik = discan_covar_loglik(n_ind, pos, n_gen, n_par, newpar, Genoprob,
-				      Addcov, n_addcov, Intcov, n_intcov, pheno);
-      return(newllik); 
-    }
-#endif
 
     if(newllik - curllik < tol) return(newllik);
     

@@ -10,7 +10,7 @@
 }
 
 \usage{
-summary.ripple(object, lod.cutoff = -1, \dots)
+\method{summary}{ripple}(object, lod.cutoff = -1, \dots)
 }
 
 \arguments{

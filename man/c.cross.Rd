@@ -7,7 +7,9 @@
   Concatenate the data for multiple QTL experiments.
 }
 
-\usage{c.cross(\dots)}
+\usage{
+\method{c}{cross}(\dots)
+}
 
 \arguments{
  \item{\dots}{A set of objects of class \code{cross}.  See

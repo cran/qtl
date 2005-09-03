@@ -223,19 +223,6 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	      }
 	    }
 	    
-#ifdef UNDEFINED
-	    /* check for convergence */
-	    flag = 0;
-	    for(j=0; j<n_col[m]+1; j++) {
-	      if(fabs(param[j]-oldparam[j]) > 
-		 tol*(fabs(oldparam[j])+tol*100.0)) {
-		flag = 1;
-		break;
-	      }
-	    }
-	    if(!flag) break;
-#endif
-
 	    flag = 1;
 	    /* use log likelihood only to check for convergence */
 	    if(llik[m]-oldllik < tol) { 
@@ -255,14 +242,6 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	    warning("Didn't converge!\n");
 	  }
 
-#ifdef UNDEFINED
-	  if(!error_flag) { /* skip if there was an error */
-	    /* calculate log likelihood */
-	    llik[m] = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
-					Wts1, Wts2, Addcov, n_addcov, Intcov, 
-					n_intcov, pheno, weights, param, m);
-	  }
-#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 
@@ -494,19 +473,6 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	      }
 	    }
 	    
-#ifdef UNDEFINED
-	    /* check for convergence */
-	    flag = 0;
-	    for(j=0; j<n_col[m]+1; j++) {
-	      if(fabs(param[j]-oldparam[j]) > 
-		 tol*(fabs(oldparam[j])+tol*100.0)) {
-		flag = 1;
-		break;
-	      }
-	    }
-	    if(!flag) break;
-#endif
-
 	    flag = 1;
 	    /* use log likelihood only to check for convergence */
 	    if(llik[m]-oldllik < tol) { 
@@ -528,14 +494,6 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	    warning("Didn't converge!\n");
 	  }
 
-#ifdef UNDEFINED
-	  if(!error_flag) { /* skip if there was an error */
-	    /* calculate log likelihood */
-	    llik[m] = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
-					Wts1, Wts2, Addcov, n_addcov, Intcov, 
-					n_intcov, pheno, weights, param, m);
-	  }
-#endif
 	} /* no error in getting initial estimates */
       } /* loop over model */ 
 

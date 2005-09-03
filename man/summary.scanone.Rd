@@ -10,7 +10,7 @@
 }
 
 \usage{
-summary.scanone(\dots, threshold=0)
+\method{summary}{scanone}(\dots, threshold=0)
 }
 
 \arguments{

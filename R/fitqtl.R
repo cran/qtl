@@ -2,9 +2,9 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Oct, 2004
+# last modified Sep, 2005
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,12 +20,11 @@
 #
 # Now only imputation method is implemented
 #
-#
 ######################################################################
 
 fitqtl <-
 function(pheno, qtl, covar=NULL, formula, method=c("imp"),
-         dropone=TRUE)
+         dropone=TRUE, get.ests=FALSE)
 {
   # some input checking stuff in here
   if( !sum(class(qtl) == "qtl") )
@@ -53,7 +52,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     covar <- covar.tmp
     # hack input qtl object to drop individuals with missing data
     qtl$n.ind <- sum(keep.ind)
-    qtl$geno <- qtl$geno[keep.ind,,]
+    qtl$geno <- qtl$geno[keep.ind,,,drop=FALSE]
   }
   
   # local variables
@@ -62,12 +61,10 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   n.draws <- dim(qtl$geno)[3] # number of draws
   n.gen <- qtl$n.gen # number of genotypes
   
-  if( is.null(covar) ){  # number of covarariates
+  if( is.null(covar) )  # number of covarariates
     n.covar <- 0
-  }
-  else {
+  else 
     n.covar <- ncol(covar)
-  }
   
   # if formula is missing, build one
   # all QTLs and covarariates will be additive by default
@@ -87,7 +84,6 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
 
   # parse the input formula
   p <- parseformula(formula, dimnames(qtl$geno)[[2]], dimnames(covar)[[2]])
-
   # make an array n.gen.QC to represent the genotype numbers
   # for all input QTLs and covarariates. For covarariates the
   # number of genotyps is 1. This makes programming easier
@@ -99,6 +95,18 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   if(!is.null(p$idx.covar))
     covar.C <- as.matrix(covar[,p$idx.covar])
   
+  sizefull <- 1+sum(n.gen.QC)
+  if(p$n.int > 0) {
+    form <- p$formula.intmtx*n.gen.QC
+    if(!is.matrix(form)) {
+      sizefull <- sizefull + prod(form[form!=0])
+    }
+    else {
+      form <- apply(form,2,function(a) prod(a[a != 0]))
+      sizefull <- sizefull + sum(form)
+    }
+  }
+      
   # call C function to do the genome scan
   if(method == "imp") {
     z <- .C("R_fitqtl_imp",
@@ -112,10 +120,96 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
             as.integer(p$formula.intmtx),  # formula matrix for interactive terms
             as.integer(p$n.int), # number of interactions in the formula
             as.double(pheno), # phenotype
+            as.integer(get.ests), # get estimates?
             # return variables
             lod=as.double(0), # LOD score
             df=as.integer(0), # degree of freedom
+            ests=as.double(rep(0,sizefull)),
+            ests.cov=as.double(rep(0,sizefull*sizefull)),
+            design.mat=as.double(rep(0,sizefull*n.ind)),
             PACKAGE="qtl")
+  }
+
+  if(get.ests) { 
+    # first, construct the new design matrix
+    #  X = the matrix used in the C coe
+    #  Z = the matrix we want
+    thenames <- qtl$name[p$idx.qtl]
+    if(n.covar > 0) thenames <- c(thenames,names(covar)[p$idx.covar])
+
+    ests <- z$ests
+    ests.cov <- matrix(z$ests.cov,ncol=sizefull)
+    if(any(qtl$n.gen[p$idx.qtl]>=4)) 
+      warning("Estimated QTL effects not yet made meaningful for this case.\n   ")
+    else {
+      X <- matrix(z$design.mat,ncol=sizefull)
+      Z <- matrix(0,nrow=n.ind,ncol=sizefull)
+      colnames(Z) <- rep("",sizefull)
+
+      # mean column
+      Z[,1] <- 1 
+      colnames(Z)[1] <- "Intercept"
+
+      # ZZ stores the main effects matrices, for creating the interactions
+      ZZ <- vector("list",p$n.qtl+p$n.covar)
+      curcol <- 1
+      # covariates
+      if(p$n.covar > 0) {
+        for(j in 1:p$n.covar) 
+          Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- covar[,p$idx.covar[j],drop=FALSE]
+        colnames(Z)[curcol+1:p$n.covar] <- names(covar)[p$idx.covar]
+        curcol <- curcol + p$n.covar
+      }
+      # QTL main effects
+      for(i in seq(along=p$idx.qtl)) {
+        if(n.gen[i]==2) {
+          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
+          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+1] <- 1
+          colnames(Z)[curcol+1] <- thenames[i]
+        }
+        else { # 3 genotypes
+          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
+          Z[qtl$geno[,p$idx.qtl[i],1]==3,curcol+1] <- 1
+          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+2] <- 1
+          colnames(Z)[curcol+1:2] <- paste(thenames[i],c("a","d"),sep="")
+        }
+        ZZ[[i]] <- Z[,curcol+1:(n.gen[i]-1),drop=FALSE]
+        curcol <- curcol + n.gen[i]-1
+      }
+      if(p$n.int>0) {
+        for(i in 1:p$n.int) {
+          if(p$n.int==1) 
+            intform <- p$formula.intmtx
+          else
+            intform <- p$formula.intmtx[,i]
+          tempZ <- matrix(1,ncol=1,nrow=nrow(Z))
+          colnames(tempZ) <- ""
+          for(j in seq(along=intform)) {
+            if(intform[j]==1) {
+              tZ <- NULL
+              for(k in 1:ncol(ZZ[[j]])) {
+                tZZ <- tempZ * ZZ[[j]][,k]
+                if(all(colnames(tempZ) == ""))
+                  colnames(tZZ) <- colnames(ZZ[[j]])[k]
+                else
+                  colnames(tZZ) <- paste(colnames(tempZ),colnames(ZZ[[j]])[k],sep=":")
+                tZ <- cbind(tZ,tZZ)
+              }
+              tempZ <- tZ
+            }
+          }
+          Z[,curcol+1:ncol(tempZ)] <- tempZ
+          colnames(Z)[curcol+1:ncol(tempZ)] <- colnames(tempZ)
+          curcol <- curcol + ncol(tempZ)
+        }
+      }
+
+      b <- solve(t(Z) %*% Z, t(Z) %*% X)
+      ests <- as.numeric(b %*% ests)
+      ests.cov <- b %*% ests.cov %*% t(b)
+      names(ests) <- colnames(Z)
+      dimnames(ests.cov) <- list(colnames(Z),colnames(Z))
+    }
   }
 
   ##### output ANOVA table for full model #####
@@ -227,7 +321,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
             drop.term.name[i] <- paste(drop.term.name[i], tmp.str[j], sep=":")
         }
       }
-      ### Finish QLT name ###
+      ### Finish QTL name ###
                           
       # find the indices of the term(s) to be dropped
       # All terms contain label.term.drop will be dropped
@@ -281,9 +375,13 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
                 as.integer(p.new$formula.intmtx),  # formula matrix for interactive terms
                 as.integer(p.new$n.int), # number of interactions in the formula
                 as.double(pheno), # phenotype
+                as.integer(0),
                 # return variables
                 lod=as.double(0), # LOD score
                 df=as.integer(0), # degree of freedom
+                as.double(rep(0,sizefull)),
+                as.double(rep(0,sizefull*sizefull)),
+                as.double(rep(0,n.ind*sizefull)),
                 PACKAGE="qtl")
       }
 
@@ -328,6 +426,9 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
 #  }
 
   
+  if(get.ests) 
+    output$ests <- list(ests=ests, covar=ests.cov)
+
   class(output) <- "fitqtl"
   attr(output, "method") <- method
   attr(output, "formula") <- formula
@@ -434,6 +535,9 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 summary.fitqtl <- function(object, ...)
 {
   # this is just an interface.
+  ests <- object$ests$ests
+  se <- sqrt(diag(object$ests$covar))
+  object$ests <- cbind(est=ests, SE=se, t=ests/se)
   class(object) <- "summary.fitqtl"
   object
 }
@@ -456,15 +560,24 @@ print.summary.fitqtl <- function(x, ...)
   cat("----------------------------------  \n")
   cat( paste("Model formula is: ", deparse(attr(x, "formula")), "\n\n") )
   print(x$result.full, quote=FALSE, na.print="")
-  cat("\n\n")
+  cat("\n")
   
   # print ANOVA table for dropping one at a time analysis (if any)
   if("result.drop" %in% names(x)) {
+    cat("\n")
     cat("Drop one QTL at a time ANOVA table: \n")
     cat("----------------------------------  \n")
     # use printCoefmat instead of print.data.frame
     # make sure the last column is P value
     printCoefmat(x$result.drop, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
+    cat("\n")
+  }
+
+  if("ests" %in% names(x)) {
+    cat("\n")
+    cat("Estimated effects:\n")
+    cat("-----------------\n")
+    printCoefmat(x$ests,digits=4)
     cat("\n")
   }
 

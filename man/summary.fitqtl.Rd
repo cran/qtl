@@ -8,7 +8,7 @@
 }
 
 \usage{
-summary.fitqtl(object, \dots)
+\method{summary}{fitqtl}(object, \dots)
 }
 \arguments{
  \item{object}{Output from \code{\link[qtl]{fitqtl}}.}

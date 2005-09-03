@@ -6,6 +6,71 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
+Version 1.00, 9/3/2005:
+
+Major changes:
+
+  Revised fitqtl() so that it can provide estimated QTL effects (using
+  the imputation method), though this is working completely only for
+  autosomes in backcrosses and intercrosses at this point.
+
+  Revised fitqtl() so that it treats the X chromosome appropriately.
+
+Minor changes:
+
+  Fixed a bug in read.cross for the "qtlcart" format.  There was a
+  problem in the reading of map files if the inter-marker distances
+  were at all out of alignment (which occurred when two markers were 
+  100 cM apart).
+
+  est.rf() was revised to treat the X chromosome properly in an
+  intercross. 
+
+  Fixed a bug in scanqtl() in the case that covar=NULL was specified;
+  this should be treated just like if it were missing.
+
+  Modified plot.scantwo() so that the default is lower="joint"; I've
+  become suspicious of lower="cond-int" and "cond-add".  
+
+  Added another argument to plot.scantwo(): point.at.max, for plotting
+  an X at the maximum LOD.
+
+  Added an argument, "verbose", to scanqtl(), to give feedback about
+  progress.
+
+  Revised scanqtl() so that makeqtl() doesn't get called repeatedly,
+  but rather the imputations get copied over.  This sped the thing up
+  immensely.  
+
+  Replaced calls to print.matrix() in print.summary.ripple(), as the
+  function will be dropped from R ver 2.2.
+
+  Fixed a bug in plot.pxg(): it halted with an error in the case of
+  multiple markers on the same chromosome.
+
+  Fixed a bug in fitqtl() that made it die with only one QTL.
+
+  plot.scantwo() now gives cM locations on the axes in the case of
+  just one chromosome.
+
+  Fixed a bug in find.marker.
+
+  Fixed a slight bug in plot.scanone()
+
+  Added a function qtlversion() to print the version number of the
+  currently installed version of the package.
+
+  Fixed a bug in plot.scantwo() regarding the X chromosome in the case
+  that markers were included in scan but are not to be plotted.
+
+  Fixed a bug in scanone() and scantwo() regarding the use of sex
+  and/or pgm as covariates on the X chromosome; this affected only
+  results with method="imp" and only for the X chromosome.
+
+  Revised some of the help files so that they conform to the rules for
+  the latest version of R.
+
+
 Version 0.99, 4/26/2005:
 
 Major changes:

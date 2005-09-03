@@ -2,9 +2,9 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002-4, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
 #                       and Karl W. Broman, Johns Hopkins University
-# last modified Jul, 2004
+# last modified Aug, 2005
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -15,8 +15,12 @@
 
 scanqtl <-
   function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method=c("imp"),
-           incl.markers=FALSE)
+           incl.markers=FALSE, verbose=TRUE)
 {
+  type <- class(cross)
+  chrtype <- sapply(cross$geno,class)
+  sexpgm <- getsex(cross)
+  
   # input data checking
   if( !sum(class(cross) == "cross") )
     stop("The first input variable must be  an object of class cross")
@@ -25,7 +29,7 @@ scanqtl <-
   # note that input chr is a vector and pos is a list
 
   # check the input covariate, if any
-  if(!missing(covar)) {
+  if(!is.null(covar)) {
     if(nrow(covar) != nind(cross))
       stop("Input covariate has wrong size")
   }
@@ -34,6 +38,13 @@ scanqtl <-
     stop("Wrong phenotype column number")
   
   method <- match.arg(method)
+
+  ichr <- match(chr, names(cross$geno))
+  if(any(is.na(ichr))) {
+    err <- paste("There's no chromosome number ", chr[is.na(ichr)],
+                 "in input cross object")
+    stop(err)
+  }
 
   # if formula is missing, make one.
   # All QTLs and covariates will be additive by default
@@ -77,6 +88,7 @@ scanqtl <-
   # find the chromosome with multiple QTLs
   # indices for chromosomes with multiple QTLs
   idx.varied <- NULL
+  indices <- pos  ## added by Karl 8/23/05
   for(i in 1:length(pos)) {
     l <- length(pos[[i]] )
     if( l >= 2 ) {
@@ -92,22 +104,19 @@ scanqtl <-
       # find all markers in this range
       idx.varied <- c(idx.varied, i) 
       # make the genetic map on this chromosome
-      i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) { # no this chromosome in cross
-        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
-        stop(err)
-      }
       if(!("draws" %in% names(cross$geno[[1]]))) # there's no draw in input cross object
         stop("You need to first run sim.geno().")
       # make genetic map
-      map <- create.map(cross$geno[[i.chr]]$map,
-                        attr(cross$geno[[i.chr]]$draws,"step"),
-                        attr(cross$geno[[i.chr]]$draws,"off.end"))
+      map <- create.map(cross$geno[[ichr[i]]]$map,
+                        attr(cross$geno[[ichr[i]]]$draws,"step"),
+                        attr(cross$geno[[ichr[i]]]$draws,"off.end"))
+      indices[[i]] <- seq(along=map)
       if(!incl.markers) { # equally spaced positions
-        step <- attr(cross$geno[[i.chr]]$draws,"step")
+        step <- attr(cross$geno[[ichr[i]]]$draws,"step")
         eq.sp.pos <- seq(min(map), max(map), by=step)
         wh.eq.pos <- match(eq.sp.pos, map)
         map <- map[wh.eq.pos]
+        indices[[i]] <- indices[[i]][wh.eq.pos]
       }
 
       # locate the markers given starting and ending postion
@@ -123,8 +132,7 @@ scanqtl <-
       if(length(tmp) != 0) # ending position is before the last marker
         end <- map[min(tmp)]
       pos[[i]] <- as.vector( map[(map>=start)&(map<=end)] )
-
-
+      indices[[i]] <- indices[[i]][(map>=start)&(map<=end)]
     }
     else { # fixed position rather than range
 # Hao asked me to comment these two lines out      
@@ -137,7 +145,7 @@ scanqtl <-
   #########################
   # Now start general scan
   #########################
-  # There might be severl chromosomes with multiple QTLs
+  # There might be several chromosomes with multiple QTLs
   # Use one loop
   
   # number of chromosomes with multiple positions to be scanned
@@ -157,7 +165,8 @@ scanqtl <-
   else { # fixed QTL model (no scanning)
     qtl <- makeqtl(cross, chr=chr, pos=unlist(pos))
     result <- fitqtl(cross$pheno[,pheno.col], qtl, covar=covar,
-                     formula=formula, method=method, dropone=FALSE)
+                     formula=formula, method=method, dropone=FALSE,
+                     get.ests=FALSE)
     result <- result[1]
     names(result) <- "LOD"
     class(result) <- "scanqtl"
@@ -167,6 +176,8 @@ scanqtl <-
   }
 
   # loop thru all varied QTLs
+  if(verbose) cat(" ",n.loop, "models to fit\n")
+  current.pos <- NULL ## added by Karl 8/23/05
   for(i in 1:n.loop) {
     # find the indices for positions
     remain <- i
@@ -197,16 +208,42 @@ scanqtl <-
         pos.tmp <- c(pos.tmp, pos[[j]])
     }
 
-    # make QTL object
-    # currently we make a new qtl object for each iteration
-    # makeqtl is ridiculously slow. Needs think to use
-    # replace.qtl instead
-    qtl.obj <- makeqtl(cross, chr, pos.tmp)
-    # fit QTL, don't do drop one at a time
+    # this bit revised by Karl 8/23/05; now we make the qtl object
+    #     once, and copy stuff over otherwise
+    if(is.null(current.pos)) {
+      qtl.obj <- makeqtl(cross, chr, pos.tmp)
+      current.pos <- pos.tmp
+    }
+    else {
+      for(kk in seq(along=pos.tmp)) {
+        if(pos.tmp[kk] != current.pos[kk]) {
+          u <- abs(pos.tmp[kk]-pos[[kk]])
+          w <- indices[[kk]][u==min(u)]
+          qtl.obj$geno[,kk,] <- cross$geno[[ichr[kk]]]$draws[,w,]
 
+          if(chrtype[ichr[kk]]=="X")
+            qtl.obj$geno[,kk,] <-
+              reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE])
+
+          current.pos <- pos.tmp
+        }
+      }
+    }
+    # end of Karl's 8/23/05 addition
+
+    # fit QTL, don't do drop one at a time
     fit <- fitqtl(cross$pheno[,pheno.col], qtl=qtl.obj, covar=covar,
-                   formula=formula, method=method, dropone=FALSE)
+                  formula=formula, method=method, dropone=FALSE,
+                  get.ests=FALSE)
   
+    if(verbose) { # feedback to let you know what's happening
+      if(n.loop < 10 || 
+         (n.loop < 40 && i/4==round(i/4)) ||
+         (n.loop < 250 && i==round(i,-1)) ||
+         i/20==round(i/20))
+        cat("    ", i,"/", n.loop, "\n")
+    }
+      
     # assign to result matrix
     #     Note: [[1]][1,4] picks out the LOD score 
     result[i] <- fit[[1]][1,4]
