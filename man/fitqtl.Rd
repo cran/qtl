@@ -15,7 +15,7 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
 \arguments{
  \item{pheno}{Phenotype data (a numeric vector).}
  \item{qtl}{An object of class \code{qtl}, as output from
-   \code{\link[qtl]{makeqtl}}).} 
+   \code{\link[qtl]{makeqtl}}.} 
  \item{covar}{A data.frame of covariates}
  \item{formula}{An object of class \code{\link[base]{formula}}
    indicating the model to be fitted.  QTLs are referred to as

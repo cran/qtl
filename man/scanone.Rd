@@ -222,7 +222,7 @@ for a sex difference in the phenotype.
   quantitative trait loci in line crosses using flanking markers.
   \emph{Heredity} \bold{69}, 315--324.
 
-  Kruklyak, L. and Lander, E. S. (1995) A nonparametric approach for
+  Kruglyak, L. and Lander, E. S. (1995) A nonparametric approach for
   mapping quantitative trait loci.  \emph{Genetics} \bold{139},
   1421--1428. 
 

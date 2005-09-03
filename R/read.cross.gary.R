@@ -2,8 +2,8 @@
 #
 # read.cross.gary.R
 #
-# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2003
+# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
+# last modified Sep, 2005
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -124,11 +124,11 @@ function(dir,genfile,mnamesfile,chridfile,phefile,pnamesfile,mapfile,
   n.ind1 <- nrow(pheno)
   n.ind2 <- sapply(geno,function(a) nrow(a$data))
   if(any(n.ind1 != n.ind2)) {
-    print(c(n.ind1,n.ind2))
+    cat(n.ind1,n.ind2,"\n")
     stop("Number of individuals in genotypes and phenotypes do not match.");
   }
   if(any(n.mar1 != n.mar2)) {
-    print(c(n.mar,n.mar2))
+    cat(n.mar1,n.mar2,"\n")
     stop("Numbers of markers in genotypes and marker names files do not match.");
   }
 

@@ -99,12 +99,12 @@ mf.h(d)
 mf.k(d)
 mf.m(d)
 parseformula(formula, qtl.dimname, covar.dimname)
-print.summary.cross(x, \dots)
-print.summary.fitqtl(x, \dots)
-print.summary.map(x, \dots)
-print.summary.ripple(x, \dots)
-print.summary.scanone(x, \dots)
-print.summary.scantwo(x, \dots)
+\method{print}{summary.cross}(x, \dots)
+\method{print}{summary.fitqtl}(x, \dots)
+\method{print}{summary.map}(x, \dots)
+\method{print}{summary.ripple}(x, \dots)
+\method{print}{summary.scanone}(x, \dots)
+\method{print}{summary.scantwo}(x, \dots)
 read.cro.qtlcart(file)
 read.cross.csv(dir, file, na.strings=c("-","NA"),
                genotypes=c("A","H","B","D","C"),
@@ -144,7 +144,7 @@ sim.cross.bc(map, model, n.ind, error.prob, missing.prob,
 sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
              partial.missing.prob, keep.errorind, map.function)
 sim.ril(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
-subset.scantwo(x, chr, \dots)
+\method{subset}{scantwo}(x, chr, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
        tol=1e-4)
 write.cross.csv(cross, filestem="data", digits=5)

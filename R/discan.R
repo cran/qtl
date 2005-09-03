@@ -3,7 +3,7 @@
 # discan.R
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2005
+# last modified Sep, 2005
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -70,9 +70,9 @@ function(cross, pheno, method=c("em","mr"),
     # get null log liklihood
     if(is.na(llik0[chrtype])) {
       if(n.ac > 0)
-        nullfit <- glm(pheno ~ ac, family=binomial(link=logit))
+        nullfit <- glm(pheno ~ ac, family=binomial(link="logit"))
       else if(i==1)
-        nullfit <- glm(pheno ~ 1, family=binomial(link=logit))
+        nullfit <- glm(pheno ~ 1, family=binomial(link="logit"))
       fitted <- nullfit$fitted
       nullcoef[[chrtype]] <- nullfit$coef
       llik0[chrtype] <- sum(pheno*log10(fitted) + (1-pheno)*log10(1-fitted))
@@ -200,10 +200,10 @@ function(cross, pheno, method=c("em","mr"),
       if(adjustX) { # get LOD-score adjustment
         if(n.ac > 0) 
           nullfitX <- glm(pheno ~ ac+sexpgmcovar,
-                         family=binomial(link=logit))
+                         family=binomial(link="logit"))
         else 
           nullfitX <- glm(pheno ~ sexpgmcovar,
-                         family=binomial(link=logit))
+                         family=binomial(link="logit"))
         fittedX <- nullfitX$fitted
         llik0X <- sum(pheno*log10(fittedX) + (1-pheno)*log10(1-fittedX))
 
