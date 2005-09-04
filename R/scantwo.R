@@ -268,7 +268,7 @@ function(cross, chr, pheno.col=1,
         }
         else 
           cross$geno[[i]]$data <-
-            reviseXdata(type, "full", sexpgm, data=cross$geno[[i]]$data)
+            reviseXdata(type, "full", sexpgm, geno=cross$geno[[i]]$data)
       }
 
     } # end loop over chromosomes
@@ -489,9 +489,9 @@ function(cross, chr, pheno.col=1,
 
           if(i==1) { # first time! do null model and get neg log10 likelihood
             if(n.ac > 0)
-              nullfit <- glm(pheno ~ ac, family=binomial(link=logit))
+              nullfit <- glm(pheno ~ ac, family=binomial(link="logit"))
             else
-              nullfit <- glm(pheno ~ 1, family=binomial(link=logit))
+              nullfit <- glm(pheno ~ 1, family=binomial(link="logit"))
             fitted <- nullfit$fitted
             nullcoef <- nullfit$coef
             nllik0 <- -sum(pheno*log10(fitted) + (1-pheno)*log10(1-fitted))

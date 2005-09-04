@@ -334,7 +334,7 @@ dropqtl <-
   result$n.gen <- qtl$n.gen[idx]
   result$geno <- qtl$geno[,idx,]
   result$prob <- qtl$prob[,idx,]
-  result$type <- type
+#  result$type <- type ## is this necessary? (and where should "type" come from?
   dimnames(result$geno) <- list(NULL, paste("Q", 1:result$n.qtl, sep=""),
                                 NULL)
 
