@@ -105,7 +105,7 @@ void fitqtl_imp(int n_ind, int n_qtl, int *n_gen, int n_draws,
   int i, j, ii, jj, n_qc, itmp; /* loop variants and temp variables */
   double tol, lrss, lrss0, *LOD_array;
   double *the_ests, *the_covar, **TheEsts, ***TheCovar;
-  double *dwork, **Ests_covar, tot_wt, *wts;
+  double *dwork, **Ests_covar, tot_wt=0.0, *wts;
   double **Covar_mean, **Mean_covar, *mean_ests; /* for ests and cov matrix */
   int *iwork, sizefull, n_trim, *index;
 

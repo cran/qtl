@@ -47,9 +47,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     # subset pheno data
     pheno <- pheno[keep.ind]
     # subset covarariate
-    covar.tmp <- as.data.frame(covar[keep.ind,])
-    colnames(covar.tmp) <- colnames(covar)
-    covar <- covar.tmp
+    covar <- covar[keep.ind,,drop=FALSE]
     # hack input qtl object to drop individuals with missing data
     qtl$n.ind <- sum(keep.ind)
     qtl$geno <- qtl$geno[keep.ind,,,drop=FALSE]
@@ -156,21 +154,22 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       # covariates
       if(p$n.covar > 0) {
         for(j in 1:p$n.covar) 
-          Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- covar[,p$idx.covar[j],drop=FALSE]
+          Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- as.matrix(covar[,p$idx.covar[j]])
         colnames(Z)[curcol+1:p$n.covar] <- names(covar)[p$idx.covar]
         curcol <- curcol + p$n.covar
       }
       # QTL main effects
       for(i in seq(along=p$idx.qtl)) {
         if(n.gen[i]==2) {
-          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
-          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+1] <- 1
+          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -0.5
+          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+1] <- 0.5
           colnames(Z)[curcol+1] <- thenames[i]
         }
         else { # 3 genotypes
           Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
           Z[qtl$geno[,p$idx.qtl[i],1]==3,curcol+1] <- 1
-          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+2] <- 1
+          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+2] <- 0.5
+          Z[qtl$geno[,p$idx.qtl[i],1]!=2,curcol+2] <- -0.5
           colnames(Z)[curcol+1:2] <- paste(thenames[i],c("a","d"),sep="")
         }
         ZZ[[i]] <- Z[,curcol+1:(n.gen[i]-1),drop=FALSE]
@@ -535,9 +534,11 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 summary.fitqtl <- function(object, ...)
 {
   # this is just an interface.
-  ests <- object$ests$ests
-  se <- sqrt(diag(object$ests$covar))
-  object$ests <- cbind(est=ests, SE=se, t=ests/se)
+  if("ests" %in% names(object)) {
+    ests <- object$ests$ests
+    se <- sqrt(diag(object$ests$covar))
+    object$ests <- cbind(est=ests, SE=se, t=ests/se)
+  }
   class(object) <- "summary.fitqtl"
   object
 }

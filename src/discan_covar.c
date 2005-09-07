@@ -127,7 +127,7 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
   double fit, **temp1, **temp2;
   double *temp1s, *temp2s;
   double *newpar, *curpar;
-  double newllik, curllik, sum;
+  double newllik=0.0, curllik, sum;
   int info;
   double rcond, *junk;
 
