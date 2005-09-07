@@ -2,13 +2,13 @@
  *
  * scantwo_imp.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
  *                     and Hao Wu, The Jackson Lab
  *
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.
  *
- * last modified Dec, 2003 
+ * last modified Sep, 2005 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -123,7 +123,7 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 
   /* create local variables */
   int i, i1, i2, j; /* loop variants */
-  double lrss0, lrss_add, lrss_full, *LODfull, *LODint;
+  double lrss0, lrss_add, lrss_full, *LODfull, *LODadd;
   int n_col_f, n_gen_sq, *iwork, idx; 
   double *dwork;
 
@@ -133,7 +133,7 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 
   /* allocate space */
   LODfull = (double *)R_alloc(n_draws, sizeof(double));
-  LODint = (double *)R_alloc(n_draws, sizeof(double));
+  LODadd = (double *)R_alloc(n_draws, sizeof(double));
   iwork = (int *)R_alloc(n_col_f, sizeof(int));
   dwork = (double *)R_alloc(n_col_f*n_ind + 2*n_ind + 4*n_col_f,
 			    sizeof(double));
@@ -170,13 +170,13 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 	  
 	  /* calculate 2 different LOD scores */
 	  LODfull[j] = (double)n_ind/2.0*(lrss0-lrss_full);
-	  LODint[j] = (double)n_ind/2.0*(lrss_add-lrss_full);
+	  LODadd[j] = (double)n_ind/2.0*(lrss0-lrss_add);
 
 	}
 	/* calculate the weight average on the two LOD score vector
 	   and fill the result matrix */
 	result[i1*n_pos1+i2] = wtaverage(LODfull, n_draws);
-	result[i2*n_pos1+i1] = wtaverage(LODint, n_draws);
+	result[i2*n_pos1+i1] = result[i1*n_pos1+i2] - wtaverage(LODadd, n_draws);
 
       } /* end loop over position 1 */
     } /* end loop over position 2 */
@@ -194,12 +194,12 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
 	  
 	  /* calculate 2 different LOD scores */
 	  LODfull[j] = (double)n_ind/2.0*(lrss0-lrss_full);
-	  LODint[j] = (double)n_ind/2.0*(lrss_add-lrss_full);
+	  LODadd[j] = (double)n_ind/2.0*(lrss0-lrss_add);
 	}
 	/* calculate the weight average on the two LOD score vector
 	   and fill the result matrix */
-	result[i1 + n_pos1*i2] = wtaverage(LODint, n_draws);
 	result[idx + i1 + n_pos1*i2] = wtaverage(LODfull, n_draws);
+	result[i1 + n_pos1*i2] = result[idx + i1 + n_pos1*i2] - wtaverage(LODadd, n_draws);
 
       } /* end loop over chromesome 2 */
     } /* end loop over chromesome 1 */
