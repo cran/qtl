@@ -10,6 +10,15 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
+o In scanone (and possibly in scantwo), when a factor is used as
+  a covariate, a statement about "must be a matrix" is given, but 
+  it should say something about the need for the thing to be numeric.
+
+o Bug in plot.pxg for X chr and autosome, depending on the order of
+  the markers.
+
+o Effectscan for X chromosome.
+
 o Finish off the work to get coefficient estimates by imputation in
   fitqtl for the X chromosome in BC and F2. 
 
@@ -66,8 +75,6 @@ o Documentation on how to do thresholds a la Gary's method for
 
 o LOD thresholds for X chromosome in scanone/two.
 
-o Treatment of X chromosome in fitqtl, scanqtl?
-
 o Add an example regarding the X chromosome to the help files for
   fake.f2 and scanone.
 
@@ -81,10 +88,6 @@ o Documentation on RI lines.
 
 
 MEDIUM TERM:
-
-o Data input format with two CSV files: one for phenotypes and one for
-  genotypes.  Also, a CSV format that is the transpose of the current
-  format, for things like RILs with many markers but few individuals.
 
 o Pull out results for an interval.
 

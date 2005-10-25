@@ -21,7 +21,46 @@ location of the sampledata directory (for example,
 
         listeria.a <- read.cross("csv", ".../sampledata", "listeria.csv")
 
-2. "mm" (mapmaker) format
+2. "csvr" format (rotated "csv")
+
+   File:
+
+        listeria_rot.csv
+
+   Data import:
+
+        listeria.a2 <- read.cross("csvr", ".../sampledata", "listeria_rot.csv")
+
+
+3. "csvs" format (like "csv", but with separate files for phenotype
+   and genotype data)
+
+   Files:
+
+        listeria_gen.csv         Genotype data
+        listeria_phe.csv         Phenotype data
+
+   Data import:
+
+        listeria.a3 <- read.cross("csvs", ".../sampledata",
+                                  "listeria_gen.csv", "listeria_phe.csv")
+
+
+4. "csvsr" format (like "csvr", but both files are rotated)
+
+   Files:
+
+        listeria_gen_rot.csv     Genotype data
+        listeria_phe_rot.csv     Phenotype data
+
+   Data import:
+
+        listeria.a4 <- read.cross("csvsr", ".../sampledata",
+                                  "listeria_gen_rot.csv", 
+                                  "listeria_phe_rot.csv")
+
+
+5. "mm" (mapmaker) format
 
    Files:
 
@@ -40,7 +79,7 @@ location of the sampledata directory (for example,
                                  "listeria.raw",,"listeria.maps")
 
 
-3. "qtx" (Mapmanager QTX) format
+6. "qtx" (Mapmanager QTX) format
 
    File:
 
@@ -51,7 +90,7 @@ location of the sampledata directory (for example,
        listeria.c <- read.cross("qtx", ".../sampledata", "listeria.qtx")
 
 
-4. "qtlcart" (QTL Cartographer) format
+7. "qtlcart" (QTL Cartographer) format
 
    Files:
 
@@ -64,7 +103,7 @@ location of the sampledata directory (for example,
                                  "listeria_qc.cro", "listeria_qc.map")
 
 
-5. "karl" format
+8. "karl" format
 
     Files:
 

@@ -8,7 +8,7 @@
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Mar, 2005
+ * last modified Sep, 2005
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -265,5 +265,13 @@ void comparegeno(int **Geno, int n_ind, int n_mar,
 void R_comparegeno(int *geno, int *n_ind, int *n_mar, 
 		   int *n_match, int *n_missing);
 
+void R_locate_xo(int *n_ind, int *n_mar, int *type,
+		 int *geno, double *map, 
+		 double *location, int *nseen);
+
+/* Note: type ==0 for backcross and ==1 for intercross */
+void locate_xo(int n_ind, int n_mar, int type, int **Geno,
+	       double *map, double **Location, 
+	       int *nseen);
 
 /* end of util.h */

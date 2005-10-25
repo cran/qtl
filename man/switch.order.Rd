@@ -7,7 +7,7 @@
   new order.
 }
 
-\usage{switch.order(cross, chr, order, error.prob=0,
+\usage{switch.order(cross, chr, order, error.prob=0.0001,
                     map.function=c("haldane","kosambi","c-f","morgan"))}
 
 \arguments{

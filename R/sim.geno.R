@@ -2,8 +2,8 @@
 #
 # sim.geno.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2004
+# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# last modified Oct, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -19,7 +19,7 @@
 ######################################################################
 
 sim.geno <-
-function(cross, n.draws=16, step=0, off.end=0, error.prob=0,
+function(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
   # map function

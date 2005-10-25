@@ -8,8 +8,8 @@
 }
 
 \usage{
-\method{plot}{map}(x, map2, horizontal=FALSE, shift=TRUE, \dots)
-plot.map(x, map2, horizontal=FALSE, shift=TRUE, \dots)
+\method{plot}{map}(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
+plot.map(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
 }
 
 \arguments{
@@ -20,6 +20,8 @@ plot.map(x, map2, horizontal=FALSE, shift=TRUE, \dots)
     chromosomes and markers as the first.  As with the first argument, a
     \code{cross} object may be given instead.  If this argument is
     given, a comparison of the two genetic maps is plotted.}
+  \item{chr}{Vector specifying which chromosomes to plot. (The
+    chromosomes must be specified by name.)}
   \item{horizontal}{Specifies whether the chromosomes should be
     plotted horizontally.}
   \item{shift}{If TRUE, shift the first marker on each chromosome to be

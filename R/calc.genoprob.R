@@ -3,7 +3,7 @@
 # calc.genoprob.R
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified mAR, 2005
+# last modified Oct, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,7 +20,7 @@
 ######################################################################
 
 calc.genoprob <-
-function(cross, step=0, off.end=0, error.prob=0,
+function(cross, step=0, off.end=0, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
   # map function

@@ -10,7 +10,7 @@
 }
 
 \usage{
-fill.geno(cross, method=c("imp","argmax"), error.prob=0,
+fill.geno(cross, method=c("imp","argmax"), error.prob=0.0001,
           map.function=c("haldane","kosambi","c-f","morgan"))
 }
 

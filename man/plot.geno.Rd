@@ -9,8 +9,8 @@
 }
 
 \usage{
-plot.geno(x, chr, ind, horizontal=TRUE, cutoff=3.5,
-          min.sep=2, cex=1.2, \dots) 
+plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
+          cutoff=3.5, min.sep=2, cex=1.2, \dots) 
 }			    
 
 \arguments{
@@ -19,6 +19,8 @@ plot.geno(x, chr, ind, horizontal=TRUE, cutoff=3.5,
   \item{chr}{Chromosome number to plot.}
   \item{ind}{Vector of individuals to plot.  If missing, all individuals
     are plotted.}
+  \item{include.xo}{If TRUE, plot red X's in intervals having a
+    crossover.} 
   \item{horizontal}{If TRUE, chromosomes are plotted horizontally.}
   \item{cutoff}{Genotypes with error LOD scores above this value are
     flagged as possible errors.}

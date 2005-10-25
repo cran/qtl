@@ -4,7 +4,7 @@
 #
 # copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Aug, 2005
+# last modified Oct, 2005
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -95,13 +95,20 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
 }
 
 plot.map <-
-function(x, map2, horizontal=FALSE, shift=TRUE, ...) 
+function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...) 
 {
   map <- x
   # figure out if the input is a cross (containing a map)
   #    or is the map itself
-  if(!is.na(match("geno",names(map)))) 
+  if(length(class(map))>1 && class(map)[2]=="cross")
     map <- pull.map(map)
+  if(!missing(map2) && length(class(map2))>1 && class(map2)[2]=="cross")
+    map2 <- pull.map(map2)
+  
+  if(!missing(chr)) {
+    map <- map[chr]
+    if(!missing(map2)) map2 <- map2[chr]
+  }
 
   sex.sp <- FALSE
 
@@ -115,17 +122,16 @@ function(x, map2, horizontal=FALSE, shift=TRUE, ...)
         map <- lapply(map,function(a) a[1,])
       }
       else {
-        if(!is.na(match("geno",names(map2))))
-          map2 <- pull.map(map2)
         Map1 <- lapply(map,function(a) a[1,,drop=TRUE])
         Map2 <- lapply(map,function(a) a[2,,drop=TRUE])
         Map3 <- lapply(map2,function(a) a[1,,drop=TRUE])
         Map4 <- lapply(map2,function(a) a[2,,drop=TRUE])
         old.mfrow <- par("mfrow")
         on.exit(par(mfrow=old.mfrow))
+
         par(mfrow=c(2,1))
-        plot.map(Map1,Map3,horizontal)
-        plot.map(Map2,Map4,horizontal)
+        plot.map(Map1,Map3,horizontal=horizontal,shift=shift)
+        plot.map(Map2,Map4,horizontal=horizontal,shift=shift)
         return(invisible())
       }
     }
@@ -136,18 +142,8 @@ function(x, map2, horizontal=FALSE, shift=TRUE, ...)
   }
   else { # single map
     # determine whether a second map was given
-    if(!missing(map2)) {
-      if(is.logical(map2)) { # assume "map2" should be "horizontal"
-        horizontal <- map2
-        map2 <- NULL
-        one.map <- TRUE
-      }
-      else { # determine if it is a cross object
-        if(!is.na(match("geno",names(map2))))
-          map2 <- pull.map(map2)
-        one.map <- FALSE
-      }
-    }
+    if(!missing(map2)) 
+      one.map <- FALSE
     else one.map <- TRUE
   }
        
@@ -335,10 +331,12 @@ function (x, auto.layout = TRUE, pheno, ...)
 ######################################################################
 
 plot.geno <-
-function(x, chr, ind, horizontal=TRUE, cutoff=3.5, min.sep=2, cex=1.2, ...)
+function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
+         cutoff=3.5, min.sep=2, cex=1.2, ...)
 {
   cross <- x  
   cross <- subset(cross,chr=chr)
+  if(!missing(ind)) cross <- subset(cross, ind=ind)
   type <- class(cross)[1]
   
   if(type != "bc" && type != "f2" && type != "riself" && type != "risib")
@@ -367,15 +365,18 @@ function(x, chr, ind, horizontal=TRUE, cutoff=3.5, min.sep=2, cex=1.2, ...)
   d <- diff(map)
   d[d < min.d] <- min.d
   map <- cumsum(c(0,d))
-
+  cross$geno[[1]]$map <- map
+  
   data <- cross$geno[[1]]$data
-  if(!missing(ind)) {
-    data <- data[ind,]
-    errors <- errors[ind,]
-  }
   n.ind <- nrow(errors)
 
   color <- c("white","gray60","black","green","orange","red")
+
+  if(include.xo) { # find crossover locations
+    xoloc <- locate.xo(cross)
+    xoloc <- data.frame(ind=rep(1:length(xoloc),sapply(xoloc,length)),
+                        loc=unlist(xoloc))
+  }
 
   if(horizontal==TRUE) {
     plot(0,0,type="n",xlab="Position (cM)",ylab="Individual",
@@ -424,6 +425,7 @@ function(x, chr, ind, horizontal=TRUE, cutoff=3.5, min.sep=2, cex=1.2, ...)
       points(x,ind,pch=0,col=color[6],cex=cex+0.4,lwd=2)
     }
 
+    if(include.xo) points(xoloc$loc,xoloc$ind,pch=4,col="blue",lwd=2)
   }
   else {
     plot(0,0,type="n",ylab="Position (cM)",xlab="Individual",
@@ -471,6 +473,9 @@ function(x, chr, ind, horizontal=TRUE, cutoff=3.5, min.sep=2, cex=1.2, ...)
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
       points(ind,y,pch=0,col=color[6],cex=cex+0.4,lwd=2)
     }
+
+    if(include.xo) points(xoloc$ind,xoloc$loc,pch=4,col="blue",lwd=2)
+
   }
   invisible()
 }

@@ -3,7 +3,7 @@
 # ripple.R
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Aug, 2005
+# last modified Oct, 2005
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -22,7 +22,7 @@
 
 ripple <-
 function(cross, chr, window=4, method=c("countxo","likelihood"),
-         error.prob=0, map.function=c("haldane","kosambi","c-f","morgan"),
+         error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
          maxit=4000, tol=1e-4, sex.sp=TRUE)
 {
   # pull out relevant chromosome

@@ -8,7 +8,7 @@
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Apr, 2005
+ * last modified Sep, 2005
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -23,7 +23,8 @@
  *                  sample_int, allocate_imatrix, allocate_dmatrix
  *                  reorg_errlod, double_permute, int_permute, 
  *                  random_int
- *                  wtaverage, comparegeno, R_comparegeno
+ *                  wtaverage, comparegeno, R_comparegeno,
+ *                  R_locate_xo, locate_xo
  *
  **********************************************************************/
 
@@ -516,6 +517,109 @@ void R_comparegeno(int *geno, int *n_ind, int *n_mar,
   comparegeno(Geno, *n_ind, *n_mar, N_Match, N_Missing);
 }
   
+void R_locate_xo(int *n_ind, int *n_mar, int *type,
+		 int *geno, double *map, 
+		 double *location, int *nseen)
+{
+  int **Geno;
+  double **Location;
+
+  reorg_geno(*n_ind, *n_mar, geno, &Geno);
+  reorg_errlod(*n_ind, *n_mar-1, location, &Location);
+
+  locate_xo(*n_ind, *n_mar, *type, Geno, map, Location,
+	   nseen);
+}
+
+/* Note: type ==0 for backcross and ==1 for intercross */
+void locate_xo(int n_ind, int n_mar, int type, int **Geno,
+	       double *map, double **Location, int *nseen)
+{
+  int i, j, curgen, newgen, number;
+  double curpos;
+
+  for(i=0; i<n_ind; i++) {
+    curgen = Geno[0][i];
+    curpos = map[0];
+    nseen[i]=0;
+    for(j=1; j<n_mar; j++) {
+      if(curgen==0) { /* haven't yet seen a genotype */
+	curgen = Geno[j][i];
+	curpos = map[j];
+      }
+      else {
+	if(Geno[j][i] == 0) { /* not typed */
+	}
+	else {
+	  if(Geno[j][i] == curgen) {
+	    curpos = map[j];
+	  }
+	  else {
+	    if(type==0) {
+	      Location[nseen[i]][i] = (map[j]+curpos)/2.0;
+
+	      curgen = Geno[j][i];
+	      curpos = map[j];
+	      nseen[i]++;
+	    }
+	    else {
+	      number = 0; /* number of XOs; indicates to set Location[] */
+	      switch(Geno[j][i]) {
+	      case 1:
+		switch(curgen) {
+		case 2: curgen=1; number=1; break;
+		case 3: curgen=1; number=2; break;
+		case 4: curgen=1; break;
+		case 5: curgen=1; number=1; break;
+		} break;
+	      case 2:
+		switch(curgen) {
+		case 1: curgen=2; number=1; break;
+		case 3: curgen=2; number=1; break;
+		case 4: curgen=2; break;
+		case 5: curgen=2; break;
+		} break;
+	      case 3:
+		switch(curgen) {
+		case 1: curgen=3; number=2; break;
+		case 2: curgen=3; number=1; break;
+		case 4: curgen=3; number=1; break;
+		case 5: curgen=3; break;
+		} break;
+	      case 4:
+		switch(curgen) {
+		case 1: break;
+		case 2: break;
+		case 3: curgen=2; number=1; break;
+		case 5: curgen=2; break;
+		} break;
+	      case 5:
+		switch(curgen) {
+		case 1: curgen=2; number=1; break;
+		case 2: break;
+		case 3: break;
+		case 4: curgen=2; break;
+		} break;
+	      }
+	      
+	      if(number==1) {
+		Location[nseen[i]][i] = (curpos+map[j])/2.0;
+		nseen[i]++;
+	      }
+	      else if(number==2) {
+		Location[nseen[i]][i] = (curpos+2.0*map[j])/3.0;
+		Location[nseen[i]+1][i] = (2.0*curpos+map[j])/3.0;
+		nseen[i] += 2;
+	      }
+	      curpos = map[j];
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+	  
 
 
 /* end of util.c */

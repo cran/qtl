@@ -9,7 +9,7 @@
 }
 
 \usage{
-est.map(cross, error.prob=0,
+est.map(cross, error.prob=0.0001,
         map.function=c("haldane","kosambi","c-f","morgan"), maxit=4000,
         tol=1e-4, sex.sp=TRUE, verbose=FALSE)
 }

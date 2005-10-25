@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
 #     [find.pheno and find.flanking from Brian Yandell]
-# last modified Sep, 2005
+# last modified Oct, 2005
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -18,7 +18,7 @@
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, convert.scanone, find.pheno,
 #           find.flanking, strip.partials, comparegeno
-#           qtlversion
+#           qtlversion, locate.xo
 #
 ######################################################################
 
@@ -577,7 +577,7 @@ function(cross)
 ######################################################################
 
 switch.order <-
-function(cross, chr, order, error.prob=0,
+function(cross, chr, order, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
   map.function <- match.arg(map.function)
@@ -937,7 +937,7 @@ function(...)
 ######################################################################
 
 fill.geno <-
-function(cross, method=c("imp","argmax"), error.prob=0,
+function(cross, method=c("imp","argmax"), error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
   method <- match.arg(method)
@@ -1780,6 +1780,62 @@ function(cross, what=c("proportion","number"))
 qtlversion <-
 function()
   installed.packages()["qtl","Version"]
+
+
+######################################################################
+#
+# locate.xo
+#
+# Locate crossovers on a single chromosome in each individual
+# Look at just the first chromosome
+# 
+######################################################################
+
+locate.xo <-
+function(cross)
+{
+  geno <- cross$geno[[1]]$data
+  geno[is.na(geno)] <- 0
+  type <- class(cross)[1]
+
+  if(type != "bc" && type != "f2" && type != "riself" && type != "risib")
+    stop("locate.xo only working for backcross, intercross or RI strains.")
+
+  map <- cross$geno[[1]]$map
+  if(is.matrix(map)) map <- map[1,]
+  map <- map - map[1] # shift first marker to 0
+
+  # bc or intercross?  thetype==0 for BC and ==1 for intercross
+  if(type=="f2") {
+    if(class(geno) == "X") thetype <- 0
+    else thetype <- 1
+  }
+  else thetype <- 0
+
+  n.ind <- nrow(geno)
+  n.mar <- ncol(geno)
+
+  z <- .C("R_locate_xo",
+          as.integer(n.ind),
+          as.integer(n.mar),
+          as.integer(thetype),
+          as.integer(geno),
+          as.double(map),
+          location=as.double(rep(0,n.ind*2*(n.mar-1))),
+          nseen=as.integer(rep(0,n.ind)),
+          PACKAGE="qtl")
+  location <- matrix(z$location, nrow=n.ind)
+  nseen <- z$nseen
+
+  lo <- vector("list",n.ind)
+  for(i in 1:n.ind) {
+    if(nseen[i] > 0) 
+      lo[[i]] <- location[i,1:nseen[i]]
+  }
+
+  lo
+}
+
 
 # end of util.R
 

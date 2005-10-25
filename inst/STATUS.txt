@@ -6,7 +6,50 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
-Version 1.00, 9/7/2005:
+Version 1.01, 10/25/2005:
+
+Major changes:
+
+  Revised read.cross to include three additional data formats: 
+
+    "csvr"   The format "csv", but with rows and columns
+             interchanged. I call that a "rotated" version of the CSV
+             format, but it's really a transposed version.
+
+    "csvs"   The format "csv", but with separate files for the
+             genotype and phenotype data.  Note that the first column
+             in the phenotype data should specify the individuals'
+             IDs, and that there should be a column in the phenotype
+             data with precisely the same name, and the individuals
+             should be in precisely the same order.
+
+    "csvsr"  The format "csvs", but with the genotype and phenotype
+             files rotated (really transposed).
+
+   Added example files (of the listeria data) in these formats in the
+   "sampledata" directory. 
+
+Minor changes:
+
+  plot.scantwo can now plot the additive LOD scores in the lower
+  triangle (with the argument lower="add")
+
+  Fixed a bug regarding the X chromosome in scanone() with the use of
+  covariates.
+
+  Modifying plot.geno() to put X's at inferred crossover locations.
+
+  Modified plot.rf() so that the lines between chromosomes are white.
+
+  Added a "chr" argument to plot.map, so that a selected set of
+  chromosomes may be plotted.
+
+  Changed the default value for the error.prob argument from 0 to
+  0.0001 in est.map(), calc.genoprob(), sim.geno(), and other
+  functions. 
+
+
+Version 1.00, 9/10/2005:
 
 Major changes:
 

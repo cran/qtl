@@ -2,8 +2,8 @@
 #
 # xchr.R
 #
-# copyright (c) 2005, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2005
+# copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
+# last modified Sep, 2005
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -725,8 +725,28 @@ function(sexpgm, covar)
 
   covar <- as.matrix(covar)
 
-  X <- cbind(1,sexpgm$sex,sexpgm$pgm, sexpgm$sex*sexpgm$pgm)
+  if(!is.null(sexpgm$pgm) && length(unique(sexpgm$pgm))==1) sexpgm$pgm <- NULL
+  if(!is.null(sexpgm$sex) && length(unique(sexpgm$sex))==1) sexpgm$sex <- NULL
+
+  if(!is.null(sexpgm$sex)) {
+    if(!is.null(sexpgm$pgm)) {
+      X <- cbind(1,sexpgm$sex, sexpgm$pgm, sexpgm$sex*sexpgm$pgm)
+    }
+    else {
+      X <- cbind(1,sexpgm$sex)
+    }
+  }
+  else {
+    if(!is.null(sexpgm$pgm)) {
+      X <- cbind(1,sexpgm$pgm)
+    }
+    else {
+      X <- cbind(rep(1,nrow(covar)))
+    }
+  }
+       
   nc <- ncol(X)
+
   keep <- rep(TRUE,ncol(covar))
   for(i in 1:ncol(covar)) {
     if(qr(cbind(X,covar[,i]))$rank <= nc)

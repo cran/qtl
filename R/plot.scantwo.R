@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-5, Karl W Broman, Johns Hopkins University,
 #                       Hao Wu and Brian Yandell
-# last modified Sep, 2005
+# last modified Oct, 2005
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -17,7 +17,7 @@
 
 plot.scantwo <-
 function(x, chr, incl.markers = FALSE, zlim,
-         lower = c("joint", "cond-int", "cond-add"), nodiag = TRUE,
+         lower = c("joint", "add", "cond-int", "cond-add"), nodiag = TRUE,
          contours = FALSE, main, zscale = TRUE, point.at.max=FALSE,
          col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
          gamma = 1, ...)
@@ -70,12 +70,15 @@ function(x, chr, incl.markers = FALSE, zlim,
 
   # replace joint LOD with LOD[q1,q2] - max{LOD[q1],LOD[q2]}
   if(lower == "cond-int") {
-    lod[lower.tri(lod)] <- lod[lower.tri(lod)] - q1[lower.tri(lod)]
+    lod[lower.tri(lod)] <- (lod - q1)[lower.tri(lod)] 
   }
   else if(lower == "cond-add") {
-    lod[lower.tri(lod)] <- lod[lower.tri(lod)]-t(lod)[lower.tri(lod)]-q1[lower.tri(lod)]
+    lod[lower.tri(lod)] <- (lod - t(lod) - q1)[lower.tri(lod)]
   }
-
+  else if(lower == "add") {
+    lod[lower.tri(lod)] <- (lod - t(lod))[lower.tri(lod)]
+  }
+  
   if(nodiag) diag(lod) <- 0
 
   # deal with bad LOD score values
