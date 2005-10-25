@@ -1,94 +1,115 @@
 ######################################################################
 #
-# read.cross.csv.R
+# read.cross.csvs.R
 #
-# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
+# copyright (c) 2005, Karl W Broman, Johns Hopkins University
 # last modified Oct, 2005
-# first written Aug, 2000
+# first written Oct, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Part of the R/qtl package
-# Contains: read.cross.csv
+# Contains: read.cross.csvs
 #           [See read.cross.R for the main read.cross function.]
 #
 ######################################################################
 
 ######################################################################
 #
-# read.cross.csv
+# read.cross.csvs
 #
-# read data in comma-delimited format
+# read data in comma-delimited format, with separate files for phenotype
+# and genotype data
 #
 ######################################################################
 
-read.cross.csv <-
-function(dir, file, na.strings=c("-","NA"),
+read.cross.csvs <-
+function(dir, genfile, phefile, na.strings=c("-","NA"),
          genotypes=c("A","H","B","D","C"),
          estimate.map=TRUE, rotate=FALSE, ...)
 {
   # create file names
-  if(missing(file)) file <- "data.csv"
+  if(missing(genfile)) genfile <- "gen.csv"
+  if(missing(phefile)) phefile <- "phe.csv"
 
   if(!missing(dir) && dir != "") {
-    file <- file.path(dir, file)
+    genfile <- file.path(dir, genfile)
+    phefile <- file.path(dir, phefile)
   }
 
   args <- list(...)
   # read the data file
-  if(length(args) < 1 || is.na( match("sep",names(args))))
+  if(length(args) < 1 || is.na( match("sep",names(args)))) {
     # "sep" not in the "..." argument and so take sep=","
-    data <- read.table(file, sep=",", na.strings=na.strings,
-                       colClasses="character", fill=TRUE,
-                       blank.lines.skip=TRUE, ...)
-  else 
-    data <- read.table(file, na.strings=na.strings,
-                       colClasses="character", fill=TRUE,
-                       blank.lines.skip=TRUE, ...)
-
-  if(rotate) {
-    data <- as.data.frame(t(data))
-    for(i in 1:ncol(data)) data[,i] <- as.character(data[,i])
-  }
-
-  # determine number of phenotypes based on initial blanks in row 2
-  n <- ncol(data)
-  temp <- rep(FALSE,n)
-  for(i in 1:n) {
-    temp[i] <- all(data[2,1:i]=="")
-    if(!temp[i]) break
-  }
-
-  if(!any(temp)) # no phenotypes!
-    stop("You must include at least one phenotype (e.g., an index).")
-  n.phe <- max((1:n)[temp])
-
-  # Is map included?  yes if first n.phe columns in row 3 are all blank
-  if(all(!is.na(data[3,1:n.phe]) & data[3,1:n.phe]=="")) {
-    map.included <- TRUE
-    map <- as.numeric(unlist(data[3,-(1:n.phe)]))
-    if(any(is.na(map))) 
-      stop("There are missing marker positions.")
-    nondatrow <- 3
+    gen <- read.table(genfile, sep=",", na.strings=na.strings,
+                      colClasses="character", fill=TRUE,
+                      blank.lines.skip=TRUE, ...)
+    pheno <- read.table(phefile, sep=",", na.strings=na.strings,
+                        colClasses="character", fill=TRUE,
+                        blank.lines.skip=TRUE, ...)
   }
   else {
+    gen <- read.table(genfile, na.strings=na.strings,
+                      colClasses="character", fill=TRUE,
+                      blank.lines.skip=TRUE, ...)
+    pheno <- read.table(phefile, na.strings=na.strings,
+                        colClasses="character", fill=TRUE,
+                        blank.lines.skip=TRUE, ...)
+  }
+
+  if(rotate) {
+    gen <- as.data.frame(t(gen))
+    for(i in 1:ncol(gen)) gen[,i] <- as.character(gen[,i])
+
+    pheno <- as.data.frame(t(pheno))
+    for(i in 1:ncol(pheno)) pheno[,i] <- as.character(pheno[,i])
+  }
+
+  # We must make the first column have the individual IDs
+  indname <- gen[1,1]
+  if(gen[3,1] == "") {
+    genind <- gen[-(1:3),1]
+    map.included <- TRUE
+    nondatrow <- 3 # last non-data row
+  }
+  else {
+    genind <- gen[-(1:2),1]
     map.included <- FALSE
-    map <- rep(0,ncol(data)-n.phe)
     nondatrow <- 2 # last non-data row
   }
-  pheno <- as.data.frame(data[-(1:nondatrow),1:n.phe,drop=FALSE])
-  colnames(pheno) <- data[1,1:n.phe]
+  gen <- gen[,-1,drop=FALSE]
+
+  wh <- which(pheno[1,] == indname)
+  if(length(wh) < 1) 
+    stop("Can't find the individual ID column in the phenotype file.")
+  
+  pheind <- pheno[-1,wh[1]]
+
+  if(!all(genind == pheind)) 
+    stop("Mismatch in individual IDs between genotype and phenotype files.")
+  n.phe <- ncol(pheno)
+
+  if(map.included) {
+    map <- as.numeric(unlist(gen[3,]))
+    if(any(is.na(map))) 
+      stop("There are missing marker positions.")
+  }
+  else 
+    map <- rep(0,ncol(gen))
+
+  colnames(pheno) <- unlist(pheno[1,])
+  pheno <- as.data.frame(pheno[-1,])
 
   # replace empty cells with NA
-  data <- sapply(data,function(a) { a[!is.na(a) & a==""] <- NA; a })
+  gen <- sapply(gen,function(a) { a[!is.na(a) & a==""] <- NA; a })
 
   # pull apart phenotypes, genotypes and map
-  mnames <- data[1,-(1:n.phe)]
+  mnames <- unlist(gen[1,])
   if(any(is.na(mnames)))  stop("There are missing marker names.")
-  chr <- data[2,-(1:n.phe)]
+  chr <- unlist(gen[2,])
   if(any(is.na(chr))) stop("There are missing chromosome IDs.")
 
   # look for strange entries in the genotype data
-  temp <- unique(as.character(data[-(1:nondatrow),-(1:n.phe),drop=FALSE]))
+  temp <- unique(as.character(gen[-(1:nondatrow),,drop=FALSE]))
   temp <- temp[!is.na(temp)]
   wh <- is.na(match(temp,genotypes))
   if(any(wh)) {
@@ -100,11 +121,11 @@ function(dir, file, na.strings=c("-","NA"),
 
   # convert genotype data
   if(length(genotypes) > 0)  
-    allgeno <- matrix(match(data[-(1:nondatrow),-(1:n.phe)],genotypes),
-                      ncol=ncol(data)-n.phe)
+    allgeno <- matrix(match(gen[-(1:nondatrow),,drop=FALSE],genotypes),
+                      ncol=ncol(gen))
   else
-    allgeno <- matrix(as.numeric(data[-(1:nondatrow),-(1:n.phe)]),
-                      ncol=ncol(data)-n.phe)
+    allgeno <- matrix(as.numeric(gen[-(1:nondatrow),,drop=FALSE]),
+                      ncol=ncol(gen)-n.phe)
 
   # Fix up phenotypes
   sw2numeric <-
@@ -231,4 +252,4 @@ function(dir, file, na.strings=c("-","NA"),
   list(cross,estmap)
 }
 
-# end of read.cross.csv.R
+# end of read.cross.csvs.R

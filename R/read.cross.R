@@ -3,7 +3,7 @@
 # read.cross.R
 #
 # copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2005
+# last modified Oct, 2005
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -22,16 +22,39 @@
 ######################################################################
 
 read.cross <-
-function(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
-         file, genfile, mapfile, phefile, chridfile, mnamesfile, pnamesfile,
+function(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
+                  "qtlcart", "gary", "karl"),
+         dir="", file, genfile, mapfile, phefile, chridfile, mnamesfile, pnamesfile,
          na.strings=c("-","NA"), genotypes=c("A","H","B","D","C"),
          estimate.map=TRUE, convertXdata=TRUE, ...)
 {
+  if(format == "csvrs") {
+    format <- "csvsr"
+    warning("Assuming you mean 'csvsr' rather than 'csvrs'.\n")
+  }
   format <- match.arg(format)
 
-  if(format=="csv") { # comma-delimited format
-    cross <- read.cross.csv(dir,file,na.strings,genotypes,
-                            estimate.map,...)
+  if(format=="csv" || format=="csvr") { # comma-delimited format
+    cross <- read.cross.csv(dir, file, na.strings, genotypes,
+                            estimate.map, rotate=(format=="csvr"),
+                            ...)
+  }
+  else if(format=="csvs" || format=="csvsr") { # comma-delimited format
+
+    # allow easier input of filenames into function arguments
+    if(missing(phefile) && !missing(file) && !missing(genfile)) {
+      # read.cross("format", "dir", "genfile", "phefile")
+      phefile <- genfile
+      genfile <- file
+    }
+    else if(missing(genfile) && !missing(file) && !missing(phefile)) {
+      # read.cross("format", "dir", "genfile", phefile="phefile")
+      genfile <- file
+    }
+
+    cross <- read.cross.csvs(dir, genfile, phefile, na.strings, genotypes,
+                             estimate.map, rotate=(format=="csvsr"),
+                             ...)
   }
   else if(format=="qtx") { # Mapmanager QTX format
     cross <- read.cross.qtx(dir,file,estimate.map)

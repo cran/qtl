@@ -147,13 +147,13 @@ function(x, chr, which=c("both","lod","rf"), ...)
   n.mar <- nmar(x)
   n.chr <- nchr(x)
   a <- c(0.5,cumsum(n.mar)+0.5)
-  abline(v=a,xpd=FALSE)
-  abline(h=a,xpd=FALSE)
+  abline(v=a,xpd=FALSE,col="white")
+  abline(h=a,xpd=FALSE,col="white")
 
   # this line adds a line above the image
   #     (the image function leaves it out)
-  abline(h=0.5+nrow(g),xpd=FALSE)
-  abline(v=0.5+nrow(g),xpd=FALSE)
+  abline(h=0.5+c(0,nrow(g)),xpd=FALSE)
+  abline(v=0.5+c(0,nrow(g)),xpd=FALSE)
 
   # add chromosome numbers
   a <- par("usr")

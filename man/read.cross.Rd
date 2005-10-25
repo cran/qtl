@@ -12,9 +12,10 @@
 }
 
 \usage{
-read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
-           file, genfile, mapfile, phefile, chridfile, mnamesfile,
-           pnamesfile, na.strings=c("-","NA"),
+read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
+                    "qtlcart", "gary", "karl"),
+           dir="", file, genfile, mapfile, phefile, chridfile,
+           mnamesfile, pnamesfile, na.strings=c("-","NA"),
            genotypes=c("A","H","B","D","C"), estimate.map=TRUE,
            convertXdata=TRUE, \dots)
 }
@@ -24,11 +25,12 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
   \item{dir}{Directory in which the data files will be found.  In
     Windows, use forward slashes (\code{"/"}) or double backslashes
     (\code{"\\\\"}) to specify directory trees.}
-  \item{file}{The main imput file for formats \code{csv} and \code{mm}.}
+  \item{file}{The main imput file for formats \code{csv}, \code{csvr}
+    and \code{mm}.} 
   \item{genfile}{File with genotype data (formats \code{karl} and
     \code{gary} only).}
   \item{mapfile}{File with marker position information (all formats
-    except \code{csv}).}
+    except \code{csv} and \code{csvr}).}
   \item{phefile}{File with phenotype data (formats \code{karl} and
     \code{gary} only).}
   \item{chridfile}{File with chromosome ID for each marker (\code{gary}
@@ -37,18 +39,19 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
   \item{pnamesfile}{File with phenotype names (\code{gary} format
     only).}
   \item{na.strings}{A vector of strings which are to be interpreted as
-    missing values (\code{csv} format and \code{gary} only).  For the
-    \code{csv} format, these are interpreted globally for the entire
+    missing values (\code{csv}, \code{csvr}, and \code{gary} formats only).  For the
+    \code{csv} and \code{csvr} formats, these are interpreted globally
+    for the entire
     file, so missing value codes in phenotypes must not be valid
     genotypes, and vice versa. For the \code{gary} format, these are
     used only for the phenotype data.} 
   \item{genotypes}{A vector of character strings specifying the genotype
-    codes (\code{csv} format only).  Generally this is a vector of
+    codes (\code{csv} and \code{csvr} formats only).  Generally this is a vector of
     length 5, with the elements corresponding to AA, AB, BB, not AA 
     (i.e., AB or  BB), and not BB (ie, AB or BB).  \bold{Note}: Pay
     careful attention to the third and fourth of these; the order of
     these can be confusing.}
-  \item{estimate.map}{For formats \code{csv}, \code{qtx}, \code{mm}, and
+  \item{estimate.map}{For formats \code{csv}, \code{csvr}, \code{qtx}, \code{mm}, and
     \code{gary} only: if TRUE and marker positions are not included in
     the input files, the genetic map is estimated using the function 
     \code{\link[qtl]{est.map}}.}
@@ -57,8 +60,9 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
     \code{pgm} in the phenotype data if they available or by inference
     if they are not.  If FALSE, the X chromsome data is read as is.}  
   \item{\dots}{Additional arguments, passed to the function
-    \code{\link[base]{read.table}} in the case that
-    \code{format="csv"}.  In particular, one may use the argument
+    \code{\link[base]{read.table}} in the case of 
+    \code{csv} and \code{csvr} formats.  In particular, one may use the
+    argument
     \code{sep} to specify the field separator (the default is a comma)
     and \code{dec} to specify the character used for the decimal point
     (the default is a period).}
@@ -99,12 +103,18 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
 }
 
 \details{
-  The available formats are comma-delimited (\code{csv}), Mapmaker
-  (\code{mm}), Map Manager QTX (\code{qtx}), Gary Churchill's format
-  (\code{gary}) and Karl Broman's format (\code{karl}).  The required
-  files and their specification for each format appears below.  The
-  comma-delimited format is recommended. Note that these formats work
-  only for backcross and intercross data. 
+  The available formats are comma-delimited (\code{csv}), rotated
+  comma-delimited (\code{csvr}), comma-delimited with separate files for
+  genotype and phenotype data (\code{csvs}), rotated comma-delimited
+  with separate files for genotype and phenotype data (\code{csvsr},
+  Mapmaker (\code{mm}), Map Manager QTX (\code{qtx}), Gary Churchill's
+  format (\code{gary}) and Karl Broman's format (\code{karl}).  The
+  required files and their specification for each format appears below.
+  The comma-delimited format is recommended. Note that these formats
+  work only for backcross and intercross data.
+
+  The \code{sampledata} directory in the package distribution contains
+  sample data files in all formats except Gary's.
 }
 
 
@@ -164,6 +174,36 @@ read.cross(format=c("csv","mm","qtx","qtlcart","gary","karl"), dir="",
   of the \code{genotypes} string are found; otherwise, it is assumed to
   be an intercross.
 }
+
+\section{CSVr format}{
+  This is just like the \code{csv} format, but rotated (or really
+  transposed), so that rows are columns and columns are rows.
+}
+
+
+\section{CSVs format}{
+  This is like the \code{csv} format, but with separate files for the
+  genotype and phenotype data.
+
+  The first column in the genotype data must be specify individuals'
+  identifiers, and there must be a column in the phenotype data with
+  precisely the same information, and the individuals must be in
+  precisely the same order in the two files.
+
+  In the genotype data file, the second row gives the chromosome IDs.
+  The cell in the second row, first column, must be blank.  A third
+  row giving cM positions of markers may be included, in which case the
+  cell in the third row, first column, must be blank.
+
+  There need be no blank rows in the phenotype data file.
+}
+
+
+\section{CSVsr format}{
+  This is just like the \code{csvs} format, but rotated (or really
+  transposed), so that rows are columns and columns are rows.
+}
+
 
 \section{Mapmaker format}{
   This format requires two files.  The so-called rawfile, specified by

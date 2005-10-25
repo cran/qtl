@@ -612,7 +612,7 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
   if(missing(ylim)) ylim <- c(0,maxy)
   if(missing(xlim)) {
     if(onechr) xlim <- c(0,max(out[,2]))
-    else xlim <- c(0,maxx)
+    else xlim <- c(-gap/2,maxx+gap/2)
   }
   
   if(!add) {
@@ -623,7 +623,7 @@ function(x,x2,x3,chr,lodcolumn=3,incl.markers=TRUE,xlim, ylim,
     }
     else {
       plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
-           xlab="",ylab=dimnames(out)[[2]][3],
+           xlab="",ylab=dimnames(out)[[2]][3], xaxs="i",
            ...)
     }
     if(!missing(main)) title(main=main)

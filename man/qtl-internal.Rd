@@ -20,6 +20,7 @@
 \alias{imf.k}
 \alias{imf.m}
 \alias{locatemarker}
+\alias{locate.xo}
 \alias{makeSSmap}
 \alias{mf.cf}
 \alias{mf.h}
@@ -34,6 +35,7 @@
 \alias{print.summary.scantwo}
 \alias{read.cro.qtlcart}
 \alias{read.cross.csv}
+\alias{read.cross.csvs}
 \alias{read.cross.gary}
 \alias{read.cross.karl}
 \alias{read.cross.mm}
@@ -71,7 +73,7 @@
 \usage{
 addqtl(cross, qtl, add.chr, add.pos, add.name, map)
 adjust.rf.ri(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
-calc.pairprob(cross, step=0, off.end=0, error.prob=0, 
+calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001, 
               map.function=c("haldane","kosambi","c-f","morgan"))
 checkcovar(cross, pheno.col, addcovar, intcovar)
 checkrf(cross, threshold)
@@ -93,6 +95,7 @@ imf.h(r)
 imf.k(r)
 imf.m(r)
 locatemarker(map, pos, chr, flag)
+locate.xo(cross)
 makeSSmap(cross)
 mf.cf(d)
 mf.h(d)
@@ -108,7 +111,10 @@ parseformula(formula, qtl.dimname, covar.dimname)
 read.cro.qtlcart(file)
 read.cross.csv(dir, file, na.strings=c("-","NA"),
                genotypes=c("A","H","B","D","C"),
-               estimate.map=TRUE, \dots)
+               estimate.map=TRUE, rotate=FALSE, \dots)
+read.cross.csvs(dir, genfile, phefile, na.strings=c("-","NA"),
+                genotypes=c("A","H","B","D","C"),
+                estimate.map=TRUE, rotate=FALSE, \dots)
 read.cross.gary(dir, genfile, mnamesfile, chridfile, phefile,
                 pnamesfile, mapfile,estimate.map,na.strings)
 read.cross.karl(dir, genfile, mapfile, phefile)

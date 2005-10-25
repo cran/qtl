@@ -9,7 +9,7 @@
 
 \usage{
 \method{plot}{scantwo}(x, chr, incl.markers=FALSE, zlim,
-             lower=c("joint","cond-int","cond-add"), nodiag=TRUE, 
+             lower=c("joint","add","cond-int","cond-add"), nodiag=TRUE, 
              contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
              col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
              gamma=1, \dots)
@@ -64,7 +64,11 @@
 
   If \code{lower="joint"}, the lower triangle will contain the joint LOD
   scores, \eqn{LOD_j = \log_{10} L_f(q_1,q_2) - \log_{10} L_0}{%
-    LODi = log10 Lf(q1,q2) - log10 L0}.
+    LODj = log10 Lf(q1,q2) - log10 L0}.
+
+  If \code{lower="add"}, the lower triangle will contain the additive
+  LOD scores, \eqn{LOD_a = \log_{10} L_a(q_1,q_2) - \log_{10} L_0}{%
+    LODa = log10 La(q1,q2) - log10 L0}.
 
   If \code{lower="cond-int"}, the lower triangle will contain LOD scores
   comparing the two-QTL joint likelihood to the best of the single-QTL models,

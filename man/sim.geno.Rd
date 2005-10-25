@@ -11,7 +11,7 @@
 }
 
 \usage{
-sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0, 
+sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001, 
          map.function=c("haldane","kosambi","c-f","morgan"))
 }
 
