@@ -2,9 +2,9 @@
  * 
  * scanone_em.h
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2004
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -54,10 +54,7 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
- *              the first column contains the log10 likelihood, the 
- *              next set contain estimated genotype-specific means, and 
- *              the last column contains the estimated residual SD
+ * result       Upon exit, the LOD scores
  *
  * std_start    If 1, use the usual starting points [initial weights as 
  *                    Pr(QTL geno | marker genotypes)]
@@ -74,12 +71,14 @@ void R_scanone_em(int *n_ind, int *n_pos, int *n_gen,
  *
  * work         Workspace of dimension 4 x n_gen
  *
+ * means        Space for the phenotype means at each genotype
+ *
  **********************************************************************/
 
 void scanone_em(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-		double *pheno, double *weights, double **Result, 
+		double *pheno, double *weights, double *result, 
 		int std_start, double *start,
-		int maxit, double tol, double **work);
+		int maxit, double tol, double **work, double *means);
 
 /* end of scanone_em.h */
 

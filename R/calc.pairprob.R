@@ -68,7 +68,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     one.map <- TRUE
   }
   else if(type == "riself" || type=="risib") {
-    cfunc <- "calc_genoprob_bc"
+    cfunc <- "calc_pairprob_bc"
     n.gen <- 2
     gen.names <- c("A","B")
     one.map <- TRUE

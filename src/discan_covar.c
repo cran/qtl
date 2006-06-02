@@ -4,7 +4,7 @@
  *
  * copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
  *
- * last modified Apr, 2005
+ * last modified Nov, 2005
  * first written Dec, 2004
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Linpack.h>
 #include "util.h"
 #include "discan_covar.h"
 #define TOL 1e-12

@@ -11,12 +11,11 @@
 }
 
 \usage{
-scantwo(cross, chr, pheno.col=1,
+scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-        model=c("normal","binary"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
         run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
-        verbose=TRUE, n.perm)
+        verbose=TRUE, n.perm, n.node)
 }
 
 \arguments{
@@ -25,15 +24,17 @@ scantwo(cross, chr, pheno.col=1,
  \item{chr}{Vector indicating the chromosomes for which LOD scores
    should be calculated.}
  \item{pheno.col}{Column number in the phenotype matrix which should be
-   used as the phenotype.}
+   used as the phenotype.  This can be a vector of integers; for methods
+   \code{"hk"} and \code{"imp"} this can be considerably faster than doing
+   them one at a time.}
+ \item{model}{The phenotypic model: the usual normal model or a model for
+   binary traits.}
  \item{method}{Indicates whether to use standard interval mapping (ie
    the EM algorithm), imputation, Haley-Knott regression, or marker
    regression.  Marker regression is performed either by dropping
    individuals with missing genotypes (\code{"mr"}), or by first filling
    in missing data using a single imputation (\code{"mr-imp"}) or by the
    Viterbi algorithm (\code{"mr-argmax"}).}
- \item{model}{The phenotypic model: the usual normal model or a model for
-   binary traits.}
  \item{addcovar}{Additive covariates.}
  \item{intcovar}{Interactive covariates (interact with QTL genotype).}
  \item{weights}{Optional weights of individuals.  Should be either NULL
@@ -53,6 +54,8 @@ scantwo(cross, chr, pheno.col=1,
  \item{n.perm}{If specified, a permutation test is performed rather than
    an analysis of the observed data.  This argument defines the number
    of permutation replicates.}
+ \item{n.node}{Number of nodes to use for parallelization of
+   permutations; only if package \code{snow} is available.}
 }
 
 \details{

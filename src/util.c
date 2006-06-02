@@ -2,13 +2,13 @@
  * 
  * util.c
  *
- * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Sep, 2005
+ * last modified Feb, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -24,7 +24,8 @@
  *                  reorg_errlod, double_permute, int_permute, 
  *                  random_int
  *                  wtaverage, comparegeno, R_comparegeno,
- *                  R_locate_xo, locate_xo
+ *                  R_locate_xo, locate_xo, matmult, expand_col2drop
+ *                  dropcol_xpx, dropcol_xpy, dropcol_x
  *
  **********************************************************************/
 
@@ -35,6 +36,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include "util.h"
+#include <R_ext/Lapack.h>
 
 #define THRESH 200.0
 
@@ -525,7 +527,7 @@ void R_locate_xo(int *n_ind, int *n_mar, int *type,
   double **Location;
 
   reorg_geno(*n_ind, *n_mar, geno, &Geno);
-  reorg_errlod(*n_ind, *n_mar-1, location, &Location);
+  reorg_errlod(*n_ind, (*type+1)*(*n_mar-1), location, &Location);
 
   locate_xo(*n_ind, *n_mar, *type, Geno, map, Location,
 	   nseen);
@@ -535,7 +537,7 @@ void R_locate_xo(int *n_ind, int *n_mar, int *type,
 void locate_xo(int n_ind, int n_mar, int type, int **Geno,
 	       double *map, double **Location, int *nseen)
 {
-  int i, j, curgen, newgen, number;
+  int i, j, curgen, number;
   double curpos;
 
   for(i=0; i<n_ind; i++) {
@@ -620,6 +622,128 @@ void locate_xo(int n_ind, int n_mar, int type, int **Geno,
   }
 }
 	  
+/* multiply two matrices - I'm using dgemm from lapack here */
+void matmult2(double *result, double *a, int nrowa,
+             int ncola, double *b, int ncolb)
+
+{ 
+  double alpha=1.0, beta=1.0;
+  F77_CALL(dgemm)("N", "N", &nrowa, &ncolb, &ncola, &alpha, a, &nrowa,
+             b, &ncola, &beta, result, &nrowa);
+}
+
+void matmult(double *result, double *a, int nrowa,
+             int ncola, double *b, int ncolb)
+
+{
+  int i, j, k;
+
+  for(i=0; i<nrowa; i++)
+    for(j=0; j<ncolb; j++) {
+      /* clear the content of result */
+      result[j*nrowa+i] = 0.0;
+      /*result[i*ncolb+j] = 0.0;*/
+      for(k=0; k<ncola; k++)
+        result[j*nrowa+i] += a[k*nrowa+i]*b[j*ncola+k];
+    }
+
+}
+
+
+/**********************************************************************
+ * 
+ * expandcol2drop
+ *
+ * Used in scantwo_1chr_em for the X chromosome, to figure out 
+ * what columns to drop in the presence of covariates when certain
+ * genotype columns must be dropped
+ *
+ **********************************************************************/
+
+void expand_col2drop(int n_gen, int n_addcov, int n_intcov, 
+		     int *col2drop, int *allcol2drop)
+{
+  int k1, k2, s, ss, j;
+
+  for(k1=0, s=0, ss=0; k1<n_gen; k1++, ss++, s++) 
+    allcol2drop[s] = col2drop[ss];
+
+
+  for(k2=0; k2<n_gen-1; k2++, s++, ss++) 
+    allcol2drop[s] = col2drop[ss];
+
+  for(j=0; j<n_addcov; j++, s++) 
+    allcol2drop[s]=0;
+
+  for(j=0; j<n_intcov; j++) {
+    for(k1=0, ss=0; k1<n_gen-1; k1++, s++, ss++)
+      allcol2drop[s] = col2drop[ss];
+
+    ss++;
+
+    for(k2=0; k2<n_gen-1; k2++, s++, ss++)
+      allcol2drop[s] = col2drop[ss];
+  }
+
+  for(k1=0, ss=2*n_gen-1; k1<n_gen-1; k1++) 
+    for(k2=0; k2<n_gen-1; k2++, s++, ss++) 
+      allcol2drop[s] = col2drop[ss];
+
+  for(j=0; j<n_intcov; j++)
+    for(k1=0, ss=2*n_gen-1; k1<n_gen-1; k1++)
+      for(k2=0; k2<n_gen-1; k2++, s++, ss++)
+	allcol2drop[s] = col2drop[ss];
+}
+
+
+void dropcol_xpx(int *n_col, int *col2drop, double *xpx)
+{
+  int i, j, s, n;
+
+  n=0;
+  for(i=0, s=0; i< *n_col; i++) {
+    if(!col2drop[i]) n++;
+    for(j=0; j < *n_col; j++) {
+      if(!col2drop[i] && !col2drop[j]) {
+	xpx[s] = xpx[j+i*(*n_col)];
+	s++;
+      }
+    }
+  }
+	
+  *n_col = n;
+}
+
+
+void dropcol_xpy(int n_col, int *col2drop, double *xpy)
+{
+  int i, s;
+
+  for(i=0, s=0; i<n_col; i++) {
+    if(!col2drop[i]) {
+      xpy[s] = xpy[i];
+      s++;
+    }
+  }
+}
+
+void dropcol_x(int *n_col, int n_row, int *col2drop, double *x)
+{
+  int i, j, n, s;
+  
+  n=0;
+  for(i=0, s=0; i<*n_col; i++) {
+    if(!col2drop[i]) {
+      n++;
+      for(j=0; j<n_row; j++)
+	x[j+s*n_row] = x[j+i*n_row];
+      s++;
+    }
+  }
+  *n_col = n;
+}
+
 
 
 /* end of util.c */
+

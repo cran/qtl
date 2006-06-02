@@ -6,6 +6,114 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
 
+Version 1.02, 6/2/2006:
+
+Major changes:
+
+  Modified scanone() and scantwo() so that they may analyze multiple
+  phenotypes simultaneously.  This can greatly speed up the analyses
+  with Haley-Knott regression (method="hk") and imputation
+  (method="imp").  We can use this trick to speed up permutation
+  tests: create multiple permuted phenotypes and then analyze them all
+  at once.
+
+  scanone() results no longer include parameter estimates (such as the
+  phenotypic averages for each genotype group and the residual SD).
+  The bookkeeping for this became too painful as we moved to allow
+  multiple phenotypes to be analyzed simultaneously.  To get such
+  estimates, use fitqtl().  fitqtl() currently works only via the
+  imputation method, but we expect to soon implement multiple interval
+  mapping (MIM) and also Haley-Knott regression.
+
+  scantwo() with method="em" now works for the X chromosome, including
+  with model="binary".
+
+  Modified the "map10" dataset: a genetic map modeled after the mouse,
+  with markers having an approximately 10 cM spacing.  We've revised
+  the chromosome lengths to match those in the Mouse Genome Database. 
+
+  Dropped support for intercrosses with sex-specific maps (class
+  "f2ss"). 
+
+  Changed the meaning of the argument "lodcolumn" in scanone(). It now
+  should be an index starting at 1 rather than 3.  I think this will
+  be more clear for the case of LOD scores from multiple phenotypes,
+  though perhaps it will be less clear.
+
+  summary.scanone() now takes an argument "lodcolumn"; if a single
+  scanone output is given as input, it picks off peaks using those LOD
+  scores.  (As with plot.scanone, this is indexed starting at 1.)
+
+  Similarly, added a "lodcolumn" argument to plot.scantwo() and
+  summary.scantwo(), for the case that the scantwo results are for
+  multiple phenotypes; only results for a single phenotype are used by
+  these functions, and "lodcolumn" indicates which one.
+
+Minor changes:
+ 
+  Modified summary.cross() to give a warning if there are markers at
+  precisely the same position.  Added a function jittermap() to assist
+  in fixing this.  Numerous functions run into problems if there are
+  markers on top of each other.  Revised the hyper dataset so that it
+  doesn't have this problem.
+
+  Switched the order of the arguments "model" and "method" in scantwo()
+  to match that for scanone().
+
+  Fixed a slight bug in max.scanone() that led to an unnecessary
+  warning message.
+
+  Fixed a slight bug in locate.xo(), used by plot.geno() to identify
+  the locations of crossovers.
+
+  Made a slight revision to read.map.qtlcart(), so that chromosome
+  names are not required in the map file, and so that more informative
+  messages are displayed if marker or chromosome names are not found. 
+
+  Modified qtlversion(), which prints the installed version of the
+  package, to use library(help=qtl) rather than installed.packages().
+  This is a lot faster.
+
+  Added, to summary.cross(), a check on whether multiple phenotypes
+  have the same name.
+
+  Modified plot.cross() so that it will work if multiple phenotypes
+  have the same name (though that shouldn't happen).
+
+  Fixed a bug in fitqtl() regarding the names of coefficients for
+  interactions between QTLs and covariates when get.ests=TRUE.
+
+  Fixed a slight problem in read.cross.csv() and read.cross.csvs() so 
+  they will read in 4-way cross data.  You need to use genotypes=NULL.	
+
+  Modified c.cross() so that it can combined crosses typed at
+  different numbers of markers.  The number of chromosomes must be the
+  same, and the genetic maps must be consistent.
+
+  Modified plot.scanone() so that you can give it a "ylab" argument to
+  override the y-axis labels.  Eliminated the "main" argument, as that 
+  can be passed via "...".
+
+  Modified the threshold for est.rf() to print warnings about possibly
+  switched genotype data.
+
+  Fixed a slight typo in the help file for plot.scantwo().
+
+  Fixed a bug in calc.pairprob() (used by scantwo) for RILs.
+
+  Fixed a slight bug in scanone() for permutations; it dropped 
+  covariates in permutation tests with model="binary".
+
+  Fixed a slight bug in read.cross with format "csvs", for the
+  case that the argument genotypes=NULL.
+
+  Fixed a slight bug in checkcovar() used by scanone() that arose when
+  there were missing values in the phenotype data.
+
+  Added a utility function chrlen() for pulling out the lengths of all
+  of the chromosomes.
+
+
 Version 1.01, 10/25/2005:
 
 Major changes:

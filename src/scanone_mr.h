@@ -2,9 +2,9 @@
  * 
  * scanone_mr.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -59,16 +59,13 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
- *              the first column contains the RSS, the next set contain
- *              estimated genotype-specific means, and the last column
- *              contains the estimated residual SD
+ * result       Vector of length n_pos, to contain the RSS
  *
  **********************************************************************/
 
 void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
 		double **Addcov, int n_addcov, double **Intcov,
 		int n_intcov, double *pheno, double *weights, 
-		double **Result);
+		double *result);
 
 /* end of scanone_mr.h */

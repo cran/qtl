@@ -2,9 +2,9 @@
 #
 # qtlcart_io.R
 #
-# copyright (c) 2002-5, Brian S. Yandell
+# copyright (c) 2002-6, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Jun, 2005
+# last modified Jun, 2006
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -98,10 +98,18 @@ function (file)
   
 
   tmp <- grep("-b", f)
+  if(length(tmp) < 1) stop("Marker names not found in map file\n")
   markers <- scan(file, list(1, 2, ""), skip = tmp[1], nlines = nmarkers, 
                   blank.lines.skip = FALSE, quiet = TRUE)
-  chroms <- scan(file, list(1, ""), skip = tmp[2], nlines = nchrom, 
-                 blank.lines.skip = FALSE, quiet = TRUE)[[2]]
+  
+  if(length(tmp) < 2) {
+    warning("Chromosome names not found in map file\n")
+    chroms <- as.character(1:nchrom)
+  }
+  else 
+    chroms <- scan(file, list(1, ""), skip = tmp[2], nlines = nchrom, 
+                   blank.lines.skip = FALSE, quiet = TRUE)[[2]]
+
   map <- list()
   n.markers <- table(markers[[1]])
 
@@ -172,7 +180,7 @@ function (file)
   }
   else if (cross == "SF2" || cross == "RF2") 
     cross <- "f2"
-  else if (cross != "f2" && cross != "bc" && cross != "f2ss" && 
+  else if (cross != "f2" && cross != "bc" && 
            cross != "risib" && cross != "riself" && cross != "4way") {
     err <- paste("Cross type", cross, "not supported.")
     stop(err)
@@ -233,7 +241,7 @@ function( cross, filestem="data")
 
   type <- class(cross)[1]
   if(type=="bc") type <- "B1"
-  else if(type=="f2" || type=="f2ss") type <- "RF2"
+  else if(type=="f2") type <- "RF2"
   else if(type=="riself") type <- "RI1"
   else if(type=="risib") type <- "RI2"
   else {

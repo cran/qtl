@@ -2,14 +2,14 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2004
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: summary.cross, print.summary.cross, nind, nchr, nmar,
-#           totmar, nphe, nmissing, print.cross
+#           totmar, nphe, nmissing, print.cross, chrlen
 #
 ######################################################################
 
@@ -26,7 +26,7 @@ function(object,...)
   n.mar <- nmar(object)
   type <- class(object)[1]
 
-  if(type != "f2" && type != "f2ss" && type != "bc" && type != "4way" &&
+  if(type != "f2" && type != "bc" && type != "4way" &&
      type != "riself" && type != "risib" && type != "cc") {
     err <- paste("Cross type", type, "is not suppoted.")
     stop(err)
@@ -47,7 +47,7 @@ function(object,...)
   missing.gen <- mean(is.na(Geno))
   
   # table of genotype values
-  if(type=="f2" || type=="f2ss") {
+  if(type=="f2") {
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:5))
     names(typings) <- c("AA","AB","BB","not BB","not AA")
   }
@@ -67,10 +67,10 @@ function(object,...)
   # amount of missing phenotype data
   missing.phe <- as.numeric(cbind(apply(object$pheno,2,function(a) mean(is.na(a)))))
 
-  # check that, in the case of "f2ss" and "4way" crosses, the genetic
+  # check that, in the case of a "4way" cross, the genetic
   #     maps are matrices with 2 rows, and that for other crosses,
   #     the genetic maps are numeric vectors
-  if(type=="f2ss" || type=="4way") {
+  if(type=="4way") {
     if(any(!sapply(object$geno, function(a) (is.matrix(a$map) && nrow(a$map)==2)))) 
       warning("The genetic maps should all be matrices with two rows.")
   }
@@ -108,10 +108,35 @@ function(object,...)
       err <- paste("Markers out of order on chr", chr)
       stop(err)
     }
+
+    # check that no two markers are on top of each other
+    if(is.matrix(map)) { # sex-specific maps
+      n <- ncol(map)
+      if(n > 1) {
+        d1 <- diff(map[1,])
+        d2 <- diff(map[2,])
+        if(any(d1 < 1e-14 & d2 < 1e-14))
+          warning("Some markers at the same position; use jittermap().")
+      }
+    }
+    else {
+      n <- length(map)
+      if(n > 1) {
+        d <- diff(map)
+        if(any(d < 1e-14)) 
+          warning("Some markers at the same position; use jittermap().")
+      }
+    }
+
   }
     
-  if(!is.data.frame(object$pheno))
+  if(!is.data.frame(object$pheno)) 
     warning("Phenotypes should be a data.frame.")
+
+  x <- table(colnames(object$pheno))
+  if(any(x > 1)) 
+    warning("Some phenotypes have the same name:\n",
+            paste(names(x)[x>1], collapse="  "))
 
   # check genotype data
   if(type=="bc" || type=="riself" || type=="risib") {
@@ -131,7 +156,7 @@ function(object,...)
       warning(warn)
     }
   }
-  else if(type=="f2" || type=="f2ss") {
+  else if(type=="f2") {
     # invalid genotypes
     if(any(!is.na(Geno) & Geno!=1 & Geno!=2 & Geno!=3 &
            Geno!=4 & Geno!=5)) { 
@@ -206,7 +231,6 @@ function(x,...)
 {
 #  cat("\n")
   if(x$type=="f2") cat("    F2 intercross\n\n")
-  else if(x$type=="f2ss") cat("    F2 intercross w/ sex-specific maps\n\n")
   else if(x$type=="bc") cat("    Backcross\n\n")
   else if(x$type=="4way") cat("    4-way cross\n\n")
   else if(x$type=="riself") cat("    RI strains via selfing\n\n")
@@ -324,6 +348,19 @@ function(x, ...)
   cat("  It is too complex to print, so we provide just this summary.\n")
   print(summary(x))
   return(summary(x))
+}
+
+
+# get chromosome lengths
+chrlen <-
+function(object)
+{
+  x <- pull.map(object)
+
+  if(is.matrix(x[[1]])) 
+    return(sapply(x, apply, 1, function(a) diff(range(a))))
+
+  sapply(x, function(a) diff(range(a)))
 }
 
 

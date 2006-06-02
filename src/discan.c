@@ -2,9 +2,9 @@
  * 
  * discan.c
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Aug, 2004
+ * last modified Feb, 2006
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -41,12 +41,12 @@ void R_discan_mr(int *n_ind, int *n_pos, int *n_gen,
 		    int *geno, int *pheno, double *result)
 {
   int **Geno;
-  double **Result;
+  double *means;
 
   reorg_geno(*n_ind, *n_pos, geno, &Geno);
-  reorg_errlod(*n_pos, *n_gen+1, result, &Result);
+  allocate_double(*n_gen, &means);
 
-  discan_mr(*n_ind, *n_pos, *n_gen, Geno, pheno, Result);
+  discan_mr(*n_ind, *n_pos, *n_gen, Geno, pheno, result, means);
 }
 
 /**********************************************************************
@@ -62,14 +62,15 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
 		 double *genoprob, int *pheno, double *result, 
 		 int *maxit, double *tol)
 {
-  double ***Genoprob, **Result, **work;
+  double ***Genoprob, **work;
+  double *means;
 
   reorg_genoprob(*n_ind, *n_pos, *n_gen, genoprob, &Genoprob);
-  reorg_errlod(*n_pos, *n_gen+1, result, &Result);
   allocate_dmatrix(3, *n_gen, &work);
+  allocate_double(*n_gen, &means);
 
-  discan_im(*n_ind, *n_pos, *n_gen, Genoprob, pheno, Result, 
-	    *maxit, *tol, work);
+  discan_im(*n_ind, *n_pos, *n_gen, Genoprob, pheno, result, 
+	    *maxit, *tol, work, means);
 
 }
 
@@ -89,14 +90,14 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
- * Result       Result matrix of size [n_pos x (n_gen+1)]; upon return, 
- *              the first column contains the RSS and the rest contain
- *              estimated genotype-specific probabilities
+ * result       Upon return, to contain the log10 likelihoods
+ *
+ * means        Space for the phenotype means for each genotype
  *
  **********************************************************************/
 
 void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
-		  int *pheno, double **Result)
+		  int *pheno, double *result, double *means)
 {
   int i, j, k, n, tp, *ng, *np;
 
@@ -107,7 +108,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   allocate_int(n_gen, &np);
 
   for(i=0; i<n_pos; i++) {
-    Result[0][i] = 0.0; n=tp=0; 
+    result[i] = 0.0; n=tp=0; 
     for(j=0; j< n_gen; j++) {
       ng[j] = np[j] = 0;
 
@@ -121,20 +122,19 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	}
       }
       
-      if(ng[j] > 0)
-	Result[j+1][i] = (double)np[j]/(double)ng[j];
+      if(ng[j] > 0) means[j] = (double)np[j]/(double)ng[j];
       else /* no individuals with this genotype */
-	Result[j+1][i] = NA_REAL;
+	means[j] = NA_REAL;
     } /* loop over genotype groups */
 
     /* calculate LOD score */
     for(j=0; j<n_gen; j++) {
       if(np[j] > 0 && np[j] < ng[j]) 
-	Result[0][i] += ((double)np[j]*log10(Result[j+1][i]) +
-			 (double)(ng[j]-np[j])*log10(1.0-Result[j+1][i]));
+	result[i] += ((double)np[j]*log10(means[j]) +
+			 (double)(ng[j]-np[j])*log10(1.0-means[j]));
     }
     if(tp > 0 && tp < n) 
-      Result[0][i] -= ((double)tp*log10((double)tp/(double)n) +
+      result[i] -= ((double)tp*log10((double)tp/(double)n) +
 		       (double)(n-tp)*log10((double)(n-tp)/(double)n));
 
   } /* loop over marker positions */
@@ -158,9 +158,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  *
  * pheno        Phenotype data, as a vector
  *
- * Result       Result matrix of size [n_pos x (n_gen+1)]; upon return, 
- *              the first column contains the log10 likelihood and the 
- *              rest contain estimated genotype-specific probabilities
+ * result       Upon return, to contain the log10 likelihoods
  *
  * maxit        Maximum number of iterations in the EM algorithm
  *
@@ -168,11 +166,13 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  *
  * work         Workspace of dimension 3 x n_gen
  *
+ * means        Space for the phenotype means for each genotype
+ *
  **********************************************************************/
 
 void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-	       int *pheno, double **Result, 
-	       int maxit, double tol, double **work)
+	       int *pheno, double *result, 
+	       int maxit, double tol, double **work, double *means)
 {
   int i, j, k, s, flag=0;
   double sw;
@@ -181,20 +181,20 @@ void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 
     /* initiate EM */
     for(k=0; k<n_gen; k++) {
-      Result[k+1][i] = sw=0.0;
+      means[k] = sw=0.0;
       for(j=0; j<n_ind; j++) {
 	sw += Genoprob[k][i][j]; /* k=gen, i=pos, j=ind */
-	if(pheno[j]) Result[k+1][i] += Genoprob[k][i][j];
+	if(pheno[j]) means[k] += Genoprob[k][i][j];
       }
-      Result[k+1][i] /= sw;
+      means[k] /= sw;
     }
 
     for(s=0; s < maxit; s++) { /* EM iterations */
     
       /* copy over current estimates */
       for(k=0; k<n_gen; k++) {
-	work[0][k] = Result[k+1][i]; 
-	Result[k+1][i] = work[1][k] = 0.0;
+	work[0][k] = means[k]; 
+	means[k] = work[1][k] = 0.0;
       }
       
       for(j=0; j<n_ind; j++) { /* loop over individuals */
@@ -211,18 +211,18 @@ void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 	/* M-step */
 	for(k=0; k<n_gen; k++) {
 	  work[1][k] += work[2][k];
-	  if(pheno[j]) Result[k+1][i] += work[2][k];
+	  if(pheno[j]) means[k] += work[2][k];
 	}
       }
       
       /* complete M-step */
       for(k=0; k<n_gen; k++) 
-	Result[k+1][i] /= work[1][k];
+	means[k] /= work[1][k];
 
       /* check for convergence */
       flag = 0;
       for(k=0; k<n_gen; k++) {
-	if(fabs(Result[k+1][i] - work[0][k]) > tol*(fabs(work[0][k])+tol*100.0)) {
+	if(fabs(means[k] - work[0][k]) > tol*(fabs(work[0][k])+tol*100.0)) {
 	  flag = 1;
 	  break;
 	}
@@ -234,14 +234,14 @@ void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
     if(flag) warning("Didn't converge!\n");
 
     /* calculate log lik */
-    Result[0][i] = 0.0;
+    result[i] = 0.0;
     for(j=0; j<n_ind; j++) {
       sw = 0.0;
       if(pheno[j]) 
-	for(k=0; k<n_gen; k++) sw += Genoprob[k][i][j] * Result[k+1][i];
+	for(k=0; k<n_gen; k++) sw += Genoprob[k][i][j] * means[k];
       else
-	for(k=0; k<n_gen; k++) sw += Genoprob[k][i][j] * (1.0-Result[k+1][i]);
-      Result[0][i] += log10(sw);
+	for(k=0; k<n_gen; k++) sw += Genoprob[k][i][j] * (1.0-means[k]);
+      result[i] += log10(sw);
     }
 
   } /* end loop over marker positions */

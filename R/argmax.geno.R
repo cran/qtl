@@ -2,8 +2,8 @@
 #
 # argmax.geno.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -61,10 +61,6 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     }
     else if(type == "4way") {
       cfunc <- "argmax_geno_4way"
-      one.map <- FALSE
-    }
-    else if(type == "f2ss") {
-      cfunc <- "argmax_geno_f2ss"
       one.map <- FALSE
     }
     else if(type == "cc") {

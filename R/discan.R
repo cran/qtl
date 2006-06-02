@@ -2,8 +2,8 @@
 #
 # discan.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Sep, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -89,11 +89,11 @@ function(cross, pheno, method=c("em","mr"),
       newgeno[is.na(newgeno)] <- 0 
 
       # discard partially informative genotypes
-      if(type=="f2" || type=="f2ss") newgeno[newgeno>3] <- 0
+      if(type=="f2") newgeno[newgeno>3] <- 0
       if(type=="4way") newgeno[newgeno>4] <- 0
 
       # revise X chromosome genotypes
-      if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+      if(chrtype=="X" && (type=="bc" || type=="f2"))
          newgeno <- reviseXdata(type, "full", sexpgm, geno=newgeno)
 
       n.pos <- ncol(newgeno)
@@ -119,7 +119,7 @@ function(cross, pheno, method=c("em","mr"),
       n.pos <- ncol(genoprob)
 
       # revise X chromosome genotypes
-      if(chrtype=="X" && (type=="bc" || type=="f2" || type=="f2ss"))
+      if(chrtype=="X" && (type=="bc" || type=="f2"))
          genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
 
       map <- create.map(cross$geno[[i]]$map,
@@ -159,7 +159,7 @@ function(cross, pheno, method=c("em","mr"),
                 as.integer(n.gen),         # number of possible genotypes
                 as.double(genoprob),       # genotype probabilities
                 as.integer(pheno),          # phenotype data
-                result=as.double(rep(0,n.pos*(n.gen+1))),
+                result=as.double(rep(0,n.pos)),
                 as.integer(maxit),
                 as.double(tol),
                 PACKAGE="qtl")
@@ -171,25 +171,11 @@ function(cross, pheno, method=c("em","mr"),
     if(method == "em") z[,1] <- z[,1] - llik0[chrtype]
     z[is.na(z[,1]),1] <- 0
 
-    if(n.ac + n.ic > 0)
-      colnames(z) <- c("lod")
-    else
-      colnames(z) <- c("lod",gen.names)
+    colnames(z) <- c("lod")
       
-    w <- names(map)
-    o <- grep("^loc\-*[0-9]+",w)
-    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
-      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
-    rownames(z) <- w
-    
-    z <- as.data.frame(z)
-    z <- cbind(chr=rep(names(cross$geno)[i],length(map)), pos=map, z)
-    rownames(z) <- w
-
     # get null log10 likelihood for the X chromosome
     adjustX <- FALSE
     if(chrtype=="X") {
-
       # determine which covariates belong in null hypothesis
       temp <- scanoneXnull(type, sexpgm)
       adjustX <- temp$adjustX
@@ -208,63 +194,22 @@ function(cross, pheno, method=c("em","mr"),
         llik0X <- sum(pheno*log10(fittedX) + (1-pheno)*log10(1-fittedX))
 
         # adjust LOD curve
-        z[,3] <- z[,3] - (llik0X - llik0["X"])
+        z <- z - (llik0X - llik0["X"])
       }
     }
 
-    # if different number of columns from other chromosomes,
-    #     expand to match
-    if(!is.null(results) && ncol(z) != ncol(results)) {
-      cnz <- colnames(z)
-      cnr <- colnames(results)
-      wh.zr <- match(cnz,cnr)
-      wh.rz <- match(cnr,cnz)
-      if(all(!is.na(wh.rz))) {
-        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=ncol(z)))
-        dimnames(newresults) <- list(rownames(results), cnz)
-        newresults[,cnr] <- results
-        results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
-      }
-      else if(all(!is.na(wh.zr))) {
-        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=ncol(results)))
-        dimnames(newz) <- list(rownames(z), cnr)
-        newz[,cnz] <- z
-        z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
-      }
-      else {
-        newnames <- c(cnr, cnz[is.na(wh.zr)])
-
-        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=length(newnames)))
-        dimnames(newresults) <- list(rownames(results), newnames)
-        newresults[,cnr] <- results
-        results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
-        
-        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=length(newnames)))
-        dimnames(newz) <- list(rownames(z), newnames)
-        newz[,cnz] <- z
-        z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
-      }
-    }
+    w <- names(map)
+    o <- grep("^loc\-*[0-9]+",w)
+    if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+      w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
+    rownames(z) <- w
+    
+    z <- as.data.frame(z)
+    z <- cbind(chr=rep(names(cross$geno)[i],length(map)), pos=map, z)
+    rownames(z) <- w
 
     results <- rbind(results, z)
   } # loop over chromosomes
-
-  if(n.addcovar + n.intcovar > 0)
-    results <- results[,1:3]
-  
-  if(ncol(results) > 3) {
-    # sort the later columns
-    neworder <- c(colnames(results)[1:3],sort(colnames(results)[-(1:3)]))
-    results <- results[,neworder]
-  }
 
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method

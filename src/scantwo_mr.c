@@ -43,7 +43,8 @@
 void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *weights, double *result)
+		       double *pheno, double *weights, double *result,
+		       int *n_col2drop, int *col2drop)
 {
   int **Geno;
   double **Result, **Addcov, **Intcov;
@@ -56,7 +57,8 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
   if(*n_intcov > 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
 
   scantwo_1chr_mr(*n_ind, *n_pos, *n_gen, Geno, Addcov, *n_addcov, 
-		  Intcov, *n_intcov, pheno, weights, Result);
+		  Intcov, *n_intcov, pheno, weights, Result,
+		  *n_col2drop, col2drop);
 }
 
 /**********************************************************************
@@ -95,17 +97,23 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *              testing epistasis.
  *              Note: indexed as Result[col][row]
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double *weights, double **Result)
+		     double *weights, double **Result,
+		     int n_col2drop, int *col2drop)
 {
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
-  int n_col_0, n_col_a, n_col_f, n_gen_sq, *which_ind;
+  int n_col_0, n_col_a, n_col_f, n_col_a_temp, n_col_f_temp, n_gen_sq, *which_ind;
   double *work, *x, *qty, *qraux, *coef, *resid, tol, lrss0, *y;
   double lrss0_allind=0.0;
+  int *allcol2drop;
 
   /* tolerance for linear regression */
   tol = TOL;
@@ -117,6 +125,13 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   n_col_a = (n_gen*2-1)+n_addcov+n_intcov*(n_gen-1)*2; 
   /* no. param full model */
   n_col_f = n_gen_sq+n_addcov+n_intcov*(n_gen_sq-1); 
+
+  /* expand col2drop */
+  if(n_col2drop) {
+    allocate_int(n_col_f, &allcol2drop);
+    expand_col2drop(n_gen, n_addcov, n_intcov, 
+		    col2drop, allcol2drop);
+  }
 
   /* allocate space and set things up*/
   which_ind = (int *)R_alloc(n_ind, sizeof(int));
@@ -204,9 +219,15 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	    s += (n_gen-1);
 	  }
 	}
+	
+	n_col_a_temp = n_col_a;
+	if(n_col2drop) 
+	  dropcol_x(&n_col_a_temp, this_n_ind, allcol2drop, x);
+
 	/* linear regression of phenotype on QTL genotype probabilities */
-	F77_CALL(dqrls)(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_a_temp, y, &ny, &tol, 
 			coef, resid, qty, &k, jpvt, qraux, work);
+
 	/* RSS */
 	Result[i2][i] = 0.0;
 	for(j=0; j<this_n_ind; j++) Result[i2][i] += (resid[j]*resid[j]);
@@ -221,18 +242,16 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	  x[j+(Geno[i][which_ind[j]]-1)*this_n_ind] = 
 	    weights[which_ind[j]]; /* QTL 1 */
 	  s = n_gen;
+
 	  if(Geno[i2][which_ind[j]] < n_gen) /* QTL 2 */
 	    x[j+(Geno[i2][which_ind[j]]-1+s)*this_n_ind] = 
 	      weights[which_ind[j]];
 	  s += (n_gen-1);
-	  if(Geno[i][which_ind[j]] < n_gen && 
-	     Geno[i2][which_ind[j]] < n_gen) /* QTL x QTL */
-	    x[j+((Geno[i][which_ind[j]]-1)*(n_gen-1)+s+
-		 Geno[i2][which_ind[j]]-1)*this_n_ind] = weights[which_ind[j]];
-	  s += (n_gen-1)*(n_gen-1);
+
 	  for(k=0; k<n_addcov; k++) /* additive covariates */
 	    x[j+(k+s)*this_n_ind] = Addcov[k][which_ind[j]];
 	  s += n_addcov;
+
 	  for(k=0; k<n_intcov; k++) {
 	    if(Geno[i][which_ind[j]] < n_gen) /* interactive x QTL 1 */
 	      x[j+(s+Geno[i][which_ind[j]]-1)*this_n_ind] = 
@@ -242,6 +261,15 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	      x[j+(s+Geno[i2][which_ind[j]]-1)*this_n_ind] = 
 		Intcov[k][which_ind[j]];
 	    s += (n_gen-1);
+	  }
+
+	  if(Geno[i][which_ind[j]] < n_gen && 
+	     Geno[i2][which_ind[j]] < n_gen) /* QTL x QTL */
+	    x[j+((Geno[i][which_ind[j]]-1)*(n_gen-1)+s+
+		 Geno[i2][which_ind[j]]-1)*this_n_ind] = weights[which_ind[j]];
+	  s += (n_gen-1)*(n_gen-1);
+
+	  for(k=0; k<n_intcov; k++) { /* interactive x QTL x QTL */
 	    if(Geno[i][which_ind[j]] < n_gen && 
 	       Geno[i2][which_ind[j]] < n_gen) /* QTL x QTL */
 	      x[j+((Geno[i][which_ind[j]]-1)*(n_gen-1)+s+
@@ -250,8 +278,14 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	    s += (n_gen-1)*(n_gen-1);
 	  }
 	}
+
+	/* drop x's */
+	n_col_f_temp = n_col_f;
+	if(n_col2drop) 
+	  dropcol_x(&n_col_f_temp, this_n_ind, allcol2drop, x);
+
 	/* linear regression of phenotype on QTL genotype probabilities */
-	F77_CALL(dqrls)(x, &this_n_ind, &n_col_f, y, &ny, &tol, 
+	F77_CALL(dqrls)(x, &this_n_ind, &n_col_f_temp, y, &ny, &tol, 
 			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
 	Result[i][i2] = 0.0;

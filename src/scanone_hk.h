@@ -2,9 +2,9 @@
  * 
  * scanone_hk.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -29,7 +29,7 @@
 
 void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
 		  double *genoprob, double *addcov, int *n_addcov, 
-                  double *intcov, int *n_intcov, double *pheno,
+                  double *intcov, int *n_intcov, double *pheno, int *nphe,
 		  double *weights, double *result);
 
 /**********************************************************************
@@ -59,18 +59,18 @@ void R_scanone_hk(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * nphe         Number of phenotypes
+ *
  * weights      Vector of positive weights, of length n_ind
  *
- * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
- *              the first column contains the LOD, the next set contain
- *              estimated genotype-specific means, and the last column
- *              contains the estimated residual SD
+ * Result       Result matrix of size [n_pos x (nphe)] containing the
+ *              LOD scores for each phenotype
  *
  **********************************************************************/
 
 void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
                 double **Addcov, int n_addcov, double **Intcov, 
-		int n_intcov, double *pheno, double *weights,
+		int n_intcov, double *pheno, int nphe, double *weights,
 		double **Result);
 
 /* end of scanone_hk.h */

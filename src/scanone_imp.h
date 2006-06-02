@@ -2,13 +2,13 @@
  * 
  * scanone_imp.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
  *
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Oct, 2002
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -34,8 +34,8 @@
 void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws, 
 		   int *draws, double *addcov, int *n_addcov, 
 		   double *intcov, int *n_intcov, double *pheno, 
-		   double *weights,
-		   double *result, int *trim, int *direct);
+		   int *nphe, double *weights,
+		   double *result);
 
 /**********************************************************************
  * 
@@ -67,31 +67,27 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * result       Result vector of length [n_pos]; upon return, contains
+ * Result       Matrix of size [n_pos x nphe]; upon return, contains
  *              the "LPD" (log posterior distribution of QTL location).
  * 
- * trim         If 1, trim off the top and bottom log2(n.draws) LODs 
- *
- * direct       If 1, return log10[mean(10^LOD)]; if 0, return
- *              mean(LOD) + var(LOD)/2
- *
  **********************************************************************/
 
 void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws, 
 		 int ***Draws, double **Addcov, int n_addcov, 
 		 double **Intcov, int n_intcov, double *pheno, 
-		 double *weights,
-		 double *result, int trim, int direct);
+		 int nphe, double *weights,
+		 double **Result);
 
 /* function to calculate the null model RSS for scanone_imp */
-double nullRss(double *pheno, double *weights, int n_ind, 
-	       double **Addcov, int n_addcov, 
-	       double *dwork, int *iwork);
+void nullRss(double *tmppheno, double *pheno, int nphe, int n_ind,
+             double **Addcov, int n_addcov, double *dwork_null,
+             int multivar, double *rss0, double *weights);
 
 /* function to calculate the alternative model RSS. 
    This function is called by scanone_imp */
-double altRss(double *pheno, double *weights, int n_ind, int n_gen, 
-	      int *Draws, double **Addcov, int n_addcov, double **Intcov, 
-	      int n_intcov, double *dwork, int *iwork);
+void altRss1(double *tmppheno, double *pheno, int nphe, int n_ind, int n_gen,
+	     int *Draws, double **Addcov, int n_addcov, double **Intcov,
+	     int n_intcov, double *dwork, int multivar, double *rss, 
+	     double *weights);
 
 /* end of scanone_imp.h */

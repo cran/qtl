@@ -51,14 +51,14 @@ out2.covar <- scanone(fake.bc, pheno.col=2,
                       addcovar=ac, intcovar=ic)
 
 # summaries
-summary(out1.nocovar, 3)
-summary(out1.covar, 3)
-summary(out2.nocovar, 3)
-summary(out2.covar, 3)
+summary(out1.nocovar, thr=3)
+summary(out1.covar, thr=3)
+summary(out2.nocovar, thr=3)
+summary(out2.covar, thr=3)
 
 # plots
-plot(out1.covar,out1.nocovar,chr=c(2,5,10))
-plot(out2.covar,out2.nocovar,chr=c(2,5,10))
+plot(out1.covar, out1.nocovar, chr=c(2,5,10))
+plot(out2.covar, out2.nocovar, chr=c(2,5,10))
 }
 
 \seealso{ \code{\link[qtl]{sim.cross}}, \code{\link[qtl]{fake.4way}},

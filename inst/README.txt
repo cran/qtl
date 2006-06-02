@@ -29,21 +29,21 @@ OBTAINING R/QTL
 
 INSTALLATION OF R AND R/QTL (Windows)
 
-  1. The Windows version of R is distributed as a single file,
-     with a name something like rw2010.exe.  Install R by executing
+  1. The Windows version of R is distributed as a single file, with a
+     name something like R-2.2.0-win32.exe.  Install R by executing
      this file.  We recommend installing R in "c:\R" rather than
      "c:\Program Files\R".  Why didn't Microsoft use "Programs" rather
-     than "Program files"? 
+     than "Program files"?
 
-  2. To install R/qtl, download the file "qtl.99-22.zip" (or the
+  2. To install R/qtl, download the file "qtl.1.02-1.zip" (or the
      equivalent) and then do one of the following:
 
      a. Start R.  Select (on the menu bar) "Packages" and then
         "Install package from local zip file...".  Find the file
-        "qtl_0.99-22.zip" on your hard drive, and click "Open".
+        "qtl_1.02-1.zip" on your hard drive, and click "Open".
 
-     b. Unzip the "qtl_0.99-22.zip" file into the directory
-        $RHOME\library (where $RHOME is something like c:\R\rw1081).
+     b. Unzip the "qtl_1.02-1.zip" file into the directory
+        $RHOME\library (where $RHOME is something like c:\R\R-2.2.0).
         Note that this should create a directory $RHOME\library\qtl
         containing the R source code and the compiled dll.
 
@@ -53,14 +53,14 @@ INSTALLATION OF R AND R/QTL (Windows)
 
 INSTALLATION OF R AND R/QTL (MacOS version 10.2.x and above)
 
-  1. Download the file RAqua.dmg and double-click it to mount a
-     "drive" with a name something like "R-2.0.1.dmg".  Follow the
-     instructions in the file "ReadMe.txt".
-
+  1. Download the file R-2.2.0.dmg and double-click it to create a
+     "drive" with a name like "R-2.2.0".  Double-click on the file
+     R.mkpg and follow the instructions.
+     
   2. To install R/qtl:
 
      a. Download the compiled version of R/qtl for Mac OS X, a file
-        like "qtl_0.99-22.tgz".
+        like "qtl_1.02-1.tgz".
 
      b. Start R by double-clicking "R" in your Applications folder.
 
@@ -70,7 +70,7 @@ INSTALLATION OF R AND R/QTL (MacOS version 10.2.x and above)
 	Select "Local Binary Package" from the drop-down menu at the
         top of the window that comes up.
 
-	Click "Install/Update" at the bottom of the window.
+	Click "Install" at the bottom of the window.
 
 	Find the package on your harddrive and click "Open".
 
@@ -81,20 +81,20 @@ INSTALLATION OF R/QTL (Unix)
 
   1. We'll assume that R has already been installed. 
 
-  2. Go into the directory containing the file "qtl_0.99-22.tar.gz".
+  2. Go into the directory containing the file "qtl_1.02-1.tar.gz".
 
   3. Do one of the following:
 
      a. To install R/qtl in the standard location
         (/usr/local/lib/R/library), type 
 
-            R CMD INSTALL qtl_*.tar.gz
+            R CMD INSTALL qtl_1.02-1.tar.gz
 
         You'll probably need to be superuser.
 
      b. To install the package locally, type 
 
-            R CMD INSTALL --library=/home/auser/Rlibs qtl_*.tar.gz
+            R CMD INSTALL --library=/home/auser/Rlibs qtl_1.02-1.tar.gz
 
         (where "/home/auser/Rlibs" should be replaced with the
         appropriate directory).  

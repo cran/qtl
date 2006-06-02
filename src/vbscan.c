@@ -2,9 +2,9 @@
  * 
  * vbscan.c
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Nov, 2004
+ * last modified Feb, 2006
  * first written May, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -29,16 +29,15 @@
 #include "util.h"
 
 void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
-		int *survived, double *lod, int maxit, double tol)
+	    int *survived, double *lod, int maxit, double tol)
 {
   double ***Genoprob, **w;
-  int i, j, k, p, flag;
-  int ncol;
+  int i, j, k, p, flag, ncol;
   double *mu, sig=0.0, *pi, *mu_prev, sig_prev, *pi_prev;
   double mu0, sig0, pi0, q0, loglik0;
   double s1, s2, s3;
 
-  ncol = 4+2*n_gen; /* number of columns in output (lod) */
+  ncol = 3;
 
   /* set up matrix for the genoprob */
   reorg_genoprob(n_ind, n_pos, n_gen, genoprob, &Genoprob);
@@ -153,12 +152,6 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
 	  s1 += (1-pi[j])*Genoprob[j][p][i]*dnorm(pheno[i],mu[j],sig,0);
       lod[p*ncol] += log(s1);
     }
-
-    for(j=0; j<n_gen; j++) {
-      lod[p*ncol+3+j] = pi[j];
-      lod[p*ncol+3+n_gen+j] = mu[j];
-    }
-    lod[p*ncol+ncol-1] = sig;
 
     /* repeat with pi's constant */ 
     for(j=0; j<n_gen; j++) mu_prev[j] = mu[j];
@@ -278,14 +271,6 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
 
 } 
   
-
-/* This is not needed; we can use the function that comes with R
-double dnorm(double y, double mu, double sig)
-{
-  return(exp(-0.5*(y-mu)*(y-mu)/sig/sig)/sig);
-}
-*/
-
 
 void R_vbscan(int *n_pos, int *n_ind, int *n_gen, double *genoprob, 
               double *pheno, 

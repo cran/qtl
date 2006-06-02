@@ -32,7 +32,8 @@
 void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *weights, double *result);
+		       double *pheno, double *weights, double *result,
+		       int *n_col2drop, int *col2drop);
 
 /**********************************************************************
  * 
@@ -70,12 +71,17 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *              testing epistasis.
  *              Note: indexed as Result[col][row]
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double *weights, double **Result);
+		     double *weights, double **Result,
+		     int n_col2drop, int *col2drop);
 
 /**********************************************************************
  * 

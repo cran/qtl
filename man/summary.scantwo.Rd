@@ -8,7 +8,7 @@
 }
 
 \usage{
-\method{summary}{scantwo}(object, thresholds = c(0, 0, 0),
+\method{summary}{scantwo}(object, thresholds = c(0, 0, 0), lodcolumn=1,
                 type = c("joint","interaction"), \dots)
 }
 
@@ -19,6 +19,9 @@
    for the joint LOD, interaction LOD and single-QTL conditional
    LOD. Negative threshold values are taken relative to the maximum
    joint, interaction, or individual QTL LOD, respectively.}
+  \item{lodcolumn}{If the scantwo results contain LOD scores for
+    multiple phenotypes, this argument indicates which to use in the
+    summary.} 
  \item{type}{Indicates whether to pick peaks with maximal joint or
    interaction LOD.}
  \item{\dots}{Ignored at this point.}

@@ -2,13 +2,13 @@
  * 
  * util.h
  *
- * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                       and Hao Wu, The Jackson Laboratory
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Sep, 2005
+ * last modified Feb, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -24,8 +24,12 @@
  *                  reorg_errlod, double_permute, int_permute, 
  *                  random_int
  *                  wtaverage, comparegeno, R_comparegeno
+ *                  R_locate_xo, locate_xo, matmult, expand_col2drop
  *
  **********************************************************************/
+
+/* Macro for getting maximum */
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 /**********************************************************************
  * 
@@ -273,5 +277,32 @@ void R_locate_xo(int *n_ind, int *n_mar, int *type,
 void locate_xo(int n_ind, int n_mar, int type, int **Geno,
 	       double *map, double **Location, 
 	       int *nseen);
+
+/* multiply two matrices - I'm using dgemm from lapack here */
+void matmult(double *result, double *a, int nrowa,
+             int ncola, double *b, int ncolb);
+/* multiply two matrices - I'm using dgemm from lapack here */
+void matmult2(double *result, double *a, int nrowa,
+             int ncola, double *b, int ncolb);
+
+
+/**********************************************************************
+ * 
+ * expand_col2drop
+ *
+ * Used in scantwo_1chr_em for the X chromosome, to figure out 
+ * what columns to drop in the presence of covariates when certain
+ * genotype columns must be dropped
+ *
+ **********************************************************************/
+
+void expand_col2drop(int n_gen, int n_addcov, int n_intcov, 
+		     int *col2drop, int *allcol2drop);
+
+void dropcol_xpx(int *n_col, int *col2drop, double *xpx);
+
+void dropcol_xpy(int n_col, int *col2drop, double *xpy);
+
+void dropcol_x(int *n_col, int n_row, int *col2drop, double *x);
 
 /* end of util.h */

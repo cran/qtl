@@ -34,6 +34,7 @@ data(map10)
 summary(map10)
 }
 
-\seealso{ \code{\link[qtl]{pull.map}}, \code{\link[qtl]{summary.cross}} }
+\seealso{ \code{\link[qtl]{chrlen}}, \code{\link[qtl]{pull.map}},
+  \code{\link[qtl]{summary.cross}} } 
 
 \keyword{print}

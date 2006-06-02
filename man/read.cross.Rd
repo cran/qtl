@@ -50,7 +50,11 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
     length 5, with the elements corresponding to AA, AB, BB, not AA 
     (i.e., AB or  BB), and not BB (ie, AB or BB).  \bold{Note}: Pay
     careful attention to the third and fourth of these; the order of
-    these can be confusing.}
+    these can be confusing.
+
+    If you are trying to read 4-way cross data, your file must have
+    genotypes coded as described below, and you need to set 
+    \code{genotypes=NULL} so that no re-coding gets done.}
   \item{estimate.map}{For formats \code{csv}, \code{csvr}, \code{qtx}, \code{mm}, and
     \code{gary} only: if TRUE and marker positions are not included in
     the input files, the genetic map is estimated using the function 

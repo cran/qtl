@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified May, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -38,7 +38,7 @@ function(cross, maxit=4000, tol=1e-4)
     temp <- cross$geno[[i]]$data
 
     # treat X chromosome specially in an intercross
-    if((type=="f2" || type=="f2ss") && chrtype[i]=="X") {
+    if(type=="f2" && chrtype[i]=="X") {
       fixX <- TRUE
       if(i != 1) xchrcol <- c(xchrcol,ncol(Geno)+(1:ncol(cross$geno[[i]]$data)))
       else xchrcol <- 1:ncol(cross$geno[[i]]$data)
@@ -50,7 +50,7 @@ function(cross, maxit=4000, tol=1e-4)
   }
 
   # which type of cross is this?
-  if(type == "f2" || type=="f2ss") 
+  if(type == "f2")
     cfunc <- "est_rf_f2"
   else if(type == "bc" || type=="risib" || type=="riself") 
     cfunc <- "est_rf_bc"
@@ -95,7 +95,7 @@ function(cross, maxit=4000, tol=1e-4)
     cross$rf[xchrcol,xchrcol] <- zz
   }
 
-  checkrf(cross, 3)
+  checkrf(cross, 5)
   cross
 }
 
@@ -174,7 +174,7 @@ function(x, chr, which=c("both","lod","rf"), ...)
 # check for apparent errors in the recombination fractions
 ######################################################################
 checkrf <-
-function(cross, threshold=3)
+function(cross, threshold=5)
 {
   rf <- cross$rf
   n.mar <- nmar(cross)
