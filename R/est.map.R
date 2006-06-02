@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -76,10 +76,6 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
     else if(type == "4way") {
       one.map <- FALSE
       cfunc <- "est_map_4way"
-    }
-    else if(type == "f2ss") {
-      one.map <- FALSE
-      cfunc <- "est_map_f2ss"
     }
     else {
       err <- paste("est.map not available for cross type",

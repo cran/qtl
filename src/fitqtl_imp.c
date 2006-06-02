@@ -5,7 +5,7 @@
  * copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
  *     Modified by Karl W. Broman to get estimates of QTL effects
  *
- * last modified Aug, 2005
+ * last modified Nov, 2005
  * first written Apr, 2002
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Linpack.h>
 #include "util.h"
 #include "fitqtl_imp.h"
 #define TOL 1e-12

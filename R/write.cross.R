@@ -2,9 +2,9 @@
 #
 # write.cross.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 #                       and Hao Wu, The Jackson Laboratory
-# last modified Sep, 2004
+# last modified Jun, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -31,7 +31,7 @@ function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, di
   # revise X data
   chrtype <- sapply(cross$geno,class)
   crosstype <- class(cross)[1]
-  if((crosstype=="bc" || crosstype=="f2" || crosstype=="f2ss") &&
+  if((crosstype=="bc" || crosstype=="f2") &&
      any(chrtype=="X")) {
     sexpgm <- getsex(cross)
     sex <- sexpgm$sex
@@ -321,7 +321,7 @@ function(geno,sex,pgm,crosstype)
     geno[sex==1,] <- temp
   }
 
-  if(crosstype == "f2" || crosstype=="f2ss") {
+  if(crosstype == "f2") {
 
     # females
     if(!is.null(pgm)) {

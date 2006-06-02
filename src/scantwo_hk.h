@@ -2,9 +2,9 @@
  * 
  * scantwo_hk.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Oct, 2002
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -32,8 +32,8 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
 		       double *genoprob, double *pairprob, 
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *weights, 
-		       double *result);
+		       double *pheno, int *nphe, double *weights, 
+		       double *result, int *n_col2drop, int *col2drop);
 
 /**********************************************************************
  * 
@@ -67,6 +67,8 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
+ * nphe         Number of phenotypes
+ *
  * weights      Vector of positive weights, of length n_ind
  *
  * Result       Result matrix of size [n_pos x n_pos]; the lower
@@ -75,12 +77,17 @@ void R_scantwo_1chr_hk(int *n_ind, int *n_pos, int *n_gen,
  *              testing epistasis.
  *              Note: indexed as Result[col][row]
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 		     double *****Pairprob, double **Addcov, int n_addcov, 
-		     double **Intcov, int n_intcov, double *pheno, 
-		     double *weights, double **Result);
+		     double **Intcov, int n_intcov, double *pheno, int nphe,
+		     double *weights, double ***Result, int n_col2drop, 
+		     int *col2drop);
 
 /**********************************************************************
  * 
@@ -96,7 +103,7 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *genoprob1, double *genoprob2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
-		       double *pheno, double *weights,
+		       double *pheno, int *nphe, double *weights,
 		       double *result_full, double *result_int);
 
 /**********************************************************************
@@ -133,6 +140,8 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
  *
  * pheno        Phenotype data, as a vector
  *
+ * nphe         Number of phenotypes
+ *
  * weights      Vector of positive weights, of length n_ind
  *
  * Result_full  Result matrix of size [n_pos1 x n_pos2]
@@ -150,7 +159,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double ***Genoprob2, 
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
-		     double *weights,
-		     double **Result_full, double **Result_int);
+		     int nphe, double *weights,
+		     double ***Result_full, double ***Result_int);
 
 /* end of scantwo_hk.h */

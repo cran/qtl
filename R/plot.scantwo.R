@@ -2,9 +2,9 @@
 #
 # plot.scantwo.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University,
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
 #                       Hao Wu and Brian Yandell
-# last modified Oct, 2005
+# last modified Jun, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -16,13 +16,24 @@
 ######################################################################
 
 plot.scantwo <-
-function(x, chr, incl.markers = FALSE, zlim,
+function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
          lower = c("joint", "add", "cond-int", "cond-add"), nodiag = TRUE,
          contours = FALSE, main, zscale = TRUE, point.at.max=FALSE,
          col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
          gamma = 1, ...)
 {
   col.scheme <- match.arg(col.scheme)
+
+  if(length(dim(x$lod)) > 2) { # results from multiple phenotypes
+    if(length(lodcolumn) > 1) {
+      warning("Argument lodcolumn should be of length 1.")
+      lodcolumn <- lodcolumn[1]
+    }
+      
+    if(lodcolumn < 0 || lodcolumn > dim(x$lod)[3])
+      stop("Argument lodcolumn misspecified.")
+    x$lod <- x$lod[,,lodcolumn]
+  }
 
   if(!missing(chr)) 
     x <- subset(x, chr=chr)
@@ -83,7 +94,15 @@ function(x, chr, incl.markers = FALSE, zlim,
 
   # deal with bad LOD score values
   if(any(is.na(lod) | lod < -1e-06 | lod == Inf)) {
-    warning("Some LOD scores NA, Inf or < 0; set to 0")
+    if(any(is.na(lod))) 
+      warning("Some LOD scores NA, set to 0")
+    
+    if(any(!is.na(lod) & lod < -1e-6)) 
+      warning("Some LOD scores <0, set to 0")
+    
+    if(any(!is.na(lod) & lod == Inf)) 
+      warning("Some LOD scores =Inf, set to 0")
+    
     lod[is.na(lod) | lod < 0 | lod == Inf] <- 0
   }
 

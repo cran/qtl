@@ -2,15 +2,15 @@
 #
 # xchr.R
 #
-# copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
-# last modified Sep, 2005
+# copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: Utilities for dealing with the X chromosome.
 #           getsex, getgenonames, reviseXdata, scanoneXnull
-#           revisecovar
+#           revisecovar, dropXcol
 #           [See also fixXgeno.bc & fixXgeno.f2 in read.cross.R]
 #
 ######################################################################
@@ -90,7 +90,7 @@ function(cross)
 # get names of genotypes
 # used in discan, effectplot, plot.pxg, scanone, scantwo, vbscan, reviseXdata
 getgenonames <-
-function(type=c("f2","bc","f2ss","riself","risib","4way"),
+function(type=c("f2","bc","riself","risib","4way"),
          chrtype=c("A","X"), expandX=c("simple","standard","full"),
          sexpgm)
 {  
@@ -188,7 +188,7 @@ function(type=c("f2","bc","f2ss","riself","risib","4way"),
 
 # revise genotype data, probabilities or imputations for the X chromosome
 reviseXdata <-
-function(type=c("f2ss","f2","bc"), expandX=c("simple","standard","full"),
+function(type=c("f2","bc"), expandX=c("simple","standard","full"),
          sexpgm, geno, prob, draws, pairprob)
 {
   type <- match.arg(type)
@@ -308,13 +308,26 @@ function(type=c("f2ss","f2","bc"), expandX=c("simple","standard","full"),
       else { # both dir, females
         if(!missing(geno)) {
           gback <- geno[pgm==1,]
-          gback[!is.na(gback) & gback==1] <- 3
-          geno[pgm==1,] <- gback
+          if(expandX!="full") {
+            gback[!is.na(gback) & gback==1] <- 3
+            geno[pgm==1,] <- gback
+          }
+          else {
+            gback[!is.na(gback) & gback==1] <- 4
+            gback[!is.na(gback) & gback==2] <- 3
+            geno[pgm==1,] <- gback
+          }
           return(geno)
         }
         else if(!missing(draws)) {
           gback <- draws[pgm==1,,]
-          gback[!is.na(gback) & gback==1] <- 3
+          if(expandX!="full") {
+            gback[!is.na(gback) & gback==1] <- 3
+          }
+          else {
+            gback[!is.na(gback) & gback==1] <- 4
+            gback[!is.na(gback) & gback==2] <- 3
+          }
           draws[pgm==1,,] <- gback
           return(draws)
         }
@@ -641,7 +654,6 @@ function(type, sexpgm)
   sex <- sexpgm$sex
   pgm <- sexpgm$pgm
 
-  if(type == "f2ss") type <- "f2"
   if(type == "risib" || type=="riself") type <- "bc"
 
   ### first figure out sex/pgm pattern
@@ -755,5 +767,30 @@ function(sexpgm, covar)
   if(!any(keep)) return(NULL)
   covar[,keep,drop=FALSE]
 }
+
+######################################################################
+# dropXcol: for use with scantwo() for the X chromosome:
+#           figure out what columns to drop
+######################################################################
+dropXcol <-
+function(type=c("f2","bc"), sexpgm)
+{
+  type <- match.arg(type)
+  gn <- getgenonames(type, "X", "full", sexpgm)
+
+  if(length(gn)==2) return(rep(0,4))
+
+  if(length(gn)==4) return( c(0,0,0,0,0,1,0,  0,1,1,1,1,1,1,1,0) )
+
+  if(length(gn)==6) {
+    todrop <- c(rep(0,11), rep(1,25))
+    todrop[c(8,10)] <- 1
+    todrop[11+c(1,13,25)] <- 0
+    return(todrop)
+  }
+
+  return(rep(0,length(gn)^2))
+}
+
 
 # end of xchr.R

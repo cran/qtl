@@ -2,9 +2,9 @@
  * 
  * discan.h
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Aug, 2004
+ * last modified Feb, 2006
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -60,14 +60,14 @@ void R_discan_im(int *n_ind, int *n_pos, int *n_gen,
  *
  * pheno        Phenotype data, as a vector
  *
- * Result       Result matrix of size [n_pos x (n_gen+1)]; upon return, 
- *              the first column contains the RSS, the next set contain
- *              estimated genotype-specific probabilities
+ * result       Upon return, to contain the log10 likelihoods
+ *
+ * means        Space for the phenotype means for each genotype
  *
  **********************************************************************/
 
 void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
-		  int *pheno, double **Result);
+		  int *pheno, double *result, double *means);
 
 /**********************************************************************
  * 
@@ -87,10 +87,7 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  *
  * pheno        Phenotype data, as a vector
  *
- * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
- *              the first column contains the log10 likelihood, the 
- *              next set contain estimated genotype-specific means, and 
- *              the last column contains the estimated residual SD
+ * result       Upon return, to contain the log10 likelihoods
  *
  * maxit        Maximum number of iterations in the EM algorithm
  *
@@ -98,11 +95,13 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
  *
  * work         Workspace of length n_gen
  *
+ * means        Space for the phenotype means for each genotype
+ *
  **********************************************************************/
 
 void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
-	       int *pheno, double **Result, 
-	       int maxit, double tol, double **work);
+	       int *pheno, double *result, 
+	       int maxit, double tol, double **work, double *means);
 
 /* end of discan.h */
 

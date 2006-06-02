@@ -2,9 +2,9 @@
  * 
  * scantwo_em.c
  *
- * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Apr, 2005
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -27,6 +27,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Linpack.h>
 #include "util.h"
 #include "scantwo_em.h"
 #define TOL 1e-12
@@ -44,7 +45,8 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights, double *result,
-		       int *maxit, double *tol, int *verbose)
+		       int *maxit, double *tol, int *verbose,
+		       int *n_col2drop, int *col2drop)
 {
   double **Result, **Addcov, **Intcov, *****Pairprob;
 
@@ -57,7 +59,8 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 
   scantwo_1chr_em(*n_ind, *n_pos, *n_gen, Pairprob, 
 		  Addcov, *n_addcov, Intcov, *n_intcov, 
-		  pheno, weights, Result, *maxit, *tol, *verbose);
+		  pheno, weights, Result, *maxit, *tol, *verbose,
+		  *n_col2drop, col2drop);
 }
 
 /**********************************************************************
@@ -106,20 +109,47 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *                 >2, print out initial and final log likelihoods
  *                 >3, print out log likelihood at each iteration
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_1chr_em(int n_ind, int n_pos, int n_gen, 
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     double *weights,
-		     double **Result, int maxit, double tol, int verbose)
+		     double **Result, int maxit, double tol, int verbose,
+		     int n_col2drop, int *col2drop)
 {
-  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
+  int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], n_col_rev[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
   double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2], sw;
+  int *allcol2drop;
 
   n_col[0] = (2*n_gen-1) + n_addcov + 2*(n_gen-1)*n_intcov;
   n_col[1] = n_gen*n_gen + n_addcov + (n_gen*n_gen-1)*n_intcov;
+
+  /* expand col2drop */
+  if(n_col2drop) {
+    allocate_int(n_col[1], &allcol2drop);
+    expand_col2drop(n_gen, n_addcov, n_intcov, 
+		    col2drop, allcol2drop);
+  }
+
+  /* revised numbers of parameters */
+  if(n_col2drop) {
+    n_col_rev[0] = 0;
+    for(i=0; i<n_col[0]; i++) 
+      if(!allcol2drop[i]) n_col_rev[0]++;
+    n_col_rev[1] = n_col_rev[0];
+    for(i=n_col[0]; i<n_col[1]; i++)
+      if(!allcol2drop[i]) n_col_rev[1]++;
+  }
+  else {
+    n_col_rev[0] = n_col[0];
+    n_col_rev[1] = n_col[1];
+  }
 
   /* allocate workspaces */
   wts = (double *)R_alloc(2*n_gen*(n_gen+1)*n_ind, sizeof(double));
@@ -174,7 +204,8 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	}
 	scantwo_em_mstep(n_ind, n_gen, n_gen, Addcov, n_addcov, 
 			 Intcov, n_intcov, pheno, weights, Probs, Wts1, Wts2,
-			 oldparam, m, work1, work2, &error_flag);
+			 oldparam, m, work1, work2, &error_flag,
+			 n_col2drop, allcol2drop, verbose);
 
 	if(error_flag) {
 	  if(verbose>1) 
@@ -184,7 +215,9 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	else { /* only proceed if there's no error */
 	  oldllik = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
 				      Wts1, Wts2, Addcov, n_addcov, Intcov, 
-				      n_intcov, pheno, weights, oldparam, m);
+				      n_intcov, pheno, weights, oldparam, m,
+				      n_col2drop, allcol2drop);
+
 	  if(verbose>2) 
 	    Rprintf("   [%3d %3d] %1d %9.3lf\n", 
 		    i1+1, i2+1, m+1, oldllik);
@@ -192,11 +225,13 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, oldparam, m, 1);
+			     n_intcov, pheno, weights, oldparam, m, 1,
+			     n_col2drop, allcol2drop);
 
 	    scantwo_em_mstep(n_ind, n_gen, n_gen, Addcov, n_addcov, 
 			     Intcov, n_intcov, pheno, weights, Wts12, Wts1, 
-			     Wts2, param, m, work1, work2, &error_flag);
+			     Wts2, param, m, work1, work2, &error_flag,
+			     n_col2drop, allcol2drop, verbose);
 	    if(error_flag) {
 	      flag=0;
 	      if(verbose>1)
@@ -207,7 +242,9 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 
 	    llik[m] = scantwo_em_loglik(n_ind, n_gen, n_gen, Probs, Wts12, 
 					Wts1, Wts2, Addcov, n_addcov, Intcov, 
-					n_intcov, pheno, weights, param, m);
+					n_intcov, pheno, weights, param, m,
+					n_col2drop, allcol2drop);
+
 	    if(verbose>1) { /* print log likelihood */
 	      if(verbose>2) 
 		Rprintf("   [%3d %3d] %1d %4d %9.6lf\n", 
@@ -217,7 +254,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 			i1+1, i2+1, m+1, r+1, (llik[m]-oldllik));
 
 	      if(verbose>3) { /* print parameters */
-		for(j=0; j<n_col[m]; j++) 
+		for(j=0; j<n_col_rev[m]; j++) 
 		  Rprintf(" %7.3lf", param[j]);
 		Rprintf("\n");
 	      }
@@ -362,6 +399,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
   int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
   double *param, *oldparam, ***Wts12, **Wts1, **Wts2;
   double *wts, *work1, *work2, temp, ***Probs, oldllik=0.0, llik[2], sw;
+  int n_col2drop=0, *allcol2drop=0;
 
   n_col[0] = (n_gen1+n_gen2-1) + n_addcov + (n_gen1+n_gen2-2)*n_intcov;
   n_col[1] = n_gen1*n_gen2 + n_addcov + (n_gen1*n_gen2-1)*n_intcov;
@@ -424,7 +462,8 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	}
 	scantwo_em_mstep(n_ind, n_gen1, n_gen2, Addcov, n_addcov, 
 			 Intcov, n_intcov, pheno, weights, Probs, Wts1, Wts2,
-			 oldparam, m, work1, work2, &error_flag);
+			 oldparam, m, work1, work2, &error_flag,
+			 n_col2drop, allcol2drop, verbose);
 
 	if(error_flag) {
 	  if(verbose>1)
@@ -434,7 +473,9 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	else { /* only proceed if there's no error */
 	  oldllik = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 				      Wts1, Wts2, Addcov, n_addcov, Intcov, 
-				      n_intcov, pheno, weights, oldparam, m);
+				      n_intcov, pheno, weights, oldparam, m,
+				      n_col2drop, allcol2drop);
+
 	  if(verbose>2)
 	    Rprintf("   [%3d %3d] %1d %9.3lf\n", 
 		    i1+1, i2+1, m+1, oldllik);
@@ -442,11 +483,13 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
 	    scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 			     Wts1, Wts2, Addcov, n_addcov, Intcov, 
-			     n_intcov, pheno, weights, oldparam, m, 1);
+			     n_intcov, pheno, weights, oldparam, m, 1,
+			     n_col2drop, allcol2drop);
 
 	    scantwo_em_mstep(n_ind, n_gen1, n_gen2, Addcov, n_addcov, 
 			     Intcov, n_intcov, pheno, weights, Wts12, Wts1, 
-			     Wts2, param, m, work1, work2, &error_flag);
+			     Wts2, param, m, work1, work2, &error_flag,
+			     n_col2drop, allcol2drop, verbose);
 	    if(error_flag) {
 	      flag=0;
 	      if(verbose>1)
@@ -456,8 +499,10 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	    }
 
 	    llik[m] = scantwo_em_loglik(n_ind, n_gen1, n_gen2, Probs, Wts12, 
-				       Wts1, Wts2, Addcov, n_addcov, Intcov, 
-				       n_intcov, pheno, weights, param, m);
+					Wts1, Wts2, Addcov, n_addcov, Intcov, 
+					n_intcov, pheno, weights, param, m,
+					n_col2drop, allcol2drop);
+
 	    if(verbose>1) { /* print log likelihood */
 	      if(verbose>2)
 		Rprintf("   [%3d %3d] %1d %4d %9.6lf\n", 
@@ -559,7 +604,8 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 		      double *weights,
 		      double ***Wts12, double **Wts1, double **Wts2,
 		      double *param, int full_model,
-		      double *work1, double *work2, int *error_flag)
+		      double *work1, double *work2, int *error_flag,
+		      int n_col2drop, int *allcol2drop, int verbose)
 {
   int i, j, j2, k1, k2, s, s2, nparm1, info;
   double rcond, temp;
@@ -730,25 +776,16 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
   } /* end loop over individuals */
   /* done calculating E(X'X) */
 
+  if(n_col2drop) { /* drop some columns (X chromosome) */
+    dropcol_xpy(nparm1, allcol2drop, work2);
 
-  /*  for(k1=0; k1<nparm1; k1++) {
-    for(k2=0; k2<nparm1; k2++) 
-      Rprintf("%8.3lf ", work1[k1+k2*nparm1]);
-    Rprintf("\n");
-    } */
-
-  /* Copy upper triangle into lower triangle.                   */
-  /* This isn't be needed, since the Fortran functions below    */
-  /* assume a symmetric matrix and use only the upper triangle. */
-  /*                                                            */
-  /*  for(j=0; j<nparm1-1; j++)                                 */
-  /*    for(k=j+1; k<nparm1; k++)                               */
-  /*      work1[k+j*nparm1] = work1[j+k*nparm1];                */
+    dropcol_xpx(&nparm1, allcol2drop, work1);
+  }
 
   /* solve work1 * beta = work2 for beta */
   F77_CALL(dpoco)(work1, &nparm1, &nparm1, &rcond, param, &info);
   if(fabs(rcond) < TOL || info != 0) { /* error! */
-    warning("X'X matrix is singular.\n");
+    if(verbose > 1) Rprintf("X'X matrix is singular.\n");
     *error_flag = 1;
   }
   else {
@@ -812,63 +849,82 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
 		      double **Wts1, double **Wts2,
 		      double **Addcov, int n_addcov, double **Intcov,
 		      int n_intcov, double *pheno, double *weights, 
-		      double *param, int full_model, int rescale)
+		      double *param, int full_model, int rescale,
+		      int n_col2drop, int *allcol2drop)
 {
-  int i, j, k1, k2, s;
+  int i, j, k1, k2, s, ss;
   double temp;
 
   for(i=0; i<n_ind; i++) {
 
     /* Get fitted values and put in Wts12 */
     /* additive covar effect */
-    s = n_gen1+n_gen2-1;
+    if(n_col2drop) {
+      for(ss=0, s=0; ss<n_gen1+n_gen2-1; ss++)
+	if(!allcol2drop[ss]) s++;
+    }
+    else s=n_gen1+n_gen2-1;
+
     temp = 0.0;
-    for(j=0; j<n_addcov; j++) 
-      temp += (Addcov[j][i]*param[j+s]);
+    for(j=0; j<n_addcov; j++, s++) 
+      temp += (Addcov[j][i]*param[s]);
     
     /* QTL 1 effect */
-    for(k1=0; k1<n_gen1; k1++) { 
-      for(k2=0; k2<n_gen2; k2++) 
-	Wts12[k1][k2][i] = param[k1]*weights[i]+temp;
+    for(k1=0, ss=0, s=0; k1<n_gen1; k1++, ss++, s++) { 
+      if(!n_col2drop || !allcol2drop[ss]) {
+	for(k2=0; k2<n_gen2; k2++) 
+	  Wts12[k1][k2][i] = param[s]*weights[i]+temp;
+      }
+      else s--;
     }
-    s = n_gen1; /* location in param vector */
 
     /* QTL 2 effect */
-    for(k2=0; k2<n_gen2-1; k2++) { 
-      for(k1=0; k1<n_gen1; k1++) 
-	Wts12[k1][k2][i] += param[k2+s]*weights[i];
+    for(k2=0; k2<n_gen2-1; k2++, ss++, s++) { 
+      if(!n_col2drop || !allcol2drop[ss]) {
+	for(k1=0; k1<n_gen1; k1++) 
+	  Wts12[k1][k2][i] += param[s]*weights[i];
+      }
+      else s--;
     }
-    s += (n_gen2-1+n_addcov);
+    s += n_addcov;
+    ss += n_addcov;
 
     /* QTL x interactive covar */
     for(j=0; j<n_intcov; j++) {
-      for(k1=0; k1<n_gen1-1; k1++) { /* QTL1 x intxn */
-	for(k2=0; k2<n_gen2; k2++)
-	  Wts12[k1][k2][i] += param[k1+s]*Intcov[j][i];
+      for(k1=0; k1<n_gen1-1; k1++, ss++, s++) { /* QTL1 x intxn */
+	if(!n_col2drop || !allcol2drop[ss]) {
+	  for(k2=0; k2<n_gen2; k2++)
+	    Wts12[k1][k2][i] += param[s]*Intcov[j][i];
+	}
+	else s--;
       }
-      s += n_gen1-1;
-      for(k2=0; k2<n_gen2-1; k2++) { /* QTL2 x intxn */
-	for(k1=0; k1<n_gen1; k1++)
-	  Wts12[k1][k2][i] += param[k2+s]*Intcov[j][i];
+      for(k2=0; k2<n_gen2-1; k2++, ss++, s++) { /* QTL2 x intxn */
+	if(!n_col2drop || !allcol2drop[ss]) {
+	  for(k1=0; k1<n_gen1; k1++)
+	    Wts12[k1][k2][i] += param[s]*Intcov[j][i];
+	}
+	else s--;
       }
-      s += n_gen2-1;
     }
       
     if(full_model) {
       /* QTL x QTL interaction */
       for(k1=0; k1<n_gen1-1; k1++) 
-	for(k2=0; k2<n_gen2-1; k2++) 
-	  Wts12[k1][k2][i] += param[k1*(n_gen2-1)+k2+s]*weights[i];
-      s += (n_gen1-1)*(n_gen2-1);
+	for(k2=0; k2<n_gen2-1; k2++, ss++, s++) {
+	  if(!n_col2drop || !allcol2drop[ss]) 
+	    Wts12[k1][k2][i] += param[s]*weights[i];
+	  else s--;
+	}
       
       /* QTL x QTL x interactive covar */
       for(j=0; j<n_intcov; j++) {
 	for(k1=0; k1<n_gen1-1; k1++) {
-	  for(k2=0; k2<n_gen2-1; k2++) {
-	    Wts12[k1][k2][i] += param[k1*(n_gen2-1)+k2+s]*Intcov[j][i];
+	  for(k2=0; k2<n_gen2-1; k2++, ss++, s++) {
+	    if(!n_col2drop || !allcol2drop[ss]) 
+	      Wts12[k1][k2][i] += param[s]*Intcov[j][i];
+	    else s--;
 	  }
 	}
-	s += (n_gen1-1)*(n_gen2-1);
       }
     } 
     /* done calculating fitted values */
@@ -903,20 +959,24 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
     } /* end rescale */
       
   } /* end loop over individuals */
+
 }
 
 double scantwo_em_loglik(int n_ind, int n_gen1, int n_gen2, double ***Probs,
 			 double ***Wts12, double **Wts1, double **Wts2, 
 			 double **Addcov, int n_addcov, double **Intcov,
 			 int n_intcov, double *pheno, double *weights,
-			 double *param, int full_model)
+			 double *param, int full_model,
+			 int n_col2drop, int *allcol2drop)
 {
   double loglik, temp;
   int j, k1, k2;
   
   scantwo_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 		   Wts1, Wts2, Addcov, n_addcov, Intcov, 
-		   n_intcov, pheno, weights, param, full_model, 0);
+		   n_intcov, pheno, weights, param, full_model, 0,
+		   n_col2drop, allcol2drop);
+
 
   loglik=0.0;
   for(j=0; j<n_ind; j++) {
@@ -926,6 +986,7 @@ double scantwo_em_loglik(int n_ind, int n_gen1, int n_gen2, double ***Probs,
 	temp += Wts12[k1][k2][j];
     loglik += log10(temp);
   }
+
   return(loglik);
 }
 

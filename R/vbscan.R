@@ -2,8 +2,8 @@
 #
 # vbscan.R
 #
-# copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2004
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written May, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -68,7 +68,7 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
     n.gen <- length(gen.names)
 
     # revise X chromosome genotypes
-    if(chrtype=="X" && (type=="f2" || type=="f2ss" || type=="bc"))
+    if(chrtype=="X" && (type=="f2" || type=="bc"))
       genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
 
     z <- .C("R_vbscan",
@@ -78,7 +78,7 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
             as.double(genoprob),
             as.double(y),
             as.integer(survived),
-            lod=as.double(rep(0,(4+2*n.gen)*n.pos)),
+            lod=as.double(rep(0, n.pos*3)),
             as.integer(maxit),
             as.double(tol),
             PACKAGE="qtl")
@@ -92,6 +92,8 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
                       pos = map,
                       matrix(z$lod,nrow=n.pos,byrow=TRUE))
 
+    colnames(res)[-(1:2)] <- c("lod.p.mu","lod.p","lod.mu")
+
     w <- names(map)
     o <- grep("^loc\-*[0-9]+",w)
 
@@ -99,10 +101,6 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(res) <- w
     
-    colnames(res) <- c("chr","pos","lod","lod.p","lod.mu",
-                       paste("pi",gen.names,sep="."),
-                       paste("mu",gen.names,sep="."), "sigma")
-
     z <- res
 
 
@@ -139,56 +137,9 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
       }
     } 
 
-    # if different number of columns from other chromosomes,
-    #     expand to match
-    if(!is.null(results) && ncol(z) != ncol(results)) {
-      cnz <- colnames(z)
-      cnr <- colnames(results)
-      wh.zr <- match(cnz,cnr)
-      wh.rz <- match(cnr,cnz)
-      if(all(!is.na(wh.rz))) {
-        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=ncol(z)))
-        dimnames(newresults) <- list(rownames(results), cnz)
-        newresults[,cnr] <- results
-        results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
-      }
-      else if(all(!is.na(wh.zr))) {
-        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=ncol(results)))
-        dimnames(newz) <- list(rownames(z), cnr)
-        newz[,cnz] <- z
-        z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
-      }
-      else {
-        newnames <- c(cnr, cnz[is.na(wh.zr)])
-
-        newresults <- data.frame(matrix(NA,nrow=nrow(results),ncol=length(newnames)))
-        dimnames(newresults) <- list(rownames(results), newnames)
-        newresults[,cnr] <- results
-        results <- newresults
-        for(i in 2:ncol(results))
-          if(is.factor(results[,i])) results[,i] <- as.numeric(results[,i])
-        
-        newz <- data.frame(matrix(NA,nrow=nrow(z),ncol=length(newnames)))
-        dimnames(newz) <- list(rownames(z), newnames)
-        newz[,cnz] <- z
-        z <- newz
-        for(i in 2:ncol(z))
-          if(is.factor(z[,i])) z[,i] <- as.numeric(z[,i])
-      }
-    }
-
     results <- rbind(results, z)
   }
   
-  # sort the later columns
-  neworder <- c(colnames(results)[1:5],sort(colnames(results)[-(1:5)]))
-  results <- results[,neworder]
-
-
   class(results) <- c("scanone","data.frame")
   attr(results,"method") <- method
   attr(results,"type") <- class(cross)[1]

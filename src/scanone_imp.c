@@ -2,13 +2,13 @@
  * 
  * scanone_imp.c
  *
- * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
  *
  * This file is written by Hao Wu (hao@jax.org), 
  * with slight modifications by Karl Broman.
  *
- * last modified Jan, 2005
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -30,6 +30,7 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
 #include "util.h"
+#include "lapackutil.h"
 #include "scanone_imp.h"
 #define TOL 1e-12
 
@@ -45,14 +46,15 @@
 void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws, 
 		   int *draws, double *addcov, int *n_addcov, 
 		   double *intcov, int *n_intcov, double *pheno, 
-		   double *weights,
-		   double *result, int *trim, int *direct)
+		   int *nphe, double *weights,
+		   double *result)
 {
   /* reorganize draws */
   int ***Draws;
-  double **Addcov, **Intcov;
+  double **Addcov, **Intcov, **Result;
   
   reorg_draws(*n_ind, *n_pos, *n_draws, draws, &Draws);
+  reorg_errlod(*n_pos, *nphe, result, &Result); 
 
   /* reorganize addcov and intcov (if they are not empty) */
   /* currently reorg_errlod function is used to reorganize the data */
@@ -60,8 +62,8 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
   if(*n_intcov != 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
       
   scanone_imp(*n_ind, *n_pos, *n_gen, *n_draws, Draws, 
-	      Addcov, *n_addcov, Intcov, *n_intcov, pheno, weights,
-	      result, *trim, *direct);
+	      Addcov, *n_addcov, Intcov, *n_intcov, pheno, *nphe, weights,
+	      Result);
 }
 
 
@@ -91,39 +93,77 @@ void R_scanone_imp(int *n_ind, int *n_pos, int *n_gen, int *n_draws,
  *
  * n_intcov     Number of interacting covariates
  *
- * pheno        Phenotype data, as a vector
+ * pheno        Phenotype data, as a vector/matrix
+ *
+ * nphe         Number of phenotypes
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * result       Result vector of length [n_pos]; upon return, contains
+ * Result       Matrix of size [n_pos x nphe]; upon return, contains
  *              the "LPD" (log posterior distribution of QTL location).
  * 
- * trim         If 1, trim off the top and bottom log2(n.draws) LODs 
- *
- * direct       If 1, return log10[mean(10^LOD)]; if 0, return
- *              mean(LOD) + var(LOD)/2
- *
  **********************************************************************/
 
 void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws, 
 		 int ***Draws, double **Addcov, int n_addcov, 
 		 double **Intcov, int n_intcov, double *pheno, 
-		 double *weights,
-		 double *result, int trim, int direct)
+		 int nphe, double *weights,
+		 double **Result)
 {
 
   /* create local variables */
-  int i, j, k; /* loop variants */
-  int idx; /* the smallest and biggest idx LOD scores need to be thrown */
-  double tol, rss, lrss0, sum, sums, meanLOD, varLOD, *LOD;
-  double *dwork;
-  int *iwork, sizefull;
+  int i, j, k, itmp, nrss, sizefull, sizenull, lwork, 
+    idx, multivar=0, trim=1;
+  double **lrss0, **lrss1, *LOD, *lod_tmp, dtmp,
+    *tmppheno, *dwork_null, *dwork_full, tol;
 
+
+  /* if number of pheno is 1 or do multivariate model, 
+  we have only one rss at each position. Otherwise, 
+  we have one rss for each phenotype */
+  if( (nphe==1) || (multivar==1) )
+    nrss = 1;
+  else
+    nrss = nphe;
+
+  /* number of columns in design matrices for null and full model */
+  sizenull = 1 + n_addcov;
   sizefull = n_gen + n_addcov + n_intcov*(n_gen-1);
-  dwork = (double *)R_alloc(n_ind*(sizefull+2)+4*sizefull, sizeof(double));
-  iwork = (int *)R_alloc(sizefull, sizeof(int));
 
-  LOD = (double *)R_alloc(n_draws, sizeof(double));
+  /* allocate memory */
+  lod_tmp = (double *)R_alloc(n_draws, sizeof(double));
+  tmppheno = (double *) R_alloc(n_ind*nphe, sizeof(double));
+  /* for null model */
+  lwork = 3*sizenull + MAX(n_ind, nphe);
+  if(multivar == 1) /* request to do multivariate normal model */
+    dwork_null = (double *)R_alloc(sizenull+lwork+2*n_ind*sizenull+n_ind*nphe+nphe*nphe+sizenull*nphe, 
+      sizeof(double));
+  else /* normal model, don't need to allocate memory for rss_det, which is nphe^2 */
+    dwork_null = (double *)R_alloc(sizenull+lwork+2*n_ind*sizenull+n_ind*nphe+sizenull*nphe,
+      sizeof(double));
+
+  /* for full model */
+  lwork = 3*sizefull + MAX(n_ind, nphe);
+  if(multivar == 1) /* request to do multivariate normal model */
+    dwork_full = (double *)R_alloc(sizefull+lwork+2*n_ind*sizefull+n_ind*nphe+nphe*nphe+sizefull*nphe,
+      sizeof(double));
+  else /* normal model, don't need to allocate memory for rss_det, which is nphe^2 */
+    dwork_full = (double *)R_alloc(sizefull+lwork+2*n_ind*sizefull+n_ind*nphe+sizefull*nphe,
+      sizeof(double));
+  /* for rss' and lod scores - we might not need all of this memory */
+  lrss0 = (double **)R_alloc(n_draws, sizeof(double*));
+  lrss1 = (double **)R_alloc(n_draws, sizeof(double*));
+  /*LOD = (double **)R_alloc(n_draws, sizeof(double*));*/
+  for(i=0; i<n_draws; i++) {
+    lrss0[i] = (double *)R_alloc(nrss, sizeof(double));
+    lrss1[i] = (double *)R_alloc(nrss, sizeof(double));
+    /*LOD[i] = (double *)R_alloc(nrss, sizeof(double));*/
+  }
+  /* LOD matrix - allocate LOD matrix as a pointer to double, then I can call wtaverage
+  directly using pointer operation without looping. This will save some time if there are 
+  lots of phenotypes */
+  LOD = (double *)R_alloc(n_draws*nrss, sizeof(double));
+
 
   /* tolerance for linear regression */
   tol = TOL;
@@ -131,7 +171,8 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
   /* adjust phenotypes and covariates using weights */
   /* Note: these are actually square-root of weights */
   for(i=0; i<n_ind; i++) {
-    pheno[i] *= weights[i];
+    for(j=0; j<nphe; j++)
+      pheno[i+j*n_ind] *= weights[i];
     for(j=0; j<n_addcov; j++) 
       Addcov[j][i] *= weights[i];
     for(j=0; j<n_intcov; j++)
@@ -143,52 +184,47 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
   else idx=0;
 
   /* Call nullRss to calculate the RSS for the null model */
-  lrss0 = log10(nullRss(pheno, weights, n_ind, Addcov, n_addcov, dwork, iwork));
-
+  for (i=0; i<n_draws; i++) {
+  /* make a copy of phenotypes. I'm doing this because 
+    dgelss will destroy the input rhs array */
+    memcpy(tmppheno, pheno, n_ind*nphe*sizeof(double));
+    nullRss(tmppheno, pheno, nphe, n_ind, Addcov, n_addcov,
+      dwork_null, multivar, lrss0[i], weights);
+  }
+  
   /* calculate the LOD score for each marker */
+  dtmp = (double)n_ind/2.0; /* this will be used in calculating LOD score */
   for(i=0; i<n_pos; i++) { /* loop over positions */
 
     for(j=0; j<n_draws; j++) { /* loop over imputations */
-
+      /* loop over imputations */
       /* call altRss to calcualte the RSS for alternative model,
-	 given marker and imputatin number */
-      rss = altRss(pheno, weights, n_ind, n_gen, Draws[j][i], Addcov, 
-		   n_addcov, Intcov, n_intcov, dwork, iwork);
+      given marker and imputatin number */
+      memcpy(tmppheno, pheno, n_ind*nphe*sizeof(double));
+      altRss1(tmppheno, pheno, nphe, n_ind, n_gen, Draws[j][i], Addcov,
+        n_addcov, Intcov, n_intcov, dwork_full, multivar, lrss1[j], weights);
 
       /* calculate the LOD score for this marker in this imputation */
-      LOD[j] = (double)n_ind/2.0*(lrss0-log10(rss));
+      for(k=0; k<nrss; k++) 
+        LOD[j+k*n_draws] = dtmp*(lrss0[j][k]-lrss1[j][k]);
 
     } /* end loop over imputations */
 
-    if(trim) /* sort the LOD scores in ascending order */
-      R_rsort(LOD, n_draws);
+    /* calculate the weight average on the LOD score vector
+    and fill the result matrix. Note that result is a matrix
+    by ROW. I figured this is the most efficient way to calculate it.
+    On exit, we need to use matrix(..., byrow=T) to get the correct one */
+    if(n_draws > 1) {
+      for(k=0; k<nrss; k++) 
+        Result[k][i] = wtaverage(LOD+k*n_draws, n_draws);
 
-    if(direct) { /* result = log10[mean(10^LOD)] */
-      result[i] = 0.0;
-      for(k=idx; k<n_draws-idx; k++) 
-	result[i] += exp(LOD[k]*log(10.0));
-      result[i] = log10(result[i]/(double)(n_draws-2*idx));
     }
-    else { /* result = mean(LOD) + var(LOD)/2 */
-      /* get a new list of LOD scores, throwing the biggest 
-	 and smallest idx LOD scores. */
-      for(k=idx, sum=0.0; k<n_draws-idx; k++) 
-	sum += LOD[k]; /* calculate the sum of newLOD in the same loop */
-
-      /* calculate the mean of newLOD */
-      meanLOD = sum / (n_draws-2*idx); 
-
-      /* calculate the variance of newLOD */
-      if(n_draws > 2*idx+1) {
-        for(k=idx,sums=0.0; k<n_draws-idx; k++) 
-	  sums += (LOD[k]-meanLOD) * (LOD[k]-meanLOD);
-        varLOD = sums/(n_draws-2*idx-1);
-      }
-      else varLOD = 0.0;
-
-      /* The return value */
-      result[i] = meanLOD + log(10.0)*0.5*varLOD;
-    }
+    else { 
+      itmp = i*nrss;
+      for(k=0;k<nrss; k++)
+        Result[k][i] = LOD[k];
+    } 
+   
 
   } /* end loop over positions */
 }
@@ -196,81 +232,200 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
 
 /* function to calculate the null model RSS for scanone_imp */
 
-double nullRss(double *pheno, double *weights, int n_ind, 
-	       double **Addcov, int n_addcov, 
-	       double *dwork, int *iwork)
+/**********************************************************
+ *
+ * function to calculate the residual sum of squares (RSS)
+ * for the null model: pheno ~ u + addcov
+ * This function is used by scanone_imp and scantwo_imp 
+ *
+ * Note that if the input pheno is a matrix (multiple columns),
+ * a multivariate normal model will be applied, which means
+ * the result rss should be det((y-yfit)'*(y-yfit))
+ *
+ **********************************************************/
+void nullRss(double *tmppheno, double *pheno, int nphe, int n_ind,
+             double **Addcov, int n_addcov, double *dwork_null,
+             int multivar, double *rss0, double *weights)
 {
   /* create local variables */
-  int i, j, ny, k, *jpvt0, ncolx0;
-  double tol, rss0=0.0; 
-  double *work0, *x0, *qraux0, *coef0, *qty0, *resid0;
+  int i, j, ncolx0, lwork, info, rank, nrss, ind_idx;
+  double alpha=1.0, beta=0.0, tol=TOL, dtmp;
+  double *work, *x0, *x02, *s, *yfit, *rss_det=0, *coef;
 
-  tol = TOL;
-  ny = 1; /* number of phenotypes */
+  if( (nphe==1) || (multivar==1) )
+    nrss = 1;
+  else
+    nrss = nphe;
 
+  /*rss0 = mxCalloc(nrss, sizeof(double));*/
+
+  /* split the memory block */
   ncolx0 = 1 + n_addcov; /* number of columns in x0 matrix */
+  /* init rank to be ncolx, which means X is of full rank.
+  If it's not, the value of rank will be changed by dgelss */
+  rank = ncolx0;
 
-  /* point to areas of workspaces */
-  /* dwork length n_ind*ncolx0 + 4*ncolx0 + 2*n_ind */
-  x0 = dwork; /* length n_ind*ncolx0 */
-  coef0 = x0 + n_ind*ncolx0; /* length ncolx0 */
-  work0 = coef0 + ncolx0;  /* length 2*ncolx0 */
-  qraux0 = work0 + 2*ncolx0; /* length ncolx0 */
-  resid0 = qraux0 + ncolx0; /* length n_ind */
-  qty0 = resid0 + n_ind; /* length n_ind */
-    
-  jpvt0 = iwork; /* length ncolx0 */
-    
-  /* redidual and qty vector will use the same pointers 
-     as in the alternative model*/
-    
-  /* fill up x0 matrix */
+  /* lwork = 3*ncolx0 + n_ind;*/
+  lwork = 3*ncolx0 + MAX(n_ind,nphe);
+  /* allocate memory */
+  s = dwork_null;
+  work = s + ncolx0;
+  x0 = work + lwork;
+  x02 = x0 + n_ind*ncolx0;
+  yfit = x02 + n_ind*ncolx0;
+  coef = yfit + n_ind*nphe;
+  if(multivar == 1)
+    rss_det = coef + ncolx0*nphe;
+
+  /* fill up x0 matrix */ 
   for (i=0; i<n_ind; i++) {
     x0[i] = weights[i]; /* the first row (column in Fortran) are all 1s */
-    for(j=0; j<n_addcov; j++) 
-      x0[(j+1)*n_ind+i] = Addcov[j][i]; 
+    for(j=0; j<n_addcov; j++)
+      x0[(j+1)*n_ind+i] = Addcov[j][i];
   }
 
-  k = 0;
+  /* make a copy of x0 matrix, we may need it */
+  memcpy(x02, x0, n_ind*ncolx0*sizeof(double));
 
-  /* fit linear regression model */
-  F77_CALL(dqrls)(x0, &n_ind, &ncolx0, pheno, &ny, &tol, coef0, resid0,
-		  qty0, &k, jpvt0, qraux0, work0);
-  
-  /* calculate the null RSS */
-  for (i=0,rss0=0.0; i<n_ind; i++) 
-    rss0 += resid0[i]*resid0[i];
+  /* Now we have the design matrix x, the model is pheno = x*b
+  call LAPACK routine DGELSS to do the linear regression.
+  Note that DGELSS doesn't have the assumption that X is full rank. */
+  /* Pass all arguments to Fortran by reference */
+  mydgelss (&n_ind, &ncolx0, &nphe, x0, x02, pheno, tmppheno,
+    s, &tol, &rank, work, &lwork, &info);
 
-  /* return rss0 */
-  return(rss0);
+  /* calculate residual sum of squares */
+  if(nphe == 1) {
+    /* if there are only one phenotype, this is easier */
+    /* if the design matrix is full rank */
+    if(rank == ncolx0) {
+      rss0[0] = 0.0;
+      for (i=rank; i<n_ind; i++)
+        rss0[0] += tmppheno[i]*tmppheno[i];
+    }
+    else {
+      /* the design matrix is not full rank, this is trouble */
+      /* calculate the fitted value using yfit=x02*tmppheno(1:ncolx0) */
+      matmult(yfit, x02, n_ind, ncolx0, tmppheno, 1);
+      /* calculate rss */
+      for (i=0; i<n_ind; i++)
+        rss0[0] += (pheno[i]-yfit[i]) * (pheno[i]-yfit[i]);
+    }
+  }
 
-}
+  else { /* multiple phenotypes, this is troubler */
+    if(multivar == 1) { /* multivariate model */
+      /* note that the result tmppheno has dimension n_ind x nphe,
+      the first ncolx0 rows contains the estimates. */
+      for (i=0; i<nphe; i++)
+        memcpy(coef+i*ncolx0, tmppheno+i*n_ind, ncolx0*sizeof(double));
+      /* calculate yfit */
+      matmult(yfit, x02, n_ind, ncolx0, coef, nphe);
+      /* calculate residual, put the result in tmppheno */
+      for (i=0; i<n_ind*nphe; i++)
+        tmppheno[i] = pheno[i] - yfit[i];
 
+      /* calcualte rss_det = tmppheno'*tmppheno. */
+      /* Call BLAS routine dgemm.  Note that the result rss_det is a 
+      symemetric positive definite matrix */
+      /* the dimension of tmppheno is n_ind x nphe */
+      mydgemm(&nphe, &n_ind, &alpha, tmppheno, &beta, rss_det);
+      /* calculate the determinant of rss */
+      /* do Cholesky factorization on rss_det */
+      mydpotrf(&nphe, rss_det, &info);
+      for(i=0, rss0[0]=1.0;i<nphe; i++)
+        rss0[0] *= rss_det[i*nphe+i]*rss_det[i*nphe+i];
+    }
 
-/* function to calculate the alternative model RSS. 
-   This function is called by scanone_imp */
+    else { /* return on rss for each phenotype */
+      if(rank == ncolx0) { /* if the design matrix is of full rank, it's easier */
+        for(i=0; i<nrss; i++) {
+          rss0[i] = 0.0;
+          ind_idx = i*n_ind;
+          for (j=rank; j<n_ind; j++) {
+            dtmp = tmppheno[ind_idx+j];
+            rss0[i] += dtmp * dtmp; 
+          }
+        }
+      }
+      else { /* not full rank, this is trouble */
+        /* note that the result tmppheno has dimension n_ind x nphe,
+        the first ncolx0 rows contains the estimates. */
+        for (i=0; i<nphe; i++)
+          memcpy(coef+i*ncolx0, tmppheno+i*n_ind, ncolx0*sizeof(double));
+        /* calculate yfit */
+        matmult(yfit, x02, n_ind, ncolx0, coef, nphe);
+        /* calculate residual, put the result in tmppheno */
+        for (i=0; i<n_ind*nphe; i++)
+          tmppheno[i] = pheno[i] - yfit[i];
+        /* calculate rss */
+        for(i=0; i<nrss; i++) {
+          rss0[i] = 0.0;
+          ind_idx = i*n_ind;
+          for(j=0; j<n_ind; j++) {
+            dtmp = tmppheno[ind_idx+j];
+            rss0[i] += dtmp * dtmp; 
+          }
+        }
+      }
+    }
 
-double altRss(double *pheno, double *weights, int n_ind, int n_gen, 
-	      int *Draws, double **Addcov, int n_addcov, double **Intcov, 
-	      int n_intcov, double *dwork, int *iwork)
+  }
+
+  /* take log10 */ 
+  for(i=0; i<nrss; i++)
+    rss0[i] = log10(rss0[i]);
+
+} 
+    
+
+/**************************************************************
+ *
+ * function to calculate alternative model RSS for one QTL model. 
+ * Model is pheno ~ u + Q + addcov + Q:intcov
+ *
+ * This function is called by scanone_imp 
+ *
+ **************************************************************/
+
+void altRss1(double *tmppheno, double *pheno, int nphe, int n_ind, int n_gen,
+	     int *Draws, double **Addcov, int n_addcov, double **Intcov,
+	     int n_intcov, double *dwork, int multivar, double *rss, 
+	     double *weights)
 {
   /* create local variables */
+  int i, j, s, s2, ncolx, lwork, rank, info, nrss, ind_idx;
+  double *x, *x_bk, *singular, *yfit, *work, *coef, *rss_det=0;
+  double alpha=1.0, beta=0.0, tol=TOL, dtmp;
+  /* for lapack dgelss */
 
-  int ny, *jpvt, k, i, j, s, s2, ncolx;
-  double *work, *x, *qty, *qraux, *coef, *resid;
-  double tol, rss;
-
-  /* tolerance for linear regression */
-  tol = TOL;
+  if( (nphe==1) || (multivar==1) )
+    nrss = 1;
+  else
+    nrss = nphe; 
 
   /* number of columns in design matrix X */
-  ncolx = n_gen + n_addcov + n_intcov*(n_gen-1); 
+  ncolx = n_gen + n_addcov + n_intcov*(n_gen-1);
+  /* init rank to be ncolx, which means X is of full rank.
+  If it's not, the value of rank will be changed by dgelss */
+  rank = ncolx;
 
-  ny = 1; /* number of phenotypes */
-  k = 0;
+  /* split the memory block */
+  lwork = 3*ncolx+ MAX(n_ind, nphe);
+  /*lwork = 3*ncolx + n_ind;*/
+  singular = dwork;
+  work = singular + ncolx;
+  x = work + lwork;
+  x_bk = x + n_ind*ncolx;
+  yfit = x_bk + n_ind*ncolx;
+  coef = yfit + n_ind*nphe;
+  if(multivar == 1)
+    rss_det = coef + ncolx*nphe;
+
+  /* zero out X matrix */
+  for(i=0; i<n_ind*ncolx; i++) x[i] = 0.0;
 
   /* fill up design matrix */
-  x = dwork;
   for(i=0; i<n_ind; i++) {
     /* QTL genotypes */
     for(s=0; s<n_gen; s++) {
@@ -279,42 +434,110 @@ double altRss(double *pheno, double *weights, int n_ind, int n_gen,
     }
 
     /* Additive covariates */
-    for(s=0, s2=n_gen; s<n_addcov; s++, s2++) 
+    for(s=0, s2=n_gen; s<n_addcov; s++, s2++)
       x[i+s2*n_ind] = Addcov[s][i];
-      
+
     /* Interactive covariates */
     for(s=0; s<n_intcov; s++) {
       for(j=0; j<n_gen-1; j++, s2++) {
-	if(Draws[i] == j+1) x[i+n_ind*s2] = Intcov[s][i];
-	else x[i+n_ind*s2] = 0.0;
+        if(Draws[i] == j+1) x[i+n_ind*s2] = Intcov[s][i];
+        else x[i+n_ind*s2] = 0.0;
       }
     }
-    
+
   } /* end loop over individuals */
   /* Done filling up X matrix */
 
-  /* point to rest of workspace */
-  jpvt = iwork;
-  work = dwork + n_ind*ncolx; /* length 2*ncolx */
-  qty = work + 2*ncolx; /* length n_ind */
-  qraux = qty + n_ind; /* length ncolx */
-  coef = qraux + ncolx; /* length ncolx */
-  resid = coef + ncolx; /* length n_ind */
-  ny = 1;
+  /* make a copy of x matrix, we may need it */
+  memcpy(x_bk, x, n_ind*ncolx*sizeof(double));
+  /* Call LAPACK engine DGELSS to do linear regression.
+  Note that DGELSS doesn't have the assumption that X is full rank. */
+  /* Pass all arguments to Fortran by reference */
+  mydgelss(&n_ind, &ncolx, &nphe, x, x_bk, pheno, tmppheno,
+    singular, &tol, &rank, work, &lwork, &info);
 
+  /* calculate residual sum of squares */
+  if(nphe == 1) {
+    /* only one phenotype, this is easier */
+    /* if the design matrix is full rank */
+    if(rank == ncolx)
+      for (i=rank, rss[0]=0.0; i<n_ind; i++)
+        rss[0] += tmppheno[i]*tmppheno[i];
+      else {
+        /* the desigm matrix is not full rank, this is trouble */
+        /* calculate the fitted value */
+        matmult(yfit, x_bk, n_ind, ncolx, tmppheno, 1);
+        /* calculate rss */
 
-  /* call Fortran function to fit the linear regression model */
-  F77_CALL(dqrls)(x, &n_ind, &ncolx, pheno, &ny, &tol, coef, resid,
-		  qty, &k, jpvt, qraux, work);
+        for (i=0, rss[0]=0.0; i<n_ind; i++)
+          rss[0] += (pheno[i]-yfit[i]) * (pheno[i]-yfit[i]);
+      }
+  }
+  else { /* multiple phenotypes */
+    if(multivar == 1) { /* multivariate normal model, this is troubler */
+      /* multivariate model, rss=det(rss) */
+      /* note that the result tmppheno has dimension n_ind x nphe,
+      the first ncolx rows contains the estimates. */
+      for (i=0; i<nphe; i++)
+        memcpy(coef+i*ncolx, tmppheno+i*n_ind, ncolx*sizeof(double));
+      /* calculate yfit */
+      matmult(yfit, x_bk, n_ind, ncolx, coef, nphe);
+      /* calculate residual, put the result in tmppheno */
+      for (i=0; i<n_ind*nphe; i++)
+        tmppheno[i] = pheno[i] - yfit[i];
 
-  /* calculate RSS */
-  for(i=0, rss=0.0; i<n_ind; i++) 
-    rss += resid[i]*resid[i];
+      /* calcualte rss_det = tmppheno'*tmppheno. */
+      /* clear rss_det */ 
+      for (i=0; i<nphe*nphe; i++) rss_det[i] = 0.0;
+      /* Call BLAS routine dgemm.  Note that the result rss_det is a 
+      symemetric positive definite matrix */
+      /* the dimension of tmppheno is n_ind x nphe */
+      mydgemm(&nphe, &n_ind, &alpha, tmppheno, &beta, rss_det);
+      /* calculate the determinant of rss */
+      /* do Cholesky factorization on rss_det */
+      mydpotrf(&nphe, rss_det, &info);
+      for(i=0, rss[0]=1.0;i<nphe; i++)
+        rss[0] *= rss_det[i*nphe+i]*rss_det[i*nphe+i];
+    } 
 
-  /* return rss */
-  return(rss);
+    else { /* return rss as a vector */
+      if(rank == ncolx) { /* design matrix is of full rank, this is easier */
+        for(i=0; i<nrss; i++) {
+          rss[i] = 0.0;
+          ind_idx = i*n_ind;
+          for (j=rank; j<n_ind; j++) {
+            dtmp = tmppheno[ind_idx+j];
+            rss[i] += dtmp*dtmp;
+          }
+        }
+      }
+      else { /* design matrix is singular, this is troubler */
+        /* note that the result tmppheno has dimension n_ind x nphe,
+        the first ncolx rows contains the estimates. */
+        for (i=0; i<nphe; i++)
+          memcpy(coef+i*ncolx, tmppheno+i*n_ind, ncolx*sizeof(double));
+        /* calculate yfit */
+        matmult(yfit, x_bk, n_ind, ncolx, coef, nphe);
+        /* calculate residual, put the result in tmppheno */
+        for (i=0; i<n_ind*nphe; i++)
+          tmppheno[i] = pheno[i] - yfit[i];
+        /* calculate rss */
+        for(i=0; i<nrss; i++) {
+          rss[i] = 0.0;
+          ind_idx = i*n_ind;
+          for(j=0; j<n_ind; j++) {
+            dtmp = tmppheno[ind_idx+j];
+            rss[i] += dtmp * dtmp;
+          }
+        }
+      }
+    }
+  }
 
-  /* end of function */
-}
+  /* take log10 */
+  for(i=0; i<nrss; i++)
+    rss[i] = log10(rss[i]);
+
+} /* end of function */
 
 /* end of scanone_imp.c */

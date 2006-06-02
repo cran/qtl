@@ -2,13 +2,13 @@
  *
  * scantwo_imp.h
  *
- * copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                     and Hao Wu, The Jackson Lab
  *
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.
  *
- * last modified Oct, 2002 
+ * last modified Feb, 2006 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -34,8 +34,9 @@
 void R_scantwo_imp(int *n_ind, int *same_chr, int *n_pos1, int *n_pos2, 
 		   int *n_gen1, int *n_gen2, int *n_draws, int *draws1, 
 		   int *draws2, double *addcov, int *n_addcov, 
-		   double *intcov, int *n_intcov, double *pheno, 
-		   double *weights, double *result);
+		   double *intcov, int *n_intcov, double *pheno, int *nphe,
+		   double *weights, double *result, int *n_col2drop,
+		   int *col2drop);
 
 /**********************************************************************
  * 
@@ -81,18 +82,23 @@ void R_scantwo_imp(int *n_ind, int *same_chr, int *n_pos1, int *n_pos2,
  *
  * result       Result vector of length [n_pos1*n_pos2];
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2, 
 		 int n_gen1, int n_gen2, int n_draws, int ***Draws1, 
 		 int ***Draws2, double **Addcov, int n_addcov, 
-		 double **Intcov, int n_intcov, double *pheno, 
-		 double *weights, double *result);
+		 double **Intcov, int n_intcov, double *pheno, int nphe,
+		 double *weights, double *result, int n_col2drop,
+		 int *col2drop);
 
-void altRss2(double *pheno, double *weights, 
-	     int n_ind, int n_gen1, int n_gen2, 
-	     int *Draws1, int *Draws2, double **Addcov, int n_addcov, 
-	     double **Intcov, int n_intcov, double *lrss_add, 
-	     double *lrss_full, double *dwork, int *iwork);
+void altRss2(double *tmppheno, double *pheno, int nphe, int n_ind, int n_gen1, int n_gen2,
+             int *Draws1, int *Draws2, double **Addcov, int n_addcov,
+             double **Intcov, int n_intcov, double *lrss,
+             double *dwork_add, double *dwork_full, int multivar, double *weights, 
+	     int n_col2drop, int *allcol2drop);
 
 /* end of scantwo_imp.h */

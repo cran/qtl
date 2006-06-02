@@ -10,9 +10,30 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 1.01 bugs:
+
+>>  1. plot.pxg for X chr and autosome: results can be messed
+       up, depending on the order of the markers.  
+
+    2. plot.geno() can give a bus error.  This is due to a problem
+       in locate.xo().  [Fixed in version 1.02.]
+
+>>  3. read.cross for "qtx" sometimes doesn't seem to take the
+       genotype pattern appropriately; read in a backcross as if it
+       were an F2. 
+
+>>  4. An NA in the mapmaker data file caused an error in read.cross;
+       the line became too long.  Maybe this is true whenever an item
+       doesn't match what is expected.
+
+>>  5. summary.scantwo doesn't work if there's just two positions on a
+       chromosome (or maybe it's for one position).
+
+
 Version 0.99 bugs:
 
->>  1. est.rf() treats the X chromosome in an intercross incorrectly.
+    1. est.rf() treats the X chromosome in an intercross incorrectly.
+       [Fixed in version 1.00.]
 
 
 Version 0.98 bugs:
@@ -86,8 +107,8 @@ Version 0.96 bugs:
 
 Version 0.95 bugs:
 
->>  1. scantwo is not working well for the EM algorithm, in the case
-       of the X chromosome
+    1. scantwo is not working well for the EM algorithm, in the case
+       of the X chromosome [Fixed in version 1.02.]
 
     2. I suspect that the treatment of the X chromosome is still not
        correct for scanone and scantwo.  I think the null model needs

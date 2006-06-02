@@ -8,6 +8,7 @@
 \alias{create.map}
 \alias{discan}
 \alias{dropqtl}
+\alias{dropXcol}
 \alias{effectplot.getmark}
 \alias{effectplot.calmeanse}
 \alias{fixX4write}
@@ -50,8 +51,10 @@
 \alias{ripple.perm2}
 \alias{ripple.perm.sub}
 \alias{scanone.perm}
+\alias{scanone.perm.engine}
 \alias{scanoneXnull}
 \alias{scantwo.perm}
+\alias{scantwo.perm.engine}
 \alias{sim.cc}
 \alias{sim.cross.4way}
 \alias{sim.cross.bc}
@@ -83,11 +86,12 @@ discan(cross, pheno, method=c("em","mr"),
        addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
        verbose=FALSE)
 dropqtl(qtl, drop)
+dropXcol(type=c("f2","bc"), sexpgm)
 fixX4write(geno,sex,pgm,crosstype)
 fixXgeno.bc(cross)
 fixXgeno.f2(cross)
 getsex(cross)
-getgenonames(type=c("f2","bc","f2ss","riself","risib","4way"),
+getgenonames(type=c("f2","bc","riself","risib","4way"),
              chrtype=c("A","X"), expandX=c("simple","standard","full"),
              sexpgm)
 imf.cf(r)
@@ -125,7 +129,7 @@ read.map.qtlcart(file)
 read.maps.mm(mapsfile)
 replaceqtl(cross, qtl, replace, by.chr, by.pos, by.name, map)
 revisecovar(sexpgm, covar)
-reviseXdata(type=c("f2ss","f2","bc"), expandX=c("simple","standard","full"),
+reviseXdata(type=c("f2","bc"), expandX=c("simple","standard","full"),
             sexpgm, geno, prob, draws, pairprob)
 ripple.perm1(n)
 ripple.perm2(n)
@@ -134,14 +138,20 @@ scanone.perm(cross, pheno.col=1, model=c("normal","binary","2part","np"),
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
              addcovar=NULL, intcovar=NULL, weights=NULL,
              upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
-             tol=1e-4, n.perm=1000, verbose=TRUE)
+             tol=1e-4, n.perm=1000, n.node, verbose=TRUE)
+scanone.perm.engine(n.perm, cross, pheno.col, model,
+                    method, addcovar, intcovar, weights,
+                    upper, ties.random, start, maxit, tol,
+                    verbose)
 scanoneXnull(type, sexpgm)
-scantwo.perm(cross, pheno.col=1,
+scantwo.perm(cross, pheno.col=1, model=c("normal","binary"),
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
-             model=c("normal","binary"),
              addcovar=NULL, intcovar=NULL, weights=NULL,
              incl.markers=FALSE, maxit=4000, tol=1e-4, verbose=FALSE,
-             n.perm=1000)
+             n.perm=1000, n.node)
+scantwo.perm.engine(n.perm, cross, pheno.col, model,
+                    method, addcovar, intcovar, weights,
+                    incl.markers, maxit, tol, verbose)
 sim.cc(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
 sim.cross.4way(map, model, n.ind, error.prob, missing.prob,
                partial.missing.prob, keep.errorind, map.function)

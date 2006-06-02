@@ -8,7 +8,7 @@
 }
 
 \usage{
-\method{plot}{scantwo}(x, chr, incl.markers=FALSE, zlim,
+\method{plot}{scantwo}(x, chr, incl.markers=FALSE, zlim, lodcolumn=1,
              lower=c("joint","add","cond-int","cond-add"), nodiag=TRUE, 
              contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
              col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
@@ -24,6 +24,9 @@
   \item{zlim}{A vector of length 2 (optional), indicating the z limits
     for the joint LOD and the epistasis LOD scores, respectively.  If
     missing, the maximum limits are used for each.}
+  \item{lodcolumn}{If the scantwo results contain LOD scores for
+    multiple phenotypes, this argument indicates which to use in the
+    plot.} 
   \item{lower}{Indicates which LOD scores should be plotted in the lower
     triangle.  See the details below.}
   \item{nodiag}{If TRUE, suppress the plot of the scanone output
@@ -60,7 +63,7 @@
   
   The upper triangle in plot from this function contains the epistasis
   LOD scores, \eqn{LOD_i = \log_{10} L_f(q_1,q_2) - \log_{10} L_a(q_1,q_2)}{%
-    LODi = log10 Lf(q1,q2) - log10 Lf(q1,q2)}.
+    LODi = log10 Lf(q1,q2) - log10 La(q1,q2)}.
 
   If \code{lower="joint"}, the lower triangle will contain the joint LOD
   scores, \eqn{LOD_j = \log_{10} L_f(q_1,q_2) - \log_{10} L_0}{%

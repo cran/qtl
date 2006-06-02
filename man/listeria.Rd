@@ -61,11 +61,11 @@ out <- scanone(listeria, model="2part", method="em",
                upper=TRUE, pheno.col=2)
 
 # Summary of the results
-summary(out, 4)
+summary(out, thr=4)
 
 # Plot LOD curves for interesting chromosomes
 #     (The two-part model gives three LOD scores)
-plot(out, out, out, chr=c(1,5,6,13,15), lodcolumn=3:5,
+plot(out, out, out, chr=c(1,5,6,13,15), lodcolumn=1:3,
      lty=1, col=c("black","red","blue"))
 }
 

@@ -9,9 +9,9 @@
 }
 
 \usage{
-\method{plot}{scanone}(x, x2, x3, chr, lodcolumn=3, incl.markers=TRUE,
+\method{plot}{scanone}(x, x2, x3, chr, lodcolumn=1, incl.markers=TRUE,
              xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
-             add=FALSE, gap=25, main, mtick = c("line", "triangle"),
+             add=FALSE, gap=25, mtick = c("line", "triangle"),
              \dots)
 }			    
 
@@ -28,7 +28,7 @@
   \item{chr}{Vector specifying which chromosomes to plot. (The
     chromosomes must be specified by name.)}
   \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
-    columns of the input should be plotted (generally column 3).}
+    of the LOD score columns should be plotted (generally this is 1).}
   \item{incl.markers}{Indicate whether to plot line segments at the
   marker locations.}
   \item{xlim}{Limits for x-axis (optional).}
@@ -38,7 +38,6 @@
   \item{lwd}{Line widths; a vector of length 1 or 3.}
   \item{add}{If TRUE, add to a current plot.}
   \item{gap}{Gap separating chromosomes (in cM).}
-  \item{main}{An optional title for the plot.}
   \item{mtick}{Tick mark type for markers (line segments or
     upward-pointing triangels).}
   \item{\dots}{Passed to the function \code{\link[base]{plot}} when it

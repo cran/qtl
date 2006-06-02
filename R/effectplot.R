@@ -2,9 +2,11 @@
 #
 # effectplot.R
 #
-# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
 # 
+# Last modified Jun, 2006
+#
 # Modified by Hao Wu Feb 2005 for the following:
 # 1. function will take marker, pseudomarker or phenotype as input;
 # 2. separate functions to extract marker genodata given marker names
@@ -147,7 +149,7 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
     else { # otherwise, generate a standard one
       if(type == "bc") 
         geno1 <- c("AA", "AB")
-      else if(type == "f2" || type == "f2ss") 
+      else if(type == "f2")
         geno1 <- c("AA", "AB", "BB")
       else if(type == "riself" || type == "risib") 
         geno1 <- c("AA", "BB")
@@ -186,7 +188,7 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       else { # otherwise, generate a standard one
         if(type == "bc") 
           geno2 <- c("AA", "AB")
-        else if(type == "f2" || type == "f2ss") 
+        else if(type == "f2")
           geno2 <- c("AA", "AB", "BB")
         else if(type == "riself" || type == "risib") 
           geno2 <- c("AA", "BB")
@@ -441,7 +443,7 @@ effectplot.getmark <- function (cross, mname) {
   else if(mar.type=="marker") { # this is a real marker
     mark <- cross$geno[[chr]]$data[, idx.pos]
     # if X chr and backcross or intercross, get sex/dir data + revise data
-    if(chrtype == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
+    if(chrtype == "X" && (type == "bc" || type == "f2")) {
       sexpgm <- getsex(cross)
       mark <- as.numeric(reviseXdata(type, "standard", sexpgm, 
                                       geno = as.matrix(mark)))
@@ -454,7 +456,7 @@ effectplot.getmark <- function (cross, mname) {
     mark <- cross$geno[[chr]]$draws[,idx.pos,]
 
     # if X chr and backcross or intercross, get sex/dir data + revise data
-    if(chrtype == "X" && (type == "bc" || type == "f2" || type == "f2ss")) {
+    if(chrtype == "X" && (type == "bc" || type == "f2")) {
       sexpgm <- getsex(cross)
       mark <- reviseXdata(type, "standard", sexpgm, geno=mark)
       gennames <- getgenonames(type, chrtype, "standard", sexpgm)

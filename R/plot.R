@@ -2,9 +2,9 @@
 #
 # plot.R
 #
-# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
+# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Oct, 2005
+# last modified Jun, 2006
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -307,17 +307,25 @@ function (x, auto.layout = TRUE, pheno, ...)
   plot.missing(x)
   plot.map(x)
 
-  if( is.numeric(pheno) )
-    pheno = names(x$pheno)[pheno]
+#  if( is.numeric(pheno) )
+#    pheno = names(x$pheno)[pheno]
+  if(!is.numeric(pheno)) {
+    temp <- match(pheno, names(x$pheno))
+    if(any(is.na(temp))) 
+      warning("Some phenotypes not found:",
+              paste(pheno[is.na(temp)], collapse=" "))
+    pheno <- temp[!is.na(temp)]
+  }
 
   for(i in pheno) {
     if(!is.numeric(x$pheno[[i]])) {
       par(yaxt = "s")
-      barplot(c(table(x$pheno[[i]])), axes = FALSE, xlab = i, ylab = "",
-              main = i, col = "white")
+      barplot(c(table(x$pheno[[i]])), axes = FALSE, xlab = paste("phe", i),
+              ylab = "", main = colnames(x$pheno)[i], col = "white")
     }
     else hist(x$pheno[[i]], breaks = round(sqrt(nrow(x$pheno)) + 5),
-              xlab = i, prob = TRUE, ylab = "", main = i, yaxt = "n")
+              xlab = paste("phe", i), prob = TRUE, ylab = "", yaxt = "n",
+              main = colnames(x$pheno)[i])
   }
   invisible()
 }
@@ -502,7 +510,8 @@ function(x,chr,method=c("both","entropy","variance"),...)
     cross <- calc.genoprob(cross)
   }
 
-  gap <- attr(cross$geno[[1]]$prob,"off.end")*2+10 # gap between chr in plot
+#  gap <- attr(cross$geno[[1]]$prob,"off.end")*2+10 # gap between chr in plot
+  gap <- 25
 
   n.ind <- nind(cross)
   for(i in 1:n.chr) {
@@ -554,10 +563,10 @@ function(x,chr,method=c("both","entropy","variance"),...)
       plot.scanone(results,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results,lodcolumn=4,ylim=c(0,1),gap=gap,
+      plot.scanone(results,lodcolumn=2,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==2)
-      plot.scanone(results,results,lodcolumn=3:4,ylim=c(0,1),gap=gap,
+      plot.scanone(results,results,lodcolumn=1:2,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
   }
   else { # gap was included in ...
@@ -565,10 +574,10 @@ function(x,chr,method=c("both","entropy","variance"),...)
       plot.scanone(results,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results,lodcolumn=4,ylim=c(0,1),
+      plot.scanone(results,lodcolumn=2,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==2)
-      plot.scanone(results,results,lodcolumn=3:4,ylim=c(0,1),
+      plot.scanone(results,results,lodcolumn=1:2,ylim=c(0,1),
                    main="Missing information",...)
   }
 
@@ -617,8 +626,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
     chrtype <- chrtype[chr]
   
   # if X chromosome and backcross or intercross, get sex/direction data
-  if(any(chrtype == "X") && (type == "bc" || type == "f2" || 
-            type == "f2ss")) 
+  if(any(chrtype == "X") && (type == "bc" || type == "f2"))
     sexpgm <- getsex(cross)
   else sexpgm <- NULL
 
@@ -637,7 +645,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
     function(x, type)
       {
         tmp <- is.na(x)
-        if(type=="f2" || type=="f2ss") tmp[!is.na(x) & x>3] <- TRUE
+        if(type=="f2") tmp[!is.na(x) & x>3] <- TRUE
         if(type=="4way") tmp[!is.na(x) & x>4] <- TRUE
         tmp
       }
@@ -663,13 +671,12 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   y <- cross$pheno[, pheno.col]
 
   if(!infer) { # replace partially informative genotypes with NAs
-    if(type == "f2" || type == "f2ss") x[x > 3] <- NA
+    if(type == "f2") x[x > 3] <- NA
     if(type == "4way") x[x > 4] <- NA
   }
 
   # in case of X chromosome, recode some genotypes
-  if(any(chrtype == "X") && (type == "bc" || type == "f2" || 
-           type == "f2ss")) {
+  if(any(chrtype == "X") && (type == "bc" || type == "f2")) {
     ix = seq(n.mark)[chrtype == "X"]
     for(i in ix)
       x[, i] <- as.numeric(reviseXdata(type, "full", sexpgm,

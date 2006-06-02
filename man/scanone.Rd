@@ -14,7 +14,7 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
         upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
-        tol=1e-4, n.perm, verbose)
+        tol=1e-4, n.perm, n.node=1, verbose)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -22,7 +22,9 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{chr}{Vector indicating the chromosomes for which LOD scores
    should be calculated.}
  \item{pheno.col}{Column number in the phenotype matrix which should be
-   used as the phenotype.}
+   used as the phenotype.  This can be a vector of integers; for methods
+   \code{"hk"} and \code{"imp"} this can be considerably faster than doing
+   them one at a time.}
  \item{model}{The phenotypic model: the usual normal model, a model for
    binary traits, a two-part model or non-parametric.}
  \item{method}{Indicates whether to use the EM algorithm, 
@@ -56,6 +58,8 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{n.perm}{If specified, a permutation test is performed rather than
    an analysis of the observed data.  This argument defines the number
    of permutation replicates.}
+ \item{n.node}{Number of nodes to use for parallelization of
+   permutations; only if package \code{snow} is available.}
  \item{verbose}{In the case \code{n.perm} is specified, display
    information about the progress of the permutation tests.}
 }
@@ -187,9 +191,8 @@ for a sex difference in the phenotype.
   first two columns contain the chromosome IDs and cM positions.  The
   third column contains the LOD score.  In the case of the two-part
   model, the third column is LOD(\eqn{p,\mu}{p,mu}), while the fourth
-  and fifth columns are LOD(\eqn{p}) and LOD(\eqn{\mu}{mu}).  In the
-  case of no covariates, further columns specify the parameter
-  estimates. The data frame is given class \code{"scanone"} and
+  and fifth columns are LOD(\eqn{p}) and LOD(\eqn{\mu}{mu}).  The data
+  frame is given class \code{"scanone"} and
   attributes  \code{"model"}, \code{"method"} and \code{"type"} (the
   latter is the type of cross analyzed). \cr 
 
@@ -258,8 +261,8 @@ out.em <- scanone(hyper, method="em")
 out.hk <- scanone(hyper, method="hk")
 
 # Summarize results: peaks above 3
-summary(out.em, 3)
-summary(out.hk, 3)
+summary(out.em, thr=3)
+summary(out.hk, thr=3)
 
 # Plot the results
 plot(out.hk, out.em)
@@ -270,7 +273,7 @@ plot(out.hk, out.em, chr=c(1,4), lty=1, col=c("blue","black"))
 hyper.c1n4 <- sim.geno(subset(hyper, chr=c(1,4)),
                        step=2.5, n.draws=8)
 out.imp <- scanone(hyper.c1n4, method="imp")
-summary(out.imp, 3)
+summary(out.imp, thr=3)
 
 # Plot all three results
 plot(out.imp, out.hk, out.em, chr=c(1,4), lty=1,
@@ -286,7 +289,7 @@ plot(out.imp, out.hk, out.em, chr=c(1,4), lty=1,
 # Non-parametric
 ###################
 out.np <- scanone(hyper, model="np")
-summary(out.np, 3)
+summary(out.np, thr=3)
 
 # Plot with previous results
 plot(out.np, chr=c(1,4), lty=1, col="green")
@@ -300,10 +303,10 @@ data(listeria)
 \dontshow{listeria <- subset(listeria,chr=c(1,5,13))}
 listeria <- calc.genoprob(listeria,step=2.5)
 out.2p <- scanone(listeria, model="2part", upper=TRUE)
-summary(out.2p, 5)
+summary(out.2p, thr=5)
 
 # Plot all three LOD scores together
-plot(out.2p, out.2p, out.2p, lodcolumn=c(4,5,3), lty=1, chr=c(1,5,13),
+plot(out.2p, out.2p, out.2p, lodcolumn=c(2,3,1), lty=1, chr=c(1,5,13),
      col=c("red","blue","black"))
 
 # Permutation test
@@ -320,10 +323,10 @@ listeria <- subset(listeria, ind=!is.na(listeria$pheno[,1]))
 listeria$pheno[,2] <- rep(0,nind(listeria))
 listeria$pheno[listeria$pheno[,1]==264,2] <- 1
 out.bin <- scanone(listeria, pheno.col=2, model="binary")
-summary(out.bin, 3)
+summary(out.bin, thr=3)
 
 # Plot LOD for binary model with LOD(p) from 2-part model
-plot(out.bin, out.2p, lodcolumn=c(3,4), lty=1, col=c("black", "red"),
+plot(out.bin, out.2p, lodcolumn=c(1,2), lty=1, col=c("black", "red"),
      chr=c(1,5,13))
 
 # Permutation test
@@ -347,9 +350,9 @@ ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]
 out.covar <- scanone(fake.bc, pheno.col=1,
                      addcovar=ac, intcovar=ic)
-summary(out.nocovar,3)
-summary(out.covar,3)
-plot(out.covar,out.nocovar,chr=c(2,5,10))
+summary(out.nocovar, thr=3)
+summary(out.covar, thr=3)
+plot(out.covar, out.nocovar, chr=c(2,5,10))
 }
 
 \seealso{ \code{\link[qtl]{plot.scanone}}, 

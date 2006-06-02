@@ -2,9 +2,9 @@
  * 
  * scantwo_em.h
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2004
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -16,7 +16,7 @@
  *
  * Contains: R_scantwo_1chr_em, scantwo_1chr_em, 
  *           R_scantwo_2chr_em, scantwo_2chr_em,
- *           scantwo_em_estep, scantwo_em_mstep, scantwo_em_loglik
+ *           scantwo_em_estep, scantwo_em_mstep, scantwo_em_loglik,
  *  
  **********************************************************************/
 
@@ -33,7 +33,8 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
 		       double *pairprob, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights, double *result,
-		       int *maxit, double *tol, int *verbose);
+		       int *maxit, double *tol, int *verbose,
+		       int *n_col2drop, int *col2drop);
 
 /**********************************************************************
  * 
@@ -81,13 +82,18 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  *                 >2, print out initial and final log likelihoods
  *                 >3, print out log likelihood at each iteration
  *
+ * n_col2drop   For X chromosome, number of columns to drop
+ *
+ * col2drop     For X chromosome, indicates which columns to drop
+ *
  **********************************************************************/
 
 void scantwo_1chr_em(int n_ind, int n_pos, int n_gen, 
 		     double *****Pairprob, double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     double *weights,
-		     double **Result, int maxit, double tol, int verbose);
+		     double **Result, int maxit, double tol, int verbose,
+		     int n_col2drop, int *col2drop);
 
 /**********************************************************************
  * 
@@ -216,7 +222,8 @@ void scantwo_em_mstep(int n_ind, int n_gen1, int n_gen2,
 		      double *weights,
 		      double ***Wts12, double **Wts1, double **Wts2,
 		      double *param, int full_model,
-		      double *work1, double *work2, int *error_flag);
+		      double *work1, double *work2, int *error_flag,
+		      int n_col2drop, int *allcol2drop, int verbose);
 
 /**********************************************************************
  * 
@@ -266,13 +273,16 @@ void scantwo_em_estep(int n_ind, int n_gen1, int n_gen2,
 		      double **Wts1, double **Wts2,
 		      double **Addcov, int n_addcov, double **Intcov,
 		      int n_intcov, double *pheno, double *weights, 
-		      double *param, int full_model, int rescale);
+		      double *param, int full_model, int rescale,
+		      int n_col2drop, int *allcol2drop);
 
 double scantwo_em_loglik(int n_ind, int n_gen1, int n_gen2, double ***Probs,
 			 double ***Wts12, double **Wts1, double **Wts2, 
 			 double **Addcov, int n_addcov, double **Intcov,
 			 int n_intcov, double *pheno, double *weights,
-			 double *param, int full_model);
+			 double *param, int full_model,
+			 int n_col2drop, int *allcol2drop);
+
 
 /* end of scantwo_em.h */
 

@@ -10,7 +10,7 @@
 }
 
 \usage{
-\method{summary}{scanone}(\dots, threshold=0)
+\method{summary}{scanone}(\dots, threshold=0, lodcolumn=1)
 }
 
 \arguments{
@@ -19,6 +19,8 @@
  \item{threshold}{LOD score thresholds. Only peaks with LOD score above
    this value will be returned. This could be a scalar, a vector or a
    matrix. See below section for details.}
+ \item{lodcolumn}{An integer, or vector of integers, indicating which
+    of the LOD score columns should be plotted (generally this is 1).}
 }
 
 \details{
@@ -61,7 +63,7 @@
   
   Usually the threshold should be obtained from the permutation
   test. Users can use \code{\link[stats]{quantile}} to get a list of
-  threhold values for different significance levels.
+  threshold values for different significance levels.
 }
 
 \value{

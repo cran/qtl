@@ -2,8 +2,8 @@
 #
 # read.cross.csv.R
 #
-# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# last modified Feb, 2006
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -87,21 +87,22 @@ function(dir, file, na.strings=c("-","NA"),
   chr <- data[2,-(1:n.phe)]
   if(any(is.na(chr))) stop("There are missing chromosome IDs.")
 
-  # look for strange entries in the genotype data
-  temp <- unique(as.character(data[-(1:nondatrow),-(1:n.phe),drop=FALSE]))
-  temp <- temp[!is.na(temp)]
-  wh <- is.na(match(temp,genotypes))
-  if(any(wh)) {
-    warn <- "The following unexpected genotype codes were treated as missing.\n    "
-    ge <- paste("|", paste(temp[wh],collapse="|"),"|",sep="")
-    warn <- paste(warn,ge,"\n",sep="")
-    warning(warn)
-  }
+  if(length(genotypes) > 0) {
+    # look for strange entries in the genotype data
+    temp <- unique(as.character(data[-(1:nondatrow),-(1:n.phe),drop=FALSE]))
+    temp <- temp[!is.na(temp)]
+    wh <- is.na(match(temp,genotypes))
+    if(any(wh)) {
+      warn <- "The following unexpected genotype codes were treated as missing.\n    "
+      ge <- paste("|", paste(temp[wh],collapse="|"),"|",sep="")
+      warn <- paste(warn,ge,"\n",sep="")
+      warning(warn)
+    }
 
-  # convert genotype data
-  if(length(genotypes) > 0)  
+    # convert genotype data
     allgeno <- matrix(match(data[-(1:nondatrow),-(1:n.phe)],genotypes),
                       ncol=ncol(data)-n.phe)
+  }
   else
     allgeno <- matrix(as.numeric(data[-(1:nondatrow),-(1:n.phe)]),
                       ncol=ncol(data)-n.phe)
@@ -221,6 +222,12 @@ function(dir, file, na.strings=c("-","NA"),
       cross$geno[[i]]$map <- cross$geno[[i]]$map[o]
       cross$geno[[i]]$data <- cross$geno[[i]]$data[,o,drop=FALSE]
     }
+  }
+
+  # if 4-way cross, make the maps matrices
+  if(type=="4way") {
+    for(i in 1:n.chr) 
+      cross$geno[[i]]$map <- rbind(cross$geno[[i]]$map, cross$geno[[i]]$map)
   }
 
   # estimate genetic map

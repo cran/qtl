@@ -2,9 +2,9 @@
  * 
  * scanone_mr.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2003
+ * last modified Feb, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -45,17 +45,16 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
 		  double *result)
 {
   int **Geno;
-  double **Result, **Addcov, **Intcov;
+  double **Addcov, **Intcov;
 
   reorg_geno(*n_ind, *n_pos, geno, &Geno);
-  reorg_errlod(*n_pos, *n_gen+2, result, &Result);
 
   /* reorganize addcov and intcov (if they are not empty) */
   if(*n_addcov > 0) reorg_errlod(*n_ind, *n_addcov, addcov, &Addcov);
   if(*n_intcov > 0) reorg_errlod(*n_ind, *n_intcov, intcov, &Intcov);
 
   scanone_mr(*n_ind, *n_pos, *n_gen, Geno, Addcov, *n_addcov,
-	     Intcov, *n_intcov, pheno, weights, Result);
+	     Intcov, *n_intcov, pheno, weights, result);
 }
 
 /**********************************************************************
@@ -84,17 +83,14 @@ void R_scanone_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  *
  * weights      Vector of positive weights, of length n_ind
  *
- * Result       Result matrix of size [n_pos x (n_gen+2)]; upon return, 
- *              the first column contains the RSS, the next set contain
- *              estimated genotype-specific means, and the last column
- *              contains the estimated residual SD
+ * result       Vector of length n_pos, to contain the RSS
  *
  **********************************************************************/
 
 void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno, 
 		double **Addcov, int n_addcov, double **Intcov,
 		int n_intcov, double *pheno, double *weights,
-		double **Result)
+		double *result)
 {
   int ny, *jpvt, k, i, j, ncol, ncol0, k2, s;
   double *work, *x, *qty, *qraux, *coef, *resid, tol, rss0, *y;
@@ -191,21 +187,12 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 		    qty, &k, jpvt, qraux, work);
 
     /* RSS */
-    Result[0][i] = 0.0;
-    for(j=0; j<this_n_ind; j++) Result[0][i] += (resid[j]*resid[j]);
-
-    if(n_addcov == 0 && n_intcov == 0) {
-      /* save coefficients only if no covariates */
-      /* re-scramble coefficients */
-      for(j=0; j<n_gen; j++) Result[1+j][i] = coef[jpvt[j]];
-    
-      /* residual SD */
-      Result[1+n_gen][i] = sqrt(Result[0][i]/(double)(this_n_ind-n_gen));
-    }
+    result[i] = 0.0;
+    for(j=0; j<this_n_ind; j++) result[i] += (resid[j]*resid[j]);
 
     /* log10 likelihood */
-    Result[0][i] = (double)this_n_ind/2.0* 
-      (log10(rss0)-log10(Result[0][i]));
+    result[i] = (double)this_n_ind/2.0* 
+      (log10(rss0)-log10(result[i]));
 
   } /* loop over marker positions */
 }

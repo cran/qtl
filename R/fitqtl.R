@@ -2,9 +2,9 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Sep, 2005
+# last modified Feb, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -136,6 +136,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     if(n.covar > 0) thenames <- c(thenames,names(covar)[p$idx.covar])
 
     ests <- z$ests
+
     ests.cov <- matrix(z$ests.cov,ncol=sizefull)
     if(any(qtl$n.gen[p$idx.qtl]>=4)) 
       warning("Estimated QTL effects not yet made meaningful for this case.\n   ")
@@ -153,9 +154,11 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       curcol <- 1
       # covariates
       if(p$n.covar > 0) {
-        for(j in 1:p$n.covar) 
+        for(j in 1:p$n.covar) {
           Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- as.matrix(covar[,p$idx.covar[j]])
-        colnames(Z)[curcol+1:p$n.covar] <- names(covar)[p$idx.covar]
+          colnames(Z)[curcol+j] <- colnames(ZZ[[p$n.qtl+j]]) <- names(covar)[p$idx.covar[j]]
+#        colnames(Z)[curcol+1:p$n.covar] <- names(covar)[p$idx.covar]
+        }
         curcol <- curcol + p$n.covar
       }
       # QTL main effects
@@ -175,6 +178,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
         ZZ[[i]] <- Z[,curcol+1:(n.gen[i]-1),drop=FALSE]
         curcol <- curcol + n.gen[i]-1
       }
+
       if(p$n.int>0) {
         for(i in 1:p$n.int) {
           if(p$n.int==1) 

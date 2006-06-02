@@ -2,23 +2,24 @@
 #
 # util.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 #     [find.pheno and find.flanking from Brian Yandell]
-# last modified Oct, 2005
+#
+# last modified Jun, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: pull.map, replace.map, create.map,
+# Contains: pull.map, replace.map, c.cross, create.map,
 #           convert.cross, clean, drop.nullmarkers
 #           drop.markers, geno.table, mf.k, mf.h, imf.k, imf.h
-#           mf.cf, imf.cf, mf.m, imf.m, convert2ss, switch.order
+#           mf.cf, imf.cf, mf.m, imf.m, switch.order, makeSSmap,
 #           subset.cross, fill.geno, checkcovar, find.marker,
-#           adjust.rf.ri, pull.geno, lodint, bayesint, makeSSmap,
+#           adjust.rf.ri, pull.geno, lodint, bayesint, 
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, convert.scanone, find.pheno,
 #           find.flanking, strip.partials, comparegeno
-#           qtlversion, locate.xo
+#           qtlversion, locate.xo, jittermap
 #
 ######################################################################
 
@@ -56,7 +57,7 @@ function(cross, map)
   n.mar2 <- sapply(map,length)
 
   type <- class(cross)[1]
-  if(type=="4way" || type=="f2ss") {
+  if(type=="4way") {
     mnames <- unlist(lapply(cross$geno, function(a) colnames(a$map)))
     mnames2 <- unlist(lapply(map, function(a) colnames(a)))
     n.mar2 <- n.mar2/2
@@ -453,7 +454,7 @@ function(cross)
   n.chr <- nchr(cross)
 
   type <- class(cross)[1]
-  if(type == "f2" || type=="f2ss") {
+  if(type == "f2") {
     n.gen <- 5
     gen.names <- c("AA","AB","BB","AA/AB","AB/BB")
   }
@@ -551,23 +552,6 @@ function(d)
     uniroot(icf, c(0,0.5-1e-10),d=a)$root })
 }
 
-
-# convert F2 intercross to sex-specific
-convert2ss <-
-function(cross)  
-{
-  if(class(cross)[1] != "f2")
-    stop("This function applies only to f2 crosses.")
-
-  class(cross)[1] <- "f2ss"
-
-#  for(i in 1:nchr(cross)) 
-#    cross$geno[[i]]$map <- rbind(cross$geno[[i]]$map,
-#                                 cross$geno[[i]]$map)
-  cross <- makeSSmap(cross)
-
-  cross
-}
 
 ######################################################################
 #
@@ -765,60 +749,13 @@ c.cross <-
 function(...)
 {
   args <- list(...)
-
+  n.args <- length(args)
+  
   # if only one cross, just return it
-  if(length(args)==1) return(args[[1]])
+  if(n.args==1) return(args[[1]])
 
   if(any(sapply(args, function(a) class(a)[2]) != "cross"))
     stop("All arguments must be cross objects.")
-
-  if(length(unique(sapply(args, nchr))) > 1) 
-    stop("All arguments must have the same number of chromosomes.")
-
-  x <- args[[1]]
-  chr <- names(x$geno)
-  n.mar <- nmar(x)
-  marnam <- unlist(lapply(x$geno,function(b) colnames(b$data)))
-
-  for(i in 2:length(args)) {
-    y <- args[[i]]
-    y.marnam <- unlist(lapply(y$geno, function(b) colnames(b$data)))
-    if(chr != names(y$geno) || any(n.mar != nmar(y)) || any(marnam != y.marnam))
-      stop("All arguments must have the same chromosomes and markers.")
-  }
-    
-  # get all phenotype names
-  phenam <- names(x$pheno)
-  for(i in 2:length(args))
-    phenam <- c(phenam, names(args[[i]]$pheno))
-  phenam <- unique(phenam)
-
-  # form big phenotype matrix
-  n.ind <- sapply(args,nind)
-  pheno <- matrix(nrow=sum(n.ind),ncol=length(phenam))
-  colnames(pheno) <- phenam
-  pheno <- as.data.frame(pheno)
-
-  for(i in 1:length(phenam)) {
-    phe <- vector("list",length(args))
-    for(j in 1:length(args)) {
-      o <- match(phenam[i],names(args[[j]]$pheno))
-      if(is.na(o)) phe[[j]] <- rep(NA,n.ind[j])
-      else phe[[j]] <- args[[j]]$pheno[,o]
-    }
-    pheno[,i] <- unlist(phe)
-  }
-
-  # indicator of which cross
-  whichcross <- matrix(0,ncol=length(args),nrow=sum(n.ind))
-  colnames(whichcross) <- paste("cross",1:length(args),sep="")
-  prev <- 0
-  for(i in 1:length(args)) {
-    wh <- prev + 1:n.ind[i]
-    prev <- prev + n.ind[i]
-    whichcross[wh,i] <- 1
-  }
-  pheno <- cbind(pheno,whichcross)
 
   # crosses must be all the same, or must be combination of F2 and BC
   classes <- sapply(args,function(a) class(a)[1])
@@ -835,7 +772,67 @@ function(...)
     pheno <- cbind(pheno,which)
   }
 
-  x$pheno <- pheno
+  if(length(unique(sapply(args, nchr))) > 1) 
+    stop("All arguments must have the same number of chromosomes.")
+
+  x <- args[[1]]
+  chr <- names(x$geno)
+  n.mar <- nmar(x)
+  marnam <- unlist(lapply(x$geno,function(b) colnames(b$data)))
+
+  map.mismatch <- 0
+  for(i in 2:n.args) {
+    y <- args[[i]]
+    y.marnam <- unlist(lapply(y$geno, function(b) colnames(b$data)))
+    if(chr != names(y$geno) || any(n.mar != nmar(y)) ||
+       any(marnam != y.marnam)) {
+      map.mismatch <- 1
+      break
+    }
+  }
+  if(map.mismatch) { # get the maps to line up
+    for(i in 1:nchr(args[[1]])) {
+      themap <- NULL
+
+      themaps <- vector("list", n.args)
+
+      for(j in 1:n.args)  {
+        if(is.matrix(args[[j]]$map))
+          stop("c.cross() won't work with sex-specific maps.")
+
+        themaps[[j]] <- args[[j]]$geno[[i]]$map
+        themap <- c(themap, themaps[[j]])
+      }
+      themap <- sort(themap)
+      mn <- unique(names(themap))
+
+      newmap <- rep(0,length(mn))
+      names(newmap) <- mn
+      for(j in 1:length(newmap)) 
+        newmap[j] <- mean(themap[names(themap) == mn[j]])
+
+      for(j in 1:n.args) {
+        if(any(diff(match(names(themaps[[j]]), mn)) < 0)) 
+          stop(" Markers must all be in the same order. [chr", j,"]")
+
+        if(!all(mn %in% names(themaps[[j]]))) {
+          temp <- matrix(ncol=length(mn), nrow=nind(args[[j]]))
+          colnames(temp) <- mn
+          temp[,names(themaps[[j]])] <- args[[j]]$geno[[i]]$data
+          args[[j]]$geno[[i]]$data <- temp
+        }
+        args[[j]]$geno[[i]]$map <- newmap
+      }
+
+    }
+        
+  } # end of map mismatch fix
+
+  x <- args[[1]]
+  chr <- names(x$geno)
+  n.mar <- nmar(x)
+  marnam <- unlist(lapply(x$geno,function(b) colnames(b$data)))
+
 
   # create genotype information
   geno <- x$geno
@@ -843,85 +840,123 @@ function(...)
     geno[[j]] <- list(data=geno[[j]]$data, map=geno[[j]]$map)
     class(geno[[j]]) <- class(x$geno[[j]])
   }
-  for(i in 2:length(args)) 
+  for(i in 2:n.args) 
     for(j in 1:nchr(x))
       geno[[j]]$data <- rbind(geno[[j]]$data,args[[i]]$geno[[j]]$data)
   
-  # if probs exist in each and all have the same
-  #     set up values, keep them
-  wh <- sapply(args, function(a) match("prob",names(a$geno[[1]])))
-  step <- sapply(args,function(a) attr(a$geno[[1]]$prob,"step"))
-  error.prob <- sapply(args,function(a) attr(a$geno[[1]]$prob,"error.prob"))
-  off.end <- sapply(args,function(a) attr(a$geno[[1]]$prob,"off.end"))
-  map.function <- sapply(args,function(a) attr(a$geno[[1]]$prob,"map.function"))
-  if(!any(is.na(wh)) && length(unique(step))==1 &&
-     length(unique(error.prob))==1 && length(unique(off.end))==1 &&
-     length(unique(map.function))==1) {
-    if(allsame) { # all same cross type
-      for(j in 1:nchr(x)) {
-        geno[[j]]$prob <- array(dim=c(sum(n.ind),dim(x$geno[[j]]$prob)[-1]))
-        dimnames(geno[[j]]$prob) <- dimnames(x$geno[[j]]$prob)
-        prev <- 0
-        for(i in 1:length(args)) {
-          wh <- prev + 1:n.ind[i]
-          prev <- prev + n.ind[i]
-          geno[[j]]$prob[wh,,] <- args[[i]]$geno[[j]]$prob
-        }
-      }
+  # get all phenotype names
+  phenam <- names(x$pheno)
+  for(i in 2:n.args)
+    phenam <- c(phenam, names(args[[i]]$pheno))
+  phenam <- unique(phenam)
+
+  # form big phenotype matrix
+  n.ind <- sapply(args,nind)
+  pheno <- matrix(nrow=sum(n.ind),ncol=length(phenam))
+  colnames(pheno) <- phenam
+  pheno <- as.data.frame(pheno)
+
+  for(i in 1:length(phenam)) {
+    phe <- vector("list",n.args)
+    for(j in 1:n.args) {
+      o <- match(phenam[i],names(args[[j]]$pheno))
+      if(is.na(o)) phe[[j]] <- rep(NA,n.ind[j])
+      else phe[[j]] <- args[[j]]$pheno[,o]
     }
-    else { # mixed F2 and BC
-      for(j in 1:nchr(x)) {
-        wh <- match("f2",classes)
-        geno[[j]]$prob <- array(0,dim=c(sum(n.ind),dim(args[[wh]]$geno[[j]]$prob)[-1]))
-        dimnames(geno[[j]]$prob) <- dimnames(args[[wh]]$geno[[j]]$prob)
-        prev <- 0
-        for(i in 1:length(args)) {
-          wh <- prev + 1:n.ind[i]
-          prev <- prev + n.ind[i]
-          if(classes[i]=="f2") 
+    pheno[,i] <- unlist(phe)
+  }
+
+  # indicator of which cross
+  whichcross <- matrix(0,ncol=n.args,nrow=sum(n.ind))
+  colnames(whichcross) <- paste("cross",1:n.args,sep="")
+  prev <- 0
+  for(i in 1:n.args) {
+    wh <- prev + 1:n.ind[i]
+    prev <- prev + n.ind[i]
+    whichcross[wh,i] <- 1
+  }
+  pheno <- cbind(pheno,whichcross)
+
+
+  x$pheno <- pheno
+
+  if(!map.mismatch) { # keep probs and draws only if we've not re-aligned the maps
+    # if probs exist in each and all have the same
+    #     set up values, keep them
+    wh <- sapply(args, function(a) match("prob",names(a$geno[[1]])))
+    step <- sapply(args,function(a) attr(a$geno[[1]]$prob,"step"))
+    error.prob <- sapply(args,function(a) attr(a$geno[[1]]$prob,"error.prob"))
+    off.end <- sapply(args,function(a) attr(a$geno[[1]]$prob,"off.end"))
+    map.function <- sapply(args,function(a) attr(a$geno[[1]]$prob,"map.function"))
+    if(!any(is.na(wh)) && length(unique(step))==1 &&
+       length(unique(error.prob))==1 && length(unique(off.end))==1 &&
+       length(unique(map.function))==1) {
+      if(allsame) { # all same cross type
+        for(j in 1:nchr(x)) {
+          geno[[j]]$prob <- array(dim=c(sum(n.ind),dim(x$geno[[j]]$prob)[-1]))
+          dimnames(geno[[j]]$prob) <- dimnames(x$geno[[j]]$prob)
+          prev <- 0
+          for(i in 1:n.args) {
+            wh <- prev + 1:n.ind[i]
+            prev <- prev + n.ind[i]
             geno[[j]]$prob[wh,,] <- args[[i]]$geno[[j]]$prob
-          else # backcross
-            geno[[j]]$prob[wh,,1:2] <- args[[i]]$geno[[j]]$prob
+          }
         }
       }
-    }    
-
-    for(j in 1:nchr(x)) {
-      attr(geno[[j]]$prob,"step") <- step[1]
-      attr(geno[[j]]$prob,"error.prob") <- error.prob[1]
-      attr(geno[[j]]$prob,"off.end") <- off.end[1]
-      attr(geno[[j]]$prob,"map.function") <- map.function[1]
-    }
-  }
-
-  # if draws exist in each and all have the same
-  #     set up values, keep them
-  wh <- sapply(args, function(a) match("draws",names(a$geno[[1]])))
-  step <- sapply(args,function(a) attr(a$geno[[1]]$draws,"step"))
-  error.prob <- sapply(args,function(a) attr(a$geno[[1]]$draws,"error.prob"))
-  off.end <- sapply(args,function(a) attr(a$geno[[1]]$draws,"off.end"))
-  map.function <- sapply(args,function(a) attr(a$geno[[1]]$draws,"map.function"))
-  ndraws <- sapply(args,function(a) dim(a$geno[[1]]$draws)[3])
-  if(!any(is.na(wh)) && length(unique(step))==1 &&
-     length(unique(error.prob))==1 && length(unique(off.end))==1 &&
-     length(unique(map.function))==1 && length(unique(ndraws))==1) {
-    for(j in 1:nchr(x)) {
-      geno[[j]]$draws <- array(0,dim=c(sum(n.ind),dim(x$geno[[j]]$draws)[-1]))
-      dimnames(geno[[j]]$draws) <- dimnames(x$geno[[j]]$draws)
-      prev <- 0
-      for(i in 1:length(args)) {
-        wh <- prev + 1:n.ind[i]
-        prev <- prev + n.ind[i]
-        geno[[j]]$draws[wh,,] <- args[[i]]$geno[[j]]$draws
+      else { # mixed F2 and BC
+        for(j in 1:nchr(x)) {
+          wh <- match("f2",classes)
+          geno[[j]]$prob <- array(0,dim=c(sum(n.ind),dim(args[[wh]]$geno[[j]]$prob)[-1]))
+          dimnames(geno[[j]]$prob) <- dimnames(args[[wh]]$geno[[j]]$prob)
+          prev <- 0
+          for(i in 1:n.args) {
+            wh <- prev + 1:n.ind[i]
+            prev <- prev + n.ind[i]
+            if(classes[i]=="f2") 
+              geno[[j]]$prob[wh,,] <- args[[i]]$geno[[j]]$prob
+            else # backcross
+              geno[[j]]$prob[wh,,1:2] <- args[[i]]$geno[[j]]$prob
+          }
+        }
+      }    
+  
+      for(j in 1:nchr(x)) {
+        attr(geno[[j]]$prob,"step") <- step[1]
+        attr(geno[[j]]$prob,"error.prob") <- error.prob[1]
+        attr(geno[[j]]$prob,"off.end") <- off.end[1]
+        attr(geno[[j]]$prob,"map.function") <- map.function[1]
       }
-
-      attr(geno[[j]]$draws,"step") <- step[1]
-      attr(geno[[j]]$draws,"error.prob") <- error.prob[1]
-      attr(geno[[j]]$draws,"off.end") <- off.end[1]
-      attr(geno[[j]]$draws,"map.function") <- map.function[1]
+    }
+  
+    # if draws exist in each and all have the same
+    #     set up values, keep them
+    wh <- sapply(args, function(a) match("draws",names(a$geno[[1]])))
+    step <- sapply(args,function(a) attr(a$geno[[1]]$draws,"step"))
+    error.prob <- sapply(args,function(a) attr(a$geno[[1]]$draws,"error.prob"))
+    off.end <- sapply(args,function(a) attr(a$geno[[1]]$draws,"off.end"))
+    map.function <- sapply(args,function(a) attr(a$geno[[1]]$draws,"map.function"))
+    ndraws <- sapply(args,function(a) dim(a$geno[[1]]$draws)[3])
+    if(!any(is.na(wh)) && length(unique(step))==1 &&
+       length(unique(error.prob))==1 && length(unique(off.end))==1 &&
+       length(unique(map.function))==1 && length(unique(ndraws))==1) {
+      for(j in 1:nchr(x)) {
+        geno[[j]]$draws <- array(0,dim=c(sum(n.ind),dim(x$geno[[j]]$draws)[-1]))
+        dimnames(geno[[j]]$draws) <- dimnames(x$geno[[j]]$draws)
+        prev <- 0
+        for(i in 1:n.args) {
+          wh <- prev + 1:n.ind[i]
+          prev <- prev + n.ind[i]
+          geno[[j]]$draws[wh,,] <- args[[i]]$geno[[j]]$draws
+        }
+  
+        attr(geno[[j]]$draws,"step") <- step[1]
+        attr(geno[[j]]$draws,"error.prob") <- error.prob[1]
+        attr(geno[[j]]$draws,"off.end") <- off.end[1]
+        attr(geno[[j]]$draws,"map.function") <- map.function[1]
+      }
     }
   }
-
+  
   x <- list(geno=geno, pheno=pheno)
   class(x) <- c(type,"cross")
   x
@@ -1029,21 +1064,24 @@ function(cross, pheno.col, addcovar, intcovar)
     }
   }
 
-  # check phenotypes
-  if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
+  # check phenotypes - we allow multiple phenotypes here
   if(pheno.col < 1 || pheno.col > nphe(cross))
     stop("Specified phenotype column is invalid.")
-  if(!is.numeric(cross$pheno[,pheno.col]))
-    stop("Chosen phenotype is not numeric, and needs to be.")
+  # check if all phenotypes are numeric
+  pheno <- cross$pheno[,pheno.col,drop=FALSE]
+  idx.nonnum <- which(!apply(pheno,2, is.numeric))
+  if(length(idx.nonnum) > 0)
+    stop(paste("Following phenotypes are not numeric: Column ",
+               paste(idx.nonnum, collapse=",")))
 
   orig.n.ind <- nind(cross)
 
   # drop individuals with missing phenotypes
-  pheno <- cross$pheno[,pheno.col]
   if(any(is.na(pheno))) {
-    keep.ind <- (1:length(pheno))[!is.na(pheno)]
+    keep.ind <- as.numeric(which(apply(pheno, 1, function(x) !any(is.na(x)))))
+#    keep.ind <- (1:length(pheno))[!is.na(pheno)]
     cross <- subset.cross(cross,ind=keep.ind)
-    pheno <- pheno[keep.ind]
+    pheno <- pheno[keep.ind,,drop=FALSE]
   }
   else keep.ind <- 1:nind(cross)
   n.ind <- nind(cross)
@@ -1087,7 +1125,7 @@ function(cross, pheno.col, addcovar, intcovar)
     wh <- apply(cbind(addcovar,intcovar),1,function(a) any(is.na(a)))
     if(any(wh)) {
       cross <- subset.cross(cross,ind=(!wh))
-      pheno <- pheno[!wh]
+      pheno <- pheno[!wh,,drop=FALSE]
       addcovar <- addcovar[!wh,,drop=FALSE]
       if(!is.null(intcovar)) intcovar <- intcovar[!wh,,drop=FALSE]
       n.ind <- nind(cross)
@@ -1116,6 +1154,8 @@ function(cross, pheno.col, addcovar, intcovar)
       }
     }
   }
+
+  pheno <- as.matrix(pheno)
 
   list(cross=cross, pheno=pheno, addcovar=addcovar, intcovar=intcovar,
        n.addcovar=n.addcovar, n.intcovar=n.intcovar)
@@ -1777,9 +1817,15 @@ function(cross, what=c("proportion","number"))
 ######################################################################
 # print the installed version of R/qtl
 ######################################################################
+#qtlversion <-
+#function()
+#  installed.packages()["qtl","Version"]
 qtlversion <-
 function()
-  installed.packages()["qtl","Version"]
+{
+  u <- strsplit(library(help=qtl)[[3]][[1]][2]," ")[[1]]
+  u[length(u)]
+}
 
 
 ######################################################################
@@ -1836,7 +1882,40 @@ function(cross)
   lo
 }
 
+# jittermap: make sure no two markers are at precisely the same position
+jittermap <-
+function(object, amount=1e-6) # x is either a cross object or a map
+{
+  if(length(class(object))==2 && class(object)[2] == "cross") {
+    themap <- pull.map(object)
+    return.cross <- TRUE
+  }
+  else {
+    if(class(object) != "map") stop("Input must be a cross or a map")
+    return.cross <- FALSE
+    themap <- object
+  }
+
+  for(i in 1:length(themap)) {
+    if(is.matrix(themap[[i]])) { # sex-specific maps
+      n <- ncol(themap[[i]])
+      if(n > 1) {
+        for(j in 1:2) 
+          themap[[i]][j,] <- themap[[i]][j,] + c(0,cumsum(rep(amount, n-1)))
+      }
+    }
+    else {
+      n <- length(themap[[i]])
+      if(n > 1)
+        themap[[i]] <- themap[[i]] + c(0,cumsum(rep(amount, n-1)))
+    }
+  }
+
+  if(return.cross) 
+    return(clean(replace.map(object, themap)))
+
+  themap
+}
+
 
 # end of util.R
-
-
