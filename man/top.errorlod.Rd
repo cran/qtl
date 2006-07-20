@@ -53,4 +53,4 @@ hyper$geno[[1]]$map
 \seealso{ \code{\link[qtl]{calc.errorlod}},
   \code{\link[qtl]{plot.errorlod}} }
 
-\keyword{manip}
+\keyword{print}

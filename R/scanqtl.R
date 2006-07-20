@@ -2,9 +2,9 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                       and Karl W. Broman, Johns Hopkins University
-# last modified Aug, 2005
+# last modified Jul, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -17,7 +17,7 @@ scanqtl <-
   function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method=c("imp"),
            incl.markers=FALSE, verbose=TRUE)
 {
-  type <- class(cross)
+  type <- class(cross)[1]
   chrtype <- sapply(cross$geno,class)
   sexpgm <- getsex(cross)
   
@@ -107,9 +107,20 @@ scanqtl <-
       if(!("draws" %in% names(cross$geno[[1]]))) # there's no draw in input cross object
         stop("You need to first run sim.geno().")
       # make genetic map
-      map <- create.map(cross$geno[[ichr[i]]]$map,
-                        attr(cross$geno[[ichr[i]]]$draws,"step"),
-                        attr(cross$geno[[ichr[i]]]$draws,"off.end"))
+      if("map" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
+        map <- attr(cross$geno[[ichr[i]]]$draws,"map")
+      else {
+        stp <- attr(cross$geno[[ichr[i]]]$draws, "step")
+        oe <- attr(cross$geno[[ichr[i]]]$draws, "off.end")
+      
+        if("stepwidth" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
+          stpw <- attr(cross$geno[[ichr[i]]]$draws, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[ichr[i]]]$map,stp,oe,stpw)
+      }
+      # pull out the female map if there are sex-specific maps
+      if(is.matrix(map)) map <- map[1,]
+
       indices[[i]] <- seq(along=map)
       if(!incl.markers) { # equally spaced positions
         step <- attr(cross$geno[[ichr[i]]]$draws,"step")
@@ -223,7 +234,8 @@ scanqtl <-
 
           if(chrtype[ichr[kk]]=="X")
             qtl.obj$geno[,kk,] <-
-              reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE])
+              reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE],
+                          cross.attr=attributes(cross))
 
           current.pos <- pos.tmp
         }

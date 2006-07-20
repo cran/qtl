@@ -69,4 +69,4 @@ qtl <- makeqtl(fake.f2, qc, qp)
 \seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{calc.genoprob}},
   \code{\link[qtl]{sim.geno}} } 
 
-\keyword{models}
+\keyword{utilities}

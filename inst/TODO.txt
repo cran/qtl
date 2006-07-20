@@ -10,6 +10,25 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
+o clean.scantwo: 0 out stuff between two markers
+
+o Add cross type "dh" for doubled haploids.  Treat this just like
+  a backcross, but with different genotype labels.
+
+o refineqtl -- like fitqtl, but refines the locations of the QTLs as
+  in Zhao-Bang's MIM; the output could include both the final qtl
+  object plus the set of LOD curves, and have class "refineqtl", with
+  functions summary.refineqtl() to give the final positions and
+  plot.refineqtl() to give a plot like Z-B's.
+
+o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
+  + help file
+
+o write.qtlcart: RILs seem to need coding 0/2.
+
+o Changed default for plot.scantwo to lower="joint"; check that the
+  tutorial reflects this.  
+
 o Include Bjarke's code on eHK for scanone and scantwo.
 
 o read.cross for "qtx" sometimes doesn't seem to take the
@@ -54,9 +73,6 @@ o P-values from geno.table() when an intercross has some dominant
 
 o summary.scantwo doesn't work if there's just two positions on a
   chromosome (or maybe it's for one position).
-
-o Changed default for plot.scantwo to lower="joint"; check that the
-  tutorial reflects this.  
 
 o Fix plot.scantwo for the case that incl.markers=TRUE, so that positions
   are not equally spaced, but are according to the genetic map.
@@ -110,11 +126,6 @@ o MIM for a set of QTLs at specified locations with specified
 
 o Incorporate the DIRECT algorithm stuff from Hao
 
-o refineqtl -- like fitqtl, but refines the locations of the QTLs as
-  in Zhao-Bang's MIM
-
-o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
-
 o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
   and dev.mim to pull out the est'd coefficients, the residuals, and
   the "deviance" (2 * ln likelihood).
@@ -132,11 +143,6 @@ o Modify the map expansion for RI lines for the X chromosome.
    the marginal genotype distribution is 2:1 rather than 1:1]
   --the transition matrix is not symmetric 
   Pr(BB|AA) = 2r/(1+4r) and Pr(AA|BB) = 4r/(1+4r)
-
-o Allow tailored allele labels (e.g. CC/CB/BB rather than AA/AB/BB)
-
-o Allow use of individual IDs; a column "id" or "ID" in the phenotype
-  data.  We could refer to these in functions like top.errorlod.
 
 o Ability to get at the individual contributions to the LOD score? 
 
@@ -176,6 +182,8 @@ o Add a FAQ document to the R/qtl web page
 
 
 LONG TERM:
+
+o HMM stuff for BCn data.
 
 o Allow phenotypes on multiple individuals (esp for recombinant inbred
   lines). 

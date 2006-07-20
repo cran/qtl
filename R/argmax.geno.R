@@ -21,7 +21,8 @@
 
 argmax.geno <-
 function(cross, step=0, off.end=0, error.prob=0.0001,
-         map.function=c("haldane","kosambi","c-f","morgan"))
+         map.function=c("haldane","kosambi","c-f","morgan"),
+         stepwidth=c("fixed", "variable"))
 {
   # map function
   map.function <- match.arg(map.function)
@@ -29,6 +30,8 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
   else if(map.function=="c-f") mf <- mf.cf
   else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
+
+  stepwidth <- match.arg(stepwidth)
 
   # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
@@ -80,7 +83,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     # recombination fractions
     if(one.map) {
       # recombination fractions
-      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend,stepwidth)
       rf <- mf(diff(map))
       if(type=="risib" || type=="riself")
         rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),class(cross$geno[[i]]))
@@ -94,7 +97,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
       n.pos <- ncol(newgen)
     }
     else {
-      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend,stepwidth)
       rf <- mf(diff(map[1,]))
       rf[rf < 1e-14] <- 1e-14
       rf2 <- mf(diff(map[2,]))
@@ -146,9 +149,12 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
 
     # attribute set to the error.prob value used, for later
     #     reference
+    attr(cross$geno[[i]]$argmax, "map") <- map
     attr(cross$geno[[i]]$argmax,"error.prob") <- error.prob
     attr(cross$geno[[i]]$argmax,"step") <- step
     attr(cross$geno[[i]]$argmax,"off.end") <- temp.offend
+    attr(cross$geno[[i]]$argmax,"map.function") <- map.function
+    attr(cross$geno[[i]]$argmax,"stepwidth") <- stepwidth
   }
 
   # store argmax values as integers

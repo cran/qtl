@@ -35,4 +35,4 @@ image(1:n.ind,1:n.ind,output,col=gray((0:99)/99),breaks=seq(0,1,len=101))
 
 \seealso{ \code{\link[qtl]{nmissing}} }
 
-\keyword{manip}
+\keyword{utilities}

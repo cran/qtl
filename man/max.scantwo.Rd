@@ -9,7 +9,7 @@
 }
 
 \usage{
-\method{max}{scantwo}(\dots, na.rm=TRUE)
+\method{max}{scantwo}(\dots, na.rm=TRUE, lodcolumn=1)
 }
 
 \arguments{
@@ -18,6 +18,8 @@
    objects may be input, only the first is considered.}
  \item{na.rm}{A logical indicating whether missing values should be
    removed.}
+  \item{lodcolumn}{If the scantwo results contain LOD scores for
+    multiple phenotypes, this argument indicates which to use.}
 }
 
 \value{

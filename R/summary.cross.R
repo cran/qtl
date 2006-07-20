@@ -3,7 +3,7 @@
 # summary.cross.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Jul, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -38,10 +38,7 @@ function(object,...)
   }
 
   # combine genotype data into one big matrix
-  Geno <- object$geno[[1]]$data
-  if(n.chr > 1)
-    for(i in 2:n.chr)
-      Geno <- cbind(Geno,object$geno[[i]]$data)
+  Geno <- pull.geno(object)
 
   # proportion of missing genotype data
   missing.gen <- mean(is.na(Geno))
@@ -49,15 +46,25 @@ function(object,...)
   # table of genotype values
   if(type=="f2") {
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:5))
-    names(typings) <- c("AA","AB","BB","not BB","not AA")
+    temp <- getgenonames("f2", "A", cross.attr=attributes(object))
+    names(typings) <- c(temp, paste("not", temp[c(3,1)]))
   }
-  else if(type=="bc") {
+  else if(type=="bc" || type=="riself" || type=="risib") {
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:2))
-    names(typings) <- c("AA","AB")
+    names(typings) <- getgenonames(type, "A", cross.attr=attributes(object))
   }
-  else if(type=="riself" || type=="risib") {
-    typings <- table(factor(Geno[!is.na(Geno)], levels=1:2))
-    names(typings) <- c("AA","BB")
+  else if(type=="4way") {
+    typings <- table(factor(Geno[!is.na(Geno)], levels=1:10))
+
+    temp <- getgenonames("4way", "A", cross.attr=attributes(object))
+    names(typings) <- c(temp,
+                        paste(temp[c(1,3)], collapse="/"),
+                        paste(temp[c(2,4)], collapse="/"),
+                        paste(temp[c(1,2)], collapse="/"),
+                        paste(temp[c(3,4)], collapse="/"),
+                        paste(temp[c(1,4)], collapse="/"),
+                        paste(temp[c(2,3)], collapse="/"))
+    
   }
   else typings <- table(factor(Geno[!is.na(Geno)]))
 
@@ -213,13 +220,27 @@ function(object,...)
   chr.nam <- names(object$geno)
   if(any(chr.class=="A" & (chr.nam=="X" | chr.nam=="x"))) {
     wh <- which(chr.nam=="X" | chr.nam=="x")
-    warning("Chromosome \"", chr.nam[wh], "\" has class \"A\" but probably should have class \"X\".")
+    warning("Chromosome \"", chr.nam[wh], "\" has class \"A\" but probably ",
+            "should have class \"X\".")
   }
+
+  # if more than one X chromosome, print a warning
+  if(sum(chr.class=="X") > 1)
+    warning("More than one X chromosome: [",
+            paste(chr.nam[chr.class == "X"], collapse=", "), "]")
+
+  if(any(chr.class=="A")) 
+    autosomes <- chr.nam[chr.class == "A"]
+  else autosomes <- NULL
+  if(any(chr.class=="X"))
+    Xchr <- chr.nam[chr.class == "X"]
+  else Xchr <- NULL
 
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,
 			missing.gen=missing.gen,typing.freq=typings,
-			missing.phe=missing.phe)
+			missing.phe=missing.phe,
+                        autosomes=autosomes, Xchr=Xchr)
   class(cross.summary) <- "summary.cross"
   cross.summary
   
@@ -237,12 +258,17 @@ function(x,...)
   else if(x$type=="risib") cat("    RI strains via sib matings\n\n")
   else cat(paste("    cross", x$type, "\n\n",sep=" "))
 
-  cat("    No. individuals: ", x$n.ind,"\n\n")
-  cat("    No. phenotypes:  ", x$n.phe,"\n")
-  cat("    Percent phenotyped: ", round((1-x$missing.phe)*100,1), "\n\n")
-  cat("    No. chromosomes: ", x$n.chr,"\n")
-  cat("    Total markers:   ", sum(x$n.mar), "\n")
-  cat("    No. markers:     ", x$n.mar, "\n")
+  cat("    No. individuals:   ", x$n.ind,"\n\n")
+  cat("    No. phenotypes:    ", x$n.phe,"\n")
+  cat("    Percent phenotyped:", round((1-x$missing.phe)*100,1), "\n\n")
+  cat("    No. chromosomes:   ", x$n.chr,"\n")
+  if(!is.null(x$autosomes))
+    cat("        Autosomes:     ", paste(x$autosomes, collapse=" "), "\n")
+  if(!is.null(x$Xchr))
+    cat("        X chr:         ", paste(x$Xchr, collapse=" "), "\n")
+  cat("\n")
+  cat("    Total markers:     ", sum(x$n.mar), "\n")
+  cat("    No. markers:       ", x$n.mar, "\n")
   cat("    Percent genotyped: ", round((1-x$missing.gen)*100,1), "\n")
   cat("    Genotypes (%):     ", 
       paste(names(x$typing.freq),round(x$typing.freq*100,1),sep=":", collapse="  "),

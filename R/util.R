@@ -3,7 +3,8 @@
 # util.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-#     [find.pheno and find.flanking from Brian Yandell]
+#     [find.pheno, find.flanking, and a modification to create.map
+#      from Brian Yandell]
 #
 # last modified Jun, 2006
 # first written Feb, 2001
@@ -32,8 +33,9 @@
 ######################################################################
 
 pull.map <-
-function(cross)
+function(cross, chr)
 {
+  if(!missing(chr)) cross <- subset(cross, chr=chr)
   a <- lapply(cross$geno,function(a) { b <- a$map; class(b) <- class(a); b })
   class(a) <- "map"
   a
@@ -94,14 +96,40 @@ function(cross, map)
 #
 # Note: map is a vector or a matrix with 2 rows
 # 
+# stepwidth = "fixed" is what R/qtl uses; stepwidth="variable" is for
+#     Brian Yandell and the bmqtl package
 ######################################################################
-
 create.map <-
-function(map, step, off.end)
+function(map, step, off.end, stepwidth = c("fixed", "variable"))
 {
+  stepwidth <- match.arg(stepwidth)
   if(step<0 || off.end<0) stop("step and off.end must be > 0.")
 
   if(!is.matrix(map)) { # sex-ave map
+    if(stepwidth == "variable") {
+      if(off.end > 0) {
+        tmp <- names(map)
+        ## Append and prepend by off.end value (exact here, no roundoff).
+        map <- c(map[1] - off.end, map, map[length(map)] + off.end)
+        names(map) <- c("loc000", tmp, "loc999")
+      }
+      if(step == 0)
+        return(unclass(map))
+
+      ## Determine differences and expansion vector.
+      dif <- diff(map)
+      expand <- pmax(1, floor(dif / step))
+
+      ## Create pseudomarker map.
+      a <- min(map) + cumsum(c(0, rep(dif / expand, expand)))
+
+      ## Names are marker names or locNNN.
+      namesa <- paste("loc", seq(length(a)), sep = "")
+      namesa[cumsum(c(1, expand))] <- names(map)
+      names(a) <- namesa
+
+      return(unclass(a))
+    }
     if(length(map) == 1) { # just one marker!
       if(off.end==0) {
         if(step == 0) step <- 1
@@ -142,16 +170,40 @@ function(map, step, off.end)
       a <- seq(floor(min(map)-off.end),ceiling(max(map)+off.end+step),
                by = step)
       a <- a[is.na(match(a,map))]
-      
+
       # no more than one point above max(map)+off.end
       z <- (seq(along=a))[a >= max(map)+off.end]
       if(length(z) > 1) a <- a[-z[-1]]
-      
+
       names(a) <- paste("loc",a,sep="")
       return(sort(c(a,map))+minloc)
     }
   } # end sex-ave map
   else { # sex-specific map
+    if(stepwidth == "variable") {
+      if(off.end > 0) {
+        tmp <- dimnames(map)[[2]]
+        map <- cbind(map[, 1] - off.end, map, map[, length(map)] + off.end)
+        dimnames(map) <- list(NULL, c("loc000", tmp, "loc999"))
+      }
+      if(step == 0)
+        return(unclass(map))
+
+      ## Determine differences and expansion vector.
+      dif <- diff(map[1, ])
+      expand <- pmax(1, floor(dif / step))
+
+      ## Create pseudomarker map.
+      a <- min(map[1, ]) + cumsum(c(0, rep(dif / expand, expand)))
+      b <- min(map[2, ]) + cumsum(c(0, rep(diff(map[2, ]) / expand, expand)))
+      map <- rbind(a,b)
+
+      namesa <- paste("loc", seq(length(a)), sep = "")
+      namesa[cumsum(c(1, expand))] <- dimnames(map)[[2]]
+      dimnames(map) <- list(NULL, namesa)
+
+      return(unclass(map))
+    }
     minloc <- c(min(map[1,]),min(map[2,]))
     map <- map-minloc
     markernames <- colnames(map)
@@ -181,7 +233,7 @@ function(map, step, off.end)
       a <- seq(floor(min(map[1,])),max(map[1,]),
                by = step)
       a <- a[is.na(match(a,map[1,]))]
-      
+
       b <- sapply(a,function(x,y,z) {
           ZZ <- min((seq(along=y))[y > x])
           (x-y[ZZ-1])/(y[ZZ]-y[ZZ-1])*(z[ZZ]-z[ZZ-1])+z[ZZ-1] }, map[1,],map[2,])
@@ -217,6 +269,7 @@ function(map, step, off.end)
     }
   }
 }
+
 
   
 ######################################################################
@@ -456,20 +509,23 @@ function(cross)
   type <- class(cross)[1]
   if(type == "f2") {
     n.gen <- 5
-    gen.names <- c("AA","AB","BB","AA/AB","AB/BB")
+    temp <- getgenonames("f2", "A", cross.attr=attributes(cross))
+    gen.names <- c(temp, paste("not", temp[c(3,1)]))
   }
-  else if(type == "bc") {
+  else if(type == "bc" || type == "risib" || type=="riself") {
     n.gen <- 2
-    gen.names <- c("AA","AB")
-  }
-  else if(type == "risib" || type=="riself") {
-    n.gen <- 2
-    gen.names <- c("AA","BB")
+    gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
   }
   else if(type == "4way") {
     n.gen <- 10
-    gen.names <- c("AC","BC","AD","BD","AC/AD","BC/BD",
-                   "AC/BC","AD/BD","AC/BD","AD/BC")
+    temp <- getgenonames("4way", "A", cross.attr=attributes(object))
+    gen.names <- c(temp,
+                   paste(temp[c(1,3)], collapse="/"),
+                   paste(temp[c(2,4)], collapse="/"),
+                   paste(temp[c(1,2)], collapse="/"),
+                   paste(temp[c(3,4)], collapse="/"),
+                   paste(temp[c(1,4)], collapse="/"),
+                   paste(temp[c(2,3)], collapse="/"))
   }
   else stop("Unknown cross type: ",type)
     
@@ -719,14 +775,45 @@ function(x, chr, ind, ...)
     for(i in 1:nchr(x)) {
       x$geno[[i]]$data <- x$geno[[i]]$data[ind,,drop=FALSE]
 
-      if(!is.na(match("prob",names(x$geno[[i]])))) 
+      if(!is.na(match("prob",names(x$geno[[i]])))) {
+        temp <- attributes(x$geno[[i]]$prob) # all attributes but dim and dimnames
         x$geno[[i]]$prob <- x$geno[[i]]$prob[ind,,,drop=FALSE]
-      if(!is.na(match("errorlod",names(x$geno[[i]])))) 
+        # put attributes back in 
+        for(k in seq(along=temp)) {
+          if(names(temp)[k] != "dim" && names(temp)[k] != "dimnames")
+            attr(x$geno[[i]]$prob, names(temp)[k]) <- temp[[k]]
+        }
+      }
+        
+      if(!is.na(match("errorlod",names(x$geno[[i]])))) {
+        temp <- attributes(x$geno[[i]]$prob) # all attributes but dim and dimnames
         x$geno[[i]]$errorlod <- x$geno[[i]]$errorlod[ind,,drop=FALSE]
-      if(!is.na(match("argmax",names(x$geno[[i]])))) 
+        # put attributes back in 
+        for(k in seq(along=temp)) {
+          if(names(temp)[k] != "dim" && names(temp)[k] != "dimnames")
+            attr(x$geno[[i]]$errorlod, names(temp)[k]) <- temp[[k]]
+        }
+      }
+
+      if(!is.na(match("argmax",names(x$geno[[i]])))) {
+        temp <- attributes(x$geno[[i]]$argmax) # all attributes but dim and dimnames
         x$geno[[i]]$argmax <- x$geno[[i]]$argmax[ind,,drop=FALSE]
-      if(!is.na(match("draws",names(x$geno[[i]])))) 
+        # put attributes back in 
+        for(k in seq(along=temp)) {
+          if(names(temp)[k] != "dim" && names(temp)[k] != "dimnames")
+            attr(x$geno[[i]]$argmax, names(temp)[k]) <- temp[[k]]
+        }
+      }
+
+      if(!is.na(match("draws",names(x$geno[[i]])))) {
+        temp <- attributes(x$geno[[i]]$draws) # all attributes but dim and dimnames
         x$geno[[i]]$draws <- x$geno[[i]]$draws[ind,,,drop=FALSE]
+        # put attributes back in 
+        for(k in seq(along=temp)) {
+          if(names(temp)[k] != "dim" && names(temp)[k] != "dimnames")
+            attr(x$geno[[i]]$draws, names(temp)[k]) <- temp[[k]]
+        }
+      }
     }
   }
   x
@@ -1236,8 +1323,11 @@ function(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 # pull.geno
 ######################################################################
 pull.geno <-
-function(cross)
+function(cross, chr)
 {
+  if(!missing(chr))
+    cross <- subset(cross, chr=chr)
+  
   X <- cross$geno[[1]]$data
   if(nchr(cross) > 1)
     for(i in 2:nchr(cross))
@@ -1280,27 +1370,24 @@ bayesint <-
 function(results, chr, prob=0.95)
 {
   results <- results[results[,1]==chr,]
-
+  
   if(all(is.na(results[,3]))) return(NULL)
-
+  
   loc <- results[,2]
   width <- diff(( c(loc[1],loc) + c(loc, loc[length(loc)]) )/ 2)
-
+  
   area <- 10^results[,3]*width
   area <- area/sum(area)
-
+  
   o <- rev(order(results[,3]))
-
-  cs <- o
-  for(i in 1:length(o))
-    cs[i] <- sum(area[min(o[1:i]):max(o[1:i])])
-
+  
+  cs <- cumsum(area[o])
+  
   wh <- min((1:length(loc))[cs >= prob])
   int <- range(o[1:wh])
-
+  
   results[c(int[1],o[1],int[2]),]
 }
-
 
   
 ######################################################################
@@ -1915,6 +2002,16 @@ function(object, amount=1e-6) # x is either a cross object or a map
     return(clean(replace.map(object, themap)))
 
   themap
+}
+
+
+print.map <-
+function(x, ...)
+{  
+  if(length(x) == 1)
+    print(unclass(x[[1]]))
+  else
+    print(unclass(lapply(x, unclass)))
 }
 
 

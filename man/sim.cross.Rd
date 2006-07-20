@@ -10,7 +10,7 @@
 \usage{
 sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
           error.prob=0, missing.prob=0, partial.missing.prob=0,
-          keep.qtlgeno=TRUE, keep.errorind=TRUE,
+          keep.qtlgeno=TRUE, keep.errorind=TRUE, m=0, p=0,
 	  map.function=c("haldane","kosambi","c-f","morgan"))
 }
 
@@ -32,14 +32,27 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
    included in the output.}
  \item{keep.errorind}{If TRUE, and if \code{error.prob > 0}, the
    identity of genotyping errors will be included in the output.}
+ \item{m}{Interference parameter; a non-negative integer.  0 corresponds
+   to no interference.}
+ \item{p}{Probability that a chiasma comes from the no-interference
+   mechanism} 
  \item{map.function}{Indicates whether to use the Haldane, Kosambi, 
    Carter-Falconer, or Morgan map function when converting genetic
    distances into recombination fractions.}
 }
 
 \details{
-  Meiosis is assumed to exhibit no crossover interference.  If one of
-  the chromosomes has class \code{X}, it is assumed to be the X
+  Meiosis is assumed to follow the Stahl model for crossover
+  interference (see the references, below), of which the no interference
+  model and the chi-square model are special cases.  Chiasmata on the
+  four-strand bundle are a superposition of chiasmata from two different
+  mechanisms.  With probability \code{p}, they arise by a mechanisms
+  exhibiting no interference; the remainder come from a chi-square model
+  with inteference parameter \code{m}.  Note that \code{m=0} corresponds
+  to no interference, and with \code{p=0}, one gets a pure chi-square
+  model.
+  
+  If a chromosomes has class \code{X}, it is assumed to be the X
   chromosome, and is assumed to be segregating in the cross.  Thus, in
   an intercross, it is segregating like a backcross chromosome.  In a
   4-way cross, a second phenotype, \code{sex}, will be generated.
@@ -91,4 +104,18 @@ fake <- sim.cross(map, type="f2", n.ind=250,
                   model = rbind(c(1,45,1,1),c(5,20,0.5,-0.5)))
 }
                     
+\references{
+  Copenhaver, G. P., Housworth, E. A. and Stahl, F. W. (2002) Crossover
+  interference in arabidopsis.  \emph{Genetics} \bold{160}, 1631--1639.
+
+  Foss, E., Lande, R., Stahl, F. W. and Steinberg, C. M. (1993) Chiasma
+  interference as a function of genetic distance. \emph{Genetics}
+  \bold{133}, 681--691.
+
+  Zhao, H., Speed, T. P. and McPeek, M. S. (1995) Statistical analysis
+  of crossover interference using the chi-square model.  \emph{Genetics}
+  \bold{139}, 1045--1056.
+
+}
+  
 \keyword{datagen}

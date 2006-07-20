@@ -2,8 +2,8 @@
 #
 # calc.genoprob.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,7 +21,8 @@
 
 calc.genoprob <-
 function(cross, step=0, off.end=0, error.prob=0.0001,
-         map.function=c("haldane","kosambi","c-f","morgan"))
+         map.function=c("haldane","kosambi","c-f","morgan"),
+         stepwidth=c("fixed", "variable"))
 {
   # map function
   map.function <- match.arg(map.function)
@@ -29,6 +30,8 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
   else if(map.function=="c-f") mf <- mf.cf
   else if(map.function=="morgan") mf <- mf.m
   else mf <- mf.h
+
+  stepwidth <- match.arg(stepwidth)
  
   # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
@@ -54,31 +57,33 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
       if(class(cross$geno[[i]]) == "A") { # autosomal
         cfunc <- "calc_genoprob_f2"
         n.gen <- 3
-        gen.names <- c("A","H","B")
+        gen.names <- getgenonames("f2", "A", cross.attr=attributes(cross))
       }
       else {                             # X chromsome 
         cfunc <- "calc_genoprob_bc"
         n.gen <- 2
-        gen.names <- c("A","H")
+        gen.names <- c("g1","g2")
       }
     }
     else if(type == "bc") {
       cfunc <- "calc_genoprob_bc"
       n.gen <- 2
-      gen.names <- c("A","H")
+      if(class(cross$geno[[i]]) == "A")
+        gen.names <- getgenonames("bc", "A", cross.attr=attributes(cross))
+      else gen.names <- c("g1","g2")
       one.map <- TRUE
     }
     else if(type == "riself" || type=="risib") {
       cfunc <- "calc_genoprob_bc"
       n.gen <- 2
-      gen.names <- c("A","B")
+      gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
       one.map <- TRUE
     }
     else if(type == "4way") {
       cfunc <- "calc_genoprob_4way"
       n.gen <- 4
       one.map <- FALSE
-      gen.names <- c("AC","BC","AD","BD")
+      gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
     }
     else if(type=="cc") {
       cfunc <- "calc_genoprob_cc"
@@ -99,7 +104,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     # recombination fractions
     if(one.map) {
       # recombination fractions
-      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend,stepwidth)
       rf <- mf(diff(map))
       if(type=="risib" || type=="riself")
         rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),class(cross$geno[[i]]))
@@ -114,7 +119,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
       marnames <- names(map)
     }
     else {
-      map <- create.map(cross$geno[[i]]$map,step,temp.offend)
+      map <- create.map(cross$geno[[i]]$map,step,temp.offend,stepwidth)
       rf <- mf(diff(map[1,]))
       rf[rf < 1e-14] <- 1e-14
       rf2 <- mf(diff(map[2,]))
@@ -157,10 +162,13 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     dimnames(cross$geno[[i]]$prob) <- list(NULL, marnames, gen.names)
     # attribute set to the error.prob value used, for later
     #     reference, especially by calc.errorlod()
+
+    attr(cross$geno[[i]]$prob, "map") <- map
     attr(cross$geno[[i]]$prob,"error.prob") <- error.prob
     attr(cross$geno[[i]]$prob,"step") <- step
     attr(cross$geno[[i]]$prob,"off.end") <- temp.offend
     attr(cross$geno[[i]]$prob,"map.function") <- map.function
+    attr(cross$geno[[i]]$prob,"stepwidth") <- stepwidth
   } # end loop over chromosomes
 
   cross

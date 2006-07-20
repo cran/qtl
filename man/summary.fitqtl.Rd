@@ -36,4 +36,4 @@
 \seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}},
 \code{\link[qtl]{scanqtl}} }  
 
-\keyword{models}
+\keyword{print}

@@ -35,4 +35,4 @@ lodint(out, 13, 1.5)
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{bayesint}} }
 
-\keyword{manip}
+\keyword{utilities}

@@ -2,13 +2,13 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jul, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: calc.errorlod, plot.errorlod, top.errorlod
+# Contains: calc.errorlod, plot.errorlod, top.errorlod, getid
 #
 ######################################################################
 
@@ -133,7 +133,13 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 
   cross <- x
   if(!missing(chr)) cross <- subset(cross,chr=chr)
-  if(!missing(ind)) cross <- subset(cross,ind=ind)
+
+  use.id <- FALSE
+  if(!missing(ind)) {
+    if(is.null(getid(cross))) cross$pheno$id <- 1:nind(cross)
+    cross <- subset(cross,ind=ind)
+    use.id <- TRUE
+  }
 
   # remove chromosomes with < 2 markers
   n.mar <- nmar(cross)
@@ -160,7 +166,10 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
   breaks[breaks==Inf] <- max(errlod)
   image(1:nrow(errlod),1:ncol(errlod),errlod,
         ylab="Individuals",xlab="Markers",col=col,
-        breaks=breaks)
+        breaks=breaks, yaxt="n")
+  if(use.id)
+    axis(side=2, at=1:nind(cross), labels=getid(cross))
+  else axis(side=2)
 
   # plot lines at the chromosome boundaries
   n.mar <- nmar(cross)
@@ -201,6 +210,9 @@ function(cross, chr, cutoff=3, msg=TRUE)
 {
   if(!missing(chr)) cross <- subset(cross,chr=chr)
 
+  id <- getid(cross)
+  if(is.null(id)) id <- 1:nind(cross)
+
   mar <- ind <- lod <- chr <- NULL
 
   # remove chromosomes with < 2 markers
@@ -218,7 +230,7 @@ function(cross, chr, cutoff=3, msg=TRUE)
     if(any(el > cutoff)) {
       o <- (el > cutoff)
       mar <- c(mar,colnames(el)[col(el)[o]])
-      ind <- c(ind,row(el)[o])
+      ind <- c(ind,id[row(el)][o])
       lod <- c(lod,el[o])
       chr <- c(chr,rep(names(cross$geno)[i],sum(o)))
       flag <- 1
@@ -228,9 +240,33 @@ function(cross, chr, cutoff=3, msg=TRUE)
     if(msg) cat("\tNo errorlods above cutoff.\n")
     return(invisible(NULL))
   }
-  o <- data.frame(chr=chr,ind=ind,marker=mar,errorlod=lod)[order(-lod,ind),]
+  o <- data.frame(chr=chr,id=ind,marker=mar,errorlod=lod)[order(-lod,ind),]
   rownames(o) <- 1:nrow(o)
   o
 }
+
+######################################################################
+# getid: internal function to pull out the "ID" column from the
+#        phenotype data, if there is one
+######################################################################
+getid <-
+function(cross)
+{
+  phe <- cross$pheno
+  nam <- names(phe)
+  if("id" %in% nam)
+    id <- phe$id
+  else if("ID" %in% nam)
+    id <- phe$ID
+  else if("Id" %in% nam)
+    id <- phe$Id
+  else if("iD" %in% nam)
+    id <- phe$iD
+  else id <- NULL
+
+  id
+}
+
+
 
 # end of errorlod.R

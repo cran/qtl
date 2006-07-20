@@ -42,7 +42,9 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
  \item{run.scanone}{If TRUE, run the function \code{\link[qtl]{scanone}}
    and place the results on the diagonal.}
  \item{incl.markers}{If FALSE, do calculations only at points on an
-   evenly spaced grid.}
+   evenly spaced grid.  If \code{\link[qtl]{calc.genoprob}} or
+   \code{\link[qtl]{sim.geno}} were run with
+   \code{stepwidth="variable"}, we force \code{incl.markers=TRUE}.}
  \item{maxit}{Maximum number of iterations in the EM algorithm; used
    only with method \code{"em"}.}
  \item{tol}{Tolerance value for determining convergence in the EM

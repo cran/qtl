@@ -197,7 +197,9 @@ function(cross, filestem="data", digits=5)
   file <- paste(filestem, ".csv", sep="")
   
   geno <- matrix(ncol=tot.mar,nrow=n.ind)
+
   alleles <- c("A","H","B","D","C")
+
   firstmar <- 1
   for(i in 1:n.chr) {
     # replace allele numbers with 

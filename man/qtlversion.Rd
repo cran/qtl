@@ -25,4 +25,4 @@
 
 \seealso{ \code{\link[base]{version}} }
 
-\keyword{manip}
+\keyword{print}

@@ -2,9 +2,9 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Sep, 2005
+# last modified Jun, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -79,10 +79,20 @@ makeqtl <-
         stop(err)
       }
       i.pos <- pos[i] # marker position
+
       # make the genetic map for this chromosome
-      map <- create.map(cross$geno[[i.chr]]$map,
-                        attr(cross$geno[[i.chr]]$draws,"step"),
-                        attr(cross$geno[[i.chr]]$draws,"off.end"))
+      if("map" %in% names(attributes(cross$geno[[i.chr]]$draws)))
+        map <- attr(cross$geno[[i.chr]]$draws,"map")
+      else {
+        stp <- attr(cross$geno[[i.chr]]$draws, "step")
+        oe <- attr(cross$geno[[i.chr]]$draws, "off.end")
+      
+        if("stepwidth" %in% names(attributes(cross$geno[[i.chr]]$draws)))
+          stpw <- attr(cross$geno[[i.chr]]$draws, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[i.chr]]$map,stp,oe,stpw)
+      }
+
       # pull out the female map if there are sex-specific maps
       if(is.matrix(map)) map <- map[1,]
 
@@ -93,11 +103,12 @@ makeqtl <-
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
 
       # no. genotypes
-      n.gen[i] <- length(getgenonames(type,chrtype[i.chr],"full",sexpgm))
+      n.gen[i] <- length(getgenonames(type,chrtype[i.chr],"full",sexpgm, attributes(cross)))
       
       # Fix up X chromsome here
       if(chrtype[i.chr]=="X")
-        geno[,i,] <- reviseXdata(type,"full",sexpgm,draws=geno[,i,,drop=FALSE])
+        geno[,i,] <- reviseXdata(type,"full",sexpgm,draws=geno[,i,,drop=FALSE],
+                                 cross.attr=attributes(cross))
     }
     # give geno dimension names
     # the 2nd dimension called "Q1", "Q2", etc.
@@ -175,12 +186,21 @@ replaceqtl <-
   # update the imputed genotype and n.gen vector (if any)
   if("geno" %in% names(qtl)) {
     if(missing(map))  { # make genetic map on this chromosome
+
+      if("map" %in% names(attributes(cross$geno[[by.chr]]$draws)))
+        map <- attr(cross$geno[[by.chr]]$draws,"map")
+      else {
+        stp <- attr(cross$geno[[by.chr]]$draws, "step")
+        oe <- attr(cross$geno[[by.chr]]$draws, "off.end")
+      
+        if("stepwidth" %in% names(attributes(cross$geno[[by.chr]]$draws)))
+          stpw <- attr(cross$geno[[by.chr]]$draws, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[by.chr]]$map,stp,oe,stpw)
+      }
+
       # pull out female map in case that there are sex-specific maps
       if(is.matrix(map)) map <- map[1,]
-
-      map <- create.map(cross$geno[[by.chr]]$map,
-                        attr(cross$geno[[by.chr]]$draws,"step"),
-                        attr(cross$geno[[by.chr]]$draws,"off.end"))
     }
 
     # locate this marker (given chromosome and position)
@@ -266,12 +286,21 @@ addqtl <-
   
     # add the imputed genotype
     if(missing(map)) { # make genetic map on this chromosome, if missing
+
+      if("map" %in% names(attributes(cross$geno[[add.chr]]$draws)))
+        map <- attr(cross$geno[[add.chr]]$draws,"map")
+      else {
+        stp <- attr(cross$geno[[add.chr]]$draws, "step")
+        oe <- attr(cross$geno[[add.chr]]$draws, "off.end")
+      
+        if("stepwidth" %in% names(attributes(cross$geno[[add.chr]]$draws)))
+          stpw <- attr(cross$geno[[add.chr]]$draws, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[add.chr]]$map,stp,oe,stpw)
+      }
+
       # pull out female map in case that there are sex-specific maps
       if(is.matrix(map)) map <- map[1,]
-
-      map <- create.map(cross$geno[[add.chr]]$map,
-                        attr(cross$geno[[add.chr]]$draws,"step"),
-                        attr(cross$geno[[add.chr]]$draws,"off.end"))
     }
 
     # locate this marker (given chromosome and position)
@@ -376,6 +405,8 @@ locatemarker <-
 #    warning(msg)
   }
 
+  if(length(marker.idx) > 1)
+    marker.idx <- marker.idx[sample(length(marker.idx))]
   marker.idx
 }
 

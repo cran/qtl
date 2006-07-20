@@ -9,7 +9,7 @@
 
 \usage{
 plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
-         pch , ylab, main, \dots)
+         pch , ylab, main, cols, \dots)
 }			    
 
 \arguments{
@@ -27,6 +27,8 @@ plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
   \item{ylab}{Label for y-axis.}
   \item{main}{Main title for the plot.  If missing, the names of the
     markers are used.}
+  \item{cols}{A vector of colors to use for the confidence intervals
+    (optional).} 
   \item{\dots}{Ignored at this point.}
 }
 

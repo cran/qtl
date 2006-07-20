@@ -33,4 +33,4 @@ find.pheno(fake.bc, "sex")
 
 %\seealso{ }
 
-\keyword{manip}
+\keyword{utilities}

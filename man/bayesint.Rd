@@ -42,4 +42,4 @@ bayesint(out, 13, 0.99)
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{lodint}} }
 
-\keyword{manip}
+\keyword{utilities}

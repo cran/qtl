@@ -2,8 +2,8 @@
 #
 # calc.pairprob.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,7 +26,8 @@
 
 calc.pairprob <-
 function(cross, step=0, off.end=0, error.prob=0.0001, 
-         map.function=c("haldane","kosambi","c-f","morgan"))
+         map.function=c("haldane","kosambi","c-f","morgan"),
+         map)
 {
   if(step==0 && off.end > 0) step <- off.end*2
 
@@ -53,31 +54,33 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     if(class(cross$geno[[1]]) == "A") { # autosomal
       cfunc <- "calc_pairprob_f2"
       n.gen <- 3
-      gen.names <- c("A","H","B")
+      gen.names <- getgenonames("f2", "A", cross.attr=attributes(cross))
     }
     else {                             # X chromsome 
       cfunc <- "calc_pairprob_bc"
       n.gen <- 2
-      gen.names <- c("A","H")
+      gen.names <- c("g1","g2")
     }
   }
   else if(type == "bc") {
     cfunc <- "calc_pairprob_bc"
     n.gen <- 2
-    gen.names <- c("A","H")
+    if(class(cross$geno[[1]]) == "A")
+      gen.names <- getgenonames("bc", "A", cross.attr=attributes(cross))
+    else gen.names <- c("g1","g2")
     one.map <- TRUE
   }
   else if(type == "riself" || type=="risib") {
     cfunc <- "calc_pairprob_bc"
     n.gen <- 2
-    gen.names <- c("A","B")
+    gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
     one.map <- TRUE
   }
   else if(type == "4way") {
     cfunc <- "calc_pairprob_4way"
     n.gen <- 4
     one.map <- FALSE
-    gen.names <- c("AC","BC","AD","BD")
+    gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
   }
   else {
     err <- paste("calc.pairprob not available for cross type",
@@ -85,13 +88,14 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     stop(err)
   }
   
+
   # genotype data
   gen <- cross$geno[[1]]$data
   gen[is.na(gen)] <- 0
   
   # get recombination fractions
   if(one.map) {
-    map <- create.map(cross$geno[[1]]$map,step,off.end)
+#    map <- create.map(cross$geno[[1]]$map,step,off.end)
     rf <- mf(diff(map))
     if(type=="risib" || type=="riself")
       rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),class(cross$geno[[1]]))
@@ -106,7 +110,7 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
     marnames <- names(map)
   }
   else {
-    map <- create.map(cross$geno[[1]]$map,step,off.end)
+#    map <- create.map(cross$geno[[1]]$map,step,off.end)
     rf <- mf(diff(map[1,]))
     rf[rf < 1e-14] <- 1e-14
     rf2 <- mf(diff(map[2,]))

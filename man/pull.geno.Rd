@@ -7,11 +7,14 @@
   Pull out the genotype data from a cross object, as a single big matrix.
 }
 
-\usage{pull.geno(cross)}
+\usage{pull.geno(cross, chr)}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See
    \code{\link[qtl]{read.cross}} for details.}
+ \item{chr}{A vector specifying which chromosomes to keep or discard.
+   This may be a logical vector, a numeric vector, or a vector of
+   character strings.} 
 }
 
 \value{
@@ -34,4 +37,4 @@ abline(h=nrow(dat)+0.5)
 
 \seealso{ \code{\link[qtl]{pull.map}} }
 
-\keyword{manip}
+\keyword{utilities}

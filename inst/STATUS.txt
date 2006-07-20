@@ -1,10 +1,88 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.biostat.jhsph.edu/~kbroman/qtl
 ----------------------------------------------------------------------
+
+Version 1.03, 7/20/2006:
+
+Major changes:
+
+  Fixed subset.cross() so that the attribitutes in the results of
+  calc.genoprob, calc.errorlod, sim.geno, and argmax.geno, don't get
+  lost on subsetting.  This was important to ensure that the package
+  will conform to a change that will occur in the next release of R.
+
+  Added a function checkAlleles() for identifying loci that might have
+  their alleles switched (in an intercross, if AA and BB are switched,
+  or in a backcross if AA and AB are switched).  The X chromosome is
+  ignored.  An internal function, checkrf() was removed; this was
+  previously called by est.rf() but wasn't well written.
+
+  Added an argument, alleles, for read.cross(), which takes two
+  single-character allele labels that are included as an attribute in
+  the cross and will be used as labels throughout the program (for
+  example, in geno.table, effectplot and plot.pxg).  This required
+  numerous small changes throughout the package.
+
+  The maps used for the results from argmax.geno(), calc.genoprob()
+  and sim.geno() are now saved as an attribute on the data they 
+  create (within the cross object) so that create.map() doesn't have
+  to be called repeatedly. 
+
+  Moved the code for simulating genotype data in sim.cross() into C,
+  to increase speed, and modified it so that one may simulate under
+  Frank Stahl's interference model (which includes the chi-square
+  model as a special case).
+
+  If one includes a phenotype named "id" or "ID", this will be used in
+  top.errorlod(), plot.errorlod(), and plot.geno() as identifiers for
+  the individual.
+
+Minor changes:
+
+  Added a warning in summary.cross() if there are multiple X
+  chromosomes; the summary now includes the names of the autosomes
+  and X chromosome (for diagnostic purposes).
+
+  Revised plot.rf() so that, if the results of est.rf aren't
+  available, that function is run.
+
+  Made a slight modification to the bayesint() function for getting
+  Bayes credible intervals from scanone() results.
+
+  Added a "chr" argument to pull.geno() and pull.map(), so that you
+  can pull out the genotype data or map for a selected set of
+  chromosomes. 
+
+  Fixed a slight bug in locatemarker(), used by makeqtl().
+
+  Added a function print.map() so that when you print a map, all of
+  the class stuff doesn't get in the way.
+
+  Included an additional argument [stepwidth = c("fixed", "variable")]
+  in the internal create.map function, for Brian Yandell and the 
+  R/bmqtl package.  This argument was also added to calc.genoprob(),
+  sim.geno() and argmax.geno().  We also added a "stepwidth"
+  attribute to the bits that these functions produce.
+
+  Added an argument, "lodcolumn", to the function max.scantwo, for
+  picking out a single phenotype in the case that the results concern
+  multiple phenotypes.  As with summary.scantwo() and plot.scantwo(),
+  this function will only give the results for a single phenotype.
+
+  Made a slight change regarding the sizes of the labels in
+  plot.pxg() and added an argument concerning colors. 
+
+  Fixed a bug in scanqtl() regarding the X chromosome.
+
+  Revised plot.map() slightly so that one can use "main" as an
+  argument, to create a custom title (such as "").
+
+  Fixed a bug in sim.map() regarding sex.sp=TRUE
+
 
 Version 1.02, 6/2/2006:
 
@@ -241,7 +319,7 @@ Major changes:
   for method="em" only. 
 
   Added a few new utility functions: bayesint() for calculating
-  Bayesian probability intervals [cf lodint()], compareGeno for
+  Bayesian probability intervals [cf lodint()], comparegeno for
   comparing individuals' genotypes, and strip.partials()
   for removing partially informative genotypes.
 

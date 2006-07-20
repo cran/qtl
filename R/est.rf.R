@@ -8,7 +8,7 @@
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: est.rf, plot.rf, checkrf
+# Contains: est.rf, plot.rf, checkAlleles
 #
 ######################################################################
 
@@ -44,7 +44,8 @@ function(cross, maxit=4000, tol=1e-4)
       else xchrcol <- 1:ncol(cross$geno[[i]]$data)
       xchr <- temp
       xchr[is.na(xchr)] <- 0
-      temp <- reviseXdata(type,"simple",getsex(cross),geno=temp)
+      temp <- reviseXdata(type,"simple",getsex(cross),geno=temp,
+                          cross.attr=attributes(cross))
     }
     Geno <- cbind(Geno,temp)
   }
@@ -56,11 +57,8 @@ function(cross, maxit=4000, tol=1e-4)
     cfunc <- "est_rf_bc"
   else if(type == "4way") 
     cfunc <- "est_rf_4way"
-  else {
-    err <- paste("est.rf not available for cross type",
-                 type, ".")
-    stop(err)
-  }
+  else 
+    stop("est.rf not available for cross type ", type, ".")
 
   Geno[is.na(Geno)] <- 0
   
@@ -95,7 +93,16 @@ function(cross, maxit=4000, tol=1e-4)
     cross$rf[xchrcol,xchrcol] <- zz
   }
 
-  checkrf(cross, 5)
+  # check for alleles switches
+  if(type == "risib" || type=="riself" || type=="f2" || type=="bc") {
+    out <- checkAlleles(cross, 5, FALSE)
+    if(!is.null(out)) {
+      out <- as.character(out[,1])
+      warning("Alleles potentially switched at markers \n  ",
+              paste(out, collapse=" "))
+    }
+  }
+
   cross
 }
 
@@ -108,7 +115,10 @@ function(x, chr, which=c("both","lod","rf"), ...)
   
   if(!missing(chr)) x <- subset(x,chr=chr)
   
-  if(is.na(match("rf",names(x)))) stop("You must run est.rf first.")
+  if(!("rf" %in% names(x))) {
+    warning("Running est.rf.")
+    x <- est.rf(x)
+  }
   g <- x$rf
   
   old.xpd <- par("xpd")
@@ -173,40 +183,101 @@ function(x, chr, which=c("both","lod","rf"), ...)
 ######################################################################
 # check for apparent errors in the recombination fractions
 ######################################################################
-checkrf <-
-function(cross, threshold=5)
+#checkrf <-
+#function(cross, threshold=5)
+#{
+#  rf <- cross$rf
+#  n.mar <- nmar(cross)
+#  map <- pull.map(cross)
+#  n <- ncol(rf)
+#  mnam <- colnames(rf)
+#  whpos <- unlist(lapply(map,function(a) 1:length(a)))
+#  whchr <- rep(names(map),sapply(map,length))
+#
+#  # first check whether a locus has "significant" pairwise recombination
+#  #     with rf > 0.5
+#  for(i in 1:n) {
+#    if(i == 1) {
+#      lod <- rf[1,-1]
+#      r <- rf[-1,1]
+#    }
+#    else if(i == n) {
+#      lod <- rf[-n,n]
+#      r <- rf[n,-n]
+#    }
+#    else {
+#      lod <- c(rf[1:(i-1),i],rf[i,(i+1):n])
+#      r <- c(rf[i,1:(i-1)],rf[(i+1):n,i])
+#    }
+#
+#    # if rf > 1/2 and LOD > threshold for more than two other markers
+#    if(sum(!is.na(lod) & !is.na(r) & lod > threshold & r > 0.5) >= 2)
+#      warning("Genotypes potentially switched for marker ", mnam[i],
+#          paste(" (",whpos[i],")",sep=""), " on chr ", whchr[i], "\n")
+#    
+#  }
+#
+#}
+
+
+######################################################################
+# checkAlleles()
+#
+# Function to find markers that may have alleles miscoded;
+# we go through each marker, one at a time, swap alleles and
+# then see what it does to pairwise linkage against all other
+# markers
+######################################################################
+
+checkAlleles <-
+function(cross, threshold=3, verbose=TRUE)
 {
-  rf <- cross$rf
-  n.mar <- nmar(cross)
-  map <- pull.map(cross)
-  n <- ncol(rf)
-  mnam <- colnames(rf)
-  whpos <- unlist(lapply(map,function(a) 1:length(a)))
-  whchr <- rep(names(map),sapply(map,length))
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("checkAlleles() only works for cross objects.")
 
-  # first check whether a locus has "significant" pairwise recombination
-  #     with rf > 0.5
-  for(i in 1:n) {
-    if(i == 1) {
-      lod <- rf[1,-1]
-      r <- rf[-1,1]
-    }
-    else if(i == n) {
-      lod <- rf[-n,n]
-      r <- rf[n,-n]
-    }
-    else {
-      lod <- c(rf[1:(i-1),i],rf[i,(i+1):n])
-      r <- c(rf[i,1:(i-1)],rf[(i+1):n,i])
-    }
-
-    # if rf > 1/2 and LOD > threshold for more than two other markers
-    if(sum(!is.na(lod) & !is.na(r) & lod > threshold & r > 0.5) >= 2)
-      warning("Genotypes potentially switched for marker ", mnam[i],
-          paste(" (",whpos[i],")",sep=""), " on chr ", whchr[i], "\n")
+  type <- class(cross)[1]
+  if(type != "f2" && type != "bc" &&
+     type != "risib" && type != "riself")
+    stop("checkAlleles not available for cross type ", type, ".")
     
-  }
+  # drop X chromosome
+  chrtype <- sapply(cross$geno,class)
+  if(all(chrtype=="X"))
+    stop("checkAlleles() only works for autosomal data.")
 
+  cross <- subset(cross, chr = (chrtype != "X"))
+
+  n.mar <- nmar(cross)
+  mar.names <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
+
+  if(!("rf" %in% names(cross))) {
+    warning("First running est.rf.")
+    cross <- est.rf(cross) 
+  }
+  diag(cross$rf) <- 0
+  lod <- rf <- cross$rf
+  lod[lower.tri(lod)] <- t(lod)[lower.tri(lod)]
+  rf[upper.tri(rf)] <- t(rf)[upper.tri(rf)]
+
+  orig.lod <- rev.lod <- lod
+  orig.lod[rf > 0.5] <- 0
+  rev.lod[rf < 0.5] <- 0
+
+  dif <- apply(rev.lod, 2, max, na.rm=TRUE) -
+    apply(orig.lod, 2, max, na.rm=TRUE)
+
+  results <- data.frame(marker=mar.names,
+                        chr=rep(names(cross$geno), n.mar),
+                        index=unlist(lapply(n.mar, function(a) 1:a)),
+                        "diff in max LOD" = dif)
+  rownames(results) <- 1:nrow(results)
+
+  if(all(results[,4] < threshold)) {
+    if(verbose) cat("No apparent problems.\n")
+    return(invisible(NULL))
+  }
+  
+  results[results[,4] >= threshold,]
 }
 
 # end of est.rf.R

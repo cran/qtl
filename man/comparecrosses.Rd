@@ -29,4 +29,4 @@ comparecrosses(listeria, listeria)
 
 \seealso{ \code{\link[qtl]{summary.cross}} }
 
-\keyword{manip}
+\keyword{utilities}
