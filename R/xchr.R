@@ -89,32 +89,62 @@ function(cross)
 
 # get names of genotypes
 # used in discan, effectplot, plot.pxg, scanone, scantwo, vbscan, reviseXdata
+# cross.attr gives the cross attributes
 getgenonames <-
 function(type=c("f2","bc","riself","risib","4way"),
          chrtype=c("A","X"), expandX=c("simple","standard","full"),
-         sexpgm)
+         sexpgm, cross.attr)
 {  
-  sex <- sexpgm$sex
-  pgm <- sexpgm$pgm
+  if(chrtype=="X") {
+    sex <- sexpgm$sex
+    pgm <- sexpgm$pgm
+  }
+
+  if(missing(cross.attr) || !("alleles" %in% names(cross.attr))) {
+    if(type == "4way") alleles <- LETTERS[1:4]
+    else alleles <- LETTERS[1:2]
+  }
+  else
+    alleles <- cross.attr$alleles
+
+  tempgn <- c(paste(rep(alleles[1],2),collapse=""),
+              paste(alleles,collapse=""),
+              paste(rep(alleles[2],2),collapse=""),
+              paste(alleles[1],"Y",sep=""),
+              paste(alleles[2],"Y",sep=""))
 
   # get rid of missing sex and pgm values, if there are any
-  if(length(sex)>0) sex <- sex[!is.na(sex)]
-  if(length(pgm)>0) pgm <- pgm[!is.na(pgm)]
+  if(chrtype=="X") {
+    if(length(sex)>0) sex <- sex[!is.na(sex)]
+    if(length(pgm)>0) pgm <- pgm[!is.na(pgm)]
+  }
 
   type <- match.arg(type)
   chrtype <- match.arg(chrtype)
   expandX <- match.arg(expandX)
 
   if(type=="riself" || type=="risib") 
-    gen.names <- c("AA","BB")
+    gen.names <- tempgn[c(1,3)]
 
   else if(type == "4way") {
-    if(chrtype=="A") gen.names <- c("AC","BC","AD","BD")
-    else gen.names <- c("AC","BC","AY","BY")
+    if(chrtype=="A")
+      gen.names <- c(paste(alleles[1],alleles[3],sep=""),
+                     paste(alleles[2],alleles[3],sep=""),
+                     paste(alleles[1],alleles[4],sep=""),
+                     paste(alleles[2],alleles[4],sep=""))
+    else
+      gen.names <- c(paste(alleles[1],alleles[3],sep=""),
+                     paste(alleles[2],alleles[3],sep=""),
+                     paste(alleles[1],"Y",sep=""),
+                     paste(alleles[2],"Y",sep=""))
   }
 
   else if(type == "bc") {
-    if(chrtype=="A") gen.names <- c("AA","AB") # autosome
+                
+
+    if(chrtype=="A") # autosome
+      gen.names <- tempgn[1:2] # AA AB
+
     else { # X chromosome
  
 #                 simple     standard       full      
@@ -123,19 +153,21 @@ function(type=c("f2","bc","riself","risib","4way"),
 #   -all males    AY/BY      same           same
 
       if(length(sex)==0 || all(sex==0)) # all females
-        gen.names <- c("AA","AB")
+        gen.names <- tempgn[1:2] # AA AB
       else if(all(sex==1)) # all males
-        gen.names <- c("AY","BY")
+        gen.names <- tempgn[4:5] # AY BY
       else { # some of each
-        if(expandX == "simple") gen.names <- c("A-", "AB", "BY")
-        else gen.names <- c("AA","AB","AY","BY")
+        if(expandX == "simple")
+          gen.names <- c(paste(alleles[1], "-", sep=""),
+                         tempgn[c(2,5)]) # A-, AB, BY
+        else gen.names <- tempgn[c(1,2,4,5)]  # AA,AB,AY,BY
       }
     }
   }
 
   else { # intercross
     if(chrtype == "A")  # autosomal
-      gen.names <- c("AA","AB","BB")
+      gen.names <- tempgn[1:3]
     else { # X chromsome
 
 # both crosses     simple     standard         full
@@ -153,31 +185,43 @@ function(type=c("f2","bc","riself","risib","4way"),
 
       if(length(sex)==0 || all(sex==0)) { # all females
         if(length(pgm)==0 || all(pgm==0)) # all forw dir
-          gen.names <- c("AA","AB")
+          gen.names <- tempgn[1:2] # AA AB
         else if(all(pgm==1))  # all backw dir
-          gen.names <- c("BB","AB")
+          gen.names <- tempgn[3:2] # BB AB
         else { # some of each direction
-          if(expandX=="full") gen.names <- c("AA","ABf","ABr","BB")
-          else gen.names <- c("AA","AB","BB")
+          if(expandX=="full")
+            gen.names <- c(tempgn[1],
+                           paste(tempgn,c("f","r"), sep=""),
+                           tempgn[3])
+          else gen.names <- tempgn[1:3]
         }
       }
       else if(all(sex==1))  # all males
-        gen.names <- c("AY","BY")
+        gen.names <- tempgn[4:5]
       else { # some of each sex
         if(length(pgm)==0 || all(pgm==0)) { # all forw
-          if(expandX=="simple") gen.names <- c("A-","AB","BY")
-          else gen.names <- c("AA","AB","AY","BY")
+          if(expandX=="simple")
+            gen.names <- c(paste(alleles[1],"-", sep=""),
+                           tempgn[c(2,5)])
+          else gen.names <- tempgn[c(1,2,4,5)]
         }
         else if (all(pgm==1)) { # all backw
-          if(expandX=="simple") gen.names <- c("B-","AB","AY")
-          else gen.names <- c("BB","AB","AY","BY")
+          if(expandX=="simple")
+            gen.names <- c(paste(alleles[2], "-",sep=""),
+                           tempgn[c(2,4)])
+          else gen.names <- tempgn[c(3,2,4,5)]
         }
         else { # some of each dir
-          if(expandX=="simple") gen.names <- c("A-","AB","B-")
+          if(expandX=="simple")
+            gen.names <- c(paste(alleles[1],"-",sep=""),
+                           tempgn[2],
+                           paste(alleles[2],"-",sep=""))
           else if(expandX=="standard")
-            gen.names <- c("AA","AB","BB","AY","BY")
+            gen.names <- tempgn
           else
-            gen.names <- c("AA","ABf","ABr","BB","AY","BY")
+            gen.names <- c(tempgn[1],
+                           paste(tempgn[2],c("f","r"),sep=""),
+                           tempgn[3:5])
         }
       }
     }
@@ -189,7 +233,7 @@ function(type=c("f2","bc","riself","risib","4way"),
 # revise genotype data, probabilities or imputations for the X chromosome
 reviseXdata <-
 function(type=c("f2","bc"), expandX=c("simple","standard","full"),
-         sexpgm, geno, prob, draws, pairprob)
+         sexpgm, geno, prob, draws, pairprob, cross.attr)
 {
   type <- match.arg(type)
   expandX <- match.arg(expandX)
@@ -205,7 +249,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
     stop("Provide just one of geno, prob, draws, pairprob.")
 
   # get genonames
-  genonames <- getgenonames(type, "X", expandX, sexpgm)
+  genonames <- getgenonames(type, "X", expandX, sexpgm, cross.attr)
 
   if(type == "bc") { # backcross
 
@@ -773,10 +817,10 @@ function(sexpgm, covar)
 #           figure out what columns to drop
 ######################################################################
 dropXcol <-
-function(type=c("f2","bc"), sexpgm)
+function(type=c("f2","bc"), sexpgm, cross.attr)
 {
   type <- match.arg(type)
-  gn <- getgenonames(type, "X", "full", sexpgm)
+  gn <- getgenonames(type, "X", "full", sexpgm, cross.attr)
 
   if(length(gn)==2) return(rep(0,4))
 

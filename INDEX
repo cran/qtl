@@ -8,6 +8,7 @@ bristleX                Data on bristle number in Drosophila
 c.cross                 Combine data for QTL experiments
 calc.errorlod           Identify likely genotyping errors
 calc.genoprob           Calculate conditional genotype probabilities
+checkAlleles            Identify markers with switched alleles
 chrlen                  Chromosome lengths in QTL experiment
 clean                   Remove derived data
 comparecrosses          Compare two cross objects.

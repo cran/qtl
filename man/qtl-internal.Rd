@@ -3,7 +3,6 @@
 \alias{adjust.rf.ri}
 \alias{calc.pairprob}
 \alias{checkcovar}
-\alias{checkrf}
 \alias{convert.cross}
 \alias{create.map}
 \alias{discan}
@@ -14,6 +13,7 @@
 \alias{fixX4write}
 \alias{fixXgeno.bc}
 \alias{fixXgeno.f2}
+\alias{getid}
 \alias{getsex}
 \alias{getgenonames}
 \alias{imf.cf}
@@ -28,6 +28,7 @@
 \alias{mf.k}
 \alias{mf.m}
 \alias{parseformula}
+\alias{print.map}
 \alias{print.summary.cross}
 \alias{print.summary.fitqtl}
 \alias{print.summary.map}
@@ -55,6 +56,7 @@
 \alias{scanoneXnull}
 \alias{scantwo.perm}
 \alias{scantwo.perm.engine}
+\alias{sim.bcg}
 \alias{sim.cc}
 \alias{sim.cross.4way}
 \alias{sim.cross.bc}
@@ -77,23 +79,23 @@
 addqtl(cross, qtl, add.chr, add.pos, add.name, map)
 adjust.rf.ri(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001, 
-              map.function=c("haldane","kosambi","c-f","morgan"))
+              map.function=c("haldane","kosambi","c-f","morgan"), map)
 checkcovar(cross, pheno.col, addcovar, intcovar)
-checkrf(cross, threshold)
 convert.cross(cross)
-create.map(map, step, off.end)
+create.map(map, step, off.end, stepwidth=c("fixed", "variable"))
 discan(cross, pheno, method=c("em","mr"),
        addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
        verbose=FALSE)
 dropqtl(qtl, drop)
-dropXcol(type=c("f2","bc"), sexpgm)
+dropXcol(type=c("f2","bc"), sexpgm, cross.attr)
 fixX4write(geno,sex,pgm,crosstype)
 fixXgeno.bc(cross)
 fixXgeno.f2(cross)
+getid(cross)
 getsex(cross)
 getgenonames(type=c("f2","bc","riself","risib","4way"),
              chrtype=c("A","X"), expandX=c("simple","standard","full"),
-             sexpgm)
+             sexpgm, cross.attr)
 imf.cf(r)
 imf.h(r)
 imf.k(r)
@@ -106,6 +108,7 @@ mf.h(d)
 mf.k(d)
 mf.m(d)
 parseformula(formula, qtl.dimname, covar.dimname)
+\method{print}{map}(x, \dots)
 \method{print}{summary.cross}(x, \dots)
 \method{print}{summary.fitqtl}(x, \dots)
 \method{print}{summary.map}(x, \dots)
@@ -130,7 +133,7 @@ read.maps.mm(mapsfile)
 replaceqtl(cross, qtl, replace, by.chr, by.pos, by.name, map)
 revisecovar(sexpgm, covar)
 reviseXdata(type=c("f2","bc"), expandX=c("simple","standard","full"),
-            sexpgm, geno, prob, draws, pairprob)
+            sexpgm, geno, prob, draws, pairprob, cross.attr)
 ripple.perm1(n)
 ripple.perm2(n)
 ripple.perm.sub(x, mat)
@@ -152,13 +155,15 @@ scantwo.perm(cross, pheno.col=1, model=c("normal","binary"),
 scantwo.perm.engine(n.perm, cross, pheno.col, model,
                     method, addcovar, intcovar, weights,
                     incl.markers, maxit, tol, verbose)
+sim.bcg(n.ind, map, m, p,
+         map.function=c("haldane","kosambi","c-f","morgan"))
 sim.cc(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
 sim.cross.4way(map, model, n.ind, error.prob, missing.prob,
-               partial.missing.prob, keep.errorind, map.function)
+               partial.missing.prob, keep.errorind, m, p, map.function)
 sim.cross.bc(map, model, n.ind, error.prob, missing.prob,
-             keep.errorind, map.function)
+             keep.errorind, m, p, map.function)
 sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
-             partial.missing.prob, keep.errorind, map.function)
+             partial.missing.prob, keep.errorind, m, p, map.function)
 sim.ril(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
 \method{subset}{scantwo}(x, chr, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,

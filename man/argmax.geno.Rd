@@ -11,7 +11,8 @@
 
 \usage{
 argmax.geno(cross, step=0, off.end=0, error.prob=0.0001, 
-            map.function=c("haldane","kosambi","c-f","morgan"))
+            map.function=c("haldane","kosambi","c-f","morgan"),
+            stepwidth=c("fixed", "variable"))
 }
 
 \arguments{
@@ -26,7 +27,11 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
    of the penetrance Pr(observed genotype | true genotype).}
  \item{map.function}{Indicates whether to use the Haldane, Kosambi,
    Carter-Falconer or Morgan map function when converting genetic
-   distances into recombination fractions.} 
+   distances into recombination fractions.}
+ \item{stepwidth}{Indicates whether the intermediate points should with
+   fixed or variable step sizes.  We strongly recommend using
+   \code{"fixed"}; \code{"variable"} is included only for the bmqtl
+   package.}
 }
 
 \details{

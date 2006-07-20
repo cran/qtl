@@ -49,6 +49,24 @@ function(cross, chr, pheno.col=1,
   if(any(pheno.col < 1 | pheno.col > nphe(cross)))
     stop("pheno.col values should be between 1 and the no. phenotypes")
 
+  # if stepwidth="variable" when calling calc.genoprob or sim.geno,
+  # we force incl.markers=TRUE; I assume it is the same for all chromosomes
+  stepwidth.var <- FALSE
+  if(method=="em" || method=="hk") {
+    if("stepwidth" %in% names(attributes(cross$geno[[1]]$prob)) &&
+       attr(cross$geno[[1]]$prob, "stepwidth") == "variable") {
+      stepwidth.var <- TRUE
+      incl.markers <- TRUE
+    }
+  }
+  else if(method=="imp") {
+    if("stepwidth" %in% names(attributes(cross$geno[[1]]$draws)) &&
+       attr(cross$geno[[1]]$draws, "stepwidth") == "variable") {
+      stepwidth.var <- TRUE
+      incl.markers <- TRUE
+    }
+  }
+
   # multiple phenotype for methods other than imp and hk
   if(length(pheno.col)>1 && n.perm <= 0 &&
      method!="imp" && method != "hk" ) {
@@ -71,7 +89,6 @@ function(cross, chr, pheno.col=1,
     }
     return(output)
   }
-
 
   # check phenotypes and covariates; drop individuals with missing values
   # in case of permutation test, only do checks once
@@ -175,7 +192,7 @@ function(cross, chr, pheno.col=1,
       else 
         sexpgm <- NULL
 
-      gen.names <- getgenonames(type, chrtype[i], "full", sexpgm)
+      gen.names <- getgenonames(type, chrtype[i], "full", sexpgm, attributes(cross))
       n.gen[i] <- length(gen.names)
     }
   } # end of if(method=="mr")
@@ -228,18 +245,36 @@ function(cross, chr, pheno.col=1,
       else 
         sexpgm <- NULL
 
-      gen.names <- getgenonames(type, chrtype[i], "full", sexpgm)
+      gen.names <- getgenonames(type, chrtype[i], "full", sexpgm, attributes(cross))
       n.gen[i] <- length(gen.names)
 
       # construct the genetic map for this chromesome
-      if(method=="imp") 
-        map <- create.map(cross$geno[[i]]$map,
-                          attr(cross$geno[[i]]$draws,"step"),
-                          attr(cross$geno[[i]]$draws,"off.end"))
-      else
-        map <- create.map(cross$geno[[i]]$map,
-                          attr(cross$geno[[i]]$prob,"step"),
-                          attr(cross$geno[[i]]$prob,"off.end"))
+      if(method=="imp") {
+        if("map" %in% names(attributes(cross$geno[[i]]$draws)))
+          map <- attr(cross$geno[[i]]$draws,"map")
+        else {
+          stp <- attr(cross$geno[[i]]$draws, "step")
+          oe <- attr(cross$geno[[i]]$draws, "off.end")
+          
+          if("stepwidth" %in% names(attributes(cross$geno[[i]]$draws)))
+            stpw <- attr(cross$geno[[i]]$draws, "stepwidth")
+          else stpw <- "fixed"
+          map <- create.map(cross$geno[[i]]$map,stp,oe,stpw)
+        }
+      }
+      else {
+        if("map" %in% names(attributes(cross$geno[[i]]$prob)))
+          map <- attr(cross$geno[[i]]$prob,"map")
+        else {
+          stp <- attr(cross$geno[[i]]$prob, "step")
+          oe <- attr(cross$geno[[i]]$prob, "off.end")
+      
+          if("stepwidth" %in% names(attributes(cross$geno[[i]]$prob)))
+            stpw <- attr(cross$geno[[i]]$prob, "stepwidth")
+          else stpw <- "fixed"
+          map <- create.map(cross$geno[[i]]$map,stp,oe,stpw)
+        }
+      }
 
       if(is.matrix(map)) map <- map[1,] # in case of sex-specific map
   
@@ -253,7 +288,7 @@ function(cross, chr, pheno.col=1,
       rownames(map) <- w 
 
       # equally spaced positions
-      if(steps[i]==0)  # just use markers
+      if(steps[i]==0 || stepwidth.var)  # just use markers
         eq.sp.pos <- rep(1,nrow(map))
       else {
         eq.sp.pos <- seq(min(map[,2]),max(map[,2]),by=steps[i])
@@ -280,15 +315,18 @@ function(cross, chr, pheno.col=1,
       if(chrtype[i]=="X" && (type=="bc" || type=="f2")) {
         if(method=="imp") 
           cross$geno[[i]]$draws <-
-            reviseXdata(type, "full", sexpgm, draws=cross$geno[[i]]$draws)
+            reviseXdata(type, "full", sexpgm, draws=cross$geno[[i]]$draws,
+                        cross.attr=attributes(cross))
         else if(method=="hk" || method=="em") {
           oldXchr <- subset(cross, chr=i)
           cross$geno[[i]]$prob <-
-            reviseXdata(type, "full", sexpgm, prob=cross$geno[[i]]$prob)
+            reviseXdata(type, "full", sexpgm, prob=cross$geno[[i]]$prob,
+                        cross.attr=attributes(cross))
         }
         else 
           cross$geno[[i]]$data <-
-            reviseXdata(type, "full", sexpgm, geno=cross$geno[[i]]$data)
+            reviseXdata(type, "full", sexpgm, geno=cross$geno[[i]]$data,
+                        cross.attr=attributes(cross))
       }
 
     } # end loop over chromosomes
@@ -324,7 +362,7 @@ function(cross, chr, pheno.col=1,
         n.ic <- n.intcovar
       }
       if(i==j && chrtype[i]=="X") {
-        col2drop <- dropXcol(type, sexpgm)
+        col2drop <- dropXcol(type, sexpgm, attributes(cross))
         n.col2drop <- sum(col2drop)
       }
       else {
@@ -426,7 +464,15 @@ function(cross, chr, pheno.col=1,
             err <- attr(oldXchr$geno[[1]]$prob, "error.prob")
             mf <- attr(oldXchr$geno[[1]]$prob, "map.function")
 
-            temp <- calc.pairprob(oldXchr,stp,oe,err,mf)
+            if("stepwidth" %in% names(attributes(oldXchr$geno[[1]]$prob)))
+              stpw <- attr(oldXchr$geno[[1]]$prob, "stepwidth")
+            else stpw <- "fixed"
+            if("map" %in% names(attributes(oldXchr$geno[[1]]$prob)))
+              tmap <- attr(oldXchr$geno[[1]]$prob,"map")
+            else
+              tmap <- create.map(oldXchr$geno[[1]]$map, stp, oe, stpw)
+
+            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap)
           }
           else {
             # calculate joint genotype probabilities for all pairs of positions
@@ -435,7 +481,15 @@ function(cross, chr, pheno.col=1,
             err <- attr(cross$geno[[i]]$prob, "error.prob")
             mf <- attr(cross$geno[[i]]$prob, "map.function")
 
-            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf)
+            if("stepwidth" %in% names(attributes(cross$geno[[i]]$prob)))
+              stpw <- attr(cross$geno[[i]]$prob, "stepwidth")
+            else stpw <- "fixed"
+            if("map" %in% names(attributes(cross$geno[[i]]$prob)))
+              tmap <- attr(cross$geno[[i]]$prob,"map")
+            else
+              tmap <- create.map(cross$geno[[i]]$map, stp, oe, stpw)
+
+            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap)
           }
 
           # pull out positions from genotype probs
@@ -454,7 +508,8 @@ function(cross, chr, pheno.col=1,
 
           # revise pair probilities for X chromosome
           if(chrtype[i]=="X" && (type=="bc" || type=="f2")) 
-            temp <- reviseXdata(type, "full", sexpgm, pairprob=temp)
+            temp <- reviseXdata(type, "full", sexpgm, pairprob=temp,
+                                cross.attr=attributes(cross))
 
           if(verbose>1) cat("  --Done.\n")
 
@@ -603,7 +658,15 @@ function(cross, chr, pheno.col=1,
             err <- attr(oldXchr$geno[[1]]$prob, "error.prob")
             mf <- attr(oldXchr$geno[[1]]$prob, "map.function")
 
-            temp <- calc.pairprob(oldXchr,stp,oe,err,mf)
+            if("stepwidth" %in% names(attributes(oldXchr$geno[[1]]$prob)))
+              stpw <- attr(oldXchr$geno[[1]]$prob, "stepwidth")
+            else stpw <- "fixed"
+            if("map" %in% names(attributes(oldXchr$geno[[1]]$prob)))
+              tmap <- attr(oldXchr$geno[[1]]$prob,"map")
+            else
+              tmap <- create.map(oldXchr$geno[[1]]$map, stp, oe, stpw)
+
+            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap)
           }
           else {
             # calculate joint genotype probabilities for all pairs of positions
@@ -612,7 +675,15 @@ function(cross, chr, pheno.col=1,
             err <- attr(cross$geno[[i]]$prob, "error.prob")
             mf <- attr(cross$geno[[i]]$prob, "map.function")
 
-            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf)
+            if("stepwidth" %in% names(attributes(cross$geno[[i]]$prob)))
+              stpw <- attr(cross$geno[[i]]$prob, "stepwidth")
+            else stpw <- "fixed"
+            if("map" %in% names(attributes(cross$geno[[i]]$prob)))
+              tmap <- attr(cross$geno[[i]]$prob,"map")
+            else
+              tmap <- create.map(cross$geno[[i]]$map, stp, oe, stpw)
+
+            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap)
           }
 
           # pull out positions from genotype probs
@@ -631,7 +702,8 @@ function(cross, chr, pheno.col=1,
 
           # revise pair probilities for X chromosome
           if(chrtype[i]=="X" && (type=="bc" || type=="f2")) 
-            temp <- reviseXdata(type, "full", sexpgm, pairprob=temp)
+            temp <- reviseXdata(type, "full", sexpgm, pairprob=temp,
+                                cross.attr=attributes(cross))
 
           if(verbose>1) cat("  --Done.\n")
 
@@ -701,7 +773,8 @@ function(cross, chr, pheno.col=1,
         else if(type=="4way") datai[datai>4] <- 0
 
         if(chrtype[i]=="X" && (type=="bc" || type=="f2"))
-            datai <- reviseXdata(type, "full", sexpgm, geno=datai)
+            datai <- reviseXdata(type, "full", sexpgm, geno=datai,
+                                 cross.attr=attributes(cross))
 
         if(i==j) { # same chromosome
 
@@ -734,7 +807,8 @@ function(cross, chr, pheno.col=1,
           else if(type=="4way") dataj[dataj>4] <- 0
 
           if(chrtype[j]=="X" && (type=="bc" || type=="f2"))
-            dataj <- reviseXdata(type, "full", sexpgm, geno=dataj)
+            dataj <- reviseXdata(type, "full", sexpgm, geno=dataj,
+                                 cross.attr=attributes(cross))
 
           z <- .C("R_scantwo_2chr_mr",
                   as.integer(n.ind),
@@ -1329,7 +1403,7 @@ function(x,...)
 {
   if(length(x)==0) {
     cat("    There were no pairs of loci meeting the criteria.\n")
-    invisible(return(NULL))
+    return(invisible(NULL))
   }
 
   # column names
@@ -1383,11 +1457,23 @@ function(x,...)
 ######################################################################
 
 max.scantwo <-
-function(..., na.rm=TRUE)
+function(..., na.rm=TRUE, lodcolumn=1)
 {
   dots <- list(...)[[1]]
   lod <- dots$lod
   map <- dots$map
+
+  if(length(dim(lod)) > 2) { # results from multiple phenotypes
+    if(length(lodcolumn) > 1) {
+      warning("Argument lodcolumn should be of length 1.")
+      lodcolumn <- lodcolumn[1]
+    }
+      
+    if(lodcolumn < 0 || lodcolumn > dim(lod)[3])
+      stop("Argument lodcolumn misspecified.")
+    lod <- lod[,,lodcolumn]
+  }
+
 
   lod[is.na(lod) | lod == Inf | lod == -Inf] <- 0
 

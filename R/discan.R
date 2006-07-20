@@ -79,7 +79,7 @@ function(cross, pheno, method=c("em","mr"),
     }
 
     # get genotype names
-    gen.names <- getgenonames(type,chrtype,"full",sexpgm)
+    gen.names <- getgenonames(type,chrtype,"full",sexpgm,attributes(cross))
     n.gen <- length(gen.names)
 
     # pull out genotype data (mr)
@@ -94,7 +94,8 @@ function(cross, pheno, method=c("em","mr"),
 
       # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2"))
-         newgeno <- reviseXdata(type, "full", sexpgm, geno=newgeno)
+         newgeno <- reviseXdata(type, "full", sexpgm, geno=newgeno,
+                                cross.attr=attributes(cross))
 
       n.pos <- ncol(newgeno)
       map <- cross$geno[[i]]$map
@@ -120,11 +121,21 @@ function(cross, pheno, method=c("em","mr"),
 
       # revise X chromosome genotypes
       if(chrtype=="X" && (type=="bc" || type=="f2"))
-         genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
+         genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob,
+                                 cross.attr=attributes(cross))
 
-      map <- create.map(cross$geno[[i]]$map,
-                        attr(cross$geno[[i]]$prob,"step"),
-                        attr(cross$geno[[i]]$prob,"off.end"))
+      if("map" %in% names(attributes(cross$geno[[i]]$prob)))
+        map <- attr(cross$geno[[i]]$prob,"map")
+      else {
+        stp <- attr(cross$geno[[i]]$prob, "step")
+        oe <- attr(cross$geno[[i]]$prob, "off.end")
+
+        if("stepwidth" %in% names(attributes(cross$geno[[i]]$prob)))
+          stpw <- attr(cross$geno[[i]]$prob, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[i]]$map,stp,oe,stpw)
+      }
+
       if(is.matrix(map)) map <- map[1,]
 
       if(n.ac + n.ic > 0) {

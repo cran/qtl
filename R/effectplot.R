@@ -6,13 +6,13 @@
 #                     and Karl W. Broman, Johns Hopkins University
 # 
 # Last modified Jun, 2006
+# first written Jul, 2002
 #
 # Modified by Hao Wu Feb 2005 for the following:
 # 1. function will take marker, pseudomarker or phenotype as input;
 # 2. separate functions to extract marker genodata given marker names
 # and calculate means and ses;
 # 
-# first written Jul, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
@@ -142,19 +142,20 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       mark1 <- as.numeric(mark1)
     }
     else if(!is.numeric(mark1)) { 
-      # if it's neither factor nor numberic, it must be a string vector
+      # if it's neither factor nor numeric, it must be a string vector
       # such like c("F","M","F")...
       geno1 <- levels(tmpf)
     }
     else { # otherwise, generate a standard one
-      if(type == "bc") 
-        geno1 <- c("AA", "AB")
-      else if(type == "f2")
-        geno1 <- c("AA", "AB", "BB")
-      else if(type == "riself" || type == "risib") 
-        geno1 <- c("AA", "BB")
-      else if(type == "4way") 
-        geno1 <- c("AC", "BC", "AD", "BD")
+      geno1 <- getgenonames(type, "A", cross.attr=attributes(cross))
+#      if(type == "bc") 
+#        geno1 <- c("AA", "AB")
+#      else if(type == "f2")
+#        geno1 <- c("AA", "AB", "BB")
+#      else if(type == "riself" || type == "risib") 
+#        geno1 <- c("AA", "BB")
+#      else if(type == "4way") 
+#        geno1 <- c("AC", "BC", "AD", "BD")
       if(length(levels(tmpf)) > length(geno1)) 
         geno1 <- c(geno1, rep("?", length(levels(tmpf)) - 
                               length(geno1)))
@@ -186,14 +187,15 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
         geno2 <- levels(tmpf)
       }
       else { # otherwise, generate a standard one
-        if(type == "bc") 
-          geno2 <- c("AA", "AB")
-        else if(type == "f2")
-          geno2 <- c("AA", "AB", "BB")
-        else if(type == "riself" || type == "risib") 
-          geno2 <- c("AA", "BB")
-        else if(type == "4way") 
-          geno2 <- c("AC", "BC", "AD", "BD")
+        geno2 <- getgenonames(type, "A", cross.attr=attributes(cross))
+#        if(type == "bc") 
+#          geno2 <- c("AA", "AB")
+#        else if(type == "f2")
+#          geno2 <- c("AA", "AB", "BB")
+#        else if(type == "riself" || type == "risib") 
+#          geno2 <- c("AA", "BB")
+#        else if(type == "4way") 
+#          geno2 <- c("AC", "BC", "AD", "BD")
         if(length(levels(tmpf)) > length(geno2)) 
            geno2 <- c(geno2, rep("?", length(levels(tmpf)) - 
                                  length(geno2)))
@@ -446,8 +448,9 @@ effectplot.getmark <- function (cross, mname) {
     if(chrtype == "X" && (type == "bc" || type == "f2")) {
       sexpgm <- getsex(cross)
       mark <- as.numeric(reviseXdata(type, "standard", sexpgm, 
-                                      geno = as.matrix(mark)))
-      gennames <- getgenonames(type, chrtype, "standard", sexpgm)
+                                     geno = as.matrix(mark),
+                                     cross.attr=attributes(cross)))
+      gennames <- getgenonames(type, chrtype, "standard", sexpgm, attributes(cross))
     }
   }
   
@@ -458,8 +461,9 @@ effectplot.getmark <- function (cross, mname) {
     # if X chr and backcross or intercross, get sex/dir data + revise data
     if(chrtype == "X" && (type == "bc" || type == "f2")) {
       sexpgm <- getsex(cross)
-      mark <- reviseXdata(type, "standard", sexpgm, geno=mark)
-      gennames <- getgenonames(type, chrtype, "standard", sexpgm)
+      mark <- reviseXdata(type, "standard", sexpgm, geno=mark,
+                          cross.attr=attributes(cross))
+      gennames <- getgenonames(type, chrtype, "standard", sexpgm, attributes(cross))
     }
   }
 

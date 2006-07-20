@@ -16,8 +16,8 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
                     "qtlcart", "gary", "karl"),
            dir="", file, genfile, mapfile, phefile, chridfile,
            mnamesfile, pnamesfile, na.strings=c("-","NA"),
-           genotypes=c("A","H","B","D","C"), estimate.map=TRUE,
-           convertXdata=TRUE, \dots)
+           genotypes=c("A","H","B","D","C"), alleles=c("A","B"),
+           estimate.map=TRUE, convertXdata=TRUE, \dots)
 }
 
 \arguments{
@@ -25,7 +25,7 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
   \item{dir}{Directory in which the data files will be found.  In
     Windows, use forward slashes (\code{"/"}) or double backslashes
     (\code{"\\\\"}) to specify directory trees.}
-  \item{file}{The main imput file for formats \code{csv}, \code{csvr}
+  \item{file}{The main input file for formats \code{csv}, \code{csvr}
     and \code{mm}.} 
   \item{genfile}{File with genotype data (formats \code{karl} and
     \code{gary} only).}
@@ -55,10 +55,13 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
     If you are trying to read 4-way cross data, your file must have
     genotypes coded as described below, and you need to set 
     \code{genotypes=NULL} so that no re-coding gets done.}
-  \item{estimate.map}{For formats \code{csv}, \code{csvr}, \code{qtx}, \code{mm}, and
-    \code{gary} only: if TRUE and marker positions are not included in
-    the input files, the genetic map is estimated using the function 
-    \code{\link[qtl]{est.map}}.}
+  \item{alleles}{A vector of two one-letter character strings (or four,
+    for the four-way cross), to be used throughout to label for the two
+    alleles.}
+  \item{estimate.map}{For formats \code{csv}, \code{csvr}, \code{qtx},
+    \code{mm}, and \code{gary} only: if TRUE and marker positions are
+    not included in the input files, the genetic map is estimated using
+    the function  \code{\link[qtl]{est.map}}.} 
   \item{convertXdata}{If TRUE, any X chromosome genotype data is
     converted to the internal standard, using columns \code{sex} and
     \code{pgm} in the phenotype data if they available or by inference

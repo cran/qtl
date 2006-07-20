@@ -37,4 +37,4 @@ plot(nmissing(listeria, which="mar"))
 \seealso{ \code{\link[qtl]{summary.cross}},
           \code{\link[qtl]{nind}}, \code{\link[qtl]{totmar}} }
 
-\keyword{manip}
+\keyword{utilities}

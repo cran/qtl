@@ -2,8 +2,8 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# last modified Oct, 2006
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -26,7 +26,7 @@ function(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
                   "qtlcart", "gary", "karl"),
          dir="", file, genfile, mapfile, phefile, chridfile, mnamesfile, pnamesfile,
          na.strings=c("-","NA"), genotypes=c("A","H","B","D","C"),
-         estimate.map=TRUE, convertXdata=TRUE, ...)
+         alleles=c("A","B"), estimate.map=TRUE, convertXdata=TRUE, ...)
 {
   if(format == "csvrs") {
     format <- "csvsr"
@@ -133,6 +133,33 @@ function(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
   # store genotype data as integers
   for(i in 1:nchr(cross))
     storage.mode(cross$geno[[i]]$data) <- "integer"
+
+  # check alleles
+  if(class(cross)[1] != "4way") {
+    if(length(alleles) > 2) {
+      warning("length of arg alleles should be 2")
+      alleles <- alleles[1:2]
+    }
+    if(length(alleles) < 2) 
+      stop("length of arg alleles should be 2")
+  }
+  else { # 4-way cross
+    if(missing(alleles))
+      alleles <- c("A","B","C","D")
+    
+    if(length(alleles) > 4) {
+      warning("length of arg alleles should be 4 for a 4-way cross")
+      alleles <- alleles[1:4]
+    }
+    if(length(alleles) < 4) 
+      stop("length of arg alleles should be 4 for a 4-way cross")
+  }
+  if(any(nchar(alleles)) != 1) {
+    warning("Each item in arg alleles should be a single character")
+    alleles <- substr(alleles, 1, 1)
+  }
+
+  attr(cross, "alleles") <- alleles
 
   # run checks
   summary(cross)

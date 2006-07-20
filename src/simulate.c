@@ -2,19 +2,18 @@
  * 
  * simulate.c
  *
- * copyright (c) 2005, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman, Johns Hopkins University
  *
- * last modified Mar, 2005
- * first written Mar, 2005
+ * last modified Jul, 2006
+ * first written Jul, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
  *
- * These functions are for simulating experimental cross data;
- * I start with the simulation of RILs
+ * These functions are for simulating backcross genotype data
  *
- * Contains: R_sim_ril, sim_all_ril, sim_ril, meiosis, sim_cc, R_sim_cc
+ * Contains: sim_bc_ni, sim_bc, R_sim_bc, R_sim_bc_ni
  *  
  **********************************************************************/
 
@@ -24,394 +23,175 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/RS.h> /* for Calloc, Realloc */
 #include "util.h"
 #include "simulate.h"
 
-/* wrapper for sim_all_ril, to be called from R */
-void R_sim_ril(int *n_chr, int *n_mar, int *n_ril, double *map,
-	       int *n_str, int *m, int *include_x, int *random_cross,
-	       int *cross, int *ril)
+/**********************************************************************
+ * 
+ * R_sim_bc_ni   Wrapper for sim_bc_ni
+ *
+ * geno is empty, of size n_mar * n_ind
+ *
+ **********************************************************************/
+
+void R_sim_bc_ni(int *n_mar, int *n_ind, double *rf, int *geno)
 {
+  int **Geno;
+
+  reorg_geno(*n_ind, *n_mar, geno, &Geno);
+
   GetRNGstate();
-
-  sim_all_ril(*n_chr, n_mar, *n_ril, map, *n_str, *m, *include_x, 
-	      *random_cross, cross, ril);
-
+  sim_bc_ni(*n_mar, *n_ind, rf, Geno);
   PutRNGstate();
 }
-	  
+
 /**********************************************************************
  * 
- * sim_all_ril
- * 
- * n_chr   Number of chromosomes
- * n_mar   Number of markers on each chromosome (vector of length n_chr)
- * n_ril   Number of RILs to simulate
- * 
- * map     Vector of marker locations, of length sum(n_mar)
- *         First marker on each chromosome should be at 0.
+ * sim_bc_ni    Simulate backcross under no interference
  *
- * n_str   Number of parental strains (either 2, 4, or 8)
- *
- * m       Interference parameter (0 is no interference)
- *
- * include_x   Whether the last chromosome is the X chromosome
- *
- * random_cross  Indicates whether the order of the strains in the cross
- *               should be randomized.
- *
- * cross   On output, the cross used for each line 
- *         (vector of length n_ril x n_str 
- *
- * ril     On output, the simulated data 
- *         (vector of length sum(n_mar) x n_ril)
+ * n_mar    Number of markers
+ * n_ind    Number of individuals
+ * rf       recombination fractions (length n_mar-1)
+ * Geno     Matrix of size n_ind x n_mar to contain genotype data
  *
  **********************************************************************/
-void sim_all_ril(int n_chr, int *n_mar, int n_ril, double *map, 
-		 int n_str, int m, int include_x, int random_cross,
-		 int *cross, int *ril)
+
+void sim_bc_ni(int n_mar, int n_ind, double *rf, int **Geno)
 {
-  int i, tot_mar;
-  int *par1a, *par1b, *par2a, *par2b;
-  int *kid1a, *kid1b, *kid2a, *kid2b;
-  int **Par1a, **Par1b, **Par2a, **Par2b;
-  int **Kid1a, **Kid1b, **Kid2a, **Kid2b;
-  int **Ril, **Cross;
-  double **Map;
+  int i, j;
 
-  /* count total number of markers */
-  for(i=0, tot_mar=0; i<n_chr; i++) 
-    tot_mar += n_mar[i];
+  for(i=0; i<n_ind; i++) {
+    if(unif_rand() < 0.5) Geno[0][i] = 1;
+    else Geno[0][i] = 2;
 
-  reorg_geno(tot_mar, n_ril, ril, &Ril);
-  reorg_geno(n_str, n_ril, cross, &Cross);
-
-  /* allocate space */
-  Map = (double **)R_alloc(n_chr, sizeof(double *));
-  Map[0] = map;
-  for(i=1; i<n_chr; i++)
-    Map[i] = Map[i-1] + n_mar[i-1];
-
-  allocate_int(tot_mar, &par1a);
-  allocate_int(tot_mar, &par1b);
-  allocate_int(tot_mar, &par2a);
-  allocate_int(tot_mar, &par2b);
-  allocate_int(tot_mar, &kid1a);
-  allocate_int(tot_mar, &kid1b);
-  allocate_int(tot_mar, &kid2a);
-  allocate_int(tot_mar, &kid2b);
-  Par1a = (int **)R_alloc(n_chr, sizeof(int *));
-  Par1b = (int **)R_alloc(n_chr, sizeof(int *));
-  Par2a = (int **)R_alloc(n_chr, sizeof(int *));
-  Par2b = (int **)R_alloc(n_chr, sizeof(int *));
-  Kid1a = (int **)R_alloc(n_chr, sizeof(int *));
-  Kid1b = (int **)R_alloc(n_chr, sizeof(int *));
-  Kid2a = (int **)R_alloc(n_chr, sizeof(int *));
-  Kid2b = (int **)R_alloc(n_chr, sizeof(int *));
-  Par1a[0] = par1a;
-  Par1b[0] = par1b;
-  Par2a[0] = par2a;
-  Par2b[0] = par2b;
-  Kid1a[0] = kid1a;
-  Kid1b[0] = kid1b;
-  Kid2a[0] = kid2a;
-  Kid2b[0] = kid2b;
-  for(i=1; i<n_chr; i++) {
-    Par1a[i] = Par1a[i-1] + n_mar[i-1];
-    Par1b[i] = Par1b[i-1] + n_mar[i-1];
-    Par2a[i] = Par2a[i-1] + n_mar[i-1];
-    Par2b[i] = Par2b[i-1] + n_mar[i-1];
-    Kid1a[i] = Kid1a[i-1] + n_mar[i-1];
-    Kid1b[i] = Kid1b[i-1] + n_mar[i-1];
-    Kid2a[i] = Kid2a[i-1] + n_mar[i-1];
-    Kid2b[i] = Kid2b[i-1] + n_mar[i-1];
+    for(j=1; j<n_mar; j++) {
+      if(unif_rand() < rf[j-1])
+	Geno[j][i] = 3 - Geno[j-1][i];
+      else
+	Geno[j][i] = Geno[j-1][i];
+    }
   }
+}
 
-  for(i=0; i<n_ril; i++) 
-    sim_ril(n_chr, n_mar, tot_mar, Map, n_str, m, Ril[i], include_x,
-	    random_cross, Cross[i], 
-	    Par1a, Par1b, Par2a, Par2b, Kid1a, Kid1b, Kid2a, Kid2b);
+
+/**********************************************************************
+ * 
+ * R_sim_bc   Wrapper for sim_bc
+ *
+ * geno is empty, of size n_mar * n_ind
+ *
+ **********************************************************************/
+
+void R_sim_bc(int *n_mar, int *n_ind, double *pos,
+	      int *m, double *p, int *geno)
+{
+  int **Geno;
+
+  reorg_geno(*n_ind, *n_mar, geno, &Geno);
+
+  GetRNGstate();
+  sim_bc(*n_mar, *n_ind, pos, *m, *p, Geno);
+  PutRNGstate();
 }
 
 /**********************************************************************
  * 
- * sim_ril: simulate a single RIL to fixation
- *  
- * n_chr   Number of chromosomes
- * n_mar   Number of markers on each chr (vector of length n_chr)
- * tot_mar  sum(n_mar)
+ * sim_bc    Simulate backcross under Stahl's interference model
  *
- * map     Positions of markers (referred to as
- *         map[mar][chr]; map[0][i] should = 0)
- *
- * n_str   Number of strains (2, 4, or 8)
- * m       Interference parameter (0 is no interference)
- *
- * ril     On exit, vector of genotypes (length tot_mar)
- * 
- * include_x    Indicates whether the last chromosome is the X chromosome
- *
- * random_cross Indicates whether to randomize order of parents in the cross
- *
- * cross    On exit, vector indicating the cross done (length n_str)
- *
- * Par1a...Kid1b  Workspace to contain intermediate genotypes
- *                Dimension n_chr x n_mar, referred to as Par1a[chr][mar]
+ * n_mar    Number of markers
+ * n_ind    Number of individuals
+ * pos      Positions of markers (in cM)
+ * m        Interference parameter (integer > 0)
+ * p        Probability chiasma comes from no interference mechanism
+ * Geno     Matrix of size n_ind x n_mar to contain genotype data
  *
  **********************************************************************/
-void sim_ril(int n_chr, int *n_mar, int tot_mar, double **map, int n_str, 
-	     int m, int *ril, int include_x, int random_cross, int *cross,
-	     int **Par1a, int **Par1b, int **Par2a, int **Par2b, 
-	     int **Kid1a, int **Kid1b, int **Kid2a, int **Kid2b)
+
+void sim_bc(int n_mar, int n_ind, double *pos, int m, double p, int **Geno)
 {
-  int i, j, k, flag;
+  int i, j, k, first;
+  int n_chi, max_chi, n_ni_xo;
+  double *chi, L;
+  
+  L = pos[n_mar-1]; /* length of chromosome in cM */
 
-  for(i=0; i<n_str; i++) cross[i] = i+1;
-  if(random_cross) int_permute(cross, n_str);
+  /* space to place the crossover locations */
+  max_chi = qpois(1e-10, L/50.0*(double)(m+2), 0, 0);
+  chi = (double *)Calloc(max_chi, double);
 
-  if(n_str==2) {
-    for(i=0; i<n_chr; i++) {
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = Par2a[i][j] = 1;
-	Par1b[i][j] = Par2b[i][j] = 2;
-      }
+  for(i=0; i<n_ind; i++) {
+    /* genotype at first marker */
+    if(unif_rand() < 0.5) Geno[0][i] = 1;
+    else Geno[0][i] = 2;
+
+    /* simulate number of chiasmata and intermediate points */
+    n_chi = rpois(L/50.0*(double)(m+1)*(1.0-p));
+
+    /* simulate number of crossovers from ni model */
+    if(p > 0)
+      n_ni_xo = rpois(L/100.0*p);
+    else n_ni_xo = 0;
+
+    if(n_chi + n_ni_xo > max_chi) { /* need more space */
+      max_chi = n_chi + n_ni_xo;
+      chi = (double *)Realloc(chi, max_chi, double);
     }
-  }
-  else if(n_str==4) {
-    for(i=0; i<n_chr; i++) {
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = 1;
-	Par1b[i][j] = 2;
-	Par2a[i][j] = 3;
-	Par2b[i][j] = 4;
-      }
-    }
-  }
-  else { 
-    for(i=0; i<n_chr; i++) {
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = 1;
-	Par1b[i][j] = 2;
-	Par2a[i][j] = 3;
-	Par2b[i][j] = 4;
-      }
-      meiosis(n_mar[i], Par1a[i], Par1b[i], map[i], m, Kid1a[i]);
-      if(include_x && i==n_chr-1) /* X chromosome */
-	for(j=0; j<n_mar[i]; j++) Kid1b[i][j] = Par2a[i][j];
-      else
-	meiosis(n_mar[i], Par2a[i], Par2b[i], map[i], m, Kid1b[i]);
-
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = 5;
-	Par1b[i][j] = 6;
-	Par2a[i][j] = 7;
-	Par2b[i][j] = 8;
-      }
-      meiosis(n_mar[i], Par1a[i], Par1b[i], map[i], m, Kid2a[i]);
-      if(include_x && i==n_chr-1) /* X chromosome */
-	for(j=0; j<n_mar[i]; j++) Kid2b[i][j] = Kid2a[i][j];
-      else
-	meiosis(n_mar[i], Par2a[i], Par2b[i], map[i], m, Kid2b[i]);
-
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = Kid1a[i][j];
-	Par1b[i][j] = Kid1b[i][j];
-	Par2a[i][j] = Kid2a[i][j];
-	Par2b[i][j] = Kid2b[i][j];
-      }
-    }
-  } 
-
-  while(1) { /* now do inbreeding to fixation */
-    for(i=0; i<n_chr; i++) {
-      meiosis(n_mar[i], Par1a[i], Par1b[i], map[i], m, Kid1a[i]);
-      if(include_x && i==n_chr-1) /* X chromosome */
-	for(j=0; j<n_mar[i]; j++) Kid1b[i][j] = Par2a[i][j];
-      else
-	meiosis(n_mar[i], Par2a[i], Par2b[i], map[i], m, Kid1b[i]);
-
-      meiosis(n_mar[i], Par1a[i], Par1b[i], map[i], m, Kid2a[i]);
-      if(include_x && i==n_chr-1) /* X chromosome */
-	for(j=0; j<n_mar[i]; j++) Kid2b[i][j] = Kid2a[i][j];
-      else
-	meiosis(n_mar[i], Par2a[i], Par2b[i], map[i], m, Kid2b[i]);
+      
+    /* simulate locations */
+    for(j=0; j<n_chi; j++) 
+      chi[j] = L*unif_rand();
+    R_rsort(chi, n_chi);
+    
+    /* pull out the locations of chiasmata */
+    first = random_int(0, m);
+    if(first >= n_chi) n_chi = 0;
+    else {
+      for(j=first, k=0; j<n_chi; j += (m+1), k++)
+        chi[k] = chi[j];
+      n_chi = k;
     }
 
-    flag = 0;
-    for(i=0; i<n_chr; i++) {
-      for(j=0; j<n_mar[i]; j++) {
-	if(!(Kid1a[i][j] == Kid1b[i][j] && Kid1a[i][j] == Kid2a[i][j] &&
-	     Kid1a[i][j] == Kid2b[i][j])) {
-	  flag=1;
-	  break;
+    if(n_chi > 0) {
+      /* thin with probability 1/2 */
+      for(j=0, k=0; j<n_chi; j++) {
+        if(unif_rand() < 0.5) {
+  	  chi[k] = chi[j];
+	  k++;
 	}
       }
+      n_chi = k;
     }
 
-    if(!flag) { /* we're done! */
-      for(i=0, k=0; i<n_chr; i++) 
-	for(j=0; j<n_mar[i]; j++, k++) 
-	  ril[k] = cross[Kid1a[i][j]-1];
-      return;
-    }
+    /* add additional crossovers */
+    for(j=0; j<n_ni_xo; j++) 
+      chi[n_chi + j] = L*unif_rand();
+    n_chi += n_ni_xo;
 
-    for(i=0; i<n_chr; i++) {
-      for(j=0; j<n_mar[i]; j++) {
-	Par1a[i][j] = Kid1a[i][j];
-	Par1b[i][j] = Kid1b[i][j];
-	Par2a[i][j] = Kid2a[i][j];
-	Par2b[i][j] = Kid2b[i][j];
+    /* re-sort */
+    R_rsort(chi, n_chi);
+
+    /* finally, fill in the genotype data */
+    first = 0;
+    for(j=1; j<n_mar; j++) {
+      while(first < n_chi && chi[first] < pos[j-1]) first++;
+      k = 0; /* count crossover in interval */
+      while(first < n_chi && chi[first] < pos[j]) {
+	k++; first++; 
       }
+      first--;
+      if(first < 0) { first = 0; }
+      
+      if(k % 2) /* recombination */
+	Geno[j][i] = 3 - Geno[j-1][i];
+      else
+	Geno[j][i] = Geno[j-1][i];
     }
   }
-  
-}
-
-/**********************************************************************
- * 
- * meiosis
- *
- * n_mar  Number of markers
- *
- * chr1   Vector of alleles along one chromosome
- * chr2   Vector of alleles along the other chromosome
- *
- * map    Marker locations in cM (need first position to be 0)
- *
- * m      interference parameter (0 corresponds to no interference)
- *
- * product  vector of length n_mar: the chromosome produced
- *
- **********************************************************************/
-void meiosis(int n_mar, int *chr1, int *chr2, double *map, int m, int *product)
-{
-  double L, *xo;
-  int i, j, first, n, cur;
-
-  L = map[n_mar-1];
-
-  if(m > 0) { /* crossover interference */
-
-    /* simulate number of XOs and intermediates */
-    n = (int) rpois(L*(double)(m+1)/50.0);
-
-    /* simulate locations */
-    allocate_double(n, &xo);
-    for(i=0; i<n; i++) 
-      xo[i] = L*unif_rand();
-    /* sort them */
-    R_rsort(xo, n);
-
-    /* which is the first crossover? */
-    first = random_int(1,m+1);
-
-    for(i=first, j=0; i<n; i += (m+1), j++) 
-      xo[j] = xo[i];
-    n = j;
-  
-    /* thin with probability 1/2 */
-    for(i=0, j=0; i<n; i++) {
-      if(unif_rand() < 0.5) {
-	xo[j] = xo[i]; 
-	j++;
-      }
-    }
-    n = j;
-  }
-  else { /* no crossover interference */
-    n = (int) rpois(L/100.0);
-
-    /* simulate locations */
-    allocate_double(n, &xo);
-    for(i=0; i<n; i++) 
-      xo[i] = L*unif_rand();
-    /* sort them */
-    R_rsort(xo, n);
-  }
-
-  /* determine which intervals recombined */
-  for(i=1,cur=0; i<n_mar; i++) {
-    product[i] = 0;
-
-    if(cur < n && xo[cur] <= map[i]) {
-      while(1) {
-	product[i] = 1-product[i];
-	cur++;
-	if(cur >= n || xo[cur] > map[i]) 
-	  break;
-      }
-    }
-  }
-  
-  if(unif_rand() < 0.5) product[0] = 0;
-  else product[0] = 1;
-  for(i=1; i<n_mar; i++) {
-    if(product[i] == 1)
-      product[i] = 1-product[i-1];
-    else
-      product[i] = product[i-1];
-  }
-  for(i=0; i<n_mar; i++) {
-    if(product[i]==0) product[i] = chr1[i];
-    else product[i] = chr2[i];
-  }
-
+  Free(chi);
 }
 
 
-/**********************************************************************
- * 
- * sim_cc    Use the result of sim_all_ril with n_str=8 plus data on
- *           the SNP genotypes of the 8 parental strains to create 
- *           real SNP data for the Collaborative Cross
- *
- * n_ril     Number of RILs to simulate
- * tot_mar   Total number of markers
- *
- * Parents   SNP data for the 8 parental lines [dim tot_mar x 8]
- * 
- * Geno      On entry, the detailed genotype data; on exit, the 
- *           SNP data written bitwise.
- * 
- * error_prob  Probability of genotyping error
- * missing_prob  Probability a genotype will be missing
- *
- **********************************************************************/
-void sim_cc(int n_ril, int tot_mar, int **Parents, int **Geno,
-	    double error_prob, double missing_prob)
-{
-  int i, j, k, temp;
-
-  for(i=0; i<n_ril; i++) {
-    for(j=0; j<tot_mar; j++) {
-      temp = Parents[Geno[j][i]-1][j];
-      if(unif_rand() < error_prob)  /* switch the SNP genotype */
-	temp = 1-temp;
-
-      Geno[j][i] = 0;
-      if(unif_rand() > missing_prob) {/* no error; convert to bit string */
-	for(k=0; k<8; k++) 
-	  if(temp == Parents[k][j]) Geno[j][i] += (1<<k);
-      }
-    }
-  }
-}
-
-/* wrapper for calling sim_cc from R */
-void R_sim_cc(int *n_ril, int *tot_mar, int *parents, int *geno,
-	      double *error_prob, double *missing_prob)
-{
-  int **Parents, **Geno;
-
-  reorg_geno(*tot_mar, 8, parents, &Parents);
-  reorg_geno(*n_ril, *tot_mar, geno, &Geno);
-
-  GetRNGstate();
-
-  sim_cc(*n_ril, *tot_mar, Parents, Geno, *error_prob, *missing_prob);
-
-  PutRNGstate();
-}
 
 /* end of simulate.c */
 

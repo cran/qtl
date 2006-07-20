@@ -64,12 +64,13 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
     if(chrtype=="X") sexpgm <- getsex(cross)
     else sexpgm <- NULL
 
-    gen.names <- getgenonames(type,chrtype,"full", sexpgm)
+    gen.names <- getgenonames(type,chrtype,"full", sexpgm, attributes(cross))
     n.gen <- length(gen.names)
 
     # revise X chromosome genotypes
     if(chrtype=="X" && (type=="f2" || type=="bc"))
-      genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob)
+      genoprob <- reviseXdata(type, "full", sexpgm, prob=genoprob,
+                              cross.attr=attributes(cross))
 
     z <- .C("R_vbscan",
             as.integer(n.pos),
@@ -83,9 +84,18 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
             as.double(tol),
             PACKAGE="qtl")
 
-    map <- create.map(cross$geno[[i]]$map,
-                      attr(cross$geno[[i]]$prob,"step"),
-                      attr(cross$geno[[i]]$prob,"off.end"))
+    if("map" %in% names(attributes(cross$geno[[i]]$prob)))
+      map <- attr(cross$geno[[i]]$prob,"map")
+    else {
+      stp <- attr(cross$geno[[i]]$prob, "step")
+      oe <- attr(cross$geno[[i]]$prob, "off.end")
+      
+      if("stepwidth" %in% names(attributes(cross$geno[[i]]$prob)))
+        stpw <- attr(cross$geno[[i]]$prob, "stepwidth")
+      else stpw <- "fixed"
+      map <- create.map(cross$geno[[i]]$map,stp,oe,stpw)
+    }
+
     if(is.matrix(map)) map <- map[1,]
 
     res <- data.frame(chr=rep(names(cross$geno)[i],length(map)),

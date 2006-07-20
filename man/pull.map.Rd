@@ -7,11 +7,14 @@
   Pull out the map portion of a cross object.
 }
 
-\usage{pull.map(cross)}
+\usage{pull.map(cross, chr)}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See
    \code{\link[qtl]{read.cross}} for details.}
+ \item{chr}{A vector specifying which chromosomes to keep or discard.
+   This may be a logical vector, a numeric vector, or a vector of
+   character strings.} 
 }
 
 \value{
@@ -34,4 +37,4 @@ plot(map)
 \seealso{ \code{\link[qtl]{replace.map}}, \code{\link[qtl]{plot.map}},
   \code{\link[qtl]{subset.cross}} }
 
-\keyword{manip}
+\keyword{utilities}

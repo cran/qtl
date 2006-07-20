@@ -2,14 +2,14 @@
 #
 # simulate.R
 #
-# copyright (c) 2001-2, Karl W Broman, Johns Hopkins University
-# last modified Apr, 2002
-# first written April, 2001
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jul, 2006
+# first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: sim.map, sim.cross, sim.cross.bc, sim.cross.f2,
-#           sim.cross.4way
+#           sim.cross.4way, sim.bcg
 #
 ######################################################################
 
@@ -62,9 +62,9 @@ function(len=rep(100,20), n.mar=10, anchor.tel=TRUE, include.x=TRUE,
   }
 
   if(sex.sp) {
-    if(eq.spacing) tempmap <- map
-    else {
-      for(i in 1:n.chr) {
+    for(i in 1:n.chr) {
+      if(eq.spacing) tempmap <- map[[i]]
+      else {
         if(anchor.tel) {
           if(n.mar[i] < 2) n.mar[i] <- 2
           tempmap <- c(0,len[i])
@@ -76,13 +76,13 @@ function(len=rep(100,20), n.mar=10, anchor.tel=TRUE, include.x=TRUE,
           tempmap <- tempmap - min(tempmap)
         }
       }
-    }
-    map[[i]] <- rbind(map[[i]],tempmap)
-    dimnames(map[[i]]) <- list(NULL,paste("D", names(map)[i], "M", 1:n.mar[i], sep=""))
-    class(map[[i]]) <- "A"
+      map[[i]] <- rbind(map[[i]],tempmap)
+      dimnames(map[[i]]) <- list(NULL,paste("D", names(map)[i], "M", 1:n.mar[i], sep=""))
+      class(map[[i]]) <- "A"
 
-    if(include.x && i==n.chr)  # if X chromosome, force no recombination in male
-      map[[i]][2,] <- rep(0,ncol(map[[i]]))
+      if(include.x && i==n.chr)  # if X chromosome, force no recombination in male
+        map[[i]][2,] <- rep(0,ncol(map[[i]]))
+    }
   }
 
   if(include.x) class(map[[n.chr]]) <- "X"
@@ -104,7 +104,7 @@ function(len=rep(100,20), n.mar=10, anchor.tel=TRUE, include.x=TRUE,
 sim.cross <-
 function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
          error.prob=0, missing.prob=0, partial.missing.prob=0,
-         keep.qtlgeno=TRUE, keep.errorind=TRUE,
+         keep.qtlgeno=TRUE, keep.errorind=TRUE, m=0, p=0,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
   type <- match.arg(type)
@@ -123,13 +123,15 @@ function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
 
   if(type=="bc")
     cross <- sim.cross.bc(map,model,n.ind,error.prob,missing.prob,
-                          keep.errorind,map.function)
+                          keep.errorind,m,p,map.function)
   else if(type=="f2")
     cross <- sim.cross.f2(map,model,n.ind,error.prob,missing.prob,
-                          partial.missing.prob,keep.errorind,map.function)
+                          partial.missing.prob,keep.errorind,
+                          m,p,map.function)
   else
     cross <- sim.cross.4way(map,model,n.ind,error.prob,missing.prob,
-                            partial.missing.prob,keep.errorind,map.function)
+                            partial.missing.prob,keep.errorind,
+                            m,p,map.function)
 
 
   # remove QTL genotypes from data and, if keep.qtlgeno=TRUE,
@@ -164,7 +166,7 @@ function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
 
 sim.cross.bc <-
 function(map,model,n.ind,error.prob,missing.prob,
-         keep.errorind,map.function)
+         keep.errorind,m,p,map.function)
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
@@ -214,33 +216,14 @@ function(map,model,n.ind,error.prob,missing.prob,
   n.mar <- sapply(map,length)
   mar.names <- lapply(map,names)
 
-#  chr.type <- sapply(map,function(a)
-#                     if(is.null(class(a))) return("A")
-#                     else return(class(a)))
   chr.type <- sapply(map, function(a) ifelse(class(a)=="X","X","A"))
   
   for(i in 1:n.chr) {
-    data <- matrix(nrow=n.ind,ncol=n.mar[i])
-    dimnames(data) <- list(NULL,mar.names[[i]])
-
     # simulate genotype data
-    d <- diff(map[[i]]) # inter-marker distances (cM)
-    r <- mf(d) # recombination fractions (Kosambi map function)
-    rbar <- 1-r
+    thedata <- sim.bcg(n.ind, map[[i]], m, p, map.function)
+    dimnames(thedata) <- list(NULL,mar.names[[i]])
 
-    # first locus on chromosome
-    data[,1] <- sample(1:2,n.ind,repl=TRUE)
-
-    # rest of markers
-    if(n.mar[i] > 1) {
-      for(j in 1:(n.mar[i]-1)) {
-        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
-        data[rec==0,j+1] <- data[rec==0,j]
-        data[rec==1,j+1] <- 3-data[rec==1,j]
-      }
-    } # if n.mar[i] > 1
-
-    geno[[i]] <- list(data = data, map = map[[i]])
+    geno[[i]] <- list(data = thedata, map = map[[i]])
     class(geno[[i]]) <- chr.type[i]
     class(geno[[i]]$map) <- NULL
     
@@ -315,7 +298,7 @@ function(map,model,n.ind,error.prob,missing.prob,
 
 sim.cross.f2 <-              
 function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
-         keep.errorind,map.function)
+         keep.errorind,m,p,map.function)
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
@@ -372,38 +355,14 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
 
   for(i in 1:n.chr) {
 
-    data <- matrix(nrow=n.ind,ncol=n.mar[i])
-    dimnames(data) <- list(NULL,mar.names[[i]])
-
     # simulate genotype data
-    d <- diff(map[[i]]) # inter-marker distances (cM)
-    r <- mf(d) # recombination fractions (Kosambi map function)
-    rbar <- 1-r
+    thedata <- sim.bcg(n.ind, map[[i]], m, p, map.function)
+    dimnames(thedata) <- list(NULL,mar.names[[i]])
 
-    # first locus on chromosome
-    if(chr.type[i]=="X") data[,1] <- sample(1:2,n.ind,repl=TRUE)
-    else data[,1] <- sample(1:3,n.ind,repl=TRUE,prob=c(1,2,1))
-    
-    # rest of markers
-    if(n.mar[i] > 1) {
-      for(j in 1:(n.mar[i]-1)) {
-        if(chr.type[i]=="X") { # X chromosome (like a backcross)
-          rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
-          data[rec==0,j+1] <- data[rec==0,j]
-          data[rec==1,j+1] <- 3-data[rec==1,j]
-        }
-        else { # F2 autosome
-          data[data[,j]==1,j+1] <- sample(1:3,sum(data[,j]==1),repl=TRUE,
-                     prob=c(rbar[j]*rbar[j],2*r[j]*rbar[j],r[j]*r[j]))
-          data[data[,j]==2,j+1] <- sample(1:3,sum(data[,j]==2),repl=TRUE,
-                     prob=c(r[j]*rbar[j],rbar[j]*rbar[j]+r[j]*r[j],r[j]*rbar[j]))
-          data[data[,j]==3,j+1] <- sample(1:3,sum(data[,j]==3),repl=TRUE,
-                     prob=c(r[j]*r[j],2*r[j]*rbar[j],rbar[j]*rbar[j]))
-        }
-      } # end loop over intervals
-    } # if n.mar[i] > 1
+    if(chr.type[i] != "X") 
+      thedata <- thedata + sim.bcg(n.ind, map[[i]], m, p, map.function) - 1
 
-    geno[[i]] <- list(data = data, map = map[[i]])
+    geno[[i]] <- list(data = thedata, map = map[[i]])
     class(geno[[i]]) <- chr.type[i]
     class(geno[[i]]$map) <- NULL
     
@@ -523,7 +482,7 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
 
 sim.cross.4way <-              
 function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
-         keep.errorind,map.function)
+         keep.errorind,m,p,map.function)
 {
   if(map.function=="kosambi") mf <- mf.k
   else if(map.function=="c-f") mf <- mf.cf
@@ -592,47 +551,23 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
   
   for(i in 1:n.chr) {
 
-    data <- matrix(nrow=n.ind,ncol=n.mar[i])
-    dimnames(data) <- list(NULL,mar.names[[i]])
+    # simulate sex
+    sex <- NULL
+    if(chr.type[i]=="X") 
+      sex <- rep(0,n.ind)
 
     # simulate genotype data
-    d <- diff(map[[i]][1,])
-    r <- mf(d)
-    rbar <- 1-r
-    d2 <- diff(map[[i]][2,])
-    r2 <- mf(d2)
-    rbar2 <- 1-r2
-    
-    data2 <- data
+    thedata <- sim.bcg(n.ind, map[[i]], m, p, map.function)
+    dimnames(thedata) <- list(NULL,mar.names[[i]])
 
-    # first locus on chromosome
-    data[,1] <- sample(1:2,n.ind,repl=TRUE)  # mother's chromosome
-    data2[,1] <- sample(1:2,n.ind,repl=TRUE) # father's chromosome
+    if(chr.type[i] != "X") 
+      thedata <- thedata + 2*sim.bcg(n.ind, map[[i]], m, p, map.function) - 2
 
-    sex <- NULL
-    if(chr.type[i]=="X") {
-      sex <- rep(0,n.ind)
-      sex[data2[,1]==2] <- 1
-    }
+    dimnames(thedata) <- list(NULL,mar.names[[i]])
 
-    # rest of markers
-    if(n.mar[i] > 1) {
-      for(j in 1:(n.mar[i]-1)) {
-        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r[j],r[j]))
-        data[rec==0,j+1] <- data[rec==0,j]
-        data[rec==1,j+1] <- 3-data[rec==1,j]
-          
-        rec <- sample(0:1,n.ind,repl=TRUE,prob=c(1-r2[j],r2[j]))
-        data2[rec==0,j+1] <- data2[rec==0,j]
-        data2[rec==1,j+1] <- 3-data2[rec==1,j]
-      }
-    } 
-    data <- data + (data2-1)*2 
-
-    geno[[i]] <- list(data = data, map = map[[i]])
+    geno[[i]] <- list(data = thedata, map = map[[i]])
     class(geno[[i]]) <- chr.type[i]
     class(geno[[i]]$map) <- NULL
-    
   } # end loop over chromosomes
 
   # simulate phenotypes
@@ -771,6 +706,53 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
   cross
 }
 
+
+######################################################################
+# sim.bcg
+#
+# simulate backcross genotype data for a single chromosome;
+# output is a matrix of 1's and 0's
+######################################################################
+
+sim.bcg <-
+function(n.ind, map, m, p,
+         map.function=c("haldane","kosambi","c-f","morgan"))
+{
+  map.function <- match.arg(map.function)
+
+  if(map.function=="kosambi") mf <- mf.k
+  else if(map.function=="c-f") mf <- mf.cf
+  else if(map.function=="morgan") mf <- mf.m
+  else mf <- mf.h
+
+  if(m < 0 || p < 0 || p > 1) 
+    stop("Must have m >= 0 and 0 <= p <= 1")
+
+  if(is.matrix(map)) map <- map[1,]
+  map <- map-map[1]
+  n.mar <- length(map)
+
+  if(m==0 || p==1) { # no interference
+    g <- .C("R_sim_bc_ni",
+            as.integer(n.mar),
+            as.integer(n.ind),
+            as.double(mf(diff(map))),
+            g=as.integer(rep(0, n.mar*n.ind)),
+            PACKAGE="qtl")$g
+  }
+  else {
+    g <- .C("R_sim_bc",
+            as.integer(n.mar),
+            as.integer(n.ind),
+            as.double(map),
+            as.integer(m),
+            as.double(p),
+            g=as.integer(rep(0, n.mar*n.ind)),
+            PACKAGE="qtl")$g
+  }
+  matrix(g, ncol=n.mar)
+}
+          
 
 
 # end of simulate.R
