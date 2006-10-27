@@ -3,7 +3,7 @@
 # est.map.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,8 +20,22 @@
 
 est.map <- 
 function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
-         maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=FALSE)
+         m=0, p=0, maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=FALSE)
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
+  if(m < 0 || p < 0 || p > 1)
+    stop("Must have m >=0 and 0 <= p <= 1")
+  
+  if(m > 0 && p < 1 && class(cross)[1] != "bc") {
+    warning("m and p currently used only for backcrosses.")
+    m <- p <- 0
+  }
+  if(m > 0 && p < 1 && !missing(map.function)) 
+    warning("Map function not used with interference model.")
+  if(m > 0 && p < 1) interf.model <- TRUE
+  else interf.model <- FALSE
 
   # map function
   map.function <- match.arg(map.function)
@@ -77,11 +91,8 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
       one.map <- FALSE
       cfunc <- "est_map_4way"
     }
-    else {
-      err <- paste("est.map not available for cross type",
-                   type, ".")
-      stop(err)
-    }
+    else 
+      stop("est.map not available for cross type ", type, ".")
 
     # genotype data
     gen <- cross$geno[[i]]$data
@@ -114,11 +125,13 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
       else temp.sex.sp <- sex.sp
     }
 
+    if(interf.model) 
+      d <- diff(cross$geno[[i]]$map)
 
     if(verbose) cat(paste("Chr ", names(cross$geno)[i], ":\n",sep="")) 
 
     # call the C function
-    if(one.map) {
+    if(one.map && !interf.model) {
       z <- .C(cfunc,
               as.integer(nrow(gen)),         # number of individuals
               as.integer(n.mar[i]),      # number of markers
@@ -137,6 +150,26 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
       newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),imf(z$rf)))
       names(newmap[[i]]) <- names(cross$geno[[i]]$map)
       attr(newmap[[i]],"loglik") <- z$loglik
+    }
+    else if(interf.model) { # Chi-square / Stahl model
+      z <- .C("R_est_map_bci",
+              as.integer(nrow(gen)),         # number of individuals
+              as.integer(n.mar[i]),      # number of markers
+              as.integer(gen),           # genotype data
+              d=as.double(d),          # cM distances
+              as.integer(m),
+              as.double(p),
+              as.double(error.prob),
+              loglik=as.double(0),       # log likelihood
+              as.integer(maxit),
+              as.double(tol),
+              as.integer(verbose),
+              PACKAGE="qtl")
+      newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),z$d))
+      names(newmap[[i]]) <- names(cross$geno[[i]]$map)
+      attr(newmap[[i]], "loglik") <- z$loglik
+      attr(newmap[[i]], "m") <- m
+      attr(newmap[[i]], "p") <- p
     }
     else {
       z <- .C(cfunc,

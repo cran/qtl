@@ -9,7 +9,7 @@
 \title{Print summary of QTL experiment}
 
 \description{
-  Print some summary information about a \code{cross} object.
+  Print summary information about a \code{cross} object.
 }
 
 \usage{
@@ -32,7 +32,7 @@ The six functions described here return the following values.
  
   \item{summary.cross}{An object of class \code{summary.cross}
     containing a variety of summary information about the cross (this is
-    generally printed automatically.)}
+    generally printed automatically).}
 
   \item{nind}{The number of individuals in the cross.}
 

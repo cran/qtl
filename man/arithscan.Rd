@@ -1,12 +1,14 @@
 \name{arithscan}
 \alias{+.scanone}
 \alias{-.scanone}
+\alias{+.scantwo}
+\alias{-.scantwo}
 
-\title{Arithmetic Operators for genome scan results}
+\title{Arithmetic Operators for scanone and scantwo results}
 
 \description{
-  These binary operators perform arithmetic on genome scan result
-  objects.
+  Add or subtract LOD scores in results
+  from \code{\link[qtl]{scanone}} or \code{\link[qtl]{scantwo}}.
 }
 
 \usage{
@@ -16,37 +18,41 @@
 
 \arguments{
   \item{scan1, scan2}{Genome scan results on the same set of chromosomes
-    and markers.}
+    and markers, as output by \code{\link[qtl]{scanone}} or \code{\link[qtl]{scantwo}}.}
 }
 
 \details{
   This is used to calculate the sum or difference of LOD scores of two
-  genome scan
-  results. The basic arithmetic operators were overrided to work on
-  objects of class \code{scanone}, \code{scantwo}, and \code{scanqtl}.
-
-  It currently only works for \code{scanone} results.
+  genome scan results.  It is particularly useful for calculating the LOD
+  scores for QTL-by-covariate interactions (see the example, below).
+  Note that the degrees of freedom are also added or subtracted.
 }
 
 \value{
-  The same data structure as the input objects, with LOD scores
-  recalcuated.
+  The same type of data structure as the input objects, with LOD scores
+  added or subtracted.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu}}
 
 \examples{
 data(fake.bc)
-fake.bc <- calc.genoprob(fake.bc)
-# genome scans without covariates
-out.nocovar <- scanone(fake.bc)
-# genome scans with covariates
+\dontshow{fake.bc <- subset(fake.bc, chr=1:2)}
+fake.bc <- calc.genoprob(fake.bc, step=2.5)
+
+# covariates
 ac <- fake.bc$pheno[,c("sex","age")]
 ic <- fake.bc$pheno[,"sex"]
-out.covar <- scanone(fake.bc, pheno.col=1,
-                     addcovar=ac, intcovar=ic)
-# plot the difference of with and without additive covariate
-plot(out.covar-out.nocovar)
+
+# scan with additive but not the interactive covariate
+out.acovar <- scanone(fake.bc, addcovar=ac)
+
+# scan with interactive covariate
+out.icovar <- scanone(fake.bc, addcovar=ac, intcovar=ic)
+
+# plot the difference of with and without the interactive covariate
+#     This is a LOD score for a test of QTL x covariate interaction
+plot(out.icovar-out.acovar)
 }
 
 \keyword{arith}

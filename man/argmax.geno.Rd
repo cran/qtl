@@ -19,7 +19,7 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
  \item{step}{Maximum distance (in cM) between positions at which the
-   genotypes are reconstructed, though for \code{step = 0}, genotypes
+   genotypes are reconstructed, though for \code{step=0}, genotypes
    are reconstructed only at the marker locations.}
  \item{off.end}{Distance (in cM) past the terminal markers on each
    chromosome to which the genotype reconstructions will be carried.}
@@ -28,10 +28,10 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
  \item{map.function}{Indicates whether to use the Haldane, Kosambi,
    Carter-Falconer or Morgan map function when converting genetic
    distances into recombination fractions.}
- \item{stepwidth}{Indicates whether the intermediate points should with
+ \item{stepwidth}{Indicates whether the intermediate points should have
    fixed or variable step sizes.  We strongly recommend using
-   \code{"fixed"}; \code{"variable"} is included only for the bmqtl
-   package.}
+   \code{"fixed"}; \code{"variable"} is included only for the qtlbim
+   package (\url{http://www.ssg.uab.edu/qtlbim}).}
 }
 
 \details{
@@ -52,7 +52,8 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
 \value{
   The input \code{cross} object is returned with a component,
   \code{argmax}, added to each component of \code{cross$geno}.
-  \code{argmax} is a matrix of size [n.ind x n.pos], where n.pos is the
+  The \code{argmax} component is a matrix of size [n.ind x n.pos], where
+  n.pos is the
   number of positions at which the reconstructed genotypes were obtained,
   containing the most likely sequences of underlying genotypes.
   Attributes \code{"error.prob"}, \code{"step"}, and \code{"off.end"}
@@ -69,7 +70,7 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
   sequences \code{AAAAAA} and \code{HHHHHH} may be more likely than any
   one of the sequences \code{AAAAAH}, \code{AAAAHH}, \code{AAAHHH},
   \code{AAHHHH}, \code{AHHHHH}, \code{AAAAAH}.  The Viterbi algorithm
-  produces a single ``most likely'' sequence of underlying genotypes.
+  produces a single "most likely" sequence of underlying genotypes.
 }
 
 
@@ -77,12 +78,8 @@ argmax.geno(cross, step=0, off.end=0, error.prob=0.0001,
 
 \examples{
 data(fake.f2)
-\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)}
-fake.f2 <- argmax.geno(fake.f2, step=2, off.end=5, err=0.01)
-
-data(fake.bc)
-\dontshow{fake.bc <- subset(fake.bc,chr=18:19)}
-fake.bc <- argmax.geno(fake.bc, step=0, off.end=0)
+\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)
+}fake.f2 <- argmax.geno(fake.f2, step=2, off.end=5, err=0.01)
 }
 
 \references{
@@ -95,6 +92,7 @@ fake.bc <- argmax.geno(fake.bc, step=0, off.end=0)
 }
   
 
-\seealso{ \code{\link[qtl]{sim.geno}}, \code{\link[qtl]{calc.genoprob}} }
+\seealso{ \code{\link[qtl]{sim.geno}}, \code{\link[qtl]{calc.genoprob}},
+\code{\link[qtl]{fill.geno}} }
 
 \keyword{utilities}

@@ -5,7 +5,7 @@
 
 \description{
   Create table showing the observed numbers of individuals with each
-  genotype at each marker, including P-values from a chi-square tests
+  genotype at each marker, including P-values from chi-square tests
   for Mendelian segregation.
 }
 

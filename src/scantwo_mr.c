@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.c
  *
- * copyright (c) 2001-3, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Dec, 2003
+ * last modified Oct, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -94,7 +94,7 @@ void R_scantwo_1chr_mr(int *n_ind, int *n_pos, int *n_gen, int *geno,
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
- *              testing epistasis.
+ *              additve models.
  *              Note: indexed as Result[col][row]
  *
  * n_col2drop   For X chromosome, number of columns to drop
@@ -294,7 +294,7 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	
 	/* convert to LODs */
 	/* interactive LOD */
-	Result[i2][i] = (double)this_n_ind/2.0*(Result[i2][i]-Result[i][i2]);
+	Result[i2][i] = (double)this_n_ind/2.0*(lrss0-Result[i2][i]);
 	/* joint LOD */
 	Result[i][i2] = (double)this_n_ind/2.0*(lrss0-Result[i][i2]);
 	
@@ -318,15 +318,15 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights,
-		       double *result_full, double *result_int)
+		       double *result_full, double *result_add)
 {
   int **Geno1, **Geno2;
-  double **Result_full, **Result_int, **Addcov, **Intcov;
+  double **Result_full, **Result_add, **Addcov, **Intcov;
 
   reorg_geno(*n_ind, *n_pos1, geno1, &Geno1);
   reorg_geno(*n_ind, *n_pos2, geno2, &Geno2);
   reorg_errlod(*n_pos1, *n_pos2, result_full, &Result_full);
-  reorg_errlod(*n_pos1, *n_pos2, result_int, &Result_int);
+  reorg_errlod(*n_pos1, *n_pos2, result_add, &Result_add);
 
   /* reorganize addcov and intcov (if they are not empty) */
   if(*n_addcov > 0) reorg_errlod(*n_ind, *n_addcov, addcov, &Addcov);
@@ -334,7 +334,7 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
 
   scantwo_2chr_mr(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2, 
 		  Geno1, Geno2, Addcov, *n_addcov, Intcov, 
-		  *n_intcov, pheno, weights, Result_full, Result_int);
+		  *n_intcov, pheno, weights, Result_full, Result_add);
 }
 
 /**********************************************************************
@@ -377,8 +377,8 @@ void R_scantwo_2chr_mr(int *n_ind, int *n_pos1, int *n_pos2,
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
  *
- * Result_int   Result matrix of size [n_pos2 x n_pos1] 
- *              containing the LODs testing interactions
+ * Result_add   Result matrix of size [n_pos2 x n_pos1] 
+ *              containing the LODs for add've models
  *              also indexed as Result[pos2][pos1]
  *
  **********************************************************************/
@@ -388,7 +388,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     double *weights,
-		     double **Result_full, double **Result_int)
+		     double **Result_full, double **Result_add)
 {
   int ny, *jpvt, i, i2, j, k, s, this_n_ind, done_allind=0;
   int n_col_0, n_col_a, n_col_f, n_gen_sq, *which_ind;
@@ -496,9 +496,9 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	F77_CALL(dqrls)(x, &this_n_ind, &n_col_a, y, &ny, &tol, 
 			coef, resid, qty, &k, jpvt, qraux, work);
 	/* RSS */
-	Result_int[i2][i] = 0.0;
-	for(j=0; j<this_n_ind; j++) Result_int[i2][i] += (resid[j]*resid[j]);
-	Result_int[i2][i] = log10(Result_int[i2][i]); /* take log base 10*/
+	Result_add[i2][i] = 0.0;
+	for(j=0; j<this_n_ind; j++) Result_add[i2][i] += (resid[j]*resid[j]);
+	Result_add[i2][i] = log10(Result_add[i2][i]); /* take log base 10*/
 	
 	/* INTERACTIVE MODEL */
 	/* zero out matrix */
@@ -548,8 +548,8 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	Result_full[i2][i] = log10(Result_full[i2][i]); /* take log base 10*/
 
 	/* convert to LODs */
-	Result_int[i2][i] = (double)this_n_ind/2.0*
-	  (Result_int[i2][i] - Result_full[i2][i]);
+	Result_add[i2][i] = (double)this_n_ind/2.0*
+	  (lrss0 - Result_add[i2][i]);
 	Result_full[i2][i] = (double)this_n_ind/2.0*(lrss0 - Result_full[i2][i]);
 
       } /* > 0 individuals with available data */

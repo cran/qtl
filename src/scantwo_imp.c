@@ -5,7 +5,7 @@
  * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                     and Hao Wu, The Jackson Lab
  *
- * last modified Feb, 2006 
+ * last modified Oct, 2006 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -265,14 +265,13 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
             /* for epistasis LOD */
             for(j=0; j<n_draws; j++)  
               lod_tmp[j] = LODadd[j][k];
-            result[k*nlod_per_draw+i2*n_pos1+i1] = result[k*nlod_per_draw+i1*n_pos2+i2] 
-	      - wtaverage(lod_tmp, n_draws);
+            result[k*nlod_per_draw+i2*n_pos1+i1] = wtaverage(lod_tmp, n_draws);
           }
         }
         else { /* only one draw */
           for(k=0;k<nrss; k++) {
 	    result[k*nlod_per_draw+i1*n_pos2+i2] = LODfull[0][k];
-            result[k*nlod_per_draw+i2*n_pos1+i1] = LODfull[0][k] - LODadd[0][k];
+            result[k*nlod_per_draw+i2*n_pos1+i1] = LODadd[0][k];
           }
         }
 
@@ -308,14 +307,13 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
             /* for epistasis LOD */
             for(j=0; j<n_draws; j++)  
               lod_tmp[j] = LODadd[j][k];
-            result[k*nlod_per_draw+i2*n_pos1+i1] = 
-	      result[(k+nrss)*nlod_per_draw+i1*n_pos2+i2] - wtaverage(lod_tmp, n_draws);
+            result[k*nlod_per_draw+i2*n_pos1+i1] = wtaverage(lod_tmp, n_draws);
           }
         }
         else { /* only one draw */
           for(k=0;k<nrss; k++) {
 	    result[(k+nrss)*nlod_per_draw+i1*n_pos2+i2] = LODfull[0][k]; 
-            result[k*nlod_per_draw+i2*n_pos1+i1] = LODfull[0][k] - LODadd[0][k];
+            result[k*nlod_per_draw+i2*n_pos1+i1] = LODadd[0][k];
           }
         }
       } /* end loop over chromesome 2 */

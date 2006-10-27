@@ -24,25 +24,15 @@ calc.errorlod(cross, error.prob=0.01,
 }
 
 \details{
-  Uses the results of the function \code{\link[qtl]{calc.genoprob}}
-  (conditional genotype probabilities given multipoint marker data), and
-  then calculates, for each individual at each marker, a LOD score
+  Calculates, for each individual at each marker, a LOD score
   measuring the strength of evidence for a genotyping error, as
   described by Lincoln and Lander (1992). 
 
-  If results of \code{\link[qtl]{calc.genoprob}} are not contained in
-  the input \code{cross} object, it is called with arguments \code{step
-  = off.end = 0}.  If it had been run, but with a different value of
-  \code{error.prob} then specified in the argument, it is called again
-  with the specified value, and using the available \code{"step"} and
-  \code{"off.end"} attributes, and the only genotype probabilities are
-  replaced.
-
-  Note that values below 3 are generally not interesting.  Also note
+  Note that values below 4 are generally not interesting.  Also note
   that if markers are extremely tightly linked, \emph{recombination
   events} can give large error LOD scores.  The error LOD scores should
   not be trusted blindly, but should be viewed as a tool for identifying
-  genotypes to study further.  
+  genotypes deserving further study.
 
   Use \code{\link[qtl]{top.errorlod}} to print all genotypes with error
   LOD scores above a specified threshold,
@@ -69,22 +59,13 @@ calc.errorlod(cross, error.prob=0.01,
 \examples{
 data(hyper)
 \dontshow{hyper <- subset(hyper,chr=c(1,19))}
-# run calc.genoprob, then calc.errorlod; use same error.prob
-hyper <- calc.genoprob(hyper,error.prob=0.01)
 hyper <- calc.errorlod(hyper,error.prob=0.01)
 
-# plot the error LOD scores; print those above a specified cutoff 
-plot.errorlod(hyper)
-plot.errorlod(hyper,chr=1)
-top.errorlod(hyper,cutoff=4)
+# print those above a specified cutoff 
+top.errorlod(hyper, cutoff=4)
 
 # plot genotype data, flagging genotypes with error LOD > cutoff
 plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
-
-# Note that if markers are extremely tightly linked,
-#     any recombination event will have a high error LOD
-plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
-hyper$geno[[1]]$map
 }
 
 \seealso{ \code{\link[qtl]{plot.errorlod}},

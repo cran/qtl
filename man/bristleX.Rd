@@ -6,7 +6,7 @@
 
 \description{ 
   Data from bristle number in chromosome X recombinant isogenic lines of
-  \emph{Drosophila melanogaster} (fruit flies).
+  \emph{Drosophila melanogaster}.
 } 
 
 \usage{data(bristleX)}
@@ -47,14 +47,13 @@ plot(bristleX)
 
 # genome scan for each of the average phenotypes
 bristleX <- calc.genoprob(bristleX, step=2)
-out <- vector("list", 4)
-for(i in 1:4) out[[i]] <- scanone(bristleX, pheno.col=2*i-1)
+out <- scanone(bristleX, pheno.col=c(1,3,5,7))
 
 # Plot the results
     # maximum LOD score among four phenotypes    
-ym <- max(sapply(out, function(a) max(a[,3])))
-plot(out[[1]], ylim=c(0,ym))
-for(i in 2:4) plot(out[[i]], add=TRUE, col=c("blue","red","green")[i-1])
+ym <- max(apply(out[,-(1:2)], 2, max))
+plot(out, lod=1:3, ylim=c(0,ym))
+plot(out, lod=4, add=TRUE, col="green")
 }
 
 \seealso{ \code{\link[qtl]{bristleX}}, \code{\link[qtl]{listeria}},

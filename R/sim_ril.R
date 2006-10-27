@@ -99,7 +99,7 @@ function(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
     for(i in 1:length(map)) {
       fmap[[i]] <- create.map(map[[i]],step,0)
       class(fmap[[i]]) <- class(map[[i]])
-      markers[[i]] <- !is.na(match(map[[i]],fmap[[i]]))
+      markers[[i]] <- map[[i]] %in% fmap[[i]]
       if(sum(markers[[i]]) != length(map[[i]]))
         warning("problem: screw up regarding create_map")
     }

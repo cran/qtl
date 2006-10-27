@@ -3,7 +3,7 @@
 # simulate.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2006
+# last modified Sep, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -133,7 +133,6 @@ function(map, model=NULL, n.ind=100, type=c("f2","bc","4way"),
                             partial.missing.prob,keep.errorind,
                             m,p,map.function)
 
-
   # remove QTL genotypes from data and, if keep.qtlgeno=TRUE,
   #     place them in cross$qtlgeno
   qtlgeno <- NULL
@@ -188,6 +187,9 @@ function(map,model,n.ind,error.prob,missing.prob,
     if(any(model[,1] < 0 | model[,1] > n.chr))
       stop("Chromosome indicators in model matrix out of range.")
     model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
+
+    # effect should be difference between the groups
+    model[,3] <- model[,3]*2  
   }
 
   # if any QTLs, place qtls on map
@@ -506,6 +508,8 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
     model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
   }
 
+  chr.type <- sapply(map,function(a) ifelse(class(a)=="A", "A", "X"))
+
   # if any QTLs, place qtls on map
   if(n.qtl > 0) {
     for(i in 1:n.qtl) {
@@ -545,9 +549,6 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
   names(geno) <- names(map)
   n.mar <- sapply(map,ncol)
   mar.names <- lapply(map,function(a) colnames(a))
-  chr.type <- sapply(map,function(a)
-                     if(is.null(class(a))) return("A")
-                     else return(class(a)))
   
   for(i in 1:n.chr) {
 
@@ -566,6 +567,7 @@ function(map,model,n.ind,error.prob,missing.prob,partial.missing.prob,
     dimnames(thedata) <- list(NULL,mar.names[[i]])
 
     geno[[i]] <- list(data = thedata, map = map[[i]])
+
     class(geno[[i]]) <- chr.type[i]
     class(geno[[i]]$map) <- NULL
   } # end loop over chromosomes

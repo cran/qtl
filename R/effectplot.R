@@ -5,7 +5,7 @@
 # copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
 # 
-# Last modified Jun, 2006
+# Last modified Oct, 2006
 # first written Jul, 2002
 #
 # Modified by Hao Wu Feb 2005 for the following:
@@ -26,7 +26,7 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
           var.flag=c("pooled","group")) 
 {
   if(!sum(class(cross) == "cross")) 
-    stop("The first input variable must be  an object of class cross")
+    stop("The first input variable must be an object of class cross")
   if(pheno.col > nphe(cross)) 
     stop("Input pheno.col is wrong")
 
@@ -37,11 +37,18 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
   chrtype1 <- chrtype2 <- "A"
   gennames1 <- gennames2 <- NULL
 
+  # If imputations are not available, create them
+  if(!("draws" %in% names(cross$geno[[1]]))) {
+    warning(" -Running sim.geno.")
+    cross <- sim.geno(cross, n.draws=16)
+  }
+      
   ####################################################
   # get genotype data for markers given marker name
   # if marker genodata were given, this will be skipped
   ####################################################
   
+
   # Get marker 1 genotype data
   if(missing(mark1)) { # no data given
     if(missing(mname1)) # no marker data or marker name, have to stop
@@ -218,7 +225,7 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
   # corresponding to the second marker
   result <- effectplot.calmeanse(pheno, mark1, mark2, ndraws, var.flag)
   means <- result$Means
-  ses <- result$SDs
+  ses <- result$SEs
   
   # assign column and row names
   if(is.null(mark2)) {
@@ -230,7 +237,7 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       ngen1 <- length(geno1)
     }
     names(result$Means) <- paste(mname1, geno1, sep = ".")
-    names(result$SDs) <- paste(mname1, geno1, sep = ".")
+    names(result$SEs) <- paste(mname1, geno1, sep = ".")
   }
   else {
     if(nrow(means) != length(geno1)) {
@@ -249,8 +256,8 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
     }
     rownames(result$Means) <- paste(mname1, geno1, sep = ".")
     colnames(result$Means) <- paste(mname2, geno2, sep = ".")
-    rownames(result$SDs) <- paste(mname1, geno1, sep = ".")
-    colnames(result$SDs) <- paste(mname2, geno2, sep = ".")
+    rownames(result$SEs) <- paste(mname1, geno1, sep = ".")
+    colnames(result$SEs) <- paste(mname2, geno2, sep = ".")
   }
 
   
@@ -399,13 +406,13 @@ effectplot.getmark <- function (cross, mname) {
     tmp <- unlist(strsplit(mname, "\\."))
     chr <- substr(tmp[1],2,10000) # this will be like 1 or "X"
     if( !(chr %in% names(cross$geno)) )
-      stop(paste("Couldn't find marker", mname))
+      stop("Couldn't find marker ", mname)
     mar.type <- "pm"
     chrtype <- class(cross$geno[[chr]])
     pm.name <- tmp[2] # this will be like loc10
     idx.pos <- which(pm.name==colnames(cross$geno[[chr]]$draws))
     if(length(idx.pos) == 0)
-      stop(paste("Couldn't find marker", mname))
+      stop("Couldn't find marker ", mname)
     else if(length(idx.pos)>1) # take the first one for multiple markers with the same name
       idx.pos <- idx.pos[1]
     
@@ -431,14 +438,14 @@ effectplot.getmark <- function (cross, mname) {
 
   # if didn't find this marker
   if(mar.type == "none")
-    stop(paste("Marker", mname, "not found"))
+    stop("Marker ", mname, " not found")
   
   # get data from typed marker, pseudomarker or phenotype
   if(mar.type == "pheno") { # this is a phenotype
     mark <- cross$pheno[,idx.pos]
     # the phenotype need to be categorical
     if(length(unique(mark)) > 5) { # I'm using arbitrary number here
-      stop(paste("The input phenotype", mname, "is not a categorical trait"))
+      stop("The input phenotype ", mname, " is not a categorical trait")
     }
     gennames <- sort(unique(mark))
   }
@@ -468,7 +475,7 @@ effectplot.getmark <- function (cross, mname) {
   }
 
   else  # none of the above
-    stop(paste("Couldn't find marker", mname))
+    stop("Couldn't find marker ", mname)
   
   
   # make mark a matrix if it's not one
@@ -610,7 +617,7 @@ effectplot.calmeanse <- function(pheno, mark1, mark2, ndraws, var.flag=c("pooled
 
   # result
   result$Means <- means
-  result$SDs <- ses
+  result$SEs <- ses
   result
 }
 

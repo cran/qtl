@@ -9,7 +9,7 @@
 
 \usage{
 plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
-         pch , ylab, main, cols, \dots)
+         pch, ylab, main, col, \dots)
 }			    
 
 \arguments{
@@ -27,7 +27,7 @@ plot.pxg(x, marker, pheno.col=1, jitter=1, infer=TRUE,
   \item{ylab}{Label for y-axis.}
   \item{main}{Main title for the plot.  If missing, the names of the
     markers are used.}
-  \item{cols}{A vector of colors to use for the confidence intervals
+  \item{col}{A vector of colors to use for the confidence intervals
     (optional).} 
   \item{\dots}{Ignored at this point.}
 }
@@ -55,6 +55,7 @@ plot.pxg(listeria, mname)
 
 mname2 <- find.marker(listeria, 13, 26) # marker D13Mit147
 plot.pxg(listeria, c(mname, mname2))
+plot.pxg(listeria, c(mname2, mname))
 
 data(fake.f2)
 mname <- find.marker(fake.f2, 1, 37) # marker D1M437
@@ -64,10 +65,11 @@ mname2 <- find.marker(fake.f2, "X", 14) # marker DXM66
 plot.pxg(fake.f2, mname2)
 
 plot.pxg(fake.f2, c(mname,mname2))
+plot.pxg(fake.f2, c(mname2,mname))
 }
 
 \seealso{ \code{\link[qtl]{find.marker}}, \code{\link[qtl]{effectplot}},
-  \code{\link[qtl]{find.flanking}} }
+  \code{\link[qtl]{find.flanking}}, \code{\link[qtl]{effectscan}} }
 
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian Yandell }

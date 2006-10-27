@@ -2,8 +2,8 @@
 #
 # read.cross.karl.R
 #
-# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2003
+# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# last modified Oct, 2006
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -144,11 +144,9 @@ function(dir,genfile,mapfile,phefile)
   else max.gen <- 10
 
   u <- unique(geno)
-  if(any(!is.na(u) & (u > max.gen | u < 1))) {
-    err <- paste("There are stange values in the genotype data :",
+  if(any(!is.na(u) & (u > max.gen | u < 1))) 
+    stop("There are stange values in the genotype data : ",
                  paste(u,collapse=":"), ".")
-    stop(err)
-  }
 
   cross$pheno <- as.data.frame(cross$pheno)
 

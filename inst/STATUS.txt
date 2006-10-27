@@ -3,8 +3,305 @@ Revision history for the R/qtl package
 ----------------------------------------------------------------------
 copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 Licensed under the GNU General Public License version 2 (June, 1991)
-http://www.biostat.jhsph.edu/~kbroman/qtl
+http://www.rqtl.org
 ----------------------------------------------------------------------
+
+Version 1.04, 10/27/2006:
+
+Major changes:
+
+  R/qtl has a new web site: www.rqtl.org
+
+  Revised the format for the output from scantwo.  Added a function
+  convert.scantwo for converting from the previous format to the new
+  format.  For scantwo results calculated with R/qtl version 1.03 and
+  earlier, you'll need to use convert.scantwo to convert them to the
+  new format in order to use the summary.scantwo and plot.scantwo
+  functions.  (In the previous format, joint and epistasis LOD scores
+  were stored; now we store the joint LOD and the LOD from the
+  additive QTL model.  This is so that, if there is a problem with the
+  joint model, it won't corrupt the results for the additive model.)
+
+  Eliminated the 'run.scanone' argument from the scantwo() function.
+  scanone is always run.  The summaries and permutation tests require
+  these results.
+
+  plot.scantwo now has an 'upper' as well as a 'lower' argument, for
+  complete control over what gets plotted.
+
+  Completely revised the summary.scanone and summary.scantwo
+  functions.  I have written documents to explain the use of the new
+  functions.  These are distributed with the code and are also
+  available at the R/qtl website (http://www.rqtl.org), under
+  "Tutorials". 
+
+  summary.scanone:  There is now a format argument, useful for the
+  case that the scanone result contains multiple LOD score columns
+  (for example, for multiple phenotypes).  We may focus on a single
+  LOD column (format="onepheno"), as was done before; include
+  different rows for the peaks in each LOD column (format="allpheno");
+  or have one row per chrosome, containing the the position and LOD
+  score for each the peak from each LOD column (format="allpeaks").
+  The function now also can take permutation results in order to
+  automatically calculate LOD thresholds or to calculate
+  genome-scan-adjusted p-values.  
+
+  summary.scantwo: This was quite radically changed.  For each pair of
+  chromosomes (including a chromosome with itself), we calculate five
+  LOD scores: the maximum LOD for the full model (2 QTL +
+  interaction), the maximum LOD for the additive model, the difference
+  between these (which concerns a test of whether the two loci
+  interact), and two LOD scores concerning 2  vs 1 QTL: the difference
+  between the full LOD and the best single-QTL LOD for the pair of
+  chromosomes, and the difference between the additive LOD and the
+  best single-QTL LOD for the pair of chromosomes.  This is the
+  recommended output, indicated via the argument what="best".  One may
+  also set the 'what' argument to "full", "add", or "int".  (See the
+  help file for summary.scantwo.)  The 'thresholds' argument now 
+  requires five values, or one may provide permutation results plus a
+  set of five 'alphas' (significance levels).  There is also an
+  argument 'allpairs'; the default is TRUE, in which case all pairs of
+  chromosomes are considered.  If allpairs=FALSE, only the self-self
+  chromosomes are considered, so that one may look more easily for
+  cases of possible linked QTL.
+
+  summary.scanone and max.scanone now can just just one object, rather
+  than multiple such, as before.  However, we have added functions
+  c.scanone and cbind.scanoneperm for combining the columns in
+  multiple runs of scanone (generally either multiple phenotypes or
+  multiple methods).  
+
+  Completely revised the summary.scantwo function.  The old version is
+  saved as the function summary.scantwo.old().
+
+  Added an argument perm.strata to scanone and scantwo, to allow
+  stratified permutation tests.  If provided, it should be a vector
+  of length the number of individuals in the cross; unique values in
+  perm.strata will specify the strata in which the permutations should
+  be performed.  (For example, this could be an indicator of the sexes
+  of the individuals, in which case the individuals will be shuffled
+  separately within males and within females.)
+
+  Permutations in scanone can now be done to give separate thresholds
+  for the autosomes and the X chromosome.  The argument perm.Xsp is
+  used to indicate that this should be done, in which case many more
+  permutations will be run for the X chromosome than for the
+  autosomes, to ensure similar accuracy.  The output of scanone when
+  n.perm>0 is now given class "scanoneperm", and we've written a
+  function summary.scanoneperm for getting LOD thresholds.  (This is
+  necessary, since the calculation autosome- and X-chromosome-specific
+  thresholds is a bit complicated.)  We've also added a function
+  c.scanoneperm for combining the results of multiple permutation
+  runs.  (This because their combination is not so simple as before.)
+  
+  Added functions -.scanoneperm, +.scanoneperm, -.scantwoperm, and
+  +.scantwoperm, for taking sums or differences of permutation results
+  from scanone or scantwo.  This is particularly useful for getting
+  LOD thresholds for QTL x covariate interactions, though one must be
+  careful to ensure that the permutations are perfectly linked, which
+  can be achieved with set.seed.
+
+  The permutation results from scantwo are completely changed.  Rather
+  than keep track of the maximum LOD score for the full model (two
+  QTLs + interaction) and the interaction LOD score, we keep track the
+  genome-wide maxima of the 5 LOD scores calculated in
+  summary.scantwo. (See above.)  The output is now given a class
+  scantwoperm, and there is a summary.scantwoperm function for
+  calculating LOD thresholds.  There is also a c.scantwoperm function
+  for combining results from multiple runs, largely for the case that
+  multiple sets of permutations were run in parallel.
+
+  Removed the ability, in scanone and scantwo, to use the snow package
+  to do parallel analysis on a linux cluster.  With the new changes in
+  scanone, I found the code to be too cumbersome.
+
+  Added the extended Haley-Knott method (see Feenstra et al.,
+  Genetics, in press) to the scanone function.  This is faster and
+  more robust than standard interval mapping, and is a better
+  approximation (but slower) than regular Haley-Knott.regression.
+
+  Revised the sim.cross() function so that, with a backcross, the
+  effect in the "model" argument is to be specified as the difference
+  between the average phenotypes for the heterozygotes and the
+  homozygotes.  (Previously, it was 1/2 this, which is 
+  different from the typical parameterization.)
+
+  Added the ability, for a backcross, to estimate a genetic map under
+  the Stahl model for crossover interference (of which the chi-square 
+  model is a special case).  Also added a function, fitstahl, for 
+  getting the maximum likelihood estimates in the Stahl model (or the
+  chi-square model); the genotyping error probability may be treated
+  as known or may also be estimated.
+
+  Added an argument, "use", to scanone and scantwo, for indicating, in
+  the case that multiple phenotypes are to be run, whether only
+  individuals with complete data on all phenotypes
+  (use="complete.obs") or all individuals (use="all.obs") are to be
+  used. 
+
+  The degrees of freedom are added as attributes in the output from
+  scanone and scantwo, including the case of permutations.  
+
+Minor changes:
+
+  In read.cross, the symbol "#" is no longer treated as a comment
+  character by default.  The default is to use comment.char=""; that
+  is, no symbol is treated as an indicator of comments.  For the
+  comma-delimited file formats, one may have a character interpreted
+  as indicating comments using the comment.char argument.  
+
+  Fixed a bug for the new "batch mode" permutations in scanone and
+  scantwo with method="hk" or ="imp".  The trick only works if there
+  is no X chromosome or all individuals have the same sex and cross
+  direction or permutations are done stratified within sex and
+  direction. 
+
+  Added an argument "show.marker.names" to plot.map and plot.scanone,
+  so that marker names can be added to these plots.
+
+  write.cross can now write data in the "csvr", "csvs" and "csvsr"
+  formats.
+
+  Added a function plot.pheno for plotting a histogram or barplot of
+  a phenotype distribution.  
+
+  Added a function condense.scantwo for producing condensed versions
+  of scanone and scantwo, containing just the maximum LOD scores on
+  each pair of chromosomes.  One can get summaries from these but not
+  plots. 
+
+  In plot.info, added step, off.end, error.prob and map.function
+  arguments.  The function now always calls calc.genoprob rather than
+  relying on the values in the data.
+
+  Changed the default cutoff for genotyping error LOD scores in
+  top.errorlod and plot.geno to 4.
+
+  Changed the name of the function clean() to clean.cross() and made
+  a new function clean() that will dispactch a cross object to
+  clean.cross.  Added a function clean.scantwo() for cleaning up the
+  output of scantwo: any values that are missing or are < 0 are
+  replaced by 0 and any LOD scores for pairs of loci that do not have
+  a marker between them are set to 0.  
+
+  The output of scantwo() now contains the original genetic map as an
+  attribute; this is needed for clean.scantwo().
+
+  Slightly revised effectplot() so that if sim.geno hasn't been run,
+  it is run (with a single imputation) before the plot is created.
+  I also changed the names in the output, so that it is "Means" and
+  "SEs".  Changed the examples in the help file for effectplot.
+
+  Added an argument "lodcolumn" to max.scanone, so that it behaves
+  like summary.scanone.
+
+  Added a function subset.scanone() for pulling out particular
+  chromosomes or LOD score columns from scanone output.
+
+  Added a function find.pseudomarker() for identifying the name of a
+  pseudomarker that is closest to a specified position.  This is
+  useful for the effectplot() function.
+
+  In scanone and scantwo, there is now a warning printed when
+  individuals with missing phenotype are dropped.  Also, a slightly
+  better error message is printed if addcovar or intcovar are not
+  numeric.  Also added a warning message if addcovar or intcovar
+  appear to be over-specified (having columns that need to be
+  dropped). 
+
+  Fixed a slight problem in the column names from scanone() in the
+  case of multiple phenotypes; changed the convention for this.  Now
+  the columns will just have the phenotype names.
+
+  Fixed the help file for read.cross concerning the individual
+  identifiers and about which files are used for the csvs and csvsr
+  formats.
+
+  Revised nmissing() so that if what="ind" and individual IDs are
+  included as a cross phenotype (named "id" or "ID"), these are used
+  as names in the output.
+
+  Revised summary.cross() to include a check of whether the individual
+  IDs (in a phenotype named "id" or "ID") are unique.  If they are
+  not, a warning is issued.
+
+  Changed the "pheno" argument in plot.cross to "pheno.col", to be
+  more consistent with other functions.
+
+  Changed the name of the argument "which" in plot.rf and nmissing to
+  "what".  
+
+  Added an argument "verbose" to the ripple function; if
+  verbose=FALSE, the function doesn't print anything.  Also modified
+  print.summary.ripple so that it prints no more than 6 rows.
+
+  Revised plot.missing so that if reorder=TRUE, the reordering of
+  individuals is done by the average of only the numeric phenotypes
+  (rather than all phenotypes, which gave an error).
+
+  Fixed a slight bug in summary.cross() regarding duplicate marker names.
+
+  Fixed a bug in scanone() that messed up the X chromosome label in
+  the case of method="imp" with multiple phenotypes.
+
+  Fixed a bug in scanone() regarding method="mr-imp" with
+  permutations. 
+
+  Revised the listeria data set slightly; added an "alleles"
+  attribute, with alleles "C" and "B", as this was a cross between
+  BALB/cByJ and C57BL/6ByJ, and those strains were coded C and B in
+  the original paper.  This takes advantage of a feature added in
+  version 1.03.  Also added a phenotype "sex" that indicates all
+  individuals are female.
+
+  Added a phenotype "sex" in the hyper data, indicating that all
+  individuals are male.
+
+  Modified checkAlleles() so that it doesn't give an error if one
+  inputs data for only the X chromosome.
+
+  Revised calc.errorlod() so that it won't give a warning if it has to
+  run calc.genoprob() because such probabilities aren't available.  It
+  will still give a warning if it has to re-run calc.genoprob() with a
+  new error.prob value.
+
+  Slight revision of plot.scanone() to include "Chromosome" as an
+  x-axis label if multiple chromosomes are plotted.
+
+  Fixed a slight bug in plot.info for the case that results are only
+  at the marker positions.
+
+  Changed the name of the "cols" argument in plot.pxg to "col".  (This
+  argument was added in version 1.03.)
+
+  Revised summary.cross so that if the "jittermap" warning is printed,
+  it's only printed once.
+
+  Made a slight change to summary.map and print.summary.map, so that
+  "sexsp" is an attribute.
+
+  A couple of changes were made to the write.cross.qtlcart():
+  round the map locations, make sure backcross code is correct, and
+  make sure RIL data is written as 0/2 rather than 0/1.    
+
+  Revised plot.info() so that if method="entropy" or
+  method="variance", only the column requested is returned.
+  (Previously, the other was also given, but with all 0's.)
+
+  Fixed a bug in sim.cross for type="4way"; it would stop with an
+  error if QTLs were to be simulated.
+
+  Fixed a bug in fill.geno for the case that a chromosome has just one
+  marker.  
+
+  Removed the function convert.cross(), which converted cross data
+  from the format used in R/qtl version < 0.65 to the current format.
+  This shouldn't be needed anymore.
+
+  Fixed a bug in plot.pxg; the plot was messed up one requested an
+  autosomal marker and an X chromosome marker, but with the X
+  chromosome marker listed first.
+
 
 Version 1.03, 7/20/2006:
 

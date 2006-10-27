@@ -9,7 +9,7 @@
 }
 
 \usage{
-\method{plot}{cross}(x, auto.layout=TRUE, pheno, \dots)
+\method{plot}{cross}(x, auto.layout=TRUE, pheno.col, \dots)
 }
 
 \arguments{
@@ -17,8 +17,9 @@
    \code{\link[qtl]{read.cross}} for details.}
  \item{auto.layout}{If TRUE, \code{par(mfrow)} is set so that all plots
    fit within one figure.}
- \item{pheno}{Vector of numbers or character strings corresponding to
-   phenotypes that should be plotted.} 
+ \item{pheno.col}{Vector of numbers or character strings corresponding to
+   phenotypes that should be plotted. If unspecified, all phenotypes are
+   plotted.} 
  \item{\dots}{Ignored at this point.}
 }
 
@@ -26,17 +27,15 @@
 
 \details{
   Calls \code{\link[qtl]{plot.missing}}, \code{\link[qtl]{plot.map}} and
-  \code{\link[base]{hist}} or \code{\link[base]{barplot}} to plot the
-  missing genotypes, genetic map, and histograms or barplots of all
-  phenotypes. 
+  \code{\link[qtl]{plot.pheno}} to plot the missing genotypes, genetic
+  map, and histograms or barplots of all phenotypes. 
 
   If \code{auto.format=TRUE}, \code{par(mfrow)} is used with
   \code{ceiling(sqrt(n.phe+2))} rows and the minimum number of columns
   so that all plots fit on the plotting device.
 
-  Numeric phenotypes are displayed as histograms with approximately
-  \eqn{\sqrt{n}+5}{sqrt(n)+5} bins.  Phenotypes that are factors are
-  displayed as barplots by calling \code{barplot(table(phe))}.
+  Numeric phenotypes are displayed as histograms or barplots by calling
+  \code{\link[qtl]{plot.pheno}}. 
 }    
 
 \examples{
@@ -45,8 +44,8 @@ plot(fake.bc)
 }
 
 \seealso{ \code{\link[qtl]{plot.missing}}, \code{\link[qtl]{plot.map}}, 
-  \code{\link[base]{hist}}, \code{\link[base]{barplot}},
-  \code{\link[base]{table}} }
+  \code{\link[qtl]{plot.pheno}} }
+
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian Yandell }
 

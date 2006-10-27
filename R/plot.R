@@ -4,13 +4,13 @@
 #
 # copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Jul, 2006
+# last modified Oct, 2006
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: plot.missing, plot.map, plot.cross, plot.geno, plot.info,
-#           plot.pxg
+#           plot.pxg, plot.pheno
 #
 ######################################################################
 
@@ -18,6 +18,8 @@ plot.missing <-
 function(x, chr, reorder=FALSE, main="Missing genotypes", ...) 
 {
   cross <- x
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
   if(!missing(chr)) cross <- subset(cross,chr=chr)
   
   # get full genotype data into one matrix
@@ -37,8 +39,11 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
       o <- order(cross$pheno[,reorder])
     }
 
-    # otherwise, order according to the sum of the phenotypes
-    else o <- order(apply(cross$pheno,1,sum))
+    # otherwise, order according to the sum of the numeric phenotypes
+    else {
+      wh <- sapply(cross$pheno, is.numeric)
+      o <- order(apply(cross$pheno[,wh,drop=FALSE],1,sum))
+    }
   }
 
   # make matrix with  0 where genotype data is missing
@@ -95,7 +100,8 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
 }
 
 plot.map <-
-function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...) 
+function(x, map2, chr, horizontal=FALSE, shift=TRUE,
+         show.marker.names=FALSE, ...) 
 {
   dots <- list(...)
   if("main" %in% names(dots)) {
@@ -112,6 +118,9 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
   if(!missing(map2) && length(class(map2))>1 && class(map2)[2]=="cross")
     map2 <- pull.map(map2)
   
+  if(class(map)[1] != "map" || (!missing(map2) && class(map2)[1] != "map"))
+    stop("Input should have class \"cross\" or \"map\".")
+
   if(!missing(chr)) {
     map <- map[chr]
     if(!missing(map2)) map2 <- map2[chr]
@@ -137,6 +146,7 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
         on.exit(par(mfrow=old.mfrow))
 
         par(mfrow=c(2,1))
+        class(Map1) <- class(Map2) <- class(Map3) <- class(Map4) <- "map"
         plot.map(Map1,Map3,horizontal=horizontal,shift=shift)
         plot.map(Map2,Map4,horizontal=horizontal,shift=shift)
         return(invisible(NULL))
@@ -155,7 +165,17 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
   }
        
   if(one.map) {
+
     n.chr <- length(map)
+    if(!show.marker.names) {  # locations of chromosomes
+      chrpos <- 1:n.chr
+      thelim <- range(chrpos)+c(-0.5, 0.5)
+    }
+    else {
+      chrpos <- seq(1, n.chr*2, by=2)
+      thelim <- range(chrpos)+c(-0.35, 2.35)
+    }
+
     if(shift) map <- lapply(map, function(a) a-a[1])
     maxlen <- max(unlist(lapply(map,max)))
 
@@ -165,21 +185,22 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
       par(xpd=TRUE, las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
       
-      plot(0,0,type="n",xlim=c(0,maxlen),ylim=c(0.5,n.chr+0.5),
+      plot(0,0,type="n",xlim=c(0,maxlen), ylim=rev(thelim),yaxs="i",
 	   xlab="Location (cM)", ylab="Chromosome", yaxt="n")
       a <- par("usr")
       
       for(i in 1:n.chr) {
-	lines(c(min(map[[i]]),max(map[[i]])),n.chr+1-c(i,i))
-	nmar <- length(map[[i]])
-	for(j in 1:nmar)
-	  lines(rep(map[[i]][j],2),n.chr+1-i+c(-1/4,1/4))
+	segments(min(map[[i]]), chrpos[i], max(map[[i]]), chrpos[i])
+        segments(map[[i]], chrpos[i]-0.25, map[[i]], chrpos[i]+0.25)
 
+        if(show.marker.names)
+          text(map[[i]], chrpos[i]+0.35, names(map[[i]]), srt=90, adj=c(1,0.5))
       }
+
       # add chromosome labels
-      text(a[1]-diff(a[1:2])*0.07, 1:n.chr, names(map))
-      segments(a[1], 1:n.chr, a[1]-diff(a[1:2])*0.03, 1:n.chr)
-#      axis(side=2, at=1:n.chr, labels=names(map))
+#      text(a[1]-diff(a[1:2])*0.07, 1:n.chr, names(map))
+#      segments(a[1], 1:n.chr, a[1]-diff(a[1:2])*0.03, 1:n.chr)
+      axis(side=2, at=chrpos, labels=names(map))
     }
     else {
       old.xpd <- par("xpd")
@@ -187,22 +208,23 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
       
-      plot(0,0,type="n",ylim=c(maxlen,0),xlim=c(0.5,n.chr+0.5),
+      plot(0,0,type="n",ylim=c(maxlen,0),xlim=thelim,xaxs="i",
 	   ylab="Location (cM)", xlab="Chromosome", xaxt="n")
       
       a <- par("usr")
       
       for(i in 1:n.chr) {
-	lines(c(i,i), c(min(map[[i]]),max(map[[i]])))
-	nmar <- length(map[[i]])
-	for(j in 1:nmar)
-	  lines(i+c(-1/4,1/4),rep(map[[i]][j],2))
+        segments(chrpos[i], min(map[[i]]), chrpos[i], max(map[[i]]))
+        segments(chrpos[i]-0.25, map[[i]], chrpos[i]+0.25, map[[i]])
+
+        if(show.marker.names)
+          text(chrpos[i]+0.35, map[[i]], names(map[[i]]), adj=c(0,0.5))
 
       }
       # add chromosome labels
-      text(1:n.chr, a[3]-diff(a[3:4])*0.07, names(map))
-      segments(1:n.chr, a[3], 1:n.chr, a[3]-diff(a[3:4])*0.03)
-#      axis(side=1, at=1:n.chr, labels=names(map))
+#      text(1:n.chr, a[3]-diff(a[3:4])*0.07, names(map))
+#      segments(1:n.chr, a[3], 1:n.chr, a[3]-diff(a[3:4])*0.03)
+      axis(side=1, at=chrpos, labels=names(map))
     }
     if(usemaindefault)
       title(main="Genetic map")
@@ -228,36 +250,46 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
     n.chr <- length(map1)
     maxloc <- max(c(unlist(lapply(map1,max)),unlist(lapply(map2,max))))
 
+    if(!show.marker.names) {  # locations of chromosomes
+      chrpos <- 1:n.chr
+      thelim <- range(chrpos)+c(-0.5, 0.5)
+    }
+    else {
+      chrpos <- seq(1, n.chr*2, by=2)
+      thelim <- range(chrpos)+c(-0.4, 2.4)
+    }
+
     if(!horizontal) {
       old.xpd <- par("xpd")
       old.las <- par("las")
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
 
-      plot(0,0,type="n",ylim=c(maxloc,0),xlim=c(0.5,n.chr+0.5),
+      plot(0,0,type="n",ylim=c(maxloc,0),xlim=thelim, xaxs="i",
            ylab="Location (cM)", xlab="Chromosome", xaxt="n")
 
       a <- par("usr")
     
       for(i in 1:n.chr) {
-      
         if(max(map2[[i]]) < max(map1[[i]])) 
           map2[[i]] <- map2[[i]] + (max(map1[[i]])-max(map2[[i]]))/2
+
         else 
           map1[[i]] <- map1[[i]] + (max(map2[[i]])-max(map1[[i]]))/2
         
-        lines(c(i-0.3,i-0.3), c(min(map1[[i]]),max(map1[[i]])))
-        lines(c(i+0.3,i+0.3), c(min(map2[[i]]),max(map2[[i]])))
+        segments(chrpos[i]-0.3, min(map1[[i]]), chrpos[i]-0.3, max(map1[[i]]))
+        segments(chrpos[i]+0.3, min(map2[[i]]), chrpos[i]+0.3, max(map2[[i]]))
         
-        nmar <- length(map1[[i]])
-        for(j in 1:nmar)
-          lines(c(i-0.3,i+0.3),c(map1[[i]][j],map2[[i]][j]))
+        segments(chrpos[i]-0.3, map1[[i]], chrpos[i]+0.3, map2[[i]])
+
+        if(show.marker.names)
+          text(chrpos[i]+0.35, map2[[i]], names(map2[[i]]), adj=c(0,0.5))
 
       }
       # add chromosome labels
-      text(1:n.chr, a[3]-diff(a[3:4])*0.07, names(map))
-      segments(1:n.chr, a[3], 1:n.chr, a[3]-diff(a[3:4])*0.03)
-#      axis(side=1, at=1:n.chr, labels=names(map1))
+#      text(1:n.chr, a[3]-diff(a[3:4])*0.07, names(map))
+#      segments(1:n.chr, a[3], 1:n.chr, a[3]-diff(a[3:4])*0.03)
+      axis(side=1, at=chrpos, labels=names(map1))
     }
     else {
       old.xpd <- par("xpd")
@@ -265,8 +297,8 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
 
-      plot(0,0,type="n",xlim=c(0,maxloc),ylim=c(0.5,n.chr+0.5),
-           xlab="Location (cM)", ylab="Chromosome", yaxt="n")
+      plot(0,0,type="n",xlim=c(0,maxloc),ylim=rev(thelim),
+           xlab="Location (cM)", ylab="Chromosome", yaxt="n", yaxs="i")
 
       a <- par("usr")
     
@@ -277,18 +309,19 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
         else 
           map1[[i]] <- map1[[i]] + (max(map2[[i]])-max(map1[[i]]))/2
         
-        lines(c(min(map2[[i]]),max(map2[[i]])), c(n.chr-i-0.3+1,n.chr-i+1-0.3))
-        lines(c(min(map1[[i]]),max(map1[[i]])), c(n.chr-i+1+0.3,n.chr+1-i+0.3))
+        segments(min(map1[[i]]), chrpos[i]-0.3, max(map1[[i]]), chrpos[[i]]-0.3)
+        segments(min(map2[[i]]), chrpos[i]+0.3, max(map2[[i]]), chrpos[[i]]+0.3)
         
-        nmar <- length(map1[[i]])
-        for(j in 1:nmar)
-          lines(c(map2[[i]][j],map1[[i]][j]), c(n.chr+1-i-0.3,n.chr+1-i+0.3))
+        segments(map1[[i]], chrpos[i]-0.3, map2[[i]], chrpos[i]+0.3)
 
+        if(show.marker.names)
+          text(map2[[i]], chrpos[i]+0.35, names(map2[[i]]), srt=90, adj=c(1,0.5))
+          
       }
       # add chromosome labels
-      text(a[1]-diff(a[1:2])*0.07, 1:n.chr, names(map))
-      segments(a[1], 1:n.chr, a[1]-diff(a[1:2])*0.03, 1:n.chr)
-#      axis(side=2, at=1:n.chr, labels=names(map1))
+#      text(a[1]-diff(a[1:2])*0.07, 1:n.chr, names(map))
+#      segments(a[1], 1:n.chr, a[1]-diff(a[1:2])*0.03, 1:n.chr)
+      axis(side=2, at=chrpos, labels=names(map1))
 
     }
     if(usemaindefault) {
@@ -303,15 +336,27 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE, ...)
 
 
 plot.cross <-
-function (x, auto.layout = TRUE, pheno, ...) 
+function (x, auto.layout = TRUE, pheno.col, ...) 
 {
+  if(length(class(x)) < 2 || class(x)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   old.yaxt <- par("yaxt")
   old.mfrow <- par("mfrow")
   on.exit(par(yaxt = old.yaxt, mfrow = old.mfrow))
 
   n.phe <- nphe(x)
-  if(missing(pheno)) pheno <- 1:n.phe
-  n.plot = length(pheno) + 2
+  if(missing(pheno.col)) pheno.col <- 1:n.phe
+  if(is.character(pheno.col)) {
+    temp <- match(pheno.col, names(x$pheno))
+    if(any(is.na(temp))) 
+      warning("Some phenotypes not found:",
+              paste(pheno.col[is.na(temp)], collapse=" "))
+    pheno.col <- temp[!is.na(temp)]
+  }
+  else pheno.col <- (1:nphe(x))[pheno.col]
+
+  n.plot = length(pheno.col) + 2
 
   # automatically choose row/column structure for the plots
   if(auto.layout) {
@@ -323,26 +368,8 @@ function (x, auto.layout = TRUE, pheno, ...)
   plot.missing(x)
   plot.map(x)
 
-#  if( is.numeric(pheno) )
-#    pheno = names(x$pheno)[pheno]
-  if(!is.numeric(pheno)) {
-    temp <- match(pheno, names(x$pheno))
-    if(any(is.na(temp))) 
-      warning("Some phenotypes not found:",
-              paste(pheno[is.na(temp)], collapse=" "))
-    pheno <- temp[!is.na(temp)]
-  }
+  for(i in pheno.col) plot.pheno(x, pheno.col=i)
 
-  for(i in pheno) {
-    if(!is.numeric(x$pheno[[i]])) {
-      par(yaxt = "s")
-      barplot(c(table(x$pheno[[i]])), axes = FALSE, xlab = paste("phe", i),
-              ylab = "", main = colnames(x$pheno)[i], col = "white")
-    }
-    else hist(x$pheno[[i]], breaks = round(sqrt(nrow(x$pheno)) + 5),
-              xlab = paste("phe", i), prob = TRUE, ylab = "", yaxt = "n",
-              main = colnames(x$pheno)[i])
-  }
   invisible()
 }
 
@@ -356,9 +383,12 @@ function (x, auto.layout = TRUE, pheno, ...)
 
 plot.geno <-
 function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
-         cutoff=3.5, min.sep=2, cex=1.2, ...)
+         cutoff=4, min.sep=2, cex=1.2, ...)
 {
   cross <- x  
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   cross <- subset(cross,chr=chr)
   use.id <- FALSE
   if(!missing(ind)) {
@@ -370,10 +400,14 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
      
   type <- class(cross)[1]
   
+  old.las <- par("las")
+  on.exit(par(las=old.las))
+  par(las=1)
+
   if(type != "bc" && type != "f2" && type != "riself" && type != "risib")
     stop("Only available for backcross, intercross or RI strains.")
 
-  if(is.na(match("errorlod",names(cross$geno[[1]])))) {
+  if(!("errorlod" %in% names(cross$geno[[1]]))) {
     warning("First running calc.errorlod.")
     cross <- calc.errorlod(cross,error.prob=0.01)
   }
@@ -412,8 +446,8 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   if(horizontal==TRUE) {
     plot(0,0,type="n",xlab="Position (cM)",ylab="Individual",
          main=paste("Chromosome",names(cross$geno)[1]),
-         ylim=c(0.5,n.ind+0.5),xlim=c(0,max(map)), yaxt="n")
-    segments(0,1:n.ind,max(map),1:n.ind)
+         ylim=c(n.ind+0.5,0.5),xlim=c(0,max(map)), yaxt="n")
+    segments(0, 1:n.ind, max(map), 1:n.ind)
     if(use.id) axis(side=2, at=1:n.ind, labels=id)
     else axis(side=2)
 
@@ -450,8 +484,8 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
 
     # plot map
     u <- par("usr")
-    segments(map,u[3],map,(u[3]+1)/2)
-    segments(map,u[4],map,(n.ind+u[4])/2)
+    segments(map,u[3],map,u[3]-1/2)
+    segments(map,u[4],map,u[4]+1/2)
 
     if(any(errors)) {
       ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
@@ -522,26 +556,31 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
 #
 ######################################################################
 plot.info <-
-function(x,chr,method=c("both","entropy","variance"),...)
+function(x,chr,method=c("both","entropy","variance"), step=1,
+         off.end=0, error.prob=0.001,
+          map.function=c("haldane","kosambi","c-f","morgan"),
+         ...)
 {
   cross <- x
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   method <- match(match.arg(method),c("entropy","variance","both"))-1
+  map.function <- match.arg(map.function)
 
   if(!missing(chr)) cross <- subset(cross,chr=chr)
 
   n.chr <- nchr(cross)
   results <- NULL
 
-  if(is.na(match("prob",names(cross$geno[[1]])))) { # need to run calc.genoprob
-    warning("First running calc.genoprob.")
-    cross <- calc.genoprob(cross)
-  }
+  cross <- calc.genoprob(cross, step=step, error.prob=error.prob,
+                         off.end=off.end, map.function=map.function)
 
-#  gap <- attr(cross$geno[[1]]$prob,"off.end")*2+10 # gap between chr in plot
   gap <- 25
 
   n.ind <- nind(cross)
   for(i in 1:n.chr) {
+
     n.gen <- dim(cross$geno[[i]]$prob)[3]
     n.pos <- ncol(cross$geno[[i]]$prob)
 
@@ -581,9 +620,11 @@ function(x,chr,method=c("both","entropy","variance"),...)
 
     if(is.matrix(map)) map <- map[1,]
 
-    z <- data.frame(chr=rep(names(cross$geno)[i],length(map)),pos=map,
+    z <- data.frame(chr=rep(names(cross$geno)[i],length(map)),
+                    pos=as.numeric(map),
                     "Missing information"=info$info1,
                     "Missing information"=info$info2)
+
     w <- names(map)
     o <- grep("^loc\-*[0-9]+",w)
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
@@ -591,15 +632,21 @@ function(x,chr,method=c("both","entropy","variance"),...)
     rownames(z) <- w
     results <- rbind(results, z)
   }
+  colnames(results)[3:4] <- c("misinfo.entropy","misinfo.variance")
+
+  if(method==0) results <- results[,-4]
+  if(method==1) results <- results[,-3]
+
+  class(results) <- c("scanone","data.frame")
 
   # check whether gap was included as an argument
   args <- list(...)
-  if(is.na(match("gap",names(args)))) {
+  if(!("gap" %in% names(args))) {
     if(method==0)
       plot.scanone(results,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results,lodcolumn=2,ylim=c(0,1),gap=gap,
+      plot.scanone(results,ylim=c(0,1),gap=gap,
                    main="Missing information",...)
     else if(method==2)
       plot.scanone(results,results,lodcolumn=1:2,ylim=c(0,1),gap=gap,
@@ -610,16 +657,13 @@ function(x,chr,method=c("both","entropy","variance"),...)
       plot.scanone(results,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==1)
-      plot.scanone(results,lodcolumn=2,ylim=c(0,1),
+      plot.scanone(results,ylim=c(0,1),
                    main="Missing information",...)
     else if(method==2)
       plot.scanone(results,results,lodcolumn=1:2,ylim=c(0,1),
                    main="Missing information",...)
   }
 
-  colnames(results)[3:4] <- c("misinfo.entropy","misinfo.variance")
-
-  class(results) <- c("scanone","data.frame")
   invisible(results)
 }
 
@@ -627,9 +671,11 @@ function(x,chr,method=c("both","entropy","variance"),...)
 # plot phenotypes against one or more markers
 plot.pxg <-
 function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE, 
-         pch, ylab, main, cols, ...) 
+         pch, ylab, main, col, ...) 
 {
   cross <- x
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
   type <- class(cross)[1]
 
   if(missing(pch)) pch <- par("pch")
@@ -640,13 +686,12 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   par(las = 1)
 
   # find chromosomes containing the markers
-  o <- sapply(cross$geno, function(a, b) !is.na(match(b, colnames(a$data))), 
+  o <- sapply(cross$geno, function(a, b) b %in% colnames(a$data), 
               marker)
   if(length(marker)==1) o <- matrix(o,nrow=1)
   if(!all(apply(o,1,any))) {
     oo <- apply(o,1,any)
-    err <- paste("Marker", marker[!oo], "not found")
-    stop(err)
+    stop("Marker ", marker[!oo], " not found")
   }
   n.mark <- length(marker)
   o <- apply(o, 1, which)
@@ -658,8 +703,8 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   pos <- NULL
   for(i in seq(length(chr))) pos[i] <- map[[chr[i]]][marker[i]]
   chrtype <- sapply(cross$geno, class)
-  if(length(chr) != length(uchr))
-    chrtype <- chrtype[chr]
+  names(chrtype) <- names(cross$geno)
+  chrtype <- chrtype[chr]
   
   # if X chromosome and backcross or intercross, get sex/direction data
   if(any(chrtype == "X") && (type == "bc" || type == "f2"))
@@ -671,7 +716,6 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   for(i in seq(length(chr))) 
     gen.names[[i]] <- getgenonames(type, chrtype[i], "full", sexpgm, attributes(cross))
   n.gen <- sapply(gen.names, length)
-
 
   jitter <- jitter/10
   if(any(n.gen == 2)) jitter <- jitter * 0.75
@@ -767,22 +811,23 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   me <- se <- array(NA, prod(n.gen))
   me[sux] <- tapply(y, x, mean, na.rm = TRUE)
   se[sux] <- tapply(y, x, function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
-  if(missing(cols)) {
-    cols <- "black"
+  thecolors <- c("black", "blue", "red", "purple", "green", "orange")
+  if(missing(col)) {
+    col <- thecolors[1:n.gen[n.mark]]
     if(n.gen[n.mark] == 3) 
-      cols <- c("blue", "purple", "red")
+      col <- c("blue", "purple", "red")
     else if(n.gen[n.mark] == 2) 
-      cols <- c("blue", "red")
+      col <- c("blue", "red")
   }
 
   segments(seq(prod(n.gen)) + jitter * 2, me, seq(prod(n.gen)) + 
-           jitter * 4, me, lwd = 2, col = cols)
+           jitter * 4, me, lwd = 2, col = col)
   segments(seq(prod(n.gen)) + jitter * 3, me - se, seq(prod(n.gen)) + 
-           jitter * 3, me + se, lwd = 2, col = cols)
+           jitter * 3, me + se, lwd = 2, col = col)
   segments(seq(prod(n.gen)) + jitter * 2.5, me - se, seq(prod(n.gen)) + 
-           jitter * 3.5, me - se, lwd = 2, col = cols)
+           jitter * 3.5, me - se, lwd = 2, col = col)
   segments(seq(prod(n.gen)) + jitter * 2.5, me + se, seq(prod(n.gen)) + 
-           jitter * 3.5, me + se, lwd = 2, col = cols)
+           jitter * 3.5, me + se, lwd = 2, col = col)
 
   # add genotypes below
   u <- par("usr")
@@ -801,8 +846,11 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
     }
     tmp <- apply(tmp, 1, function(x) paste(x, collapse = "\n"))
   }
-  text(1:prod(n.gen), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
-       cex = ifelse(n.mark==1, 1, 0.8))
+#  text(1:prod(n.gen), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
+#       cex = ifelse(n.mark==1, 1, 0.8))
+  cxaxis <- par("cex.axis") 
+  axis(side=1, at=1:prod(n.gen), labels=tmp,
+       cex=ifelse(n.mark==1, cxaxis, cxaxis*0.8))
 
   invisible(data)
 
@@ -836,6 +884,39 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
 #  }
 #  invisible(list(Rsq = Rsq, p.value = p.value, me = me, se = se, 
 #                 fit = fit, data = data))
+
+}
+
+plot.pheno <-
+function(x, pheno.col=1, ...)
+{
+  if(length(class(x)) < 2 || class(x)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
+  if(length(pheno.col) > 1)
+    warning("Ignoring all but the first element in pheno.col.")
+  if(pheno.col < 1 | pheno.col > nphe(x))
+    warning("pheno.col should be between 1 and ", nphe(x))
+
+  phe <- x$pheno[,pheno.col]
+  u <- length(unique(phe))
+  if(u==2 || (u < 10  && nind(x) > 50))
+    phe <- as.factor(phe)
+
+  old.las <- par("las")
+  on.exit(par(las=old.las))
+  par(las=1)
+
+  if(is.factor(phe)) {
+    barplot(table(phe),  xlab = paste("phe", pheno.col),
+              main = colnames(x$pheno)[pheno.col], col = "white", ...)
+  }
+  else {
+    phe <- as.numeric(phe)[1:nind(x)]
+    hist(phe, breaks = ceiling(2*sqrt(nind(x))),
+         xlab = paste("phe", pheno.col), 
+         main = colnames(x$pheno)[pheno.col], ...)
+  }
 
 }
 

@@ -8,7 +8,8 @@
 }
 
 \usage{
-write.cross(cross, format=c("csv","mm","qtlcart","gary"),
+write.cross(cross, format=c("csv", "csvr", "csvs", "csvsr",
+                            "mm", "qtlcart", "gary"),
             filestem="data", chr, digits=5)
 }
 
@@ -16,7 +17,8 @@ write.cross(cross, format=c("csv","mm","qtlcart","gary"),
   \item{cross}{An object of class \code{cross}. See
     \code{\link[qtl]{read.cross}} for details.}
   \item{format}{Specifies whether to write the data in comma-delimited,
-    Mapmaker, QTL Cartographer, or Gary Churchill's format.}
+    rotated comma-delimited, Mapmaker, QTL Cartographer, or Gary
+    Churchill's format.} 
   \item{filestem}{A character string giving the first part of the output
     file names (the bit before the dot).  In Windows, use forward
     slashes (\code{"/"}) or double backslashes (\code{"\\\\"}) to
@@ -33,8 +35,12 @@ write.cross(cross, format=c("csv","mm","qtlcart","gary"),
 %}
 
 \details{
-  Comma-delimited format: a single csv file is created in the format
-  read by \code{\link[qtl]{read.cross}}.
+  Comma-delimited formats: a single csv file is created in the formats
+  \code{"csv"} or \code{"csvr"}. Two files are created (one for the
+  genotype data and one for the phenotype data) for the formats
+  \code{"csvs"} and \code{"csvsr"}; if \code{filestem="file"}, the two
+  files will be names \code{"file_gen.csv"} and \code{"file_phe.csv"}.
+  See the help file for \code{\link[qtl]{read.cross}} for details on these formats.
 
   Mapmaker format: Data is written to two files.
   Suppose \code{filestem="file"}.  Then \code{"file.raw"} will contain
@@ -49,12 +55,12 @@ write.cross(cross, format=c("csv","mm","qtlcart","gary"),
   QTL Cartographer cross types as follows: riself to RF1, risib to RF2,
   bc to B1 and f2 to RF2. 
 
-  Gary's format: Data is written to six files. They are:
-  \code{"geno.data"} - genotype data; 
-  \code{"pheno.data"} - phenotype data; 
-  \code{"chrid.dat"} - the chromosome identifier for each marker; 
-  \code{"mnames.txt"} - the marker names; 
-  \code{"markerpos.txt"} - the marker positions; 
+  Gary's format: Data is written to six files. They are: \cr
+  \code{"geno.data"} - genotype data; \cr
+  \code{"pheno.data"} - phenotype data; \cr
+  \code{"chrid.dat"} - the chromosome identifier for each marker; \cr
+  \code{"mnames.txt"} - the marker names; \cr
+  \code{"markerpos.txt"} - the marker positions; \cr
   \code{"pnames.txt"} - the phenotype names
 }
 
@@ -64,6 +70,15 @@ write.cross(cross, format=c("csv","mm","qtlcart","gary"),
 
 # comma-delimited format
 write.cross(fake.bc, "csv", "Data/fakebc", c(1,5,13))
+
+# rotated comma-delimited format
+write.cross(fake.bc, "csvr", "Data/fakebc", c(1,5,13))
+
+# split comma-delimited format
+write.cross(fake.bc, "csvs", "Data/fakebc", c(1,5,13))
+
+# split and rotated comma-delimited format
+write.cross(fake.bc, "csvsr", "Data/fakebc", c(1,5,13))
 
 # Mapmaker format
 write.cross(fake.bc, "mm", "Data/fakebc", c(1,5,13))

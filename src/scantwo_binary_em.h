@@ -4,7 +4,7 @@
  *
  * copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Feb, 2006
+ * last modified Oct, 2006
  * first written Dec, 2004
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -39,14 +39,14 @@ void R_scantwo_2chr_binary_em(int *n_ind, int *n_pos1, int *n_pos2,
 			      double *genoprob2, double *addcov, int *n_addcov, 
 			      double *intcov, int *n_intcov, 
 			      int *pheno, double *start,
-			      double *result_full, double *result_int,
+			      double *result_full, double *result_add,
 			      int *maxit, double *tol, int *verbose);
 
 void scantwo_2chr_binary_em(int n_ind, int n_pos1, int n_pos2, int n_gen1, 
 			    int n_gen2, double ***Genoprob1, double ***Genoprob2,
 			    double **Addcov, int n_addcov, double **Intcov, 
 			    int n_intcov, int *pheno, double *start,
-			    double **Result_full, double **Result_int, 
+			    double **Result_full, double **Result_add, 
 			    int maxit, double tol, int verbose);
 
 void scantwo_binary_em_mstep(int n_ind, int n_gen1, int n_gen2, 

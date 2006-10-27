@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-6, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -24,44 +24,44 @@
 read.cross.qtlcart <-
 function (dir, crofile, mapfile)
 {
-    if (missing(mapfile)) stop("Missing mapfile.")
-    if (missing(crofile)) stop("Missing crofile.")
-
-    if(!missing(dir) && dir != "") {
-      mapfile <- file.path(dir, mapfile)
-      crofile <- file.path(dir, crofile)
-    }
-    map <- read.map.qtlcart( mapfile )
-    cro <- read.cro.qtlcart( crofile )
-
-    cat(" --Read the following data:\n")
-    cat("       Type of cross:         ", cro$cross, "\n")
-    cat("       Number of individuals: ", nrow( cro$markers ), "\n")
-    cat("       Number of markers:     ", ncol( cro$markers ), "\n")
-    cat("       Number of phenotypes:  ", ncol( cro$traits ), "\n")
-
-    maplen <- unlist(lapply(map,length))
-    markers <- split( as.data.frame( t( cro$markers )),
-                     ordered( rep(names( maplen ), maplen )))
-
-    Geno <- list()
-    for( i in names( map )) {
-      name.markers <- names( map[[i]] )
-      markers[[i]] <- t( markers[[i]] )
-      colnames( markers[[i]] ) <- name.markers
-      tmp <- list( data = markers[[i]], map = map[[i]] )
-
-      # determine whether autosomal chromosome or X chromosome
-      #     using the chromosome name
-      class(tmp) <- ifelse(length(grep("[Xx]", i)), "X", "A")
-      Geno[[i]] <- tmp
-    }
-    cross <- list(geno = Geno, pheno = cro$traits )
-    class(cross) <- c( cro$cross, "cross")
-
-    cross$pheno <- as.data.frame(cross$pheno)
-
-    list(cross,FALSE)
+  if (missing(mapfile)) stop("Missing mapfile.")
+  if (missing(crofile)) stop("Missing crofile.")
+  
+  if(!missing(dir) && dir != "") {
+    mapfile <- file.path(dir, mapfile)
+    crofile <- file.path(dir, crofile)
+  }
+  map <- read.map.qtlcart( mapfile )
+  cro <- read.cro.qtlcart( crofile )
+  
+  cat(" --Read the following data:\n")
+  cat("       Type of cross:         ", cro$cross, "\n")
+  cat("       Number of individuals: ", nrow( cro$markers ), "\n")
+  cat("       Number of markers:     ", ncol( cro$markers ), "\n")
+  cat("       Number of phenotypes:  ", ncol( cro$traits ), "\n")
+  
+  maplen <- unlist(lapply(map,length))
+  markers <- split( as.data.frame( t( cro$markers )),
+                   ordered( rep(names( maplen ), maplen )))
+  
+  Geno <- list()
+  for( i in names( map )) {
+    name.markers <- names( map[[i]] )
+    markers[[i]] <- t( markers[[i]] )
+    colnames( markers[[i]] ) <- name.markers
+    tmp <- list( data = markers[[i]], map = map[[i]] )
+    
+    # determine whether autosomal chromosome or X chromosome
+    #     using the chromosome name
+    class(tmp) <- ifelse(length(grep("[Xx]", i)), "X", "A")
+    Geno[[i]] <- tmp
+  }
+  cross <- list(geno = Geno, pheno = cro$traits )
+  class(cross) <- c( cro$cross, "cross")
+  
+  cross$pheno <- as.data.frame(cross$pheno)
+  
+  list(cross,FALSE)
 }
 
 ######################################################################
@@ -70,14 +70,14 @@ function (dir, crofile, mapfile)
 # read QTL Cartographer map file
 ######################################################################
 read.map.qtlcart <-
-function (file) 
+function (file)
 {
   # only interested in chromosomes, marker IDs and positions
-  f <- scan(file, what = "", blank.lines.skip = FALSE, sep = "\n", 
+  f <- scan(file, what = "", blank.lines.skip = FALSE, sep = "\n",
             quiet = TRUE)
   ctrl <- seq(f)[substring(f, 1, 1) == "-"]
   getvalue <- function(s, f, ctrl) {
-    tmp <- unlist(strsplit(f[ctrl[substring(f[ctrl], 2, 3) == 
+    tmp <- unlist(strsplit(f[ctrl[substring(f[ctrl], 2, 3) ==
                                   s]], " "))
     as.numeric(tmp["" != tmp][2])
   }
@@ -90,30 +90,28 @@ function (file)
   b <- grep("|", s, extended = FALSE)
   s <- grep("0", s)
   s <- ceiling((s[length(s)] - b - 1)/nchrom)
-#  position <- as.matrix(read.fwf(file, c(1 + b, rep(s, nchrom)), 
-#                                 skip = tmp[1] - 1, n = tmp[2])[, -1])
 
   position <- scan(file, what=character(), sep="\n",
-                         skip = tmp[1] - 1, n = tmp[2], quiet=TRUE)
+                   skip = tmp[1] - 1, n = tmp[2], quiet=TRUE)
   
 
   tmp <- grep("-b", f)
   if(length(tmp) < 1) stop("Marker names not found in map file\n")
-  markers <- scan(file, list(1, 2, ""), skip = tmp[1], nlines = nmarkers, 
+  markers <- scan(file, list(1, 2, ""), skip = tmp[1], nlines = nmarkers,
                   blank.lines.skip = FALSE, quiet = TRUE)
   
   if(length(tmp) < 2) {
     warning("Chromosome names not found in map file\n")
     chroms <- as.character(1:nchrom)
   }
-  else 
-    chroms <- scan(file, list(1, ""), skip = tmp[2], nlines = nchrom, 
+  else
+    chroms <- scan(file, list(1, ""), skip = tmp[2], nlines = nchrom,
                    blank.lines.skip = FALSE, quiet = TRUE)[[2]]
 
   map <- list()
   n.markers <- table(markers[[1]])
 
-  # make sense of "position" 
+  # make sense of "position"
   position <- strsplit(position, "\\s+")
   pos <- matrix(ncol=nchrom,nrow=max(n.markers))
   for(i in 1:max(n.markers)) {
@@ -135,17 +133,17 @@ function (file)
 # read QTL cartographer CRO file
 ######################################################################
 read.cro.qtlcart <-
-function (file) 
+function (file)
 {
   # translation from cro to R/qtl (see read.cross)
-  # -1	NA	missing data
-  #  0	1	AA
-  #  1	2	AB
-  #  2	3	BB
-  # 10	4	AA or AB
-  # 12	5	AB or BB
+  # -1  NA      missing data
+  #  0  1       AA
+  #  1  2       AB
+  #  2  3       BB
+  # 10  4       AA or AB
+  # 12  5       AB or BB
   #
-  f <- scan(file, what = "", blank.lines.skip = FALSE, sep = "\n", 
+  f <- scan(file, what = "", blank.lines.skip = FALSE, sep = "\n",
             quiet = TRUE)
   ctrl <- seq(f)[substring(f, 1, 1) == "-"]
   s <- strsplit(f[ctrl], " ")
@@ -170,7 +168,7 @@ function (file)
     cross <- "risib"
     fix.ridh <- TRUE
   }
-  else if (cross == "RI0") { 
+  else if (cross == "RI0") {
     cross <- "bc" # doubled haploid
     fix.ridh <- TRUE
   }
@@ -178,13 +176,12 @@ function (file)
     fix.bc1 = cross == "B1"
     cross <- "bc"
   }
-  else if (cross == "SF2" || cross == "RF2") 
+  else if (cross == "SF2" || cross == "RF2")
     cross <- "f2"
-  else if (cross != "f2" && cross != "bc" && 
-           cross != "risib" && cross != "riself" && cross != "4way") {
-    err <- paste("Cross type", cross, "not supported.")
-    stop(err)
-  }
+  else if (cross != "f2" && cross != "bc" &&
+           cross != "risib" && cross != "riself" && cross != "4way") 
+    stop("Cross type ", cross, " not supported.")
+
   notraits <- as.numeric(s$otraits[1])
   skip <- ctrl["s" == ns]
   nlines <- ctrl["e" == ns] - skip - 1
@@ -194,12 +191,12 @@ function (file)
   ns <- strsplit(trait.names, " ")
   for (i in seq(ns)) ns[[i]] <- ns[[i]][length(ns[[i]])]
   trait.names <- unlist(ns)
-  # kludge to handle factor phenos 
-  f <- matrix(scan(file, "", skip = skip, nlines = nlines, na.strings = ".", 
+  # kludge to handle factor phenos
+  f <- matrix(scan(file, "", skip = skip, nlines = nlines, na.strings = ".",
                    blank.lines.skip = FALSE, quiet = TRUE), ncol = size)
   traits <- t(f[-(1:(2 + nmarkers)), ])
   traits = as.data.frame(traits)
-  if (nrow(traits) == 1) 
+  if (nrow(traits) == 1)
     traits <- as.data.frame(t(traits))
   colnames(traits) <- trait.names
 
@@ -214,9 +211,9 @@ function (file)
   # here is the translation
   f = array(as.numeric(f),dim(f))
   f[!is.na(f)] <- c(NA, 1:3, rep(NA, 7), 4, NA, 5)[2 + f[!is.na(f)]]
-  if (fix.ridh && all(is.na(f) || f == 1 || f == 3)) 
+  if (fix.ridh && all(is.na(f) || f == 1 || f == 3))
     f[!is.na(f) & f == 3] <- 2
-  if (fix.bc1) { 
+  if (fix.bc1) {
     f[!is.na(f) & f == 5] <- NA
     f[!is.na(f) & f == 2] <- 1
     f[!is.na(f) & f == 3] <- 2
@@ -240,13 +237,25 @@ function( cross, filestem="data")
   n.mar <- nmar(cross)
 
   type <- class(cross)[1]
-  if(type=="bc") type <- "B1"
+  if(type=="bc") {
+    type <- paste("B", 1 + match(1, names(table(c(pull.geno(cross)))),
+                                 nomatch = 0), sep = "")
+  }
   else if(type=="f2") type <- "RF2"
   else if(type=="riself") type <- "RI1"
   else if(type=="risib") type <- "RI2"
   else {
     warn <- paste("Cross type", type, "may not work with QTL Cartographer.")
     warning(warn)
+  }
+
+  # RIL data: convert genotypes to 1/3; later will be converted to 0/2
+  if(type=="riself" || type=="risib") {
+    for(i in 1:nchr) {
+      g <- cross$geno[[i]]$data
+      g[!is.na(g) & g==2] <- 3
+      cross$geno[[i]]$data <- g
+    }
   }
 
   # write genotype and phenotype data
@@ -265,7 +274,7 @@ function( cross, filestem="data")
 
   # write numbers of progeny, markers and phenotypes
   write( paste( "-traits   ", n.phe ), file, append=TRUE)
-  write( "-Names of traits...", file, append=TRUE)
+  write( "-Names of the traits...", file, append=TRUE)
   phe <- names( cross$pheno )
   for( i in seq( phe ))
     write( paste( i, phe[i] ), file, append=TRUE)
@@ -339,7 +348,7 @@ function( cross, filestem="data")
     tmp <- c( mapdif[[i]],0)
     mapmat[1 + seq( along = tmp ), i ] <- tmp
   }
-  mapmat <- format( mapmat )
+  mapmat <- format(round(mapmat, 6))
   ncmap <- nchar( mapmat[1] )
   mapmat[ grep( "NA", mapmat ) ] <- paste( rep( " ", ncmap ), collapse = "" )
   tmp <- format( seq( n.chr ))
@@ -372,3 +381,5 @@ function( cross, filestem="data")
 }
 
 # end of qtlcart_io.R
+
+

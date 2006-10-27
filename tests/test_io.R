@@ -25,8 +25,8 @@ library(qtl)
 # Reading
 ##############################
 # Read CSV format
-csv <- read.cross("csv", , "listeria.csv")
-csv2 <- read.cross("csv", , "listeria2.csv", estimate=FALSE)
+csv <- read.cross("csv", "", "listeria.csv")
+csv2 <- read.cross("csv", "", "listeria2.csv", estimate=FALSE)
 
 # Read mapmaker format
 mm <- read.cross("mm", "", "listeria.raw", "listeria.map")
@@ -37,7 +37,7 @@ mm2 <- read.cross("mm", "", "listeria.raw", "listeria2.map", estimate=FALSE)
 ##############################
 # Write in CSV format
 write.cross(csv, "csv", filestem="junk1")
-csv3 <- read.cross("csv", "", "junk1.csv")
+csv3 <- read.cross("csv", "", "junk1.csv", genotypes=c("AA","AB","BB","not BB","not AA"))
 comparecrosses(csv, csv3)
 
 # Write in mapmaker format

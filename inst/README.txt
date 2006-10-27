@@ -19,10 +19,9 @@ OBTAINING R/QTL
 
   You can obtain the latest version of R/qtl from 
 
-      http://www.biostat.jhsph.edu/~kbroman/qtl
+      http://www.rqtl.org
 
-  Copies of R/qtl will also be placed on CRAN (cran.r-project.org),
-  but the version at the above site may be updated more frequently.
+  Copies of R/qtl will also be placed on CRAN (cran.r-project.org).
   Binaries are available for Windows and MacOS; source code is
   available for Unix.
 
@@ -35,20 +34,17 @@ INSTALLATION OF R AND R/QTL (Windows)
      "c:\Program Files\R".  Why didn't Microsoft use "Programs" rather
      than "Program files"?
 
-  2. To install R/qtl, download the file "qtl.1.02-1.zip" (or the
-     equivalent) and then do one of the following:
+  2. To install R/qtl, the simplest approach is to start R and type
 
-     a. Start R.  Select (on the menu bar) "Packages" and then
-        "Install package from local zip file...".  Find the file
-        "qtl_1.02-1.zip" on your hard drive, and click "Open".
+         install.packages("qtl")
 
-     b. Unzip the "qtl_1.02-1.zip" file into the directory
-        $RHOME\library (where $RHOME is something like c:\R\R-2.2.0).
-        Note that this should create a directory $RHOME\library\qtl
-        containing the R source code and the compiled dll.
+     This will download the binary from CRAN and install it.
 
-        Start R and type "link.html.help()" to get the help files for
-        the qtl package added to the help indices.
+     Alternatively, you can download the "qtl.1.02-1.zip" (or the
+     equivalent).  Then start R and select (on the menu bar)
+     "Packages" and then "Install package from local zip file...".  
+     Find the file "qtl_1.02-1.zip" on your hard drive, and click 
+     "Open".
 
 
 INSTALLATION OF R AND R/QTL (MacOS version 10.2.x and above)
@@ -57,33 +53,35 @@ INSTALLATION OF R AND R/QTL (MacOS version 10.2.x and above)
      "drive" with a name like "R-2.2.0".  Double-click on the file
      R.mkpg and follow the instructions.
      
-  2. To install R/qtl:
+  2. To install R/qtl, the simplest approach is to start R and type
 
-     a. Download the compiled version of R/qtl for Mac OS X, a file
-        like "qtl_1.02-1.tgz".
+         install.packages("qtl")
 
-     b. Start R by double-clicking "R" in your Applications folder.
+     This will download the binary from CRAN and install it.
 
-     c. From the menu bar, click "Packages & Data" -> "Package
-        Installer".  
-
-	Select "Local Binary Package" from the drop-down menu at the
-        top of the window that comes up.
-
-	Click "Install" at the bottom of the window.
-
-	Find the package on your harddrive and click "Open".
-
-	Close the window.
+     Alternatively, download the compiled version of R/qtl for 
+     Mac OS X, a file like "qtl_1.02-1.tgz".  Then start R and 
+     select (on the menu bar) "Packages & Data" -> "Package 
+     Installer".  Select "Local Binary Package" from the drop-down 
+     menu at the top of the window that comes up.  Click "Install"
+     at the bottom of the window.  Find the package on your harddrive 
+     and click "Open".  Finally, close the window.
 
 
 INSTALLATION OF R/QTL (Unix)
 
   1. We'll assume that R has already been installed. 
 
-  2. Go into the directory containing the file "qtl_1.02-1.tar.gz".
+  2. To install R/qtl, the simplest approach is to start R and
+     type
 
-  3. Do one of the following:
+         install.packages("qtl")
+
+     This will download the binary from CRAN and install it.
+
+     Alternatively, download the R/qtl source code (a file like
+     "qtl_1.02-1.tar.gz").  Go into the directory containing the
+     file and do one of the following:
 
      a. To install R/qtl in the standard location
         (/usr/local/lib/R/library), type 
@@ -145,7 +143,7 @@ GETTING STARTED
   examples.  The tutorial is bundled with R/qtl, as "rqtltour.pdf" and
   is also available from the R/qtl website: 
 
-      http://www.biostat.jhsph.edu/~kbroman/qtl
+      http://www.rqtl.org
 
 
 CITING R/QTL

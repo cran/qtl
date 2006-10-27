@@ -4,7 +4,7 @@
  *
  * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Feb, 2006
+ * last modified Oct, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -104,7 +104,7 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, int *nphe, double *weights,
-		       double *result_full, double *result_int);
+		       double *result_full, double *result_add);
 
 /**********************************************************************
  * 
@@ -148,8 +148,8 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
  *
- * Result_int   Result matrix of size [n_pos2 x n_pos1] 
- *              containing the LODs testing interactions
+ * Result_add   Result matrix of size [n_pos2 x n_pos1] 
+ *              containing the LODs for add've models
  *              also indexed as Result[pos2][pos1]
  *
  **********************************************************************/
@@ -160,6 +160,6 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     int nphe, double *weights,
-		     double ***Result_full, double ***Result_int);
+		     double ***Result_full, double ***Result_add);
 
 /* end of scantwo_hk.h */

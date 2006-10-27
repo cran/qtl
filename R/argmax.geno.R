@@ -3,7 +3,7 @@
 # argmax.geno.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -24,6 +24,9 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"),
          stepwidth=c("fixed", "variable"))
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("cross should have class \"cross\".")
+
   # map function
   map.function <- match.arg(map.function)
   if(map.function=="kosambi") mf <- mf.k
@@ -70,11 +73,8 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
       cfunc <- "argmax_geno_cc"
       one.map <- TRUE
     }
-    else {
-      err <- paste("argmax.geno not available for cross type",
-                   type, ".")
-      stop(err)
-    }
+    else 
+      stop("argmax.geno not available for cross type ", type, ".")
 
     # genotype data
     gen <- cross$geno[[i]]$data

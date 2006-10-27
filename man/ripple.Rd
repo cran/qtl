@@ -11,7 +11,7 @@
 \usage{
 ripple(cross, chr, window=4, method=c("countxo","likelihood"),
        error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
-       maxit=4000, tol=1e-4, sex.sp=TRUE)
+       maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -32,6 +32,8 @@ ripple(cross, chr, window=4, method=c("countxo","likelihood"),
  \item{tol}{Tolerance for determining convergence.}
  \item{sex.sp}{Indicates whether to estimate sex-specific maps; this is 
    used only for the 4-way cross.}
+ \item{verbose}{If TRUE, information about the number of orders (and, if
+   \code{method="likelihood"}, about progress) are printed.}
 }
 
 \details{
@@ -40,7 +42,7 @@ ripple(cross, chr, window=4, method=c("countxo","likelihood"),
   to the R function \code{\link[qtl]{est.map}}.  Of course, it would be
   faster to do everything within C, but this was a lot easier to code.
 
-  For \code{method="countxt"}, calculations are done within C.  
+  For \code{method="countxo"}, calculations are done within C.  
 }
 
 \value{
@@ -59,15 +61,15 @@ ripple(cross, chr, window=4, method=c("countxo","likelihood"),
 
 \examples{
 data(badorder)
-rip7c <- ripple(badorder, chr=1, window=3)
-summary(rip7c)
+rip1 <- ripple(badorder, chr=1, window=3)
+summary(rip1)
 
 \dontrun{
-rip2l <- ripple(badorder, chr=1, window=2, method="likelihood")
-summary(rip2l)
+rip2 <- ripple(badorder, chr=1, window=2, method="likelihood")
+summary(rip2)
 }
 
-badorder <- switch.order(badorder, 1, rip7c[2,])
+badorder <- switch.order(badorder, 1, rip1[2,])
 }
 
 \seealso{ \code{\link[qtl]{summary.ripple}}, \code{\link[qtl]{switch.order}},

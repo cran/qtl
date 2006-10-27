@@ -8,7 +8,7 @@
 }
 
 \usage{switch.order(cross, chr, order, error.prob=0.0001,
-                    map.function=c("haldane","kosambi","c-f","morgan"))}
+             map.function=c("haldane","kosambi","c-f","morgan"))}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See

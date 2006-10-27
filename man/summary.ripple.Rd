@@ -26,22 +26,23 @@
 
 \value{
   An object of class \code{summary.ripple}, whose rows correspond to
-  marker orders with likelihood within some cutoff of the initial order.
-  If no marker order, other than the initial one, has likelihood within
-  the specified range, the initial and next-best orders are returned.
+  marker orders with likelihood (or number of obligate crossovers)
+  within some cutoff of the initial order. If no marker order, other
+  than the initial one, has likelihood within the specified range, the
+  initial and next-best orders are returned. 
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{ % I don't run the following, since they are run in ripple.Rd
 \dontrun{data(badorder)
-rip7c <- ripple(badorder, 1, 7)
-summary(rip7c)
+rip1 <- ripple(badorder, 1, 7)
+summary(rip1)
 
-rip2l <- ripple(badorder, 1, 2, method="likelihood")
-summary(rip2l)
+rip2 <- ripple(badorder, 1, 2, method="likelihood")
+summary(rip2)
 
-badorder <- switch.order(badorder, 1, rip7c[2,])
+badorder <- switch.order(badorder, 1, rip2[2,])
 }}
 
 \seealso{ \code{\link[qtl]{ripple}}, \code{\link[qtl]{est.map}},

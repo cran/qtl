@@ -4,7 +4,7 @@
  *
  * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Feb, 2006
+ * last modified Oct, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -379,8 +379,7 @@ void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 
       /* convert to LODs */
       for(itmp=0; itmp < nphe; itmp++) {
-	Result[itmp][i2][i] = (double)n_ind/2.0*
-	  (Result[itmp][i2][i]-Result[itmp][i][i2]);
+	Result[itmp][i2][i] = (double)n_ind/2.0*Result[itmp][i2][i];
 	Result[itmp][i][i2] = (double)n_ind/2.0*
 	  Result[itmp][i][i2];
       }
@@ -404,15 +403,15 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, int *nphe, double *weights,
-		       double *result_full, double *result_int)
+		       double *result_full, double *result_add)
 {
-  double ***Genoprob1, ***Genoprob2, ***Result_full, ***Result_int;
+  double ***Genoprob1, ***Genoprob2, ***Result_full, ***Result_add;
   double **Addcov, **Intcov;
 
   reorg_genoprob(*n_ind, *n_pos1, *n_gen1, genoprob1, &Genoprob1);
   reorg_genoprob(*n_ind, *n_pos2, *n_gen2, genoprob2, &Genoprob2);
   reorg_genoprob(*n_pos2, *n_pos1, *nphe, result_full, &Result_full);
-  reorg_genoprob(*n_pos1, *n_pos2, *nphe, result_int, &Result_int);
+  reorg_genoprob(*n_pos1, *n_pos2, *nphe, result_add, &Result_add);
 
   /* reorganize addcov and intcov (if they are not empty) */
   if(*n_addcov > 0) reorg_errlod(*n_ind, *n_addcov, addcov, &Addcov);
@@ -420,7 +419,7 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
 
   scantwo_2chr_hk(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2, 
 		  Genoprob1, Genoprob2, Addcov, *n_addcov, Intcov, 
-		  *n_intcov, pheno, *nphe, weights, Result_full, Result_int);
+		  *n_intcov, pheno, *nphe, weights, Result_full, Result_add);
 }
 
 /**********************************************************************
@@ -465,8 +464,8 @@ void R_scantwo_2chr_hk(int *n_ind, int *n_pos1, int *n_pos2,
  *              containing the joint LODs
  *              Note: indexed as Result[iphe][pos1][pos2]
  *
- * Result_int   Result matrix of size [nphe x n_pos2 x n_pos1] 
- *              containing the LODs testing interactions
+ * Result_add   Result matrix of size [nphe x n_pos2 x n_pos1] 
+ *              containing the LODs for add've models
  *              also indexed as Result[iphe][pos2][pos1]
  *
  **********************************************************************/
@@ -477,7 +476,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     double **Addcov, int n_addcov, 
 		     double **Intcov, int n_intcov, double *pheno, 
 		     int nphe, double *weights,
-		     double ***Result_full, double ***Result_int)
+		     double ***Result_full, double ***Result_add)
 {
   int n_col_a, n_col_f, n_gen_sq, multivar=0, rank=0;
   int itmp, i, i2, j, k, k2, k3, s, nrss, lwork, info, ind_idx;
@@ -574,7 +573,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
           for (itmp=0, dtmp=0.0; itmp<n_ind; itmp++)
             dtmp += (pheno[itmp]-yfit[itmp]) * (pheno[itmp]-yfit[itmp]);
         }
-        Result_int[0][i2][i] = log10(dtmp);
+        Result_add[0][i2][i] = log10(dtmp);
       }
       else { /* multiple phenotypes */
         if(multivar == 1) { /* multivariate model, I will leave it now */
@@ -584,7 +583,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
             for(itmp=0, ind_idx=0; itmp<nrss; itmp++, ind_idx+=n_ind) { /* loop thru phenotypes */
               for(j=rank, dtmp=0.0; j<n_ind; j++)
                 dtmp += tmppheno[ind_idx+j] * tmppheno[ind_idx+j];
-              Result_int[itmp][i2][i] = log10(dtmp);
+              Result_add[itmp][i2][i] = log10(dtmp);
             }
           }
           else { /* design matrix is singular, this is troubler */
@@ -601,7 +600,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
               ind_idx = itmp*n_ind;
               for(j=0, dtmp=0.0; j<n_ind; j++)
                 dtmp = tmppheno[ind_idx+j] * tmppheno[ind_idx+j];
-              Result_int[itmp][i2][i] = log10(dtmp);
+              Result_add[itmp][i2][i] = log10(dtmp);
             }
           }
         }
@@ -695,8 +694,7 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 
       /* convert to LODs */
       for(itmp=0; itmp < nphe; itmp++) {
-	Result_int[itmp][i2][i] = (double)n_ind/2.0*
-	  (Result_int[itmp][i2][i] - Result_full[itmp][i][i2]);
+	Result_add[itmp][i2][i] = (double)n_ind/2.0*Result_add[itmp][i2][i];
 	Result_full[itmp][i][i2] = (double)n_ind/2.0*Result_full[itmp][i][i2];
       }
 

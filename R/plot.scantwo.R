@@ -11,17 +11,22 @@
 # Hao Wu (The Jackson Lab) wrote the initial code
 #
 # Part of the R/qtl package
-# Contains: plot.scantwo, subset.scantwo
+# Contains: plot.scantwo
 #
 ######################################################################
 
 plot.scantwo <-
 function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
-         lower = c("joint", "add", "cond-int", "cond-add"), nodiag = TRUE,
+         lower = c("full", "add", "cond-int", "cond-add", "int"),
+         upper = c("int", "cond-add", "cond-int", "add", "full"),
+         nodiag = TRUE,
          contours = FALSE, main, zscale = TRUE, point.at.max=FALSE,
          col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
-         gamma = 1, ...)
+         gamma = 0.6, allow.neg=FALSE, ...)
 {
+  if(class(x)[1] != "scantwo")
+    stop("Input should have class \"scantwo\".")
+
   col.scheme <- match.arg(col.scheme)
 
   if(length(dim(x$lod)) > 2) { # results from multiple phenotypes
@@ -35,19 +40,19 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
     x$lod <- x$lod[,,lodcolumn]
   }
 
-  if(!missing(chr)) 
-    x <- subset(x, chr=chr)
+  if(!missing(chr)) x <- subset(x, chr=chr)
   chr <- as.character(unique(x$map[,1]))
 
   lower <- match.arg(lower)
+  upper <- match.arg(upper)
   if(!any(class(x) == "scantwo")) 
     stop("Input variable is not an object of class scantwo!")
   lod <- x$lod
   map <- x$map
 
   # backward compatibility for previous version of R/qtl
-  if(is.na(match("scanoneX",names(x)))) {
-    warning("It would be best to re-run scantwo() with the R/qtl version 0.98 or later.")
+  if(!("scanoneX" %in% names(x))) {
+    warning("It would be best to re-run scantwo() with the R/qtl version 0.98 or later.\n")
     scanoneX <- NULL
   }
   else scanoneX <- x$scanoneX
@@ -61,73 +66,131 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
     if(!is.null(scanoneX)) scanoneX <- scanoneX[o]
   }
 
-  if(all(diag(lod) < 1e-14) && lower != "joint") 
+  if(all(diag(lod) < 1e-14) && (lower == "cond-int" || lower=="cond-add") )
     stop("Need to run scantwo with run.scanone=TRUE.")
 
-  # pull out single-QTL LODs
+  oldlod <- lod
+
+  lo <- lower.tri(lod)
+  up <- upper.tri(lod)
+  
+  # grab the interaction LOD scores
+  if(upper=="int") 
+    lod[up] <- t(oldlod)[up] - oldlod[up]
+  if(lower=="int") 
+    lod[lo] <- oldlod[lo] - t(oldlod)[lo]
+
+  if(lower=="add")
+    lod[lo] <- t(oldlod)[lo]
+
+  if(upper=="full")
+    lod[up] <- t(oldlod)[up]
+
+  # get conditional LOD scores
   if(lower=="cond-int" || lower=="cond-add") {
-    d <- diag(lod)
-    q1 <- matrix(rep(d,length(d)),ncol=length(d))
-    q2 <- matrix(rep(d,length(d)),ncol=length(d),byrow=TRUE)
-    if(!is.null(scanoneX) && any(map[,4])) {
-      d <- scanoneX
-      q1X <- matrix(rep(d,length(d)),ncol=length(d))
-      q2X <- matrix(rep(d,length(d)),ncol=length(d),byrow=TRUE)
-      q1[map[,4],] <- q1X[map[,4],]
-      q2[,map[,4]] <- q2X[,map[,4]]
+    if(lower=="cond-add")
+      lod[lo] <- t(oldlod)[lo]
+
+    thechr <- map$chr
+    uchr <- unique(thechr)
+    thechr <- factor(as.character(thechr), levels=as.character(uchr))
+    uchr <- factor(as.character(uchr), levels=levels(thechr))
+    xchr <- tapply(map$xchr, thechr, function(a) a[1])
+
+    maxo <- tapply(diag(lod), thechr, max, na.rm=TRUE)
+    if(any(xchr) && !is.null(scanoneX)) {
+      maxox <- tapply(scanoneX, thechr, max, na.rm=TRUE)
+      maxo[xchr] <- maxox[xchr]
     }
-    q1[q2>q1] <- q2[q2>q1]
+
+    n.chr <- length(chr)
+    for(i in 1:n.chr) {
+      pi <- which(thechr==uchr[i])
+      for(j in i:n.chr) {
+        pj <- which(thechr==uchr[j])
+        temp <- lod[pj,pi] - max(maxo[c(i,j)])
+        temp[!is.na(temp) & temp<0] <- 0
+        if(i==j) lod[pj,pi][lower.tri(temp)] <- temp[lower.tri(temp)]
+        else lod[pj,pi] <- temp
+      }
+    }
   }
 
-  # replace joint LOD with LOD[q1,q2] - max{LOD[q1],LOD[q2]}
-  if(lower == "cond-int") {
-    lod[lower.tri(lod)] <- (lod - q1)[lower.tri(lod)] 
+  if(upper=="cond-int" || upper=="cond-add") {
+    if(upper=="cond-int")
+      lod[up] <- t(oldlod)[up]
+
+    thechr <- map$chr
+    uchr <- unique(thechr)
+    thechr <- factor(as.character(thechr), levels=as.character(uchr))
+    uchr <- factor(as.character(uchr), levels=levels(thechr))
+    xchr <- tapply(map$xchr, thechr, function(a) a[1])
+
+    maxo <- tapply(diag(lod), thechr, max, na.rm=TRUE)
+    if(any(xchr) && !is.null(scanoneX)) {
+      maxox <- tapply(scanoneX, thechr, max, na.rm=TRUE)
+      maxo[xchr] <- maxox[xchr]
+    }
+
+    n.chr <- length(chr)
+    for(i in 1:n.chr) {
+      pi <- which(thechr==uchr[i])
+      for(j in i:n.chr) {
+        pj <- which(thechr==uchr[j])
+        temp <- lod[pi,pj] - max(maxo[c(i,j)])
+        temp[!is.na(temp) & temp<0] <- 0
+        if(i==j) lod[pi,pj][upper.tri(temp)] <- temp[upper.tri(temp)]
+        else lod[pi,pj] <- temp
+      }
+    }
   }
-  else if(lower == "cond-add") {
-    lod[lower.tri(lod)] <- (lod - t(lod) - q1)[lower.tri(lod)]
-  }
-  else if(lower == "add") {
-    lod[lower.tri(lod)] <- (lod - t(lod))[lower.tri(lod)]
-  }
-  
+
+
   if(nodiag) diag(lod) <- 0
 
   # deal with bad LOD score values
-  if(any(is.na(lod) | lod < -1e-06 | lod == Inf)) {
-    if(any(is.na(lod))) 
-      warning("Some LOD scores NA, set to 0")
-    
-    if(any(!is.na(lod) & lod < -1e-6)) 
-      warning("Some LOD scores <0, set to 0")
-    
-    if(any(!is.na(lod) & lod == Inf)) 
-      warning("Some LOD scores =Inf, set to 0")
-    
-    lod[is.na(lod) | lod < 0 | lod == Inf] <- 0
+  if(any(is.na(lod))) {
+    u <- is.na(lod)
+    n <- sum(u)
+    warning(n, " LOD scores NA, set to 0")
+    lod[u] <- 0
+  }
+  if(!allow.neg && any(!is.na(lod) & lod < -1e-6)) {
+    u <- !is.na(lod) & lod < 0
+    n <- sum(u)
+    warning(n, " LOD scores <0, set to 0")
+    lod[u] <- 0
+  }
+  if(any(!is.na(lod) & lod == Inf)) {
+    u <- !is.na(lod) & lod == Inf
+    n <- sum(u)
+    warning(n, " LOD scores =Inf, set to maximum observed value")
+    lod[u] <- max(lod[!is.na(lod) & lod < Inf])
   }
 
   if(missing(zlim)) { # no given zlim
-    # calculate the zlim for interactive and joint
+    # calculate the zlim for interactive and full LODs
     zlim.int <- max(lod[row(lod) < col(lod)])
     zlim.jnt <- max(lod[row(lod) >= col(lod)])
   }
   else {
-    zlim.int <- zlim[2]
     zlim.jnt <- zlim[1]
+    if(length(zlim) < 2)
+      zlim.int <- zlim[1]
+    else
+      zlim.int <- zlim[2]
   }
 
   # rescale the data in upper triangle based on zlims.jnt
   lod[row(lod) < col(lod)] <- lod[row(lod) < col(lod)] * zlim.jnt/zlim.int
-  if(missing(zlim)) 
-    zlim.jnt <- max(lod)
 
   # make sure LOD values are below (0,zlim.jnt) or update zlim.jnt
-  if(max(lod) > zlim.jnt) {
-    warning("LOD values out of range; updating zlim.")
-    temp <- max(lod)
-    zlim.int <- zlim.int * temp/zlim.jnt
-    zlim.jnt <- temp
-  }
+#  if(max(lod) > zlim.jnt) {
+#    warning("LOD values out of range; updating zlim.")
+#    temp <- max(lod)
+#    zlim.int <- zlim.int * temp/zlim.jnt
+#    zlim.jnt <- temp
+#  }
 
   # save old par parameters, to restore them on exit
   old.mar <- par("mar")
@@ -136,8 +199,17 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
   on.exit(par(las = old.las, mar = old.mar, mfrow = old.mfrow))
   par(las = 1)
   if(zscale) {
-    layout(cbind(1, 2), c(6, 1))
-    par(mar = c(5, 4, 4, 2) + 0.1)
+    dots <- list(...)
+
+    if("layout" %in% names(dots))
+      layout(dots[["layout"]][[1]],dots[["layout"]][[2]])
+    else
+     layout(cbind(1, 2), c(6, 1))
+
+    if("mar1" %in% names(dots))
+      par(mar=dots[["mar1"]])
+    else
+      par(mar = c(5, 4, 4, 2) + 0.1)
   }
   if( gamma < 0 && col.scheme == "redblue")
     stop( "gamma must be non-negative" )
@@ -150,15 +222,21 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
                  cm = cm.colors(256),
                  redblue = rev(rainbow(256, start = 0, end = 2/3,gamma=gamma)))
 
+  if(allow.neg) {
+    lo <- -zlim.jnt
+    lo.int <- -zlim.int
+  }
+  else lo.int <- lo <- 0
+    
+
   if(length(chr) > 1)
     image(1:ncol(lod), 1:nrow(lod), lod, ylab = "Chromosome", 
-          xlab = "Chromosome", zlim = c(0, zlim.jnt), col = cols,
+          xlab = "Chromosome", zlim = c(lo, zlim.jnt), col = cols,
           xaxt = "n", yaxt = "n")
   else
     image(map[,2], map[,2], lod, ylab = "Position (cM)", 
-          xlab = "Position (cM)", zlim = c(0, zlim.jnt), col = cols)
+          xlab = "Position (cM)", zlim = c(lo, zlim.jnt), col = cols)
           
-
   # plot point at maximum, if requested
   if(point.at.max) {
     temp <- lod
@@ -206,14 +284,16 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
     # add chromesome numbers
     a <- par("usr")
     for(i in 1:length(n.mar)) {
-      text(mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.025, 
-           chr[i], xpd = TRUE, adj = c(0.5, 1))
-      segments(mean(wh[i + c(0, 1)]), a[3],
-               mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.01, xpd = TRUE)
-      text(a[1] - diff(a[1:2]) * 0.025, mean(wh[i + c(0, 1)]), 
-           chr[i], xpd = TRUE, adj = c(1, 0.5))
-      segments(a[1], mean(wh[i + c(0, 1)]), a[1] - diff(a[1:2]) * 
-               0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
+#      text(mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.025, 
+#           chr[i], xpd = TRUE, adj = c(0.5, 1))
+#      segments(mean(wh[i + c(0, 1)]), a[3],
+#               mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.01, xpd = TRUE)
+      axis(side=1, at=mean(wh[i+c(0,1)]), labels=chr[i])
+#      text(a[1] - diff(a[1:2]) * 0.025, mean(wh[i + c(0, 1)]), 
+#           chr[i], xpd = TRUE, adj = c(1, 0.5))
+#      segments(a[1], mean(wh[i + c(0, 1)]), a[1] - diff(a[1:2]) * 
+#               0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
+      axis(side=2, at=mean(wh[i+c(0,1)]), labels=chr[i])
     }
   }
 
@@ -223,9 +303,14 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 
   if(zscale) {
     # plot the colormap
-    par(mar = c(5, 2, 4, 2) + 0.1)
-    colorstep <- zlim.jnt/255
-    image(x = 1:1, y = seq(0, zlim.jnt, colorstep), z = matrix(c(1:256), 1, 256),
+    dots <- list(...)
+    if("mar2" %in% names(dots))
+      par(mar=dots[["mar2"]])
+    else
+      par(mar = c(5, 2, 4, 2) + 0.1)
+
+    colorstep <- (zlim.jnt-lo)/255
+    image(x = 1:1, y = seq(lo, zlim.jnt, colorstep), z = matrix(c(1:256), 1, 256),
           zlim = c(1, 256), ylab = "", xlab = "", 
           xaxt = "n", yaxt = "n", col = cols)
 
@@ -253,90 +338,24 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
                          # note: pin + 2*mai = fin
     xlen.mar <- mai/pin * diff(u[1:2])
 
-    # axis for joint LODs
-    yloc <- pretty(c(0, zlim.jnt), 4)
-    yloc <- yloc[yloc <= u[4]]
-    segments(u[2], yloc, u[2] + xlen.mar/4, yloc, xpd = TRUE)
-    text(u[2] + xlen.mar/3, yloc, as.character(yloc), xpd = TRUE, adj = 0)
+    # axis for full LODs
+    yloc <- pretty(c(lo, zlim.jnt), 4)
+    yloc <- yloc[yloc >= u[3] & yloc <= u[4]]
+#    segments(u[2], yloc, u[2] + xlen.mar/4, yloc, xpd = TRUE)
+#    text(u[2] + xlen.mar/3, yloc, as.character(yloc), xpd = TRUE, adj = 0)
+    axis(side=4, at=yloc, labels=yloc)
 
     # axis for int've LODs
-    yloc <- pretty(c(0, zlim.int), 4)
+    yloc <- pretty(c(lo.int, zlim.int), 4)
     yloc.rev <- yloc * zlim.jnt/zlim.int
-    yloc <- yloc[yloc.rev <= u[4]]
-    yloc.rev <- yloc.rev[yloc.rev <= u[4]]
-    segments(u[1], yloc.rev, u[1] - xlen.mar/4, yloc.rev, xpd = TRUE)
-    text(u[1] - xlen.mar/3, yloc.rev, as.character(yloc), xpd = TRUE, adj = 1)
+    yloc <- yloc[yloc.rev >= u[3] & yloc.rev <= u[4]]
+    yloc.rev <- yloc.rev[yloc.rev >= u[3] & yloc.rev <= u[4]]
+#    segments(u[1], yloc.rev, u[1] - xlen.mar/4, yloc.rev, xpd = TRUE)
+#    text(u[1] - xlen.mar/3, yloc.rev, as.character(yloc), xpd = TRUE, adj = 1)
+    axis(side=2, at=yloc.rev, labels=yloc)
   }
 
   invisible()
-}
-
-######################################################################
-#
-# subset.scantwo
-#
-######################################################################
-
-#subset.scantwo <-
-#function(x, chr, ...)   
-#{
-#  if(missing(chr) || length(chr) == 0) return(x)
-#
-#  a <- unique(x$map[,1])
-#  if(is.numeric(chr) && all(chr < 0)) 
-#    chr <- a[chr]
-#  else chr <- a[match(chr,a)]
-#
-#  newgroups <- groups <- vector("list",length(chr))
-#  curmax <- 0
-#  for(i in 1:length(chr)) {
-#    groups[[i]] <- which(x$map[,1]==chr[i])
-#    newgroups[[i]] <- 1:length(groups[[i]]) + curmax
-#    curmax <- curmax + length(groups[[i]])
-#  }
-#
-#  g <- unlist(groups)
-#  x$map <- x$map[g,]
-#
-#  lod <- matrix(ncol=length(g),nrow=length(g))
-#  for(i in 1:length(chr)) {
-#    lod[newgroups[[i]],newgroups[[i]]] <- x$lod[groups[[i]],groups[[i]]]
-#    if(i < length(chr))
-#      for(j in (i+1):length(chr)) {
-#        if(groups[[i]][1] < groups[[j]][2]) {
-#          lod[newgroups[[i]],newgroups[[j]]] <- x$lod[groups[[i]],groups[[j]]]
-#          lod[newgroups[[j]],newgroups[[i]]] <- x$lod[groups[[j]],groups[[i]]]
-#        }
-#        else {
-#          lod[newgroups[[j]],newgroups[[i]]] <- t(x$lod[groups[[i]],groups[[j]]])
-#          lod[newgroups[[i]],newgroups[[j]]] <- t(x$lod[groups[[j]],groups[[i]]])
-#        }
-#      }
-#  }
-#  x$lod <- lod
-#  x
-#}
-
-subset.scantwo <-
-function(x, chr, ...)
-{
-  if(missing(chr) || length(chr)==0) return(x)
-
-  a <- unique(x$map[,1])
-  if(is.numeric(chr) && all(chr < 0)) 
-    chr <- a[chr]
-  else chr <- a[match(chr,a)]
-
-  wh <- !is.na(match(x$map[,1],chr))
-
-  if(length(wh) == 0) return(x)
-
-  x$map <- x$map[wh,]
-  x$lod <- x$lod[wh,wh]
-  if(!is.null(x$scanoneX))
-    x$scanoneX <- x$scanoneX[wh]
-
-  x
 }
 
 

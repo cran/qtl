@@ -9,7 +9,7 @@
 }
 
 \usage{
-top.errorlod(cross, chr, cutoff=3, msg=TRUE)
+top.errorlod(cross, chr, cutoff=4, msg=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -32,25 +32,14 @@ top.errorlod(cross, chr, cutoff=3, msg=TRUE)
 \examples{
 data(hyper)
 \dontshow{hyper <- subset(hyper, chr=c(1,19))}
-# run calc.genoprob, then calc.errorlod; use same error.prob
-hyper <- calc.genoprob(hyper,error.prob=0.01)
+# Calculate error LOD scores
 hyper <- calc.errorlod(hyper,error.prob=0.01)
 
-# plot the error LOD scores; print those above a specified cutoff 
-plot.errorlod(hyper)
-plot.errorlod(hyper,chr=1)
+# Print those above a specified cutoff 
 top.errorlod(hyper,cutoff=4)
-
-# plot genotype data, flagging genotypes with error LOD > cutoff
-plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
-
-# Note that if markers are extremely tightly linked,
-#     any recombination event will have a high error LOD
-plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
-hyper$geno[[1]]$map
 }
 
-\seealso{ \code{\link[qtl]{calc.errorlod}},
-  \code{\link[qtl]{plot.errorlod}} }
+\seealso{ \code{\link[qtl]{calc.errorlod}}, \code{\link[qtl]{plot.geno}} }
+
 
 \keyword{print}

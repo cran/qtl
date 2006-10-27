@@ -33,7 +33,7 @@ makeqtl(cross, chr, pos, qtl.name)
   genotypes if they are present in the input \code{cross} object. If both
   fields are missing in the input object, the function will report an
   error. Before running this function, the user must have first run either
-  \code{\link[qtl]{calc.geno}} or \code{\link[qtl]{sim.geno}}.
+  \code{\link[qtl]{calc.genoprob}} or \code{\link[qtl]{sim.geno}}.
 }
 
 \value{
@@ -47,12 +47,7 @@ makeqtl(cross, chr, pos, qtl.name)
   \item{n.gen}{A vector indicating the number of genotypes for each QTL.}
 }
 
-\references{
-  Sen, S. and Churchill, G. A. (2001) A statistical framework for quantitative
-  trait mapping.  \emph{Genetics} \bold{159}, 371--387.
-}
-
-\author{Hao Wu, \email{hao@jax.org} }
+\author{Hao Wu}
 
 \examples{
 data(fake.f2)

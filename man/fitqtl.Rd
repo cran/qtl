@@ -1,10 +1,10 @@
 \name{fitqtl}
 \alias{fitqtl}
 
-\title{Fit a multiple QTL model}
+\title{Fit a multiple-QTL model}
 
 \description{
-  Fits a user-specified multiple QTL model.  If specified, 
+  Fits a user-specified multiple-QTL model.  If specified, 
   a drop-one-term analysis will be performed.}
 }
 
@@ -17,7 +17,7 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
  \item{qtl}{An object of class \code{qtl}, as output from
    \code{\link[qtl]{makeqtl}}.} 
  \item{covar}{A data.frame of covariates}
- \item{formula}{An object of class \code{\link[base]{formula}}
+ \item{formula}{An object of class \code{\link[stats]{formula}}
    indicating the model to be fitted.  QTLs are referred to as
    \code{Q1}, \code{Q2}, etc.  Covariates are referred to by their names
    in the data frame \code{covar}.} 
@@ -77,11 +77,11 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
 }
 
 \references{
-  Sen, S. and Churchill, G. A. (2001) A statistical framework for quantitative
+  Sen, \'S. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
 
-\author{Hao Wu, \email{hao@jax.org} }
+\author{Hao Wu}
 
 \examples{
 data(fake.f2)

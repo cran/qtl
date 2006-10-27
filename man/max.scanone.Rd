@@ -9,18 +9,23 @@
 }
 
 \usage{
-\method{max}{scanone}(\dots, chr, na.rm=TRUE)
+\method{max}{scanone}(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, \dots)
 }
 
 \arguments{
- \item{\dots}{An object of the form output by the function
+ \item{object}{An object of the form output by the function
    \code{\link[qtl]{scanone}}: a data.frame whose third column is the
-   LOD score.  Note that while multiple objects may be input, only the
-   first is considered.}
+   LOD score.}
  \item{chr}{Numeric or character vector indicating chromosomes
    on which to find the maximum LOD score.}
+ \item{lodcolumn}{An integer, indicating which of the LOD score columns
+   should be considered in pulling out the peak (these are indexed 1,
+   2, \dots).}
+ \item{df}{If TRUE, the degrees of freedom associated with the LOD
+   scores are shown.} 
  \item{na.rm}{A logical indicating whether missing values should be
    removed.}
+ \item{\dots}{Ignored.}
 }
 
 \value{
@@ -36,16 +41,16 @@
 data(listeria)
 \dontshow{listeria <- subset(listeria,chr=c(5,13))}
 listeria <- calc.genoprob(listeria, step=2.5)
-out <- scanone(listeria, model="2part")
+out <- scanone(listeria, model="2part", upper=TRUE)
 # Maximum peak for LOD(p,mu)
 max(out)
 max(out,chr=13)
 
 # Maximum peak for LOD(p)
-max(out[,-3])
+max(out, lodcolumn=2)
 
 # Maximum peak for LOD(mu)
-max(out[,-(3:4)])
+max(out, lodcolumn=3)
 }
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{plot.scanone}},

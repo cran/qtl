@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Feb, 2006
+# last modified Oct, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -32,7 +32,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
 
   method <- match.arg(method)
 
-  if(method=="imp" && is.na(match("geno", names(qtl))))
+  if(method=="imp" && !("geno" %in% names(qtl)))
     stop("You need to run sim.geno() before creating the qtl object.")
   
   # check the input phenotypes and covarariates; drop individuals
@@ -340,10 +340,8 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       idx.term.kept <- setdiff(1:length(f.order), idx.term.drop)
       
       #### regenerate a formula with the kept terms additive ###
-      if(length(idx.term.kept) == 0) { # nothing left after drop label.term.drop
-        msg <- paste("There will be nothing left if drop ", drop.term.name[i])
-        stop(msg)
-      }
+      if(length(idx.term.kept) == 0) # nothing left after drop label.term.drop
+        stop("There will be nothing left if drop ", drop.term.name[i])
       else {
         # All terms for idx.term.kept will be additive
         # Why it's so awkward? paste can't concatenate a list of strings?
@@ -476,10 +474,8 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
       idx.qtl <- c(idx.qtl, idx.tmp)
     else if(label.term[i] %in% covar.dimname) # it's a covarariate
       idx.covar <- c(idx.covar, which(label.term[i]==covar.dimname))
-    else {
-      err <- paste("Unrecognized term", label.term[i], "in formula")
-      stop(err)
-    }
+    else 
+      stop("Unrecognized term ", label.term[i], " in formula")
   }
   n.qtl <- length(idx.qtl) # number of QTLs in formula
   n.covar <- length(idx.covar) # number of covarariates in formula
@@ -535,8 +531,12 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 # summary.fitqtl
 #
 #####################################################################
-summary.fitqtl <- function(object, ...)
+summary.fitqtl <-
+function(object, ...)
 {
+  if(class(object)[1] != "fitqtl")
+    stop("Input should have class \"fitqtl\".")
+
   # this is just an interface.
   if("ests" %in% names(object)) {
     ests <- object$ests$ests

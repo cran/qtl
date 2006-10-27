@@ -4,7 +4,7 @@
 \title{Print summary of a genetic map}
 
 \description{
-  Print some summary information about a \code{map} object.
+  Print summary information about a \code{map} object.
 }
 
 \usage{
@@ -21,10 +21,10 @@
 }
 
 \value{
-  An object of class \code{summary.map}, which is a list containing two
-  components: a matrix containing the number of markers, length, and
-  average inter-marker spacing for each chromosome and overall, and a
-  logical value indicating whether the map is sex-specific.
+  An object of class \code{summary.map}, which is just a data.frame 
+  containing the number of markers, length, and
+  average inter-marker spacing for each chromosome and overall.  An
+  attribute \code{sexsp} indicates whether the map was sex-specific.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

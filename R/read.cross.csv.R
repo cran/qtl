@@ -35,15 +35,27 @@ function(dir, file, na.strings=c("-","NA"),
 
   args <- list(...)
   # read the data file
-  if(length(args) < 1 || is.na( match("sep",names(args))))
+  if(length(args) < 1 || !("sep" %in% names(args))) {
     # "sep" not in the "..." argument and so take sep=","
-    data <- read.table(file, sep=",", na.strings=na.strings,
-                       colClasses="character", fill=TRUE,
-                       blank.lines.skip=TRUE, ...)
-  else 
-    data <- read.table(file, na.strings=na.strings,
-                       colClasses="character", fill=TRUE,
-                       blank.lines.skip=TRUE, ...)
+    if(length(args) < 1 || !("comment.char" %in% names(args)))
+      data <- read.table(file, sep=",", na.strings=na.strings,
+                         colClasses="character", fill=TRUE,
+                         blank.lines.skip=TRUE, comment.char="", ...)
+    else
+      data <- read.table(file, sep=",", na.strings=na.strings,
+                         colClasses="character", fill=TRUE,
+                         blank.lines.skip=TRUE, ...)
+  }
+  else {
+    if(length(args) < 1 || !("comment.char" %in% names(args)))
+      data <- read.table(file, na.strings=na.strings,
+                         colClasses="character", fill=TRUE,
+                         blank.lines.skip=TRUE, comment.char="", ...)
+    else
+      data <- read.table(file, na.strings=na.strings,
+                         colClasses="character", fill=TRUE,
+                         blank.lines.skip=TRUE, ...)
+  }
 
   if(rotate) {
     data <- as.data.frame(t(data))
@@ -91,7 +103,7 @@ function(dir, file, na.strings=c("-","NA"),
     # look for strange entries in the genotype data
     temp <- unique(as.character(data[-(1:nondatrow),-(1:n.phe),drop=FALSE]))
     temp <- temp[!is.na(temp)]
-    wh <- is.na(match(temp,genotypes))
+    wh <- !(temp %in% genotypes)
     if(any(wh)) {
       warn <- "The following unexpected genotype codes were treated as missing.\n    "
       ge <- paste("|", paste(temp[wh],collapse="|"),"|",sep="")
@@ -120,7 +132,7 @@ function(dir, file, na.strings=c("-","NA"),
 
   # re-order the markers by chr and position
   # try to figure out the chr labels
-  if(all(!is.na(match(chr,c(1:999,"X","x"))))) { # 1...19 + X
+  if(all(chr %in% c(1:999,"X","x"))) { # 1...19 + X
     tempchr <- chr
     tempchr[chr=="X" | chr=="x"] <- 1000
     tempchr <- as.numeric(tempchr)
@@ -206,13 +218,6 @@ function(dir, file, na.strings=c("-","NA"),
   if(cross.type=="f2") max.gen <- 5
   else if(cross.type=="bc") max.gen <- 2
   else max.gen <- 10
-
-#  u <- unique(as.numeric(allgeno))  #### rev 3/31 ####
-#  if(any(!is.na(u) & (u > max.gen | u < 1))) {
-#    err <- paste("There are strange values in the genotype data :",
-#                 paste(sort(u),collapse=":"), ".")
-#    stop(err)
-#  }
 
   # check that markers are in proper order
   #     if not, fix up the order

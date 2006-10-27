@@ -8,8 +8,8 @@
 }
 
 \usage{
-\method{plot}{map}(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
-plot.map(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
+\method{plot}{map}(x, map2, chr, horizontal=FALSE, shift=TRUE,
+     show.marker.names=FALSE, \dots)
 }
 
 \arguments{
@@ -26,6 +26,7 @@ plot.map(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
     plotted horizontally.}
   \item{shift}{If TRUE, shift the first marker on each chromosome to be
     at 0 cM.}
+  \item{show.marker.names}{If TRUE, marker names are included.}
   \item{\dots}{Ignored at this point.}
 }
 
@@ -36,8 +37,9 @@ plot.map(x, map2, chr, horizontal=FALSE, shift=TRUE, \dots)
   genetic maps if two maps are given.
 
   For a sex-specific map, female and male maps are plotted against one
-  another.  For two sex-specific maps, female maps and male maps are
-  plotted against one another.
+  another.  For two sex-specific maps, the two female maps are plotted
+  against one another and the two male maps are plotted against one
+  another. 
 }
 
 \examples{
@@ -45,9 +47,13 @@ data(fake.bc)
 \dontshow{fake.bc <- subset(fake.bc, chr=18:19)}
 plot.map(fake.bc)
 plot.map(fake.bc,horizontal=TRUE)
+
 newmap <- est.map(fake.bc)
 plot(newmap)
 plot.map(fake.bc, newmap)
+
+plot.map(fake.bc, show.marker.names=TRUE)
+
 }
 
 \seealso{ \code{\link[qtl]{est.map}}, \code{\link[qtl]{plot.cross}} }

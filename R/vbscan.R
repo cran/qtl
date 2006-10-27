@@ -49,9 +49,13 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
   n.chr <- nchr(cross)
   results <- NULL
 
+  # to store the degrees of freedom
+  dfApm <- dfAp <- dfAm <- -1
+  dfXpm <- dfXp <- dfXm <- -1
+
   for(i in 1:n.chr) {
     # make sure inferred genotypes or genotype probabilities are available
-    if(is.na(match("prob",names(cross$geno[[i]])))) {
+    if(!("prob" %in% names(cross$geno[[i]]))) {
       cat(" -Calculating genotype probabilities\n")
       cross <- calc.genoprob(cross)
     }
@@ -113,17 +117,28 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
     
     z <- res
 
-
+    if(chrtype=="A" && dfApm < 0) {
+      dfApm <- (n.gen-1)*2
+      dfAp <- (n.gen-1)
+      dfAm <- (n.gen-1)
+    }
     # get null log10 likelihood for the X chromosome
     if(chrtype=="X") {
 
       # determine which covariates belong in null hypothesis
       temp <- scanoneXnull(type, sexpgm)
       adjustX <- temp$adjustX
-      dfX <- temp$dfX
+      parX0 <- temp$parX0
       sexpgmcovar <- temp$sexpgmcovar
       sexpgmcovar.alt <- temp$sexpgmcovar.alt
       
+      if(dfXpm < 0) {
+        if(adjustX) nc <- ncol(sexpgmcovar)
+        else nc <- 1
+        dfXp <- dfXm <- n.gen - nc
+        dfXpm <- 2*dfXp
+      }
+
       if(adjustX) { # get LOD-score adjustment 
         n.gen <- ncol(sexpgmcovar)+1
         genoprob <- matrix(0,nrow=n.ind,ncol=n.gen)
@@ -154,6 +169,14 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
   attr(results,"method") <- method
   attr(results,"type") <- class(cross)[1]
   attr(results,"model") <- "twopart"
+
+  df <- NULL
+  if(dfApm > 0)
+    df <- rbind(df, "A"=c("p.mu"=dfApm, "p"=dfAp, "mu"=dfAm))
+  if(dfXpm > 0)
+    df <- rbind(df, "X"=c("p.mu"=dfXpm, "p"=dfXp, "mu"=dfXm))
+  attr(results, "df") <- df
+
   results
 }
 

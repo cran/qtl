@@ -5,7 +5,7 @@
  * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *                 and Hao Wu, The Jackson Laboratory
  *
- * This file is written by Hao Wu (hao@jax.org), 
+ * This file is written by Hao Wu
  * with slight modifications by Karl Broman.
  *
  * last modified Feb, 2006

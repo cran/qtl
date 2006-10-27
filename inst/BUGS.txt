@@ -1,19 +1,42 @@
 
 Bugs and bug fixes for R/qtl
 ----------------------------------------------------------------------
-This file is intended to contain all known bugs in the R/qtl package,
+This file is intended to contain known bugs in the R/qtl package,
 version by version.  The bugs marked with ">>" are not yet fixed.  See
-STATUS.txt for further information on changes to the package.
+STATUS.txt for further information on changes to the package.  
+The list is not comprehensive.
 
 If you find a potential bug in R/qtl, please send an email, with as
 many details as possible and possibly example data, to Karl Broman,
 <kbroman@jhsph.edu>.
 ----------------------------------------------------------------------
 
+Version 1.04 bugs:
+
+>>  1. scanone with method="ehk" still shows convergences problems in
+       the presence of interactive covariates, in some cases.
+
+>>  2. I don't completely trust the results of calc.errorlod.  It
+       seems to me that the LODs should be larger with a larger error
+       probability, but this is not the case.  I think I need to
+       re-write this so that all genotypes but that under test are
+       assumed to be correct.  
+
+
+Version 1.03 bugs:
+
+    1. In the "batch mode" permutations in scanone and scantwo
+       with method="hk" or ="imp", sex and pgm were stripped 
+       off, and so the results were wrong in the presence of an
+       X chromosome if there are some individuals of each sex
+       and/or direction.  [Fixed in version 1.04.]
+
+
 Version 1.01 bugs:
 
->>  1. plot.pxg for X chr and autosome: results can be messed
-       up, depending on the order of the markers.  
+    1. plot.pxg for X chr and autosome: results can be messed up,
+       depending on the order of the markers.  [Fixed in version
+       1.03.]  
 
     2. plot.geno() can give a bus error.  This is due to a problem
        in locate.xo().  [Fixed in version 1.02.]
