@@ -29,10 +29,10 @@ calc.genoprob(cross, step=0, off.end=0, error.prob=0.0001,
  \item{map.function}{Indicates whether to use the Haldane, Kosambi or
    Carter-Falconer map function when converting genetic distances into
    recombination fractions.} 
- \item{stepwidth}{Indicates whether the intermediate points should with
+ \item{stepwidth}{Indicates whether the intermediate points should have
    fixed or variable step sizes.  We strongly recommend using
-   \code{"fixed"}; \code{"variable"} is included only for the bmqtl
-   package.}
+   \code{"fixed"}; \code{"variable"} is included only for the qtlbim
+   package (\url{http://www.ssg.uab.edu/qtlbim}).}
 }
 
 \details{
@@ -84,12 +84,12 @@ calc.genoprob(cross, step=0, off.end=0, error.prob=0.0001,
 
 \examples{
 data(fake.f2)
-\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)}
-fake.f2 <- calc.genoprob(fake.f2, step=2, off.end=5)
+\dontshow{fake.f2 <- subset(fake.f2,chr=18:19)
+}fake.f2 <- calc.genoprob(fake.f2, step=2, off.end=5)
 
 data(fake.bc)
-\dontshow{fake.bc <- subset(fake.bc,chr=18:19)}
-fake.bc <- calc.genoprob(fake.bc, step=0, off.end=0, err=0.01)
+\dontshow{fake.bc <- subset(fake.bc,chr=18:19)
+}fake.bc <- calc.genoprob(fake.bc, step=0, off.end=0, err=0.01)
 }
 
 \seealso{ \code{\link[qtl]{sim.geno}}, \code{\link[qtl]{argmax.geno}},

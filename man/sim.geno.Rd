@@ -21,7 +21,7 @@ sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001,
    \code{\link[qtl]{read.cross}} for details.}
  \item{n.draws}{Number of simulation replicates to perform.}
  \item{step}{Maximum distance (in cM) between positions at which the
-   simulated genotypes will be drawn, though for \code{step = 0},
+   simulated genotypes will be drawn, though for \code{step=0},
    genotypes are drawn only at the marker locations.}
  \item{off.end}{Distance (in cM) past the terminal markers on each
    chromosome to which the genotype simulations will be carried.}
@@ -32,8 +32,8 @@ sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001,
    distances into recombination fractions.}
  \item{stepwidth}{Indicates whether the intermediate points should with
    fixed or variable step sizes.  We strongly recommend using
-   \code{"fixed"}; \code{"variable"} is included only for the bmqtl
-   package.}
+   \code{"fixed"}; \code{"variable"} is included only for the qtlbim
+   package (\url{http://www.ssg.uab.edu/qtlbim}).}
 }
 
 \details{
@@ -49,7 +49,7 @@ sim.geno(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001,
 \value{
   The input \code{cross} object is returned with a component,
   \code{draws}, added to each component of \code{cross$geno}.
-  \code{draws} is array of size [n.ind x n.pos x n.draws] where n.pos is
+  This is an array of size [n.ind x n.pos x n.draws] where n.pos is
   the number of positions at which the simulations were performed and
   n.draws is the number of replicates.  Attributes \code{"error.prob"},
   \code{"step"}, and \code{"off.end"} are set to the values of the

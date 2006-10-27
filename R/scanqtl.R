@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                       and Karl W. Broman, Johns Hopkins University
-# last modified Jul, 2006
+# last modified Oct, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -14,16 +14,17 @@
 ######################################################################
 
 scanqtl <-
-  function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method=c("imp"),
+  function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method="imp",
            incl.markers=FALSE, verbose=TRUE)
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   type <- class(cross)[1]
   chrtype <- sapply(cross$geno,class)
   sexpgm <- getsex(cross)
   
   # input data checking
-  if( !sum(class(cross) == "cross") )
-    stop("The first input variable must be  an object of class cross")
   if( length(chr) != length(pos))
     stop("Input chr and pos must have the same length")
   # note that input chr is a vector and pos is a list
@@ -40,11 +41,9 @@ scanqtl <-
   method <- match.arg(method)
 
   ichr <- match(chr, names(cross$geno))
-  if(any(is.na(ichr))) {
-    err <- paste("There's no chromosome number ", chr[is.na(ichr)],
-                 "in input cross object")
-    stop(err)
-  }
+  if(any(is.na(ichr))) 
+    stop("There's no chromosome number ", chr[is.na(ichr)],
+                 " in input cross object")
 
   # if formula is missing, make one.
   # All QTLs and covariates will be additive by default

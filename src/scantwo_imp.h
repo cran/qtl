@@ -8,7 +8,7 @@
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.
  *
- * last modified Feb, 2006 
+ * last modified Oct, 2006 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)

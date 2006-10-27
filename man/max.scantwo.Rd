@@ -4,36 +4,56 @@
 \title{Maximum peak in two-dimensional genome scan}
 
 \description{
-  Print the maximum joint LOD and interaction LODs in the results of
-  \code{scantwo}. 
+  Print the pair of loci with the largest LOD score in the results of
+  \code{\link[qtl]{scantwo}}. 
 }
 
 \usage{
-\method{max}{scantwo}(\dots, na.rm=TRUE, lodcolumn=1)
+\method{max}{scantwo}(object, lodcolumn=1,
+    what=c("best", "full", "add", "int"),
+    df=FALSE, na.rm=TRUE, \dots)
 }
 
 \arguments{
- \item{\dots}{An object of class \code{scantwo}, the output of the
-   function \code{\link[qtl]{scantwo}}.  Note that while multiple
-   objects may be input, only the first is considered.}
- \item{na.rm}{A logical indicating whether missing values should be
-   removed.}
-  \item{lodcolumn}{If the scantwo results contain LOD scores for
-    multiple phenotypes, this argument indicates which to use.}
+ \item{object}{An object of class \code{scantwo}, the output of the
+   function \code{\link[qtl]{scantwo}}.}
+ \item{lodcolumn}{If the scantwo results contain LOD scores for
+   multiple phenotypes, this argument indicates which to use.}
+ \item{what}{Indicates for which LOD score the maximum should be reported.}
+ \item{df}{If TRUE, the degrees of freedom associated with the LOD
+   scores are shown.} 
+ \item{na.rm}{Ignored.}
+ \item{\dots}{Ignored.}
 }
 
 \value{
   An object of class \code{summary.scantwo}, to be printed by
-  \code{print.summary.scantwo}.  Pairs of loci that have the maximum
-  joint and interaction LOD, in the two-dimensional scan.
+  \code{print.summary.scantwo}, with the pair of positions with the
+  maximum LOD score. (Which LOD score is considered is indicated by the
+  \code{what} argument.)    
+}
+
+\details{
+  This is very similar to the \code{\link[qtl]{summary.scantwo}}
+  function, though this pulls out one pair of positions.
+
+  If \code{what="best"}, we find the pair of positions at which the LOD
+  score for the full model (2 QTL + interaction) is maximized, and then
+  also print the positions on that same pair of chromosomes at which the
+  additive LOD score is maximized.
+
+  In the other cases, we pull out the pair of positions with the largest
+  LOD score; which LOD score is considered is indicated by the
+  \code{what} argument.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} } 
 
 \examples{
 data(fake.f2)
+\dontshow{fake.f2 <- subset(fake.f2, chr=18:19)}
 fake.f2 <- calc.genoprob(fake.f2, step=10)
-out.2dim <- scantwo(fake.f2, method="hk", chr=c(1,6,13))
+out.2dim <- scantwo(fake.f2, method="hk")
 max(out.2dim)
 }
 

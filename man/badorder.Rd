@@ -26,18 +26,18 @@
 
 \examples{
 data(badorder)
-\dontshow{badorder <- subset(badorder,chr=1)}
-
+\dontshow{badorder <- subset(badorder,chr=1)
+}
 # estimate recombination fractions
 badorder <- est.rf(badorder)
 plot.rf(badorder)
 
 # re-estimate map
 newmap <- est.map(badorder)
-plot.map(badorder,newmap)
+plot.map(badorder, newmap)
 
 # assess marker order on chr 1
-rip3 <- ripple(badorder,1,window=3)
+rip3 <- ripple(badorder, chr=1, window=3)
 summary(rip3)
 }
 

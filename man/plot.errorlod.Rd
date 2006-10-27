@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.errorlod(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
+plot.errorlod(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
               col=c("white","gray85","hotpink","purple3"), \dots)
 }
 
@@ -28,7 +28,7 @@ plot.errorlod(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 }
 
 \details{
-  Uses \code{\link[base]{image}} to plot a grid with different shades
+  Uses \code{\link[graphics]{image}} to plot a grid with different shades
   of pixels to indicate which genotypes are likely to be in error.
 
   Darker pixels have higher error LOD scores:
@@ -43,26 +43,16 @@ plot.errorlod(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 \examples{
 data(hyper)
 \dontshow{hyper <- subset(hyper,chr=c(1,19))}
-# run calc.genoprob, then calc.errorlod; use same error.prob
-hyper <- calc.genoprob(hyper,error.prob=0.01)
+# Calculate error LOD scores
 hyper <- calc.errorlod(hyper,error.prob=0.01)
 
 # plot the error LOD scores; print those above a specified cutoff 
 plot.errorlod(hyper)
 plot.errorlod(hyper,chr=1)
-top.errorlod(hyper,cutoff=4)
-
-# plot genotype data, flagging genotypes with error LOD > cutoff
-plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
-
-# Note that if markers are extremely tightly linked,
-#     any recombination event will have a high error LOD
-plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
-hyper$geno[[1]]$map
 }
 
 \seealso{ \code{\link[qtl]{calc.errorlod}},
-  \code{\link[qtl]{top.errorlod}}, \code{\link[base]{image}} }
+  \code{\link[qtl]{top.errorlod}}, \code{\link[graphics]{image}} }
 
 \references{
   Lincoln, S. E. and Lander, E. S. (1992) Systematic detection of

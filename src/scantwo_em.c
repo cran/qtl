@@ -4,7 +4,7 @@
  *
  * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
  *
- * last modified Feb, 2006
+ * last modified Oct, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -96,7 +96,7 @@ void R_scantwo_1chr_em(int *n_ind, int *n_pos, int *n_gen,
  * Result       Result matrix of size [n_pos x n_pos]; the lower
  *              triangle (row > col) contains the joint LODs while 
  *              the upper triangle (row < col) contains the LODs for 
- *              testing epistasis.
+ *              additive models.
  *              Note: indexed as Result[col][row]
  *
  * maxit        Maximum number of iterations for EM
@@ -290,7 +290,7 @@ void scantwo_1chr_em(int n_ind, int n_pos, int n_gen,
 	Rprintf("\n");
       }
 
-      Result[i2][i1] = llik[1]-llik[0];
+      Result[i2][i1] = -(llik[0]+sw);
       Result[i1][i2] = -(llik[1]+sw); /* sw = sum[log10(weights)] */
 
     } /* position 2 */
@@ -311,16 +311,16 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
 		       double *genoprob2, double *addcov, int *n_addcov, 
 		       double *intcov, int *n_intcov, 
 		       double *pheno, double *weights,
-		       double *result_full, double *result_int,
+		       double *result_full, double *result_add,
 		       int *maxit, double *tol, int *verbose)
 {
-  double **Result_full, **Result_int, **Addcov, **Intcov;
+  double **Result_full, **Result_add, **Addcov, **Intcov;
   double ***Genoprob1, ***Genoprob2;
 
   reorg_genoprob(*n_ind, *n_pos1, *n_gen1, genoprob1, &Genoprob1);
   reorg_genoprob(*n_ind, *n_pos2, *n_gen2, genoprob2, &Genoprob2);
   reorg_errlod(*n_pos1, *n_pos2, result_full, &Result_full);
-  reorg_errlod(*n_pos1, *n_pos2, result_int, &Result_int);
+  reorg_errlod(*n_pos1, *n_pos2, result_add, &Result_add);
 
   /* reorganize addcov and intcov (if they are not empty) */
   if(*n_addcov > 0) reorg_errlod(*n_ind, *n_addcov, addcov, &Addcov);
@@ -329,7 +329,7 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
   scantwo_2chr_em(*n_ind, *n_pos1, *n_pos2, *n_gen1, *n_gen2,
 		  Genoprob1, Genoprob2, Addcov, *n_addcov, 
 		  Intcov, *n_intcov, pheno, weights, 
-		  Result_full, Result_int, 
+		  Result_full, Result_add, 
 		  *maxit, *tol, *verbose);
 }
 
@@ -373,8 +373,8 @@ void R_scantwo_2chr_em(int *n_ind, int *n_pos1, int *n_pos2,
  *              containing the joint LODs
  *              Note: indexed as Result[pos2][pos1]
  *
- * Result_int   Result matrix of size [n_pos2 x n_pos1] 
- *              containing the LODs testing interactions
+ * Result_add   Result matrix of size [n_pos2 x n_pos1] 
+ *              containing the LODs for add've model
  *              also indexed as Result[pos2][pos1]
  *
  * maxit        Maximum number of iterations for EM
@@ -393,7 +393,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 		     int n_gen2, double ***Genoprob1, double ***Genoprob2,
 		     double **Addcov, int n_addcov, double **Intcov, 
 		     int n_intcov, double *pheno, double *weights,
-		     double **Result_full, double **Result_int, 
+		     double **Result_full, double **Result_add, 
 		     int maxit, double tol, int verbose)
 {
   int error_flag, i, i1, i2, k1, k2, j, m, n_col[2], nit[2], r, flag=0;
@@ -550,7 +550,7 @@ void scantwo_2chr_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	Rprintf("\n");
       }
 
-      Result_int[i2][i1] = llik[1]-llik[0];
+      Result_add[i2][i1] = -(llik[0]+sw);
       Result_full[i2][i1] = -(llik[1]+sw);  /* sw = sum[log10(weights)] */
 
     } /* position 2 */

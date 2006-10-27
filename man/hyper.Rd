@@ -16,7 +16,7 @@
 }  
 
 \details{
-There are 250 backcross individuals typed at 174 markers (actually one
+There are 250 male backcross individuals typed at 174 markers (actually one
 contains only missing values), including 4 on the X chromosome, with one
 phenotype. 
 

@@ -9,11 +9,11 @@
 }
 
 \usage{
-convert.scanone(output)
+\method{convert}{scanone}(object)
 }
 
 \arguments{
- \item{output}{Output from the function \code{\link[qtl]{scanone}}, for
+ \item{object}{Output from the function \code{\link[qtl]{scanone}}, for
    R/qtl version 0.97 and earlier.}
 }
 
@@ -24,14 +24,15 @@ convert.scanone(output)
 
 \details{
   Previously, inter-marker locations were named as, for example,
-  \code{loc7.5.c3}; these are changed to \code{c3.loc7.5}.
+  \code{loc7.5.c3}; these were changed to \code{c3.loc7.5}.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
-%\examples{
-%}
+\examples{
+\dontrun{out.new <- convert(out.old)}
+}
 
-\seealso{ \code{\link[qtl]{scanone}} }
+\seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{convert.scantwo}} }
 
 \keyword{manip}

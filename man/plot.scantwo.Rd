@@ -9,30 +9,33 @@
 
 \usage{
 \method{plot}{scantwo}(x, chr, incl.markers=FALSE, zlim, lodcolumn=1,
-             lower=c("joint","add","cond-int","cond-add"), nodiag=TRUE, 
-             contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
-             col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
-             gamma=1, \dots)
+     lower = c("full", "add", "cond-int", "cond-add", "int"),
+     upper = c("int", "cond-add", "cond-int", "add", "full"),
+     nodiag=TRUE, contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
+     col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
+     gamma=0.6, allow.neg=FALSE, \dots)
 }			    
 
 \arguments{
   \item{x}{An object of class \code{"scantwo"}, as output by
     \code{\link[qtl]{scantwo}}.} 
-  \item{chr}{Vector specifying which chromosomes to plot.}
+  \item{chr}{Optional vector specifying which chromosomes to plot.}
   \item{incl.markers}{If FALSE, plot LOD scores on an evenly
     spaced grid (not including the results at the markers).}
   \item{zlim}{A vector of length 2 (optional), indicating the z limits
-    for the joint LOD and the epistasis LOD scores, respectively.  If
+    for the full LOD and the epistasis LOD scores, respectively.  If
     missing, the maximum limits are used for each.}
   \item{lodcolumn}{If the scantwo results contain LOD scores for
     multiple phenotypes, this argument indicates which to use in the
     plot.} 
   \item{lower}{Indicates which LOD scores should be plotted in the lower
     triangle.  See the details below.}
+  \item{upper}{Indicates which LOD scores should be plotted in the upper
+    triangle.  See the details below.}
   \item{nodiag}{If TRUE, suppress the plot of the scanone output
     (which is normally along the diagonal.)}
   \item{contours}{If TRUE, add a contour to the plot at 1.5-LOD below
-    its maximum, using a call to \code{\link[base]{contour}}.  If a
+    its maximum, using a call to \code{\link[graphics]{contour}}.  If a
     numeric vector, contours are drawn at these values below the maximum
     LOD.} 
   \item{main}{An optional title for the plot.}
@@ -41,15 +44,23 @@
   \item{col.scheme}{Name of color pallet.}
   \item{gamma}{Parameter affecting range of colors when
     \code{col.scheme="gray"} or \code{="redblue"}.}
+  \item{allow.neg}{If TRUE, allow the plot of negative LOD scores; in
+    this case, the z-limits are symmetric about 0.  This option is
+    chiefly to allow a plot of difference between LOD scores from
+    different methods, calculated via \code{\link[qtl]{-.scantwo}}.}
   \item{\dots}{Ignored at this point.}
 }
 
 \value{None.}
 
 \details{
-  Uses \code{\link[base]{image}} to plot a grid of LOD scores.  The
-  upper triangle contains the epistasis LOD scores; the content in the
-  lower triangle depends on the input argument \code{lower}.
+  Uses \code{\link[graphics]{image}} to plot a grid of LOD scores.  The
+  particular LOD scores plotted in the upper-left and lower-right
+  triangles are selected via \code{upper} and \code{lower},
+  respectively.  By default, the upper-left triangle contains the
+  epistasis LOD
+  scores (\code{"int"}), and the lower-right triangle contains the LOD
+  scores for the full model (\code{"full"}).
   The diagonal contains either all zeros or the main effects LOD scores
   (from \code{\link[qtl]{scanone}}).
 
@@ -61,56 +72,69 @@
   likelihood under a full QTL model (including QTL-QTL interaction),
   \eqn{L_f(q_1,q_2)}{Lf(q1,q2)}.  
   
-  The upper triangle in plot from this function contains the epistasis
-  LOD scores, \eqn{LOD_i = \log_{10} L_f(q_1,q_2) - \log_{10} L_a(q_1,q_2)}{%
-    LODi = log10 Lf(q1,q2) - log10 La(q1,q2)}.
+  The five possible LOD scores that may be plotted are the following.
+  The epistasis LOD scores (\code{"int"}) are \eqn{LOD_i = \log_{10}
+    L_f(q_1,q_2) - \log_{10} L_a(q_1,q_2)}{LODi = log10 Lf(q1,q2) -
+    log10 La(q1,q2)}. 
 
-  If \code{lower="joint"}, the lower triangle will contain the joint LOD
-  scores, \eqn{LOD_j = \log_{10} L_f(q_1,q_2) - \log_{10} L_0}{%
+  The full LOD scores (\code{"full"}) are 
+  \eqn{LOD_f = \log_{10} L_f(q_1,q_2) - \log_{10} L_0}{%
     LODj = log10 Lf(q1,q2) - log10 L0}.
 
-  If \code{lower="add"}, the lower triangle will contain the additive
-  LOD scores, \eqn{LOD_a = \log_{10} L_a(q_1,q_2) - \log_{10} L_0}{%
+  The additive LOD scores (\code{"add"}) are
+  \eqn{LOD_a = \log_{10} L_a(q_1,q_2) - \log_{10} L_0}{%
     LODa = log10 La(q1,q2) - log10 L0}.
 
-  If \code{lower="cond-int"}, the lower triangle will contain LOD scores
-  comparing the two-QTL joint likelihood to the best of the single-QTL models,
-  \eqn{LOD_{ci} = \log_{10} L_f(q_1,q_2) - \log_{10} \max(L(q_1), L(q_2))}{%
-    LODci = log10 Lf(q1,q2) - log10 max(L(q1), L(q2))}.
+  In addition, we may calculate, for each pair of
+  chromosomes, the difference between the full LOD score and the
+  maximum single-QTL LOD scores for that pair of chromosomes
+  (\code{"cond-int"}).
 
-  If \code{lower="cond-add"}, the lower triangle will contain LOD scores
-  comparing the two-QTL additive likelihood to the best of the single-QTL models,
-  \eqn{LOD_{ca} = \log_{10} L_a(q_1,q_2) - \log_{10} \max(L(q_1), L(q_2))}{%
-    LODca = log10 La(q1,q2) - log10 max(L(q1), L(q2))}.  
-    
+  Finally, we may calculate, for each pair of
+  chromosomes, the difference between the additive LOD score and the
+  maximum single-QTL LOD scores for that pair of chromosomes
+  (\code{"cond-add"}).   
+
   If a color scale is plotted (\code{zscale=TRUE}), the axis on the
-  left indicates the scale for the epistasis LOD scores (the upper
-  triangle), while the axis on the right indicates the scale for the
-  lower triangle.  Note that the axis labels get screwed up
+  left indicates the scale for the upper-left triangle,
+  while the axis on the right indicates the scale for the
+  lower-right triangle.  Note that the axis labels can get screwed up
   if you change the size of the figure window; you'll need to redo the
   plot. 
-%
-%
-%  Note that the numbers plotted with the contours (if
-%  \code{contours=TRUE}) correspond to the scale for the lower triangle,
-%  and are likely incorrect for the upper triangle.  It appears to be
-%  difficult to fix this.   
 }
 
 
 \examples{
-data(fake.f2)
-fake.f2 <- calc.genoprob(fake.f2, step=5)
-out.2dim <- scantwo(fake.f2, method="hk", chr=c(1,8,13,14))
-plot(out.2dim)
-plot(out.2dim, nodiag=FALSE)
-plot(out.2dim, lower="joint", nodiag=FALSE)
+data(hyper)
+\dontshow{hyper <- subset(hyper, chr=c(1,4,6,15))}
+hyper <- calc.genoprob(hyper, step=5)
+\dontshow{hyper <- calc.genoprob(hyper)}
+
+# 2-d scan by EM and by Haley-Knott regression
+out2.em <- scantwo(hyper, method="em")
+out2.hk <- scantwo(hyper, method="hk")
+
+# plot epistasis and full LOD scores
+plot(out2.em)
+
+# plot cond-int in upper triangle and full in lower triangle
+#     for chromosomes 1, 4, 6, 15
+plot(out2.em, upper="cond-int", chr=c(1,4,6,15))
+
+# plot cond-add in upper triangle and add in lower triangle
+#     for chromosomes 1, 4
+plot(out2.em, upper="cond-add", lower="add", chr=c(1,4))
+
+# plot the differences between the LOD scores from Haley-Knott
+#     regression and the EM algorithm
+plot(out2.hk - out2.em, allow.neg=TRUE)
 }
 
 \seealso{ \code{\link[qtl]{scantwo}},
-  \code{\link[qtl]{summary.scantwo}}, \code{\link[qtl]{plot.scanone}} }
+  \code{\link[qtl]{summary.scantwo}}, \code{\link[qtl]{plot.scanone}},
+  \code{\link[qtl]{-.scantwo}} }
 
-\author{Hao Wu, \email{hao@jax.org}; Karl W Broman,
+\author{Hao Wu; Karl W Broman,
   \email{kbroman@jhsph.edu}; Brian Yandell } 
 
 \keyword{hplot}

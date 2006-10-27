@@ -46,7 +46,7 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
   interference (see the references, below), of which the no interference
   model and the chi-square model are special cases.  Chiasmata on the
   four-strand bundle are a superposition of chiasmata from two different
-  mechanisms.  With probability \code{p}, they arise by a mechanisms
+  mechanisms.  With probability \code{p}, they arise by a mechanism
   exhibiting no interference; the remainder come from a chi-square model
   with inteference parameter \code{m}.  Note that \code{m=0} corresponds
   to no interference, and with \code{p=0}, one gets a pure chi-square
@@ -61,7 +61,7 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
   variation is assumed to be normally distributed with variance 1.
 
   For a backcross, the effect of a QTL is a single number corresponding
-  to half the difference between the homozygote and the heterozygote.
+  to the difference between the homozygote and the heterozygote.
 
   For an intercross, the effect of a QTL is a pair of numbers,
   (\eqn{a,d}), where \eqn{a} is the additive effect (half the difference
@@ -77,12 +77,12 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
 
 \value{
   An object of class \code{cross}.  See \code{\link[qtl]{read.cross}} for
-  details. \cr 
+  details. 
 
   If \code{keep.qtlgeno} is TRUE, the cross object will contain a
   component \code{qtlgeno} which is a matrix containing the QTL
   genotypes (with complete data and no errors), coded as in the genotype
-  data. \cr 
+  data.
 
   If \code{keep.errorind} is TRUE and errors were simulated, each
   component of \code{geno} will each contain a matrix \code{errors},

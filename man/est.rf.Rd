@@ -34,8 +34,8 @@ est.rf(cross, maxit=4000, tol=1e-4)
   intercross or 4-way cross, a version of the EM algorithm must be used
   to estimate recombination fractions. (Since, for example, in an
   intercross individual that is heterozygous at two loci, it is not
-  known whether it shows 0 or 2 recombinations.)  Note that, for the
-  4-way cross, we estimate sex-averaged recombination fractions.
+  known whether there were 0 or 2 recombination events.)  Note that, for
+  the 4-way cross, we estimate sex-averaged recombination fractions.
 }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
@@ -47,6 +47,6 @@ plot.rf(badorder)
 }
 
 \seealso{ \code{\link[qtl]{plot.rf}}, \code{\link[qtl]{est.map}},
-  \code{\link[qtl]{badorder}} }
+  \code{\link[qtl]{badorder}}, \code{\link[qtl]{checkAlleles}} }
 
 \keyword{utilities}

@@ -5,9 +5,9 @@
 
 \description{
   This function is used to plot allelic effect at all markers for
-  selected chromosomes. For backcross, there will be only one line
-  represents the additive effect. For F2, there will be two lines
-  represent additive and dominance effects. 
+  selected chromosomes. For backcross, there will be only one line,
+  representing the additive effect. For F2, there will be two lines,
+  representing the additive and dominance effects. 
 }
 
 \usage{
@@ -21,7 +21,7 @@ effectscan(cross, pheno.col=1, chr, ylim, gap=25,
   \item{cross}{An object of class \code{cross}.}
   \item{pheno.col}{Column number in the phenotype matrix which to be
     drawn in the plot.}
-  \item{chr}{Chromosome number to be drawn in the plot.}
+  \item{chr}{Chromosome(s) to be drawn in the plot (optional).}
   \item{ylim}{y-axis limit.}
   \item{gap}{Gap separating chromosomes (in cM).}
   \item{col}{Line colors.}
@@ -30,10 +30,17 @@ effectscan(cross, pheno.col=1, chr, ylim, gap=25,
   \item{mtick}{Tick mark type for markers.}
   \item{main}{Figure title.}
   \item{add.legend}{A logical value to indicate add legend or not.}
-  \item{\dots}{Passed to the function \code{\link[base]{plot}} when it
+  \item{\dots}{Passed to the function \code{\link[graphics]{plot}} when it
     is called.}
 }
 \value{None.}
+
+\details{
+  The function calls \code{\link[qtl]{effectplot}} repeatedly for all
+  markers on the selected chromosomes.  The results of
+  \code{\link[qtl]{sim.geno}} are required for taking account of missing
+  genotype information.
+}
 
 \examples{
 data(fake.f2)
@@ -43,8 +50,9 @@ effectscan(fake.f2, ylim=c(-6,3))
 effectscan(fake.f2, chr=1:4, ylim=c(-6,3), mtick="triangle")
 }
 
-\author{Hao Wu, \email{hao@jax.org}}
+\author{Hao Wu}
 
-\seealso{ \code{\link[qtl]{effectplot}}, \code{\link[qtl]{plot.pxg}} }
+\seealso{ \code{\link[qtl]{effectplot}}, \code{\link[qtl]{plot.pxg}},
+  \code{\link[qtl]{sim.geno}} } 
 
 \keyword{hplot}

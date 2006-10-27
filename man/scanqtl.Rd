@@ -11,19 +11,19 @@
 
 \usage{
 scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
-        method=c("imp"), incl.markers=FALSE, verbose=TRUE)
+        method="imp", incl.markers=FALSE, verbose=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{pheno.col}{Column number in the phenotype matrix which should be
+ \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.}
  \item{chr}{Vector indicating the chromosome for each QTL.}
  \item{pos}{List indicating the positions or intervals on the chromosome
    to be scanned.  Each element should be either a single number (for a
    specific position) or a pair of numbers (for an interval).}
  \item{covar}{A data frame of covariates.}
- \item{formula}{An object of class \code{\link[base]{formula}}
+ \item{formula}{An object of class \code{\link[stats]{formula}}
    indicating the model to be fitted.  QTLs are indicated as \code{Q1},
    \code{Q2}, etc.  Covariates are indicated by their names in \code{covar}.}
  \item{method}{Indicates whether to use the EM algorithm or  
@@ -34,28 +34,31 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
 }
 
 \details{
-  The formula is used to specified the model to be fitted. In the
-  formula, user has to use \code{Q1}, \code{Q2}, etc., or \code{q1},
+  The formula is used to specified the model to be fit. In the
+  formula, use \code{Q1}, \code{Q2}, etc., or \code{q1},
   \code{q2}, etc., to represent the QTLs, and the column names in the
   covariate data frame to represent the covariates.
     
   Only the interaction terms need to be specifed in the formula. The
   main effects of all input QTLs (as specified by chr and pos) and
   covariates (as specifed by covar) will be included by default. For
-  example, if the formula is \code{y~Q1*Q2*Sex}, there are three
-  elements in input chr and pos and Sex is one of the column names for
-  input cov, the formula used in genome scan will be
+  example, if the formula is \code{y~Q1*Q2*Sex}, and there are three
+  elements in input \code{chr} and \code{pos} and Sex is one of the
+  column names for
+  input covariates, the formula used in genome scan will be
   \code{y ~ Q1 + Q2 + Q3 + Sex + Q1:Q2 + Q1:Sex + Q2:Sex + Q1:Q2:Sex}. 
 
-  The input pos is a list or vector to specify the position/range of the
-  input chromosomes to be scanned. If it is a vector, it gives the
-  specified position on the chromosomes. If it is a list, it will
-  contain either the certain positions or a range on chromosomes. For
-  example, the input chr is c(1, 6, 13). If pos is c(9.8, 34.0, 18.6),
-  it means to scan chromosome 1 at 9.8cM, chromosome 6 at 34cM and 
-  chromosome 13 at 18.6cM. If pos is list(c(5,15), c(30,36), 18), it
+  The input \code{pos} is a list or vector to specify the position/range
+  of the input chromosomes to be scanned. If it is a vector, it gives the
+  precise positions of the QTL on the chromosomes. If it is a list, it will
+  contain either the precise positions or a range on the chromosomes. For
+  example, consider the case that the input \code{chr = c(1, 6,
+    13)}. If \code{pos = c(9.8, 34.0, 18.6)}, 
+  it means to fit a model with QTL on chromosome 1 at 9.8cM, chromosome
+  6 at 34cM and  chromosome 13 at 18.6cM.
+  If \code{pos = list(c(5,15), c(30,36), 18)}, it
   means to scan chromosome 1 from 5cM to 15cM, chromosome 6 from 30cM to
-  36cM, fix chromosome 13 at 18cM.
+  36cM, fix the QTL on chromosome 13 at 18cM.
 }
  
 \value{
@@ -64,11 +67,11 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
   of QTLs specifed.} 
 
 \references{
-  Sen, S. and Churchill, G. A. (2001) A statistical framework for quantitative
+  Sen, \'S. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
 
-\author{Hao Wu, \email{hao@jax.org} }
+\author{Hao Wu}
 
 \examples{
 data(fake.f2)

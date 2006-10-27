@@ -22,6 +22,9 @@
 est.rf <-
 function(cross, maxit=4000, tol=1e-4) 
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   n.chr <- nchr(cross)
   n.mar <- totmar(cross)
   n.ind <- nind(cross)
@@ -109,9 +112,12 @@ function(cross, maxit=4000, tol=1e-4)
   
 
 plot.rf <-
-function(x, chr, which=c("both","lod","rf"), ...)
+function(x, chr, what=c("both","lod","rf"), ...)
 {
-  which <- match.arg(which)
+  if(length(class(x)) < 2 || class(x)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
+  what <- match.arg(what)
   
   if(!missing(chr)) x <- subset(x,chr=chr)
   
@@ -139,11 +145,11 @@ function(x, chr, which=c("both","lod","rf"), ...)
   
   g[is.na(g)] <- -1
 
-  if(which=="lod") { # plot LOD scores 
+  if(what=="lod") { # plot LOD scores 
     # copy upper triangle (LODs) to lower triangle (rec fracs)
     g[row(g) > col(g)] <- t(g)[row(g) > col(g)]
   }
-  else if(which=="rf") { # plot recombination fractions
+  else if(what=="rf") { # plot recombination fractions
     # copy lower triangle (rec fracs) to upper triangle (LODs)
     g[row(g) < col(g)] <- t(g)[row(g) < col(g)]
   }
@@ -151,7 +157,7 @@ function(x, chr, which=c("both","lod","rf"), ...)
 
 
   image(1:ncol(g),1:nrow(g),t(g),ylab="Markers",xlab="Markers",breaks=br,
-        col=c("lightgray",rev(rainbow(64,start=0,end=2/3))))
+        col=c("lightgray",rev(rainbow(64,start=0,end=2/3, gamma=0.6))))
   
   # plot lines at the chromosome boundaries
   n.mar <- nmar(x)
@@ -173,8 +179,8 @@ function(x, chr, which=c("both","lod","rf"), ...)
   for(i in 1:n.chr) 
     text(a[2]+(a[2]-a[1])*0.025,mean(wh[i+c(0,1)]),names(x$geno)[i])
 
-  if(which=="lod") title(main="Pairwise LOD scores")
-  else if(which=="rf") title(main="Recombination fractions")
+  if(what=="lod") title(main="Pairwise LOD scores")
+  else if(what=="rf") title(main="Recombination fractions")
   else title("Pairwise recombination fractions and LOD scores")
 
   invisible()
@@ -242,8 +248,10 @@ function(cross, threshold=3, verbose=TRUE)
     
   # drop X chromosome
   chrtype <- sapply(cross$geno,class)
-  if(all(chrtype=="X"))
-    stop("checkAlleles() only works for autosomal data.")
+  if(all(chrtype=="X")) {
+    if(verbose) cat("checkAlleles() only works for autosomal data.\n")
+    return(NULL)
+  }
 
   cross <- subset(cross, chr = (chrtype != "X"))
 

@@ -4,7 +4,7 @@
 \title{Chromosome lengths in QTL experiment}
 
 \description{
-  Obtain the chromosome lengths in a \code{cross} object.
+  Obtain the chromosome lengths in a \code{cross} or \code{map} object.
 }
 
 \usage{
@@ -12,8 +12,7 @@ chrlen(object)
 }
 
 \arguments{
- \item{object}{An object of class \code{cross}.  See
-   \code{\link[qtl]{read.cross}} for details.}
+ \item{object}{An object of class \code{map} or of class \code{cross}.}
 }
 
 \value{
@@ -26,6 +25,9 @@ chrlen(object)
 \examples{
 data(fake.f2)
 chrlen(fake.f2)
+
+map <- pull.map(fake.f2)
+chrlen(map)
 }
 
 \seealso{ \code{\link[qtl]{summary.map}}, \code{\link[qtl]{pull.map}},

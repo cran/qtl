@@ -3,7 +3,7 @@
 # calc.genoprob.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -24,6 +24,9 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"),
          stepwidth=c("fixed", "variable"))
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   # map function
   map.function <- match.arg(map.function)
   if(map.function=="kosambi") mf <- mf.k
@@ -91,11 +94,8 @@ function(cross, step=0, off.end=0, error.prob=0.0001,
       one.map <- TRUE
       gen.names <- LETTERS[1:8]
     }
-    else {
-      err <- paste("calc.genoprob not available for cross type",
-                    type, ".")
-      stop(err)
-    }
+    else 
+      stop("calc.genoprob not available for cross type ", type, ".")
 
     # genotype data
     gen <- cross$geno[[i]]$data

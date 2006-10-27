@@ -3,21 +3,18 @@
 # scantwo.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
-#            Hao Wu, and Brian Yandell
+#            Hao Wu
 #
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Hao Wu (The Jackson Lab) wrote the initial code for the imputation
-# method and summary.scantwo functions.  Brian Yandell made further
-# modifications/enhancements to summary.scantwo, but Karl re-wrote
-# most of it later.
+# method. 
 #
 # Part of the R/qtl package
-# Contains: scantwo, scantwo.perm, summary.scantwo
-#           print.summary.scantwo, max.scantwo
-#           scantwo.perm.engine
+# Contains: scantwo, scantwo.perm, scantwo.perm.engine
+#           revisescantwodf
 #
 ######################################################################
 
@@ -34,17 +31,29 @@ function(cross, chr, pheno.col=1,
          model=c("normal","binary"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
-         run.scanone=TRUE, incl.markers=FALSE, maxit=4000, tol=1e-4,
-         verbose=TRUE, n.perm, n.node=1)
+         use=c("all.obs", "complete.obs"),
+         incl.markers=FALSE, clean.output=FALSE,
+         maxit=4000, tol=1e-4, verbose=TRUE, n.perm,
+         perm.strata=NULL)
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   method <- match.arg(method)
   model <- match.arg(model)
+  use <- match.arg(use)
   
+  dfAAf <- dfAAa <- dfAA1 <- -1
+  dfAXf <- dfAXa <- dfAX1 <- -1
+  dfXXf <- dfXXa <- dfXX1 <- -1
+
   origcross <- cross
   
   # pull out chromosomes to be scanned
   if(!missing(chr)) cross <- subset(cross,chr=chr)
   if(missing(n.perm)) n.perm <- 0
+
+  fullmap <- pull.map(cross)
 
   if(any(pheno.col < 1 | pheno.col > nphe(cross)))
     stop("pheno.col values should be between 1 and the no. phenotypes")
@@ -67,68 +76,128 @@ function(cross, chr, pheno.col=1,
     }
   }
 
+  if(length(pheno.col)==1 && n.perm>=0) use <- "complete.obs"
+
+  if(n.perm >= 0) {    # not in the midst of a permutation test
+    # If use="all.obs", check whether there are individuals missing some
+    # phenotypes but not others.  If not, act like "complete.obs".
+    if(use=="all.obs" && length(pheno.col) > 1) {
+      n.phe <- length(pheno.col)
+      temp <- apply(cross$pheno[,pheno.col], 1, function(a) sum(is.na(a)))
+      if(all(temp==0 | temp==n.phe)) use <- "complete.obs"
+    }
+
+    # If use="complete.obs", drop individuals with any missing phenotypes
+    if(use=="complete.obs") {
+      temp <- checkcovar(cross, pheno.col, addcovar, intcovar,
+                         perm.strata, TRUE)
+      cross <- temp[[1]]
+      pheno <- temp[[2]]
+      addcovar <- temp[[3]]
+      intcovar <- temp[[4]]
+      n.addcovar <- temp[[5]]
+      n.intcovar <- temp[[6]]
+      perm.strata <- temp[[7]]
+    }
+  }
+
   # multiple phenotype for methods other than imp and hk
   if(length(pheno.col)>1 && n.perm <= 0 &&
-     method!="imp" && method != "hk" ) {
+     (use=="all.obs" || (method!="imp" && method != "hk" ))) {
     n.phe <- length(pheno.col)
     if(verbose) cat(" -Phenotype 1\n")
-    output <- scantwo(cross, , pheno.col[1], model, method, addcovar,
-                      intcovar, weights, run.scanone, incl.markers, maxit,
-                      tol, verbose, n.perm, n.node)
+    output <- scantwo(cross, pheno.col=pheno.col[1], model=model,
+                      method=method, addcovar=addcovar,
+                      intcovar=intcovar, weights=weights, use=use,
+                      incl.markers=incl.markers,
+                      clean.output=clean.output,
+                      maxit=maxit, tol=tol, verbose=verbose, n.perm=n.perm,
+                      perm.strata=perm.strata)
     temp <- array(dim=c(nrow(output$lod), ncol(output$lod), n.phe))
     temp[,,1] <- output$lod
     output$lod <- temp
     for(i in 2:n.phe) {
       if(verbose) cat(" -Phenotype ", i, "\n")
-      temp <- scantwo(cross, , pheno.col[i], model, method, addcovar,
-                      intcovar, weights, run.scanone, incl.markers, maxit,
-                      tol, verbose, n.perm, n.node)
+      temp <- scantwo(cross, pheno.col=pheno.col[i], model=model, method=method,
+                      addcovar=addcovar, intcovar=intcovar, weights=weights,
+                      use=use, incl.markers=incl.markers,
+                      clean.output=clean.output,
+                      maxit=maxit, tol=tol, verbose=verbose, n.perm=n.perm,
+                      perm.strata=perm.strata)
       output$lod[,,i] <- temp$lod
       if(!is.null(output$scanoneX))
         output$scanoneX <- cbind(output$scanoneX, temp$scanoneX)
     }
+    attr(output,"fullmap") <- fullmap
+    attr(output,"phenotypes") <- colnames(cross$pheno)[pheno.col]
     return(output)
   }
 
-  # check phenotypes and covariates; drop individuals with missing values
-  # in case of permutation test, only do checks once
-  if(n.perm>=0) { 
-    temp <- checkcovar(cross, pheno.col, addcovar, intcovar)
-    cross <- temp[[1]]
-    pheno <- temp[[2]]
-    addcovar <- temp[[3]]
-    intcovar <- temp[[4]]
-    n.addcovar <- temp[[5]]
-    n.intcovar <- temp[[6]]
+  # if n.perm specified, do a permutation test
+  if(n.perm>0) { 
+    return(scantwo.perm(cross, pheno.col=pheno.col, model=model, method=method,
+                        addcovar=addcovar, intcovar=intcovar, weights=weights,
+                        use=use, incl.markers=incl.markers, clean.output=clean.output,
+                        maxit=maxit,
+                        tol=tol, verbose=verbose, n.perm=n.perm,
+                        perm.strata=perm.strata))
   }
-  else {  # come here only in permutation tests
-    pheno <- as.matrix(cross$pheno[,pheno.col])
-    if(is.null(addcovar)) n.addcovar <- 0
-    else n.addcovar <- ncol(addcovar)
-    if(is.null(intcovar)) n.intcovar <- 0
-    else n.intcovar <- ncol(intcovar)
+
+
+  if(n.perm < 0) { # in the midst of permutations
+    if(use=="all.obs") {
+      temp <- checkcovar(cross, pheno.col, addcovar, intcovar,
+                         perm.strata, n.perm==-1)
+      cross <- temp[[1]]
+      pheno <- temp[[2]]
+      addcovar <- temp[[3]]
+      intcovar <- temp[[4]]
+      n.addcovar <- temp[[5]]
+      n.intcovar <- temp[[6]]
+      perm.strata <- temp[[7]]
+    }
+    else {
+      pheno <- as.matrix(cross$pheno[,pheno.col])
+      if(is.null(addcovar)) n.addcovar <- 0
+      else n.addcovar <- ncol(addcovar)
+      if(is.null(intcovar)) n.intcovar <- 0
+      else n.intcovar <- ncol(intcovar)
+    }
   }
+
   n.chr <- nchr(cross)
   n.ind <- nind(cross)
   n.phe <- length(pheno.col)
   type <- class(cross)[1]
   chrtype <- sapply(cross$geno,class)
 
+  if(any(chrtype=="X")) {
+    sexpgm <- getsex(cross)
+
+    addcovarX <- revisecovar(sexpgm,addcovar)
+    if(!is.null(addcovar) && (nd <- attr(addcovarX, "n.dropped")) > 0)
+      warning("Dropped ", nd, " additive covariates on X chromosome.")
+    if(length(addcovarX)==0) {
+      n.acX <- 0
+      addcovarX <- NULL
+    }
+    else n.acX <- ncol(addcovarX)
+
+    intcovarX <- revisecovar(sexpgm,intcovar)
+    if(!is.null(intcovar) && (nd <- attr(intcovarX, "n.dropped")) > 0)
+      warning("Dropped ", nd, " interactive covariates on X chromosome.")
+    if(length(intcovarX)==0) {
+      n.icX <- 0
+      intcovarX <- NULL
+    }
+    else n.icX <- ncol(intcovarX)
+  }
+  
   if(model=="binary") {
     if(method != "em") {
       method <- "em"
       warning("Only EM algorithm coded for binary traits")
     }
-    if(any(chrtype=="X")) {
-      sexpgm <- getsex(cross)
-#      if(!is.null(sexpgm$sex) || !is.null(sexpgm$pgm)) {
-#        cross <- subset(cross,chr = chrtype!="X")
-#        n.chr <- nchr(cross)
-#        n.ind <- nind(cross)
-#        warning("X chromosome is not yet working for binary traits; dropping it.")
-#      }
-    }
-
     if(!is.null(weights)) {
       weights <- NULL
       warning("weights ignored for binary traits.")
@@ -137,13 +206,6 @@ function(cross, chr, pheno.col=1,
     u <- unique(pheno)
     if(any(u!=0 & u!=1))
       stop("Phenotypes must be either 0 or 1.")
-  }
-
-  # if n.perm specified, do a permutation test
-  if(n.perm>0) { 
-    return(scantwo.perm(cross, pheno.col, model, method, addcovar,
-                        intcovar, weights, incl.markers,
-                        maxit, tol, verbose, n.perm, n.node))
   }
 
   if(n.perm == 0) { # not in the midst of permutations
@@ -164,14 +226,15 @@ function(cross, chr, pheno.col=1,
     weights <- sqrt(weights)
   }
 
-  if(run.scanone) { # also do scanone
-    if(verbose) cat(" --Running scanone\n")
-    temp <- scanone(cross, pheno.col=pheno.col, model=model, method=method, 
-                    addcovar=addcovar, intcovar=intcovar, weights=weights,
-                    maxit=maxit, tol=tol, verbose=FALSE)
-    out.scanone <- temp[,-(1:2),drop=FALSE]
-    if(verbose) cat(" --Running scantwo\n")
-  }
+  if(verbose) cat(" --Running scanone\n")
+  temp <- scanone(cross, pheno.col=pheno.col, model=model, method=method, 
+                  addcovar=addcovar, intcovar=intcovar, weights=weights,
+                  use=use, maxit=maxit, tol=tol, verbose=FALSE)
+  out.scanone <- temp[,-(1:2),drop=FALSE]
+  dfAA1 <- attr(temp, "df")["A"]
+  if(any(chrtype=="X"))
+    dfAX1 <- dfXX1 <- attr(temp, "df")["X"]
+  if(verbose) cat(" --Running scantwo\n")
 
   if(method=="mr" || method=="mr-imp" || method=="mr-argmax") { # marker regression
     # number of genotypes on each chromosome, 
@@ -187,11 +250,6 @@ function(cross, chr, pheno.col=1,
     # number of possible genotypes for each chromosome
     n.gen <- 1:n.chr
     for(i in 1:n.chr) { 
-      if(chrtype[i]=="X") 
-        sexpgm <- getsex(cross)
-      else 
-        sexpgm <- NULL
-
       gen.names <- getgenonames(type, chrtype[i], "full", sexpgm, attributes(cross))
       n.gen[i] <- length(gen.names)
     }
@@ -202,7 +260,7 @@ function(cross, chr, pheno.col=1,
     steps <- rep(0,n.chr) # step length on each chromosome
     if(method=="imp") {
       for(i in 1:n.chr) {
-        if(is.na(match("draws",names(cross$geno[[i]])))) {
+        if(!("draws" %in% names(cross$geno[[i]]))) {
           # need to run sim.geno
           warning("First running sim.geno.")
           cross <- sim.geno(cross)
@@ -222,7 +280,7 @@ function(cross, chr, pheno.col=1,
     }
     else { # H-K or EM
       for(i in 1:n.chr) {
-        if(is.na(match("prob",names(cross$geno[[i]])))) {
+        if(!("prob" %in% names(cross$geno[[i]]))) {
           # need to run calc.genoprob
           warning("First running calc.genoprob.")
           cross <- calc.genoprob(cross)
@@ -240,11 +298,6 @@ function(cross, chr, pheno.col=1,
     some.dropped <- rep(FALSE,n.chr)
 
     for(i in 1:n.chr) { 
-      if(chrtype[i]=="X") 
-        sexpgm <- getsex(cross)
-      else 
-        sexpgm <- NULL
-
       gen.names <- getgenonames(type, chrtype[i], "full", sexpgm, attributes(cross))
       n.gen[i] <- length(gen.names)
 
@@ -349,11 +402,10 @@ function(cross, chr, pheno.col=1,
     for(j in i:n.chr) { # loop over the 2nd chromosome
 
       if(chrtype[i]=="X" || chrtype[j]=="X") {
-        ac <- revisecovar(sexpgm,addcovar)
-        n.ac <- ifelse(is.null(ac),0,ncol(ac))
-        ic <- revisecovar(sexpgm,intcovar)
-        n.ic <- ifelse(is.null(ic),0,ncol(ic))
-
+        ac <- addcovarX
+        n.ac <- n.acX
+        ic <- intcovarX
+        n.ic <- n.icX
       }
       else {
         ac <- addcovar
@@ -364,10 +416,26 @@ function(cross, chr, pheno.col=1,
       if(i==j && chrtype[i]=="X") {
         col2drop <- dropXcol(type, sexpgm, attributes(cross))
         n.col2drop <- sum(col2drop)
+        n.col2drop.addmodel <- sum(col2drop[1:(2*n.gen[i]-1)])
       }
       else {
         col2drop <- rep(0,n.gen[i]*n.gen[j])
         n.col2drop <- 0
+      }
+
+      # get degrees of freedom
+      if(dfAAf < 0 && chrtype[i]=="A" && chrtype[j]=="A") { 
+        dfAAf <- (n.gen[i]*n.gen[j]-1)*(n.ic+1)
+        dfAAa <- (n.gen[i]+n.gen[j]-2)*(n.ic+1)
+      }
+      else if(dfAXf < 0 && ((chrtype[i]=="A" && chrtype[j]=="X") ||
+        (chrtype[i]=="X" && chrtype[j]=="A"))) {
+        dfAXf <- (n.gen[i]*n.gen[j]-1)*(n.icX+1)
+        dfAXa <- (n.gen[i]+n.gen[j]-2)*(n.icX+1)
+      }
+      if(dfXXf < 0 && chrtype[i]=="X" && chrtype[j]=="X") {
+        dfXXf <- (n.gen[i]*n.gen[j]-1-n.col2drop)*(n.icX+1)
+        dfXXa <- (n.gen[i]+n.gen[j]-2-n.col2drop.addmodel)*(n.icX+1)
       }
 
       # print the current working pair
@@ -415,7 +483,6 @@ function(cross, chr, pheno.col=1,
             nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
           }
 
-#          cat("nllik0: ", nllik0, "\n")
         }
         else { # on different chromosomes
           if(n.phe > 1) {
@@ -453,7 +520,6 @@ function(cross, chr, pheno.col=1,
               nllik0 <- -sum(dnorm(resid0,0,sig0/weights,log=TRUE))/log(10)
             }
           }
-
 
           if(verbose>1) cat("  --Calculating joint probs.\n")
 
@@ -501,7 +567,7 @@ function(cross, chr, pheno.col=1,
             ind <- cbind(first=t(ind)[w],second=ind[w])
 
             # which part to keep
-            keep <- apply(ind,1,function(a,b) all(!is.na(match(a,b))),
+            keep <- apply(ind,1,function(a,b) all(a %in% b),
                           keep.pos[[i]])
             temp <- temp[,keep,,]
           }
@@ -695,7 +761,7 @@ function(cross, chr, pheno.col=1,
             ind <- cbind(first=t(ind)[w],second=ind[w])
 
             # which part to keep
-            keep <- apply(ind,1,function(a,b) all(!is.na(match(a,b))),
+            keep <- apply(ind,1,function(a,b) all(a %in% b),
                           keep.pos[[i]])
             temp <- temp[,keep,,]
           }
@@ -839,17 +905,20 @@ function(cross, chr, pheno.col=1,
   } # end loop over first chromosome
 
   # subtract null neg log lik from lower tri
-  if(method=="em")
-    results[lower.tri(results)] <- nllik0 - results[lower.tri(results)]
+  if(method=="em") {
+    offdiag <- lower.tri(results) | upper.tri(results)
+    results[offdiag] <- nllik0 - results[offdiag]
+  }
   else if(method=="hk") {
-    if(n.phe == 1)
-      results[lower.tri(results)] <- nllik0 - results[lower.tri(results)]
+    if(n.phe == 1) {
+      offdiag <- lower.tri(results) | upper.tri(results)
+      results[offdiag] <- nllik0 - results[offdiag]
+    }
     else { # multiple phenotypes
-      lower <- lower.tri(results[,,1])
+      offdiag <- lower.tri(results[,,1]) | upper.tri(results[,,1])
       for(itmp in 1:n.phe) {
         # I'm doing a loop here. I should put null model back to C function
-        results[,,itmp][lower] <- nllik0[itmp] -
-          results[,,itmp][lower]
+        results[,,itmp][offdiag] <- nllik0[itmp] - results[,,itmp][offdiag]
       }
     }
   }
@@ -861,7 +930,7 @@ function(cross, chr, pheno.col=1,
     # determine which covariates belong in null hypothesis
     temp <- scanoneXnull(type, sexpgm)
     adjustX <- temp$adjustX
-    dfX <- temp$dfX
+    parX0 <- temp$parX0
     sexpgmcovar <- temp$sexpgmcovar
       
     if(adjustX) {
@@ -870,10 +939,14 @@ function(cross, chr, pheno.col=1,
                 "    when there is missing genotype data.")
 
       if(model=="binary") {
-        if(n.ac > 0)
+        if(n.ac > 0) {
           nullfitX <- glm(pheno ~ ac+sexpgmcovar, family=binomial(link="logit"))
-        else
+          parX0 <- lm(pheno ~ ac+sexpgmcovar)$rank
+        }
+        else {
           nullfitX <- glm(pheno ~ sexpgmcovar, family=binomial(link="logit"))
+          parX0 <- ncol(sexpgmcovar)
+        }
         fittedX <- nullfitX$fitted
         nullcoefX <- nullfitX$coef
         nllikX <- -sum(pheno*log10(fittedX) + (1-pheno)*log10(1-fittedX))
@@ -883,8 +956,7 @@ function(cross, chr, pheno.col=1,
         if(n.ac > 0) {
           outX <- lm(pheno ~ ac+sexpgmcovar, weights=weights^2)
           residX <- outX$resid
-          # perhaps revise the dfX, if some columns got dropped
-          dfX <- dfX - (ncol(sexpgmcovar)+n.ac - (outX$rank-1))
+          parX0 <- outX$rank
         }
         else 
           residX <- lm(pheno ~ sexpgmcovar, weights=weights^2)$resid
@@ -934,9 +1006,10 @@ function(cross, chr, pheno.col=1,
 
       if(n.phe > 1)
         wh <- ((gmap[row(results[,,1]),4] | gmap[col(results[,,1]),4]) &
-               lower.tri(results[,,1]))
+               (lower.tri(results[,,1]) | upper.tri(results[,,1])))
       else 
-        wh <- ((gmap[row(results),4] | gmap[col(results),4]) & lower.tri(results))
+        wh <- ((gmap[row(results),4] | gmap[col(results),4]) &
+               (lower.tri(results) | upper.tri(results)))
 
       if(n.phe > 1) {
         for(i in 1:n.phe) 
@@ -945,30 +1018,33 @@ function(cross, chr, pheno.col=1,
       else 
         results[wh] <- results[wh] + nllikX - nllik0
 
-      if(run.scanone) {
-        notxchr <- which(sapply(cross$geno,class)!="X")
-        if(length(notxchr) > 0) {
-          if(verbose) cat(" --Running scanone with special X chr covariates\n")
-          temp <- scanone(subset(cross,chr=notxchr),
-                          pheno.col=pheno.col, 
-                          model=model, method=method,
-                          addcovar=cbind(ac,sexpgmcovar),
-                          intcovar=ic, weights=weights,
-                          maxit=maxit, tol=tol, verbose=FALSE)
+      notxchr <- which(sapply(cross$geno,class)!="X")
+      if(length(notxchr) > 0) {
+        if(verbose) cat(" --Running scanone with special X chr covariates\n")
+        temp <- scanone(subset(cross,chr=notxchr),
+                        pheno.col=pheno.col, 
+                        model=model, method=method,
+                        addcovar=cbind(ac,sexpgmcovar),
+                        intcovar=ic, weights=weights, use=use,
+                        maxit=maxit, tol=tol, verbose=FALSE)
 
-          scanoneX <- temp[,-(1:2),drop=FALSE]
+        scanoneX <- temp[,-(1:2),drop=FALSE]
+        scanoneX <- rbind(scanoneX,
+                          out.scanone[rownames(gmap),,drop=FALSE][gmap[,4],,drop=FALSE])
 
-          scanoneX <- rbind(scanoneX,
-                            out.scanone[rownames(gmap),,drop=FALSE][gmap[,4],,drop=FALSE])
-
-          scanoneX <- scanoneX[rownames(gmap),,drop=FALSE]
-        }
-        else {
-          scanoneX <- out.scanone[rownames(gmap),,drop=FALSE][gmap[,4],,drop=FALSE]
-          scanoneX <- scanoneX[rownames(gmap),,drop=FALSE]
-        }
+        scanoneX <- scanoneX[rownames(gmap),,drop=FALSE]
+      }
+      else {
+        scanoneX <- out.scanone[rownames(gmap),,drop=FALSE][gmap[,4],,drop=FALSE]
+        scanoneX <- scanoneX[rownames(gmap),,drop=FALSE]
       }
     }
+
+    dfXXf <- dfXXf - parX0 + 1
+    dfXXa <- dfXXa - parX0 + 1
+
+    dfAXf <- dfAXf - parX0 + 1
+    dfAXa <- dfAXa - parX0 + 1
   }
   
 #  if(any(is.na(results) | results < -1e-6 | results == Inf))
@@ -984,20 +1060,34 @@ function(cross, chr, pheno.col=1,
 
   # output has 2 fields, lod and map
   out <- list(lod=results,map=gmap,scanoneX=scanoneX)
-  class(out) <- "scantwo"
 
   # fill in scanone result
-  if(run.scanone) { 
-    if(n.phe == 1)
-      diag(out$lod) <- out.scanone[rownames(out$map),]
-    else {
-      for(iphe in 1:n.phe) 
-        diag(out$lod[,,iphe]) <- out.scanone[rownames(out$map),iphe]
-    }
+  if(n.phe == 1)
+    diag(out$lod) <- out.scanone[rownames(out$map),]
+  else {
+    for(iphe in 1:n.phe) 
+      diag(out$lod[,,iphe]) <- out.scanone[rownames(out$map),iphe]
   }
 
   attr(out,"method") <- method
   attr(out,"type") <- type
+  attr(out, "fullmap") <- fullmap
+  class(out) <- "scantwo"
+
+  df <- NULL
+  if(any(chrtype=="A")) 
+    df <- rbind(df, "AA"=c("full"=dfAAf, "add"=dfAAa, "one"=dfAA1))
+  if(any(chrtype=="A") && any(chrtype=="X")) 
+    df <- rbind(df, "AX"=c("full"=dfAXf, "add"=dfAXa, "one"=dfAX1))
+  if(any(chrtype=="X")) 
+    df <- rbind(df, "XX"=c("full"=dfXXf, "add"=dfXXa, "one"=dfXX1))
+  colnames(df) <- c("full","add","one")
+  attr(out, "df") <- df
+
+  if(clean.output) # remove NA, 0 out positions between markers 
+    out <- clean(out)
+
+  attr(out, "phenotypes") <- colnames(pheno)
   out
 }
 
@@ -1011,54 +1101,22 @@ scantwo.perm <-
 function(cross, pheno.col=1, model=c("normal","binary"),
          method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
-         incl.markers=FALSE, maxit=4000, tol=1e-4, verbose=FALSE,
-         n.perm=1000, n.node=1) 
+         use=c("all.obs", "complete.obs"),
+         incl.markers=FALSE, clean.output=FALSE,
+         maxit=4000, tol=1e-4, verbose=FALSE,
+         n.perm=1000, perm.strata)
 {
   method <- match.arg(method)
   model <- match.arg(model)
+  use <- match.arg(use)
 
-  # for running on clusters, check if the setup is correct
-  if(n.node > 1) { ## run on cluster
-    ## initialize cluster
-    if(!require(snow))
-      stop("You have to install SNOW package to use cluster")
-    ## make cluster object
-    cl <- makeMPIcluster(nnodes)
-    ## correct the possible correlation problem
-    clusterApply(cl, runif(length(cl), max=1000000000), set.seed)
-    ## turn off verbose
-    verbose <- FALSE
-  }
-  
-  ## start permutation
-  if(n.node > 1) { ## run on clusters
-    ## calculate the number of permutation needed in each node
-    nperm.cluster <- rep(floor((n.perm-1)/n.node), n.node)
-    ## maybe some leftovers
-    leftover <- n.perm - 1 - sum(nperm.cluster)
-    if(leftover > 0)
-      nperm.cluster[1:leftover] <- nperm.cluster[1:leftover] + 1
-    ## load library on all nodes
-    clusterEvalQ(cl, library(qtl))
-    ## use clusterApply to run permutation on all nodes
-    ## note that the only different parameter passed to function
-    ## is nperm.cluster.
-    cat(paste("Doing permutation on", nnodes, "cluster nodes ... \n"))
-    pstar.nodes <- clusterApply(cl, nperm.cluster, scantwo.perm.engine,
-                                cross, pheno.col, model, method,
-                                addcovar, intcovar, weights,
-                                incl.markers, maxit, tol, verbose)
-    
-    ## collect the result from clusters
-    ## this part is to be done !!! - hao wu
-  }
-  else { ## on single node
-    res <- scantwo.perm.engine(n.perm, cross, pheno.col, model, 
-                               method, addcovar, intcovar, weights,
-                               incl.markers, maxit, tol, verbose)
-  }
-  
-  res
+  scantwo.perm.engine(n.perm, cross=cross, pheno.col=pheno.col,
+                      model=model, method=method, addcovar=addcovar,
+                      intcovar=intcovar, weights=weights, use=use,
+                      incl.markers=incl.markers, clean.output=clean.output,
+                      maxit=maxit, tol=tol, verbose=verbose,
+                      perm.strata=perm.strata)
+
 }
 
 
@@ -1069,46 +1127,83 @@ function(cross, pheno.col=1, model=c("normal","binary"),
 ######################################################################
 scantwo.perm.engine <-
 function(n.perm, cross, pheno.col, model,
-         method, addcovar, intcovar, weights,
-         incl.markers, maxit, tol, verbose)
+         method, addcovar, intcovar, weights, use,
+         incl.markers, clean.output,
+         maxit, tol, verbose, perm.strata)
 {
   ## local variables
   n.phe <- length(pheno.col)
-#  n.addcov <- ncol(addcovar)
   n.ind <- dim(cross$pheno)[1]
+  pn <- colnames(cross$pheno)[pheno.col]
 
-  ## initialize result
-  ## it's a list of two components, LOD.jnt and LOD.interxn
-  LOD.jnt <- matrix(0, n.perm, n.phe)
-  LOD.interxn <- matrix(0, n.perm, n.phe)
-#  res <- matrix(ncol=2,nrow=n.perm)
-      
-  if( (n.phe == 1) && ((method=="imp") || (method=="hk")) &&
-       is.null(addcovar) && is.null(intcovar) ) {
+  ## if there's only one phenotype, no covariate, and method is imp or hk,
+  ## generate permuted phenotype as a matrix and do permutation
+  ## as multiple phenotypes
+  ## we also need one sex and one direction, or that the
+  ##     stratification is within those groups
+  batch.mode <- FALSE
+  if( (n.phe==1) && ((method=="imp") || (method=="hk")) &&
+     is.null(addcovar) && is.null(intcovar) ) {
+    chrtype <- sapply(cross$geno, class)
+    sexpgm <- getsex(cross)
+    sex <- sexpgm$sex
+    pgm <- sexpgm$pgm
+    if(all(chrtype=="A")) 
+      batch.mode <- TRUE
+    else if((is.null(sex) || length(unique(sex))==1) &&
+       (is.null(pgm) || length(unique(pgm))==1)) 
+      batch.mode <- TRUE
+    else if(!is.null(perm.strata)) {
+      sp <- paste(sex, pgm, sep=":")
+      tab <- table(sp, perm.strata)
+      if(all(apply(tab, 2, function(a) sum(a != 0))==1))
+        batch.mode <- TRUE
+    }
+  }
+            
+  if(batch.mode) {
     if(verbose)
       cat("Doing permutation in batch mode ...\n")
-    ## if there's only one phenotype, no covariate, and method is imp or hk,
-    ## generate permuted phenotype as a matrix and do permutation
-    ## as multiple phenotypes
     ord <- matrix(0, n.ind, n.perm)
-    for(iperm in 1:n.perm)
-      ord[,iperm] <- sample(n.ind)
+    if(!is.null(perm.strata)) {  # stratified permutation test
+      if(length(perm.strata) != n.ind)
+        stop("perm.strata must be NULL or have length nind(cross).")
+      u <- unique(perm.strata)
+      theindex <- 1:n.ind
+      if(length(u)==n.ind)
+        stop("All elements of perm.strata are unique, so there will be no real permutation.")
+      if(length(u)==1)
+        warning("Just one unique element in perm.strata, so the perms are not stratified.")
 
-    cross$pheno <- matrix(cross$pheno[,pheno.col][ord], nrow=n.ind)
+      for(iperm in 1:n.perm) {
+        for(j in u) {
+          wh <- perm.strata==j
+          if(sum(wh)==1) ord[wh,iperm] <- theindex[wh]
+          else ord[wh,iperm] <- sample(theindex[wh])
+        }
+      }
+    }
+    else {
+      for(iperm in 1:n.perm)
+        ord[,iperm] <- sample(n.ind)
+    }
+
+    cross$pheno <- cbind(matrix(cross$pheno[,pheno.col][ord], nrow=n.ind), cross$pheno)
 
     pheno.col <- 1:n.perm
-    tem <- scantwo(cross,,pheno.col,model,method,addcovar,
-                   intcovar,weights,run.scanone=FALSE,
-                   maxit=maxit,incl.markers=incl.markers,
-                   tol=tol, verbose=TRUE, n.perm=-1)
+    tem <- scantwo(cross, pheno.col=pheno.col, model=model, method=method,
+                   addcovar=addcovar, intcovar=intcovar, weights=weights,
+                   use=use, incl.markers=incl.markers,
+                   clean.output=clean.output,
+                   maxit=maxit, tol=tol,verbose=FALSE, n.perm=-1,
+                   perm.strata=perm.strata)
+    if(clean.output) tem <- clean(tem)
+
     ## find the maximum LOD on each permutation
-    for(iperm in 1:n.perm) {
-      tmplod <- tem$lod[,,iperm]
-      LOD.jnt[iperm, 1] <- max(tmplod[tmplod < Inf & row(tmplod)>col(tmplod)],
-                               na.rm=TRUE )
-      LOD.interxn[iperm,1] <- max(tmplod[tmplod < Inf & row(tmplod)<col(tmplod)],
-                                  na.rm=TRUE )
-    }
+    perm.result <- lapply(subrousummaryscantwo(tem,for.perm=TRUE), as.matrix)
+
+    if("df" %in% names(attributes(tem))) 
+      attr(perm.result, "df") <- revisescantwodf(attr(tem, "df"))
   }
   else { ## all other cases, do one permutation at a time
     if(method=="mr-imp") # save version with missing genotypes
@@ -1118,381 +1213,84 @@ function(n.perm, cross, pheno.col, model,
     addcovarp <- intcovarp <- NULL
     if(!is.null(addcovar)) addcovar <- as.matrix(addcovar)
     if(!is.null(intcovar)) intcovar <- as.matrix(intcovar)
+
+
+    ## initialize result
+    temp <- matrix(ncol=n.phe, nrow=n.perm)
+    perm.result <- list("full"=temp,
+                        "2v1.int"=temp,
+                        "int"=temp,
+                        "add"=temp,
+                        "2v1.add"=temp)
+      
     ## permutation loop
     for(i in 1:n.perm) {
       if(verbose) cat("Permutation", i, "\n")
       ## impute genotypes for method "mr-imp"
       if(method=="mr-imp") cross <- fill.geno(tempcross)
 
-      o <- sample(1:n.ind)
+      if(!is.null(perm.strata)) {  # stratified permutation test
+        if(length(perm.strata) != n.ind)
+          stop("perm.strata must be NULL or have length nind(cross).")
+        u <- unique(perm.strata)
+        theindex <- 1:n.ind
+        if(length(u)==n.ind)
+          stop("All elements of perm.strata are unique, so no real permutations.")
+        if(length(u)==1 && i==1)
+          warning("Just one unique element in perm.strata, so the perms are not stratified.")
+
+        o <- 1:n.ind
+        for(j in u) {
+          wh <- perm.strata==j
+          if(sum(wh)>1) o[wh] <- sample(o[wh])
+        }
+      }
+      else 
+        o <- sample(1:n.ind)
+
       cross$pheno <- cross$pheno[o,,drop=FALSE]
       if(!is.null(addcovar)) addcovarp <- addcovar[o,,drop=FALSE]
       if(!is.null(intcovar)) intcovarp <- intcovar[o,,drop=FALSE]
       tem <- scantwo(cross,  pheno.col=pheno.col, model=model, 
-                     method=method, addcovar=addcovarp,
-                     intcovar=intcovarp, incl.markers=incl.markers,
-                     weights=weights, run.scanone=FALSE, maxit=maxit,
-                     tol=tol, verbose=FALSE, n.perm = -1)
+                     method=method, addcovar=addcovarp, intcovar=intcovarp,
+                     weights=weights, use=use, 
+                     incl.markers=incl.markers, clean.output=clean.output,
+                     maxit=maxit, tol=tol,
+                     verbose=FALSE, n.perm=-i, perm.strata=perm.strata)
 
-      ## calculate max joint lod and interactive lod for each phenotype
-      ## it's to take max of the two triangles for each trait
-      for(iphe in 1:n.phe) {
-        if(n.phe == 1)
-          tmplod <- tem$lod
-        else
-          tmplod <- tem$lod[,,iphe]
-        LOD.jnt[i, iphe] <- max(tmplod[tmplod < Inf & row(tmplod)>col(tmplod)],
-                                na.rm=TRUE )
-        LOD.interxn[i,iphe] <- max(tmplod[tmplod < Inf & row(tmplod)<col(tmplod)],
-                                   na.rm=TRUE )
-      }
+      if(clean.output) tem <- clean.output(tem)
+
+      # maxima
+      temp <- subrousummaryscantwo(tem, for.perm=TRUE)
+      for(j in 1:5) perm.result[[j]][i,] <- temp[[j]]
+
+      if("df" %in% names(attributes(tem))) 
+        attr(perm.result, "df") <- revisescantwodf(attr(tem, "df"))
     }
-
   }
 
   ## make result
-  res <- list(LOD.jnt=LOD.jnt, LOD.interxn=LOD.interxn)
-  attr(res,"method") <- method
-  # return
-  res
+  attr(perm.result,"method") <- method
+  class(perm.result) <- "scantwoperm"
+
+  ## add column names
+  for(i in 1:length(perm.result))
+    colnames(perm.result[[i]]) <- pn
+
+  perm.result
 }
 
-######################################################################
-#
-# summerize the result from scantwo
-#
-######################################################################
-summary.scantwo <-
-function (object, thresholds = c(0, 0, 0), lodcolumn=1,
-          type = c("joint","interaction"), ...)
+
+revisescantwodf <-
+function(df)
 {
-  type <- match.arg(type)
-  
-  if(length(dim(object$lod)) > 2) { # results from multiple phenotypes
-    if(length(lodcolumn) > 1) {
-      warning("Argument lodcolumn should be of length 1.")
-      lodcolumn <- lodcolumn[1]
-    }
-      
-    if(lodcolumn < 0 || lodcolumn > dim(object$lod)[3])
-      stop("Argument lodcolumn misspecified.")
-    object$lod <- object$lod[,,lodcolumn]
-  }
-
-  if(length(thresholds) < 3) {
-    if(length(thresholds) == 1) thresholds <- c(thresholds, 0, 0)
-    else stop("You must give three thresholds: full, interaction and main\n")
-  }
-
-  thrfull <- thresholds[1]
-  thrint <- thresholds[2]
-  thrcond <- thresholds[3]
-
-  lod <- object$lod
-  map <- object$map
-
-  # backward compatibility for previous version of R/qtl
-  if(is.na(match("scanoneX",names(object)))) {
-    warning("It would be best to re-run scantwo() with the R/qtl version 0.98 or later.")
-    scanoneX <- NULL
-  }
-  else scanoneX <- object$scanoneX
-
-  # deal with bad LOD score values
-  if(any(is.na(lod) | lod < -1e-06 | lod == Inf)) 
-    warning("Some LOD scores NA, Inf or < 0; set to 0")
-  lod[is.na(lod) | lod < 0 | lod == Inf] <- 0
-
-  # if there's no mainscan result, ignore the thresholds
-  #     and don't include the 4 conditional LOD columns
-  if(all(is.na(diag(lod)) | diag(lod) < 1e-10)) 
-    includes.scanone <- FALSE
-  else includes.scanone <- TRUE
-
-  # If scanone results available, calculate conditional LOD scores
-  if(includes.scanone) {
-    d <- diag(lod)
-    q1 <- matrix(rep(d,length(d)),ncol=length(d))
-    q2 <- matrix(rep(d,length(d)),ncol=length(d),byrow=TRUE)
-
-    if(!is.null(scanoneX) && any(map[,4])) {
-      d <- scanoneX
-      q1X <- matrix(rep(d,length(d)),ncol=length(d))
-      q2X <- matrix(rep(d,length(d)),ncol=length(d),byrow=TRUE)
-      q1[map[,4],] <- q1X[map[,4],]
-      q2[,map[,4]] <- q2X[,map[,4]]
-    }
-
-    q1[lower.tri(q1)] <- t(q2)[lower.tri(q2)]
-    condlod <- abs(lod - t(lod)) - q1
-    diag(condlod) <- 0
-  }
-  else condlod <- NULL
-
-  # Negative thresholds are interpreted relative to the maximum LOD score
-  if(thrfull < 0) 
-    thrfull <- max(0,max(lod[lower.tri(lod)]) + thrfull)
-  if(thrint < 0) 
-    thrint <- max(0,max(lod[upper.tri(lod)]) + thrint)
-  if(thrcond < 0 && includes.scanone)
-    thrcond <- max(0,max(condlod) + thrcond)
-  
-  crosstype <- attr(object, "type")
-  if(is.null(crosstype)) {
-    warning("No type attribute in input data; assuming backcross.")
-    crosstype <- "bc"
-  }
-
-  # calculate the degree of freedom
-  if(crosstype == "bc" || crosstype == "riself" || crosstype == 
-      "risib") {
-    df.int <- 1
-    df.add <- 1
-  }
-  else if(crosstype == "f2") {
-    df.int <- 4
-    df.add <- 2
-  }
-  else if(crosstype == "4way") {
-    df.int <- 9
-    df.add <- 3
-  }
-  else {
-    stop("Don't know what to do with cross type ", crosstype)
-  }
-
-  # chromsomes in the result
-  chr <- unique(map[, 1])
-  n.chr <- length(chr)
-
-  # calculate the locations of each chromosome within the LOD matrix
-  wh.index <- vector("list", n.chr)
-  n <- nrow(map)
-  for(i in 1:n.chr)
-    wh.index[[i]] <- which(map[, 1] == chr[i])
-
-  results <- NULL
-
-  # go through each pair of chromosomes
-  for(i in 1:n.chr) {
-    for(j in i:n.chr) { 
-      tmplod1 <- lod[wh.index[[j]], wh.index[[i]],drop=FALSE]
-      if(!is.null(condlod)) {
-        if(i==j) tmpcondlod <- condlod[wh.index[[i]],wh.index[[i]],drop=FALSE]
-        else {
-          tmpcondlod1 <- condlod[wh.index[[j]],wh.index[[i]],drop=FALSE]
-          tmpcondlod2 <- condlod[wh.index[[i]],wh.index[[j]],drop=FALSE]
-        }
-      }
-
-      if(i != j) tmplod2 <- lod[wh.index[[i]], wh.index[[j]],drop=FALSE]
-      else tmplod2 <- tmplod1
-      
-
-      if(type == "joint") {
-        if(i == j) {
-          tri <- lower.tri(tmplod1)
-          lod.joint <- max(tmplod1[tri])
-          idx <- which(tmplod1 == lod.joint & tri, arr.ind=TRUE)
-          if(!is.matrix(idx)) {
-            cat("problem\n")
-            return(tmplod1)
-          }
-        }
-        else {
-          lod.joint <- max(tmplod1)
-          idx <- which(tmplod1 == lod.joint, arr.ind=TRUE)
-          if(!is.matrix(idx)) {
-            cat("problem\n")
-            return(tmplod1)
-          }
-        }
-        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),,drop=FALSE]
-        idx.row <- idx[1]
-        idx.col <- idx[2]
-        
-        lod.int <- tmplod2[idx.col, idx.row,drop=FALSE]
-      }
-      else { # interaction lod
-        if(i == j) {
-          tri <- upper.tri(tmplod2)
-          lod.int <- max(tmplod2[tri])
-          idx <- which(tmplod2 == lod.int & tri, arr.ind=TRUE)
-        }
-        else {
-          lod.int <- max(tmplod2)
-          idx <- which(tmplod2 == lod.int)
-        }
-        if(nrow(idx)>1) idx <- idx[sample(nrow(idx),1),,drop=FALSE]
-        idx.row <- idx[2]
-        idx.col <- idx[1]
-        
-        lod.joint <- tmplod1[idx.row, idx.col,drop=FALSE]
-      }
-      
-      full.idx.row <- idx.row + wh.index[[j]][1] - 1
-      full.idx.col <- idx.col + wh.index[[i]][1] - 1
-
-      flag <- FALSE # a flag to indicate whether there's any peak on this pair
-      if(lod.joint >= thrfull) {
-        if(includes.scanone) {
-          if(i==j) {
-            lod.q1 <- tmpcondlod[idx.row,idx.col,drop=FALSE]
-            lod.q2 <- tmpcondlod[idx.col,idx.row,drop=FALSE]
-          }
-          else {
-            lod.q1 <- tmpcondlod1[idx.row,idx.col,drop=FALSE]
-            lod.q2 <- tmpcondlod2[idx.col,idx.row,drop=FALSE]
-          }
-          
-          if(lod.int >= thrint || min(c(lod.q1, lod.q2)) >= thrcond) {
-            flag <- TRUE
-            i.pos <- map[full.idx.col, 2]
-            j.pos <- map[full.idx.row, 2]
-            results <- rbind(results,
-                             data.frame(chr[i], chr[j], i.pos, j.pos,
-                                        lod.joint, 1 - pchisq(2 * log(10) * lod.joint,
-                                                              df.int + 2 * df.add), 
-                                        lod.int, 1 - pchisq(2 * log(10) * lod.int, df.int),
-                                        lod.q1, 1 - pchisq(2 * log(10) * lod.q1, df.add),
-                                        lod.q2, 1 - pchisq(2 * log(10) * lod.q2, df.add))
-                             )
-          }
-        } 
-        else { # no scanone output
-          flag <- TRUE
-          i.pos <- map[full.idx.col, 2]
-          j.pos <- map[full.idx.row, 2]
-          results <- rbind(results,
-                           data.frame(chr[i], chr[j], i.pos, j.pos,
-                                      lod.joint, 1 - pchisq(2 * log(10) * lod.joint,
-                                                            df.int + 2 * df.add), 
-                                      lod.int, 1 - pchisq(2 * log(10) * lod.int, df.int))
-                           )
-        }
-        # give the new row (if any) a name
-        if(flag) {
-          mname <- rownames(map)
-          rownames(results)[nrow(results)] <- paste(mname[full.idx.col], ":",
-                                                    mname[full.idx.row], sep="")
-        }
-      } # lod joint above threshold
-
-    } # end loop over chromosomes
-  }
-
-  if(is.null(results)) {
-    results <- numeric(0)
-  }
-  else {
-    if(includes.scanone) 
-      colnames(results) <- c("chr1", "chr2", "pos1", "pos2", 
-                             "lod.joint", "p.joint", "lod.int", "p.int", "lod.q1", 
-                             "p.q1", "lod.q2", "p.q2")
-    else colnames(results) <- c("chr1", "chr2", "pos1", "pos2", 
-                                "lod.joint", "p.joint", "lod.int", "p.int")
-    results <- as.data.frame(results)
-  }
-  class(results) <- c("summary.scantwo", "data.frame")
-  results
+  full <- df[,"full"]
+  add <- df[,"add"]
+  one <- df[,"one"]
+  out <- cbind(full=full, fv1=full-one, int=full-add,
+               add=add, av1=add-one)
+  rownames(out) <- rownames(df)
+  out
 }
-
-
-print.summary.scantwo <-
-function(x,...)
-{
-  if(length(x)==0) {
-    cat("    There were no pairs of loci meeting the criteria.\n")
-    return(invisible(NULL))
-  }
-
-  # column names
-  cnames <- c("pos1", "pos2", "  LODjnt", "-logP",
-              "  LODint", "-logP", "  LODq1", "-logP",
-              "  LODq2", "-logP")
-
-  # chr names
-  chr1 <- paste("c",x[,1],sep="")
-  chr2 <- paste("c",x[,2],sep="")
-
-  # pad chr names with spaces; this isn't really necessary
-  nchar.c1 <- nchar(chr1); max.nchar.c1 <- max(nchar.c1)
-  nchar.c2 <- nchar(chr2); max.nchar.c2 <- max(nchar.c2)
-  if(any(nchar.c1 < max.nchar.c1 | nchar.c2 < max.nchar.c2)) {
-    for(i in 1:length(nchar.c2)) {
-      if(nchar.c1[i] < max.nchar.c1)
-        chr1[i] <- paste(paste(rep(" ", max.nchar.c1-nchar.c1[i]),collapse=""),
-                         chr1[i],sep="")
-      if(nchar.c2[i] < max.nchar.c2)
-        chr2[i] <- paste(paste(rep(" ", max.nchar.c2-nchar.c2[i]),collapse=""),
-                         chr2[i],sep="")
-    }
-  }
-  chr <- paste(chr1,chr2,sep=":")
-
-  # round the rest; take -log10(P-values)
-  for(j in 3:ncol(x)) {
-    if(j<5)
-      x[,j] <- round(x[,j])
-    else if(j %% 2)  # odd
-      x[,j] <- round(x[,j],2)
-    else
-      x[,j] <- -round(log10(x[,j]),1)
-  }
-
-  res <- as.data.frame(x[,-(1:2)])
-  names(res) <- cnames[1:ncol(res)]
-  rownames(res) <- chr
-
-  cat("\n")
-  print.data.frame(res)
-  cat("\n")
-}
-
-######################################################################
-#
-# max.scantwo:  Give maximum joint and intxnLODs for results of the
-#               scantwo function
-#
-######################################################################
-
-max.scantwo <-
-function(..., na.rm=TRUE, lodcolumn=1)
-{
-  dots <- list(...)[[1]]
-  lod <- dots$lod
-  map <- dots$map
-
-  if(length(dim(lod)) > 2) { # results from multiple phenotypes
-    if(length(lodcolumn) > 1) {
-      warning("Argument lodcolumn should be of length 1.")
-      lodcolumn <- lodcolumn[1]
-    }
-      
-    if(lodcolumn < 0 || lodcolumn > dim(lod)[3])
-      stop("Argument lodcolumn misspecified.")
-    lod <- lod[,,lodcolumn]
-  }
-
-
-  lod[is.na(lod) | lod == Inf | lod == -Inf] <- 0
-
-  # maximum LODs
-  max.jnt <- max(lod[row(lod)>col(lod)],na.rm=na.rm)
-  max.int <- max(lod[row(lod)<col(lod)],na.rm=na.rm)
-
-  # "zero" out everything but the maxima
-  minmax <- c(min(max.jnt,max.int)/2)
-  lod[row(lod)>col(lod) & !is.na(lod) &
-      (lod<max.jnt & t(lod)<max.int)] <- minmax/10
-  lod[row(lod)<col(lod) & !is.na(lod) &
-      (t(lod)<max.jnt & lod<max.int)] <- minmax/10
-  diag(lod) <- 0
-  dots$lod <- lod
-
-  # get locations of just the maxima
-  summary(dots, c(minmax,0,0))
-}
-
 
 # end of scantwo.R

@@ -10,22 +10,17 @@
 
 \usage{
 \method{plot}{scanone}(x, x2, x3, chr, lodcolumn=1, incl.markers=TRUE,
-             xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
-             add=FALSE, gap=25, mtick = c("line", "triangle"),
-             \dots)
+     xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
+     add=FALSE, gap=25, mtick = c("line", "triangle"),
+     show.marker.names=FALSE, \dots)
 }			    
 
 \arguments{
-  \item{x}{A data.frame with at least three columns.  The first
-    three columns should be the following (any further columns are
-    ignored):} 
-  \tabular{ll}{
-     \code{chr} \tab Chromosome ID \cr
-     \code{pos} \tab Position on genetic map \cr
-     \code{lod}  \tab LOD score (or other statistic)}
-  \item{x2}{data.frame for a second genome scan (optional)}
-  \item{x3}{data.frame for a third genome scan (optional)}
-  \item{chr}{Vector specifying which chromosomes to plot. (The
+  \item{x}{An object of class \code{"scanone"}, as output by
+    \code{\link[qtl]{scanone}}.}
+  \item{x2}{Optional second \code{scanone} object.}
+  \item{x3}{Optional third \code{scanone} object.}
+  \item{chr}{Optional vector specifying which chromosomes to plot. (The
     chromosomes must be specified by name.)}
   \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
     of the LOD score columns should be plotted (generally this is 1).}
@@ -40,7 +35,8 @@
   \item{gap}{Gap separating chromosomes (in cM).}
   \item{mtick}{Tick mark type for markers (line segments or
     upward-pointing triangels).}
-  \item{\dots}{Passed to the function \code{\link[base]{plot}} when it
+  \item{show.marker.names}{If TRUE, show the marker names along the x axis.}
+  \item{\dots}{Passed to the function \code{\link[graphics]{plot}} when it
     is called.}
 }
 \value{None.}
@@ -52,7 +48,16 @@
 
   One may alternatively use the argument \code{add} to add the plot of
   an additional genome scan to the current figure, but some care is
-  required.  
+  required: the same chromosomes should be selected, and the results
+  must concern crosses with the same genetic maps.
+
+  If a single \code{scanone} object containing multiple LOD score
+  columns (for example, from different phenotypes) is input, up to three
+  LOD curves may be plotted, by providing a vector in the argument
+  \code{lodcolumn}.  If multiple \code{scanone} objects are input (via
+  \code{x}, \code{x2} and \code{x3}), the LOD score columns to be
+  plotted are chosen from the corresponding element of the
+  \code{lodcolumn} argument.
 }
 
 \examples{
@@ -65,11 +70,13 @@ plot(out.mr)
 plot(out.mr, out.em, chr=c(1,13), lty=1, col=c("violetred","black"))
 out.hk <- scanone(fake.f2, method="hk")
 plot(out.hk, chr=c(1,13), add=TRUE, col="slateblue")
+
+plot(out.hk, chr=13, show.marker.names=TRUE)
 }
 
 \seealso{ \code{\link[qtl]{scanone}},
-  \code{\link[qtl]{summary.scanone}}, \code{\link[base]{par}},
-  \code{\link[base]{colors}} }
+  \code{\link[qtl]{summary.scanone}}, \code{\link[graphics]{par}},
+  \code{\link[grDevices]{colors}} }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 

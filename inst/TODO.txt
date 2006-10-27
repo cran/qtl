@@ -10,10 +10,46 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
-o clean.scantwo: 0 out stuff between two markers
+o mention getwd(), setwd() and dir() in FAQ
+
+o FAQ: constructing covariate matrices
+       
+o plot.pxg: In the case of two markers on X chromosome, need to drop
+  some columns; there should already be code for that.
+
+o Re-write calc.errorlod to assume error.prob=0 for all but the marker
+  under test.  Need a special version of calc.genoprob.
+
+o Fix plot.scantwo for the case that incl.markers=TRUE, so that
+  positions are not equally spaced, but are according to the genetic
+  map.  (This is working if just one chromosome is plotted, but should
+  be made to work generally.)  
+
+o Go through all of the various plot functions and make sure that
+  the x- and y-axis labels are created with axis() rather than
+  text() and segments().  This way, the size of the labels can be
+  modified with par(cex.axis)
+
+o Turn the tutorial into a Sweave vingette, to conform to the
+  Bioconductor requirements?
+
+o covariates with 2part model in scanone
+
+o Test scanone with method="ehk", especially regarding interactions.
+
+o Include Bjarke's code on eHK for scantwo.
+
+o Revise plot.rf so that it can have different color schemes, as in
+  plot.scantwo. 
+
+o Simpler methods to get at interesting bits in the est.rf results.
 
 o Add cross type "dh" for doubled haploids.  Treat this just like
   a backcross, but with different genotype labels.
+
+  Actually, should revised read.cross so that if all genotypes are 
+  AA and BB, the thing is called DH by default.  Maybe add an 
+  argument to read.cross so that one may specify the cross type.
 
 o refineqtl -- like fitqtl, but refines the locations of the QTLs as
   in Zhao-Bang's MIM; the output could include both the final qtl
@@ -21,22 +57,14 @@ o refineqtl -- like fitqtl, but refines the locations of the QTLs as
   functions summary.refineqtl() to give the final positions and
   plot.refineqtl() to give a plot like Z-B's.
 
+o Documentation for makeqtl/fitqtl/scanqtl (especially summary.fitqtl).
+
 o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
   + help file
 
-o write.qtlcart: RILs seem to need coding 0/2.
-
-o Changed default for plot.scantwo to lower="joint"; check that the
-  tutorial reflects this.  
-
-o Include Bjarke's code on eHK for scanone and scantwo.
-
-o read.cross for "qtx" sometimes doesn't seem to take the
-  genotype pattern appropriately; read in a backcross as if it
-  were an F2. 
-
-o plot.pxg for X chr and autosome: results can be messed
-  up, depending on the order of the markers.  
+o write tools for converting the output from scanqtl() to the format
+  for scanone() or scantwo(), according to whether it's a 1-d or
+  2-d search, or print a warning otherwise.
 
 o Fix the help file for fitqtl() to emphasize that interactions among
   covariates are not allowed, but must be set up in advance.
@@ -44,24 +72,6 @@ o Fix the help file for fitqtl() to emphasize that interactions among
 o Add an explanation regarding the coding in the coefficient 
   estimates in fitqtl().  Add text to the help file for
   summary.fitqtl(). 
-
-o write tools for converting the output from scanqtl() to the format
-  for scanone() or scantwo(), according to whether it's a 1-d or
-  2-d search, or print a warning otherwise.
-
-o Documentation for scanone() and scantwo() regarding the X chromosome.
-
-o scanone() with model="2part" gives NAs as LOD scores if there
-  is complete penetrance (one of the p's goes to 1).  This doesn't
-  happen with model="binary".
-
-  The problem is that if everyone with a certain genotype survives,
-  then you have great segregation distortion if you look at only
-  the dead individuals, and so you can't estimate both means.
-
-o In scanone (and possibly in scantwo), when a factor is used as
-  a covariate, a statement about "must be a matrix" is given, but 
-  it should say something about the need for the thing to be numeric.
 
 o Finish off the work to get coefficient estimates by imputation in
   fitqtl for the X chromosome in BC and F2. 
@@ -71,46 +81,8 @@ o geno.table(): the X chromosome needs special treatment.
 o P-values from geno.table() when an intercross has some dominant
   markers.  
 
-o summary.scantwo doesn't work if there's just two positions on a
-  chromosome (or maybe it's for one position).
-
-o Fix plot.scantwo for the case that incl.markers=TRUE, so that positions
-  are not equally spaced, but are according to the genetic map.
-
-o Add an example regarding the X chromosome to the help files for
-  fake.f2 and scanone.
-
-o Effectscan for X chromosome.
-
-o An NA in the mapmaker data file caused an error in read.cross;
-  the line became too long.  Maybe this is true whenever an item
-  doesn't match what is expected.
-
-o Add sample data to the web site.
-
-o Speed up read.cross.mm; deliver meaningful errors if map/genotypes
-  don't match, and if too many genotypes in a row.
-
-o Documentation for makeqtl/fitqtl/scanqtl (especially summary.fitqtl).
-
-o Deal more cleanly with missing values in the output to scantwo.
-  Make the warning message more clear, and perhaps don't automatically 
-  set them to 0.
-
-o Add attributes regarding degrees of freedom and null log10lik
-  to the output of scanone and scantwo.
-
-o Revise the a.starting.point a bit.
-
 o Revise c.cross so that you can combine crosses even if there are
   different numbers of chromosomes
-
-o Turn the tutorial into a Sweave vingette, to conform to the
-  Bioconductor requirements?
-
-o Allow no p-values in summary.scantwo
-
-o LOD thresholds for X chromosome in scanone/two.
 
 o Ensure consistency in use of chromosome numbers vs names/IDs when
   plotting results of genome scans, subsetting crosses, and so forth
@@ -119,18 +91,47 @@ o Ensure consistency in use of chromosome numbers vs names/IDs when
 o Documentation on RI lines.
 
 
+
 MEDIUM TERM:
+
+o Analysis of censored phenotypes.
+
+o Analysis of residuals.
+
+o plot.scanone for *many* phenotypes: an image-type plot
+
+o Effectscan for X chromosome. Plus make it use the imputations, as in
+  effectplot.
+
+o read.cross for "qtx" sometimes doesn't seem to take the
+  genotype pattern appropriately; read in a backcross as if it
+  were an F2. 
+
+o An NA in the mapmaker data file caused an error in read.cross;
+  the line became too long.  Maybe this is true whenever an item
+  doesn't match what is expected.
+
+o Speed up read.cross.mm; deliver meaningful errors if map/genotypes
+  don't match, and if too many genotypes in a row.
+
+o scanone() with model="2part" gives NAs as LOD scores if there
+  is complete penetrance (one of the p's goes to 1).  This doesn't
+  happen with model="binary".
+
+  The problem is that if everyone with a certain genotype survives,
+  then you have great segregation distortion if you look at only
+  the dead individuals, and so you can't estimate both means.
 
 o MIM for a set of QTLs at specified locations with specified
   interactions (as a new method in fitqtl and scanqtl).
-
-o Incorporate the DIRECT algorithm stuff from Hao
 
 o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
   and dev.mim to pull out the est'd coefficients, the residuals, and
   the "deviance" (2 * ln likelihood).
 
 o In MIM, refinement of QTL location and plots of that.
+
+o Incorporate the DIRECT algorithm stuff from Hao
 
 o scanone with additive alleles at QTL
 
@@ -173,12 +174,6 @@ o Permutation tests with scantwo should include the results comparing
 
 o Modify plot.rf and plot.errorlod to allow plot of a color scale, as
   in plot.scantwo.  
-
-o Add a FAQ document to the R/qtl web page
-    - Reading in data
-    - Haley-knott vs non-parametric vs EM
-    - Do you plan to incorporate _____?
-    - Extremely large LOD scores by EM
 
 
 LONG TERM:

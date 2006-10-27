@@ -436,10 +436,10 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
   /* calculate log likelihood */
   *loglik = 0.0;
   for(i=0; i<n_ind; i++) { /* i = individual */
-    /* initialize alpha and beta */
+    /* initialize alpha */
     for(v=0; v<n_gen; v++) 
       alpha[v][0] = initf(v+1) + emitf(Geno[0][i], v+1, error_prob);
-    /* forward-backward equations */
+    /* forward equations */
     for(j=1; j<n_mar; j++) {
       for(v=0; v<n_gen; v++) {
 	alpha[v][j] = alpha[0][j-1] + 

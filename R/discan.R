@@ -3,7 +3,7 @@
 # discan.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -34,6 +34,10 @@ function(cross, pheno, method=c("em","mr"),
   if(is.null(intcovar)) n.intcovar <- 0
   else n.intcovar <- ncol(intcovar)
 
+  # to store the degrees of freedom
+  dfA <- -1
+  dfX <- parXa <- -1
+
   if(method=="mr" && n.addcovar+n.intcovar>0)  {
     warning("Covariates ignored with method=\"mr\"; use \"em\" instead")
     n.addcovar <- n.intcovar <- addcovar <- intcovar <- 0
@@ -54,10 +58,23 @@ function(cross, pheno, method=c("em","mr"),
     chrtype <- class(cross$geno[[i]])
     if(chrtype=="X") {
       sexpgm <- getsex(cross)
+
       ac <- revisecovar(sexpgm,addcovar)
-      n.ac <- ifelse(is.null(ac),0,ncol(ac))
+      if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0)
+        warning("Dropped ", nd, " additive covariates on X chromosome.")
+      if(length(ac)==0) {
+        n.ac <- 0
+        ac <- NULL
+      }
+      else n.ac <- ncol(ac)
       ic <- revisecovar(sexpgm,intcovar)
-      n.ic <- ifelse(is.null(ic),0,ncol(ic))
+      if(!is.null(intcovar) && (nd <- attr(ic, "n.dropped")) > 0)
+        warning("Dropped ", nd, " interactive covariates on X chromosome.")
+      if(length(ic)==0) {
+        n.ic <- 0
+        ic <- NULL
+      }
+      else n.ic <- ncol(ic)
     }
     else {
       sexpgm <- NULL
@@ -112,7 +129,7 @@ function(cross, pheno, method=c("em","mr"),
 
     }
     else {
-      if(is.na(match("prob",names(cross$geno[[i]])))) { # need to run calc.genoprob
+      if(!("prob" %in% names(cross$geno[[i]]))) { # need to run calc.genoprob
         warning("First running calc.genoprob.")
         cross <- calc.genoprob(cross)
       }
@@ -183,21 +200,31 @@ function(cross, pheno, method=c("em","mr"),
     z[is.na(z[,1]),1] <- 0
 
     colnames(z) <- c("lod")
-      
+
+    if(chrtype=="A" && dfA < 0)
+      dfA <- (n.gen-1)*(n.ic+1)
+    if(chrtype=="X" && parXa < 0) {
+      parXa <- n.gen + n.ac + (n.gen-1)*n.ic
+      parX0 <- n.ac+1
+      dfX <- parXa - parX0
+    }
+
     # get null log10 likelihood for the X chromosome
     adjustX <- FALSE
     if(chrtype=="X") {
       # determine which covariates belong in null hypothesis
       temp <- scanoneXnull(type, sexpgm)
       adjustX <- temp$adjustX
-      dfX <- temp$dfX
+      parX0 <- temp$parX0+n.ac
       sexpgmcovar <- temp$sexpgmcovar
       sexpgmcovar.alt <- temp$sexpgmcovar.alt      
 
       if(adjustX) { # get LOD-score adjustment
-        if(n.ac > 0) 
+        if(n.ac > 0) {
           nullfitX <- glm(pheno ~ ac+sexpgmcovar,
                          family=binomial(link="logit"))
+          parX0 <- lm(pheno~acd+sexpgmcovar)$rank
+        }
         else 
           nullfitX <- glm(pheno ~ sexpgmcovar,
                          family=binomial(link="logit"))
@@ -207,6 +234,8 @@ function(cross, pheno, method=c("em","mr"),
         # adjust LOD curve
         z <- z - (llik0X - llik0["X"])
       }
+      
+      dfX <- parXa - parX0
     }
 
     w <- names(map)
@@ -229,6 +258,17 @@ function(cross, pheno, method=c("em","mr"),
   attr(results,"null.log10.lik") <- llik0["A"]
   if(adjustX) 
     attr(results,"null.log10.lik.X") <- llik0X
+
+  # degrees of freedom
+  if(dfA > 0 && dfX > 0)
+    attr(results, "df") <- c("A"=dfA, "X"=dfX) 
+  else if(dfA > 0)
+    attr(results, "df") <- c("A"=dfA)
+  else if(dfX > 0)
+    attr(results, "df") <- c("X"=dfX)
+  else
+    attr(results, "df") <- NA
+
   results
 }
 

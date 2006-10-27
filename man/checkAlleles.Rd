@@ -30,6 +30,7 @@
 \details{
   For each marker, we compare the maximum LOD score for the cases where
   the estimated recombination fraction > 0.5 to those where r.f. < 0.5.
+  The function \code{\link[qtl]{est.rf}} must first be run.
 
   \bold{Note}: Markers that are tightly linked to a marker whose alleles
   are switched are likely to also be flagged by this method.  The real

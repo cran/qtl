@@ -38,22 +38,42 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
 
   args <- list(...)
   # read the data file
-  if(length(args) < 1 || is.na( match("sep",names(args)))) {
+  if(length(args) < 1 || !("sep" %in% names(args))) {
     # "sep" not in the "..." argument and so take sep=","
-    gen <- read.table(genfile, sep=",", na.strings=na.strings,
-                      colClasses="character", fill=TRUE,
-                      blank.lines.skip=TRUE, ...)
-    pheno <- read.table(phefile, sep=",", na.strings=na.strings,
+    if(length(args) < 1 || !("comment.char" %in% names(args))) {
+      gen <- read.table(genfile, sep=",", na.strings=na.strings,
+                        colClasses="character", fill=TRUE,
+                        blank.lines.skip=TRUE, comment.char="", ...)
+      pheno <- read.table(phefile, sep=",", na.strings=na.strings,
+                          colClasses="character", fill=TRUE,
+                          blank.lines.skip=TRUE, comment.char="", ...)
+    }
+    else {
+      gen <- read.table(genfile, sep=",", na.strings=na.strings,
                         colClasses="character", fill=TRUE,
                         blank.lines.skip=TRUE, ...)
+      pheno <- read.table(phefile, sep=",", na.strings=na.strings,
+                          colClasses="character", fill=TRUE,
+                          blank.lines.skip=TRUE, ...)
+    }
   }
   else {
-    gen <- read.table(genfile, na.strings=na.strings,
-                      colClasses="character", fill=TRUE,
-                      blank.lines.skip=TRUE, ...)
-    pheno <- read.table(phefile, na.strings=na.strings,
+    if(length(args) < 1 || !("comment.char" %in% names(args))) {
+      gen <- read.table(genfile, na.strings=na.strings,
+                        colClasses="character", fill=TRUE,
+                        blank.lines.skip=TRUE, comment.char="", ...)
+      pheno <- read.table(phefile, na.strings=na.strings,
+                          colClasses="character", fill=TRUE,
+                          blank.lines.skip=TRUE, comment.char="", ...)
+    }
+    else {
+      gen <- read.table(genfile, na.strings=na.strings,
                         colClasses="character", fill=TRUE,
                         blank.lines.skip=TRUE, ...)
+      pheno <- read.table(phefile, na.strings=na.strings,
+                          colClasses="character", fill=TRUE,
+                          blank.lines.skip=TRUE, ...)
+    }
   }
 
   if(rotate) {
@@ -112,7 +132,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   if(length(genotypes) > 0) {
     temp <- unique(as.character(gen[-(1:nondatrow),,drop=FALSE]))
     temp <- temp[!is.na(temp)]
-    wh <- is.na(match(temp,genotypes))
+    wh <- !(temp %in% genotypes)
     if(any(wh)) {
       warn <- "The following unexpected genotype codes were treated as missing.\n    "
       ge <- paste("|", paste(temp[wh],collapse="|"),"|",sep="")
@@ -141,7 +161,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
 
   # re-order the markers by chr and position
   # try to figure out the chr labels
-  if(all(!is.na(match(chr,c(1:999,"X","x"))))) { # 1...19 + X
+  if(all(chr %in% c(1:999,"X","x"))) { # 1...19 + X
     tempchr <- chr
     tempchr[chr=="X" | chr=="x"] <- 1000
     tempchr <- as.numeric(tempchr)
@@ -227,13 +247,6 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   if(cross.type=="f2") max.gen <- 5
   else if(cross.type=="bc") max.gen <- 2
   else max.gen <- 10
-
-#  u <- unique(as.numeric(allgeno))  #### rev 3/31 ####
-#  if(any(!is.na(u) & (u > max.gen | u < 1))) {
-#    err <- paste("There are strange values in the genotype data :",
-#                 paste(sort(u),collapse=":"), ".")
-#    stop(err)
-#  }
 
   # check that markers are in proper order
   #     if not, fix up the order

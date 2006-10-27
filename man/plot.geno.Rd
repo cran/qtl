@@ -10,7 +10,7 @@
 
 \usage{
 plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
-          cutoff=3.5, min.sep=2, cex=1.2, \dots) 
+          cutoff=4, min.sep=2, cex=1.2, \dots) 
 }			    
 
 \arguments{
@@ -19,7 +19,7 @@ plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   \item{chr}{Chromosome number to plot.}
   \item{ind}{Vector of individuals to plot.  If missing, all individuals
     are plotted.}
-  \item{include.xo}{If TRUE, plot red X's in intervals having a
+  \item{include.xo}{If TRUE, plot X's in intervals having a
     crossover.} 
   \item{horizontal}{If TRUE, chromosomes are plotted horizontally.}
   \item{cutoff}{Genotypes with error LOD scores above this value are
@@ -37,8 +37,8 @@ plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   indicated by red squares.  In a backcross, genotypes AA and AB are
   indicated by white and black circles, respectively.  In an intercross,
   genotypes AA, AB and BB are indicated by white, gray, and black
-  circles, respectively, and the partially missing genotypes ``not BB''
-  (D in mapmaker) and ``not AA'' (C in mapmaker) are indicated by green
+  circles, respectively, and the partially missing genotypes "not BB"
+  (D in mapmaker) and "not AA" (C in mapmaker) are indicated by green
   and orange circles, respectively.
 }
 
@@ -47,27 +47,18 @@ plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
 \examples{
 data(hyper)
 \dontshow{hyper <- subset(hyper, chr=c(1,19))}
-# run calc.genoprob, then calc.errorlod; use same error.prob
-hyper <- calc.genoprob(hyper,error.prob=0.01)
+# Calculate error LOD scores
 hyper <- calc.errorlod(hyper,error.prob=0.01)
 
-# plot the error LOD scores; print those above a specified cutoff 
-plot.errorlod(hyper)
-plot.errorlod(hyper,chr=1)
+# print those above a specified cutoff 
 top.errorlod(hyper,cutoff=4)
 
 # plot genotype data, flagging genotypes with error LOD > cutoff
 plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
-
-# Note that if markers are extremely tightly linked,
-#     any recombination event will have a high error LOD
-plot.geno(hyper, chr=1, ind=101:118, min.sep=2)
-hyper$geno[[1]]$map
 }
 
 \seealso{ \code{\link[qtl]{calc.errorlod}},
-  \code{\link[qtl]{plot.errorlod}}, \code{\link[qtl]{top.errorlod}},
-  \code{\link[base]{image}} }
+  \code{\link[qtl]{top.errorlod}} }
 
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

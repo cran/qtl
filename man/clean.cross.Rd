@@ -1,5 +1,5 @@
-\name{clean}
-\alias{clean}
+\name{clean.cross}
+\alias{clean.cross}
 
 \title{Remove derived data}
 
@@ -8,11 +8,11 @@
 }
 
 \usage{
-clean(cross)
+\method{clean}{cross}(object)
 }
 
 \arguments{
- \item{cross}{An object of class \code{cross}.  See
+ \item{object}{An object of class \code{cross}.  See
    \code{\link[qtl]{read.cross}} for details.}
 }
 
@@ -33,7 +33,7 @@ names(fake.f2$geno)
 }
 
 \seealso{ \code{\link[qtl]{drop.nullmarkers}},
-  \code{\link[qtl]{drop.markers}} }
+  \code{\link[qtl]{drop.markers}}, \code{\link[qtl]{clean.scantwo}} }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 

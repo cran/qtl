@@ -27,10 +27,10 @@ plot.missing(x, chr, reorder=FALSE, main="Missing genotypes", \dots)
 }
 
 \details{
-  Uses \code{\link[base]{image}} to plot a grid with black pixels where the
-  genotypes are missing.  For intercross and 4way cross data, gray
+  Uses \code{\link[graphics]{image}} to plot a grid with black pixels where the
+  genotypes are missing.  For intercross and 4-way cross data, gray
   pixels are plotted for the partially missing genotypes (for example,
-  ``not A'').
+  "not A").
 }
 
 \value{None.}
@@ -40,7 +40,7 @@ data(fake.f2)
 plot.missing(fake.f2)
 }
 
-\seealso{ \code{\link[qtl]{plot.cross}},  \code{\link[base]{image}} }
+\seealso{ \code{\link[qtl]{plot.cross}},  \code{\link[graphics]{image}} }
 
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

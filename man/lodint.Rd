@@ -25,12 +25,13 @@
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 
 \examples{
-data(listeria)
-listeria <- subset(listeria,chr=c(5,13))
-listeria <- calc.genoprob(listeria, step=0.5)
-out <- scanone(listeria, model="np")
-lodint(out, 5, 1.5)
-lodint(out, 13, 1.5)
+data(hyper)
+\dontshow{hyper <- subset(hyper, chr=c(1,4))}
+hyper <- calc.genoprob(hyper, step=0.5)
+out <- scanone(hyper, method="hk")
+lodint(out, chr=1)
+lodint(out, chr=4)
+lodint(out, chr=4, drop=2)
 }
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{bayesint}} }

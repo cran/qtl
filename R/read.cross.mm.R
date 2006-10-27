@@ -2,8 +2,8 @@
 #
 # read.cross.mm.R
 #
-# copyright (c) 2000-3, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2003
+# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# last modified Oct, 2006
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -91,11 +91,9 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
       type <- a[4] # a[length(a)]
       if(type == "intercross") type <- "f2"
       else if(type == "backcross") type <- "bc"
-      else {
-        err <- paste("File indicates invalid cross type: ", type,
-                     ".", sep="")
-        stop(err)
-      }
+      else 
+        stop("File indicates invalid cross type: ", type,
+                     ".")
     }
     else if(flag == 1) {
       flag <- 2
@@ -110,7 +108,7 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
 
       # if there's a set of "symbols" for non-standard symbols in
       #     the file, use them.
-      if(length(a) > 3 && !is.na(match("symbols", a))) {
+      if(length(a) > 3 && ("symbols" %in% a)) {
         o <- match("symbols",a)
         b <- a[-(1:o)]
         infile.symb <- substring(b,1,1)
@@ -119,7 +117,7 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
         wh <- rep(0,length(std.symb))
         fixed <- rep(0,length(OLD.symb))
         for(j in 1:length(std.symb))
-          if(!is.na(match(std.symb[j], OLD.symb)))
+          if(std.symb[j] %in% OLD.symb)
             wh[j] <- match(std.symb[j],OLD.symb)
         for(j in 1:length(std.symb))
           if(wh[j] != 0) {
@@ -223,7 +221,7 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
     markers <- map[,2]
 
     # reorder markers?
-    if(all(!is.na(match(chr,c(1:999,"X","x"))))) { # 1...19 + X
+    if(all(chr %in% c(1:999,"X","x"))) { # 1...19 + X
       tempchr <- chr
       tempchr[chr=="X" | chr=="x"] <- 1000
       tempchr <- as.numeric(tempchr)
@@ -261,11 +259,9 @@ function(dir,rawfile,mapfile,estimate.map=TRUE)
 
     # pull out genotype data
     o <- match(mar,marnames)
-    if(any(is.na(o))) {
-      err <- paste("Cannot find markers in genotype data: ",
+    if(any(is.na(o))) 
+      stop("Cannot find markers in genotype data: ",
                    paste(mar[is.na(o)],collapse=" "), ".",sep="")
-      stop(err)
-    }
 
     if(length(o)==1) data <- matrix(geno[,o],ncol=1)
     else data <- geno[,o]

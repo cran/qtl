@@ -5,7 +5,7 @@
 
 \description{
   Replace all partially informative genotypes (e.g., dominant markers in
-  an intercross) and replace them with missing values.
+  an intercross) with missing values.
 }
 
 \usage{strip.partials(cross, verbose=TRUE)}

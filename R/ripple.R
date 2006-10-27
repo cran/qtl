@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2005
+# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# last modified Jul, 2006
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -23,8 +23,11 @@
 ripple <-
 function(cross, chr, window=4, method=c("countxo","likelihood"),
          error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
-         maxit=4000, tol=1e-4, sex.sp=TRUE)
+         maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=TRUE)
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   # pull out relevant chromosome
   if(length(chr) > 1)
     stop("ripple only works for one chromosome at a time.")
@@ -95,10 +98,10 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     else temcross$geno[[1]]$map <- m
 
     for(i in 1:n.orders) {
-      if(i==1) cat("  ", n.orders,"total orders\n")
-      if((i %/% print.by)*print.by == i) cat("    --Order", i, "\n")
+      if(verbose && i==1) cat("  ", n.orders,"total orders\n")
+      if(verbose && (i %/% print.by)*print.by == i) cat("    --Order", i, "\n")
       temcross$geno[[1]]$data <- cross$geno[[1]]$data[,orders[i,]]
-      newmap <- est.map(temcross,error.prob,map.function,maxit,tol,sex.sp)
+      newmap <- est.map(temcross,error.prob,map.function,m=0,p=0,maxit,tol,sex.sp,FALSE)
       loglik[i] <- attr(newmap[[1]],"loglik")
       chrlen[i] <- diff(range(newmap[[1]]))
 #      if(is.matrix(newmap[[1]])) chrlen[i] <- newmap[[1]][n.mar,1]
@@ -124,17 +127,15 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     }
     else if(type == "bc" || type=="riself" || type=="risib") func <- "R_ripple_bc"
     else if(type == "4way") func <- "R_ripple_4way"
-    else {
-      err <- paste("ripple not available for cross", type)
-      stop(err)
-    }
+    else 
+      stop("ripple not available for cross ", type)
 
     # data to be input
     genodat <- cross$geno[[1]]$data
     genodat[is.na(genodat)] <- 0
     n.ind <- nind(cross)
 
-    cat("  ", n.orders,"total orders\n")
+    if(verbose) cat("  ", n.orders,"total orders\n")
     z <- .C(func,
             as.integer(n.ind),
             as.integer(n.mar),
@@ -183,9 +184,12 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
 summary.ripple <-
 function(object, lod.cutoff = -1, ...)
 {
+  if(class(object)[1] != "ripple")
+    stop("Input should have class \"ripple\".")
+
   n <- ncol(object)
 
-  if(!is.na(match("obligXO",colnames(object)))) # counts of crossovers
+  if("obligXO" %in% colnames(object)) # counts of crossovers
     o <- (object[-1,n] <= (object[1,n] - lod.cutoff*2))
   else o <- (object[-1,n-1] >= lod.cutoff) # likelihood analysis
 
@@ -209,16 +213,17 @@ function(x, ...)
 {
   n <- ncol(x)
   x <- round(x,1)
+  max.row <- 6
 
-  if(is.na(match("obligXO",colnames(x)))) 
+  if(!("obligXO" %in% colnames(x)))
     colnames(x)[n-1] <- "    LOD"
 
   class(x) <- "matrix"
 
-  if(nrow(x) > 20) {
-    print(x[1:20,])
-    n <- nrow(x)-20
-    cat(paste("... [", n, " additional rows] ...\n",sep=""))
+
+  if(nrow(x) > max.row) {
+    print(x[1:max.row,])
+    cat("... [", nrow(x)-max.row, " additional rows] ...\n")
   }
   else print(x)
 }

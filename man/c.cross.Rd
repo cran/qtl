@@ -15,17 +15,23 @@
  \item{\dots}{A set of objects of class \code{cross}.  See
    \code{\link[qtl]{read.cross}} for details.  These must all either be of the
    same cross type or be a combination of backcrosses and intercrosses.
-   All crosses must have exactly the same genetic maps, including the
-   same number of chromosomes, chromosome names, number of markers per
-   chromosome, marker names, and marker orders.}
+   All crosses must have the same number of chromosomes and chromosome
+   names, and the same marker orders and positions, though the set of
+   markers need not be precisely the same.}
 }
 
-\value{The concatenated input, as a \code{cross} object. Additional
+\value{
+  The concatenated input, as a \code{cross} object. Additional
   columns are added to the phenotype data indicating which cross an
   individual comes from; another column indicates cross type (0=BC,
   1=intercross), if there are crosses of different types.  The crosses
   are not required to have exactly the same set of phenotypes;
-  phenotypes with the same names are assumed to be the same.}
+  phenotypes with the same names are assumed to be the same.
+
+  If the crosses have different sets of markers, we
+  interpolate marker order, but the cM positions of markers that are in
+  common between crosses must be precisely the same in the different crosses.
+}
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }
 

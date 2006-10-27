@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
 #                     and Karl W. Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -74,10 +74,8 @@ makeqtl <-
     for(i in 1:n.pos) {
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) { # no this chromosome in cross 
-        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
-        stop(err)
-      }
+      if(length(i.chr) == 0) # no this chromosome in cross 
+        stop("There's no chromosome number ", chr[i], " in input cross object")
       i.pos <- pos[i] # marker position
 
       # make the genetic map for this chromosome
@@ -126,10 +124,8 @@ makeqtl <-
 
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
-      if(length(i.chr) == 0) { # no this chromosome in cross
-        err <- paste("There's no chromosome number ", chr[i], "in input cross object")
-        stop(err)
-      }
+      if(length(i.chr) == 0) # no this chromosome in cross
+        stop("There's no chromosome number ", chr[i], " in input cross object")
       i.pos <- pos[i] # marker position
 
       # locate this marker (given chromosome and position)
@@ -221,10 +217,8 @@ replaceqtl <-
       qtl$n.gen[replace] <- 2
     else if(type == "4way") 
       qtl$n.gen[replace] <- 4
-    else {
-      err <- paste("replaceqtl not available for cross", type)
-      stop(err)
-    }
+    else 
+      stop("replaceqtl not available for cross ", type)
   }
   
   # update the genoprob (if any)
@@ -278,10 +272,8 @@ addqtl <-
       n.gen <- 2
     else if(type == "4way") 
       n.gen <- 4
-    else {
-      err <- paste("addqtl not available for cross", type)
-      stop(err)
-    }
+    else 
+      stop("addqtl not available for cross ", type)
     qtl$n.gen <- c(qtl$n.gen, n.gen)
   
     # add the imputed genotype

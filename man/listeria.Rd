@@ -31,10 +31,9 @@
   control of \emph{Listeria monocytogenes} susceptibility in
   mice. \emph{Nature Genetics} \bold{27}, 259--260.
   
-  Broman, K. W., Boyartchuk, V. L. and Dietrich, W. F. (2000) Mapping
-  time-to-death quantitative trait loci in a mouse cross with high
-  survival rates. Technical Report MS00-04, Department of Biostatistics,
-  Johns Hopkins University, Baltimore, MD.
+  Broman,  K. W. (2003) Mapping quantitative trait loci in the case of a
+  spike in the phenotype distribution. \emph{Genetics} \bold{163},
+  1169--1175. 
 }
   
 \source{
@@ -51,21 +50,20 @@ summary(listeria)
 plot(listeria)
 
 # Take log of phenotype
-listeria$pheno[,2] <- log2(listeria$pheno[,1])
-names(listeria$pheno)[2] <- "logSurv"
+listeria$pheno[,1] <- log2(listeria$pheno[,1])
 plot(listeria)
 
 # Genome scan with a two-part model, using log survival
 listeria <- calc.genoprob(listeria, step=2)
 out <- scanone(listeria, model="2part", method="em",
-               upper=TRUE, pheno.col=2)
+               upper=TRUE)
 
 # Summary of the results
-summary(out, thr=4)
+summary(out, thr=c(5,3,3), format="allpeaks")
 
 # Plot LOD curves for interesting chromosomes
 #     (The two-part model gives three LOD scores)
-plot(out, out, out, chr=c(1,5,6,13,15), lodcolumn=1:3,
+plot(out, chr=c(1,5,6,13,15), lodcolumn=1:3,
      lty=1, col=c("black","red","blue"))
 }
 

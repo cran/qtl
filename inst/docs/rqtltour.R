@@ -1,3 +1,13 @@
+##############################################################
+# R code for "A brief tour of R/qtl"
+#
+# Karl W Broman
+# Department of Biostatistics, Johns Hopkins University
+#
+# http://www.rqtl.org
+#
+# 27 October 2006
+##############################################################
 
 library(qtl)
 
@@ -6,6 +16,9 @@ ls()
 help(read.cross)
 ?read.cross
 
+############################################################
+# Example 1: Hypertension
+############################################################
 data(hyper)
 ls()
 ?hyper
@@ -22,78 +35,88 @@ plot(hyper)
 
 plot.missing(hyper)
 plot.map(hyper)
-hist(hyper$pheno[,1], breaks=30)
+plot.pheno(hyper, pheno.col=1)
 
-plot.missing(hyper,reorder=TRUE)
+plot.map(hyper, chr=c(1, 4, 6, 7, 15), show.marker.names=TRUE)
+
+plot.missing(hyper, reorder=TRUE)
 
 hyper <- drop.nullmarkers(hyper)
 totmar(hyper)
 
 hyper <- est.rf(hyper)
 plot.rf(hyper)
-plot.rf(hyper,c(1,4))
+plot.rf(hyper, chr=c(1,4))
 
-plot.rf(hyper,6)
-plot.missing(hyper,6)
+plot.rf(hyper, chr=6)
+plot.missing(hyper, chr=6)
 
-newmap <- est.map(hyper, error.prob=0.01, verbose=TRUE)
+newmap <- est.map(hyper, error.prob=0.01)
 plot.map(hyper, newmap)
 
 hyper <- replace.map(hyper, newmap)
 
-hyper <- calc.genoprob(hyper, error.prob=0.01)
 hyper <- calc.errorlod(hyper, error.prob=0.01)
 
-plot.errorlod(hyper)
 top.errorlod(hyper)
-plot.errorlod(hyper, chr=c(4,11,16))
 
-plot.geno(hyper, chr=16, ind=71:90, min.sep=4)
+plot.geno(hyper, chr=16, ind=c(24:34, 71:81))
 
-hyper <- calc.genoprob(hyper, step=2, err=0.01)
 plot.info(hyper)
 plot.info(hyper, chr=c(1,4,15))
 plot.info(hyper, chr=c(1,4,15), method="entropy")
 plot.info(hyper, chr=c(1,4,15), method="variance")
 
+hyper <- calc.genoprob(hyper, step=1, error.prob=0.01)
+
 out.em <- scanone(hyper)
 out.hk <- scanone(hyper, method="hk")
 
-hyper <- sim.geno(hyper, step=2, n.draws=16)
+hyper <- sim.geno(hyper, step=2, n.draws=16, error.prob=0.01)
 out.imp <- scanone(hyper, method="imp")
 
 summary(out.em)
-summary(out.em, 3)
-summary(out.hk, 3)
-summary(out.imp, 3)
+summary(out.em, threshold=3)
+summary(out.hk, threshold=3)
+summary(out.imp, threshold=3)
 
 max(out.em)
 max(out.hk)
 max(out.imp)
 
 plot(out.em, chr=c(1,4,15))
-plot(out.hk, out.imp, out.em, chr=c(1,4,15), col=c("red","blue","black"), lty=1)
+plot(out.em, out.hk, out.imp, chr=c(1,4,15))
 plot(out.em, chr=c(1,4,15))
 plot(out.hk, chr=c(1,4,15), col="blue", add=TRUE)
 plot(out.imp, chr=c(1,4,15), col="red", add=TRUE)
 
-operm.hk <- scanone(hyper, method="hk", n.perm=10)
-quantile(operm.hk, 0.95)
+operm.hk <- scanone(hyper, method="hk", n.perm=1000)
+
+summary(operm.hk, alpha=0.05)
+
+summary(out.hk, perms=operm.hk, alpha=0.05, pvalues=TRUE)
 
 save.image()
 
-hyper.coarse <- calc.genoprob(hyper, step=10, error.prob=0.01)
+hyper <- calc.genoprob(hyper, step=5, error.prob=0.01)
 
-out2.hk <- scantwo(hyper.coarse, method="hk")
+out2.hk <- scantwo(hyper, method="hk")
 
-summary(out2.hk, c(8,3,3))
-summary(out2.hk, c(0,4,1000))
-summary(out2.hk, c(0,1000,4))
+summary(out2.hk, thresholds=c(6.0, 4.7, 4.4, 4.7, 2.6))
+
+summary(out2.hk, thresholds=c(6.0, 4.7, Inf, 4.7, 2.6))
 
 plot(out2.hk)
-plot(out2.hk,chr=c(1,4))
+plot(out2.hk, chr=c(1,4,6,15))
 
 max(out2.hk)
+
+operm2.hk <- scantwo(hyper, method="hk", n.perm=100)
+
+summary(operm2.hk)
+
+summary(out2.hk, perms=operm2.hk, pvalues=TRUE,
+        alphas=c(0.05, 0.05, 0, 0.05, 0.05))
 
 chr <- c(1, 1, 4, 6, 15)
 pos <- c(50, 76, 30, 70, 20)
@@ -104,7 +127,11 @@ out.fitqtl <- fitqtl(hyper$pheno[,1], qtl, formula=my.formula)
 summary(out.fitqtl)
 
 ls()
+rm(list=ls())
 
+############################################################
+# Example 2: Genetic mapping
+############################################################
 data(badorder)
 summary(badorder)
 plot(badorder)
@@ -119,8 +146,8 @@ plot.map(badorder, newmap)
 
 plot.rf(badorder, chr=2:3)
 
-badorder$geno[[2]]$map[6]
-badorder$geno[[3]]$map[5]
+pull.map(badorder, chr=2)
+pull.map(badorder, chr=3)
 
 badorder <- movemarker(badorder, "D2M937", 3, 48)
 badorder <- movemarker(badorder, "D3M160", 2, 28.8)
@@ -144,92 +171,118 @@ summary(rip2r)
 badorder.rev <- est.rf(badorder.rev)
 plot.rf(badorder.rev, 1)
 
+############################################################
+# Example 3: Listeria susceptibility
+############################################################
 data(listeria)
 summary(listeria)
 plot(listeria)
 plot.missing(listeria)
 
-y <- log(listeria$pheno[,1])
-listeria$pheno <- cbind(listeria$pheno, logSurv=y)
+listeria$pheno$logSurv <- log(listeria$pheno[,1])
 plot(listeria)
 
 listeria <- est.rf(listeria)
 plot.rf(listeria)
-plot.rf(listeria,c(5,13))
+plot.rf(listeria, chr=c(5,13))
 
-newmap <- est.map(listeria)
+newmap <- est.map(listeria, error.prob=0.01)
 plot.map(listeria, newmap)
+listeria <- replace.map(listeria, newmap)
 
-listeria <- calc.genoprob(listeria,error.prob=0.01)
-listeria <- calc.errorlod(listeria,error.prob=0.01)
-plot.errorlod(listeria)
+listeria <- calc.errorlod(listeria, error.prob=0.01)
 top.errorlod(listeria)
-plot.errorlod(listeria,c(5,13))
-plot.geno(listeria, chr=13, ind=61:70, min.sep=2 )
+top.errorlod(listeria, cutoff=3.5)
+plot.geno(listeria, chr=13, ind=61:70, cutoff=3.5)
 
 listeria <- calc.genoprob(listeria, step=2)
-out.2p <- scanone(listeria, pheno.col=2, model="2part", upper=TRUE)
+out.2p <- scanone(listeria, pheno.col=3, model="2part", upper=TRUE)
 
 summary(out.2p)
-summary(out.2p, 4.5)
+summary(out.2p, threshold=4.5)
+
+summary(out.2p, format="allpeaks", threshold=3)
+summary(out.2p, format="allpeaks", threshold=c(4.5,3,3))
+
 plot(out.2p)
-plot(out.2p, out.2p[,-3], out.2p[,-(3:4)], chr=c(1,5,13,15),
-     lty=1, col=c("black", "red", "blue"))
+plot(out.2p, lodcolumn=2)
+plot(out.2p, lodcolumn=1:3, chr=c(1,5,13,15))
 
-operm.2p <- scanone(listeria, model="2part", pheno.col=2,
-                    upper=TRUE, n.perm=3)
-apply(operm.2p, 2, quantile, 0.95)
+operm.2p <- scanone(listeria, model="2part", pheno.col=3,
+                    upper=TRUE, n.perm=25)
+summary(operm.2p, alpha=0.05)
 
-z <- y <- x <- listeria$pheno[,2]
-mx <- max(x, na.rm=TRUE)
-y[!is.na(x) & x==mx] <- NA
-z[!is.na(x) & x<mx] <- 0
-z[!is.na(x) & x==mx] <- 1
-listeria$pheno <- cbind(listeria$pheno, logSurv2=y, binary=z)
+summary(out.2p, format="allpeaks", perms=operm.2p,
+        alpha=0.05, pvalues=TRUE)
+
+y <- listeria$pheno$logSurv
+my <- max(y, na.rm=TRUE)
+z <- as.numeric(y==my)
+y[y==my] <- NA
+listeria$pheno$logSurv2 <- y
+listeria$pheno$binary <- z
 plot(listeria)
 
-out.mu <- scanone(listeria, pheno.col=3)
-plot(out.mu, out.2p[,-(3:4)], chr=c(1,5,13,15))
+out.mu <- scanone(listeria, pheno.col=4)
+plot(out.mu, out.2p, lodcolumn=c(1,3), chr=c(1,5,13,15))
 
-out.p <- scanone(listeria, pheno.col=4, model="binary")
-plot(out.p, out.2p[,-3], chr=c(1,5,13,15))
+out.p <- scanone(listeria, pheno.col=5, model="binary")
+plot(out.p, out.2p, lodcolumn=c(1,2), chr=c(1,5,13,15))
 
 out.np1 <- scanone(listeria, model="np", ties.random=TRUE)
 out.np2 <- scanone(listeria, model="np", ties.random=FALSE)
-plot(out.np1, out.np2)
-plot(out.2p, out.np1, out.np2, chr=c(1,5,13,15), lty=1,
-     col=c("black", "blue", "red"))
 
+plot(out.np1, out.np2)
+plot(out.2p, out.np1, out.np2, chr=c(1,5,13,15))
+
+############################################################
+# Example 4: Covariates in QTL mapping
+############################################################
 data(fake.bc)
 summary(fake.bc)
 plot(fake.bc)
 
 fake.bc <- calc.genoprob(fake.bc, step=2.5)
-out1.nocovar <- scanone(fake.bc, pheno.col=1)
-out2.nocovar <- scanone(fake.bc, pheno.col=2)
+out.nocovar <- scanone(fake.bc, pheno.col=1:2)
 
-ac <- fake.bc$pheno[,"age"]
-out1.covar.a <- scanone(fake.bc, pheno.col=1, addcov=ac)
-out2.covar.a <- scanone(fake.bc, pheno.col=2, addcov=ac)
+sex <- fake.bc$pheno$sex
+out.acovar <- scanone(fake.bc, pheno.col=1:2, addcovar=sex)
 
-ac <- fake.bc$pheno[,c("sex","age")]
-ic <- fake.bc$pheno[,"sex"]
-out1.covar.b <- scanone(fake.bc, pheno.col=1, addcov=ac, intcov=ic)
-out2.covar.b <- scanone(fake.bc, pheno.col=2, addcov=ac, intcov=ic)
+summary(out.nocovar, threshold=3, format="allpeaks")
+summary(out.acovar, threshold=3, format="allpeaks")
 
-summary(out1.nocovar, 3)
-summary(out1.covar.a, 3)
-summary(out1.covar.b, 3)
+plot(out.nocovar, out.acovar, chr=c(2, 5))
+plot(out.nocovar, out.acovar, chr=c(2, 5), lodcolumn=2)
 
-summary(out2.nocovar, 3)
-summary(out2.covar.a, 3)
-summary(out2.covar.b, 3)
+out.icovar <- scanone(fake.bc, pheno.col=1:2, addcovar=sex, intcovar=sex)
 
-plot(out1.nocovar, out1.covar.a, out1.covar.b, lty=1,
-     chr=c(2,5,10), col=c("black","blue","red"))
-plot(out2.nocovar, out2.covar.a, out2.covar.b, lty=1,
-     chr=c(2,5,10), col=c("black","blue","red"))
+summary(out.icovar, threshold=3, format="allpeaks")
 
+plot(out.acovar, out.icovar, chr=c(2,5), col=c("blue", "red"))
+plot(out.acovar, out.icovar, chr=c(2,5), lodcolumn=2,
+     col=c("blue", "red"))
+
+out.sexint <- out.icovar - out.acovar
+plot(out.sexint, lodcolumn=1:2, chr=c(2,5), col=c("green", "purple"))
+
+seed <- ceiling(runif(1, 0, 10^8))
+set.seed(seed)
+operm.acovar <- scanone(fake.bc, pheno.col=1:2, addcovar=sex,
+                        method="hk", n.perm=100)
+set.seed(seed)
+operm.icovar <- scanone(fake.bc, pheno.col=1:2, addcovar=sex,
+                        intcovar=sex, method="hk", n.perm=100)
+
+operm.sexint <- operm.icovar - operm.acovar
+
+summary(operm.sexint, alpha=c(0.05, 0.20))
+
+summary(out.sexint, perms=operm.sexint, alpha=0.1,
+        format="allpeaks", pvalues=TRUE)
+
+############################################################
+# Internal data structure
+############################################################
 data(fake.bc)
 
 class(fake.bc)
@@ -259,3 +312,4 @@ names(fake.bc)
 fake.bc <- est.rf(fake.bc)
 names(fake.bc)
 
+# end of rqtltour.R

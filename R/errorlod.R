@@ -3,12 +3,12 @@
 # errorlod.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2006
+# last modified Oct, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: calc.errorlod, plot.errorlod, top.errorlod, getid
+# Contains: calc.errorlod, plot.errorlod, top.errorlod
 #
 ######################################################################
 
@@ -23,6 +23,10 @@ calc.errorlod <-
 function(cross, error.prob=0.01,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
+  origcross <- cross
 
   # don't let error.prob be exactly zero (or >1)
   if(error.prob < 1e-50) error.prob <- 1e-50
@@ -50,18 +54,14 @@ function(cross, error.prob=0.01,
       else cfunc <- "calc_errorlod_bc"
     }
     else if(type=="4way") cfunc <- "calc_errorlod_4way"
-    else {
-      err <- paste("calc.errorlod not available for cross type",
-                   type,".")
-      stop(err)
-    }
+    else 
+      stop("calc.errorlod not available for cross type ", type, ".")
 
     # skip chromosomes with only 1 marker
     if(n.mar[i] < 2) next
 
-    if(is.na(match("prob",names(cross$geno[[i]])))) {
+    if(!("prob" %in% names(cross$geno[[i]]))) {
       # need to run calc.genoprob
-      warning("First running calc.genoprob.")
       cross <- calc.genoprob(cross,error.prob=error.prob,
                              map.function=map.function)
       Pr <- cross$geno[[i]]$prob
@@ -71,7 +71,6 @@ function(cross, error.prob=0.01,
       #     running calc.genoprob(), re-run calc.genoprob()
       if(abs(attr(cross$geno[[i]]$prob,"error.prob")
              - error.prob) > 1e-9) {
-        warning("Re-running calc.genoprob()")
         cross <-
           calc.genoprob(cross,error.prob=error.prob,
                         step=attr(cross$geno[[i]]$prob,"step"),
@@ -101,15 +100,15 @@ function(cross, error.prob=0.01,
     errlod <- array(z$errlod, dim=dim(Pr)[1:2])
 
     dimnames(errlod) <- list(NULL,colnames(cross$geno[[i]]$data))
-    cross$geno[[i]]$errorlod <- errlod
+    origcross$geno[[i]]$errorlod <- errlod
 
     # attribute set to the error.prob value used, for later
     #     reference.
-    attr(cross$geno[[i]]$errorlod,"error.prob") <- error.prob
-    attr(cross$geno[[i]]$errorlod,"map.function") <- map.function
+    attr(origcross$geno[[i]]$errorlod,"error.prob") <- error.prob
+    attr(origcross$geno[[i]]$errorlod,"map.function") <- map.function
   }
 
-  cross
+  origcross
 }
 
   
@@ -123,10 +122,13 @@ function(cross, error.prob=0.01,
 ######################################################################
 
 plot.errorlod <-
-function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
+function(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
          col=c("white","gray85","hotpink","purple3"), ...)
 {
-  if(length(breaks) < length(col)+1)
+  if(length(class(x)) < 2 || class(x)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
+  if(length(breaks) != length(col)+1)
     stop("Length of breaks should be length(col)+1.")
   if(length(breaks) != length(col)+1)
     col <- col[1:(length(breaks)+1)]
@@ -148,7 +150,7 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 
   errlod <- NULL
   for(i in 1:n.chr) {
-    if(is.na(match("errorlod",names(cross$geno[[i]])))) { # need to run calc.errorlod
+    if(!("errorlod" %in% names(cross$geno[[i]]))) { # need to run calc.errorlod
       warning("First running calc.errorlod.")
       cross <- calc.errorlod(cross,error.prob=0.01,map.function="haldane")
     }
@@ -164,6 +166,7 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 
   # plot grid 
   breaks[breaks==Inf] <- max(errlod)
+  breaks[breaks==-Inf] <- min(errlod)
   image(1:nrow(errlod),1:ncol(errlod),errlod,
         ylab="Individuals",xlab="Markers",col=col,
         breaks=breaks, yaxt="n")
@@ -206,8 +209,11 @@ function(x, chr, ind, breaks=c(-1,2,3,4.5,Inf),
 ######################################################################
 
 top.errorlod <-
-function(cross, chr, cutoff=3, msg=TRUE)  
+function(cross, chr, cutoff=4, msg=TRUE)  
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   if(!missing(chr)) cross <- subset(cross,chr=chr)
 
   id <- getid(cross)
@@ -222,7 +228,7 @@ function(cross, chr, cutoff=3, msg=TRUE)
   flag <- 0
   for(i in 1:nchr(cross)) {
     
-    if(is.na(match("errorlod",names(cross$geno[[i]])))) 
+    if(!("errorlod" %in% names(cross$geno[[i]])))
       stop("You first need to run calc.errorlod.")
 
     el <- cross$geno[[i]]$errorlod
@@ -243,28 +249,6 @@ function(cross, chr, cutoff=3, msg=TRUE)
   o <- data.frame(chr=chr,id=ind,marker=mar,errorlod=lod)[order(-lod,ind),]
   rownames(o) <- 1:nrow(o)
   o
-}
-
-######################################################################
-# getid: internal function to pull out the "ID" column from the
-#        phenotype data, if there is one
-######################################################################
-getid <-
-function(cross)
-{
-  phe <- cross$pheno
-  nam <- names(phe)
-  if("id" %in% nam)
-    id <- phe$id
-  else if("ID" %in% nam)
-    id <- phe$ID
-  else if("Id" %in% nam)
-    id <- phe$Id
-  else if("iD" %in% nam)
-    id <- phe$iD
-  else id <- NULL
-
-  id
 }
 
 

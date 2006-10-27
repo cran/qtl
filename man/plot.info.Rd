@@ -9,7 +9,10 @@
 }
 
 \usage{
-plot.info(x, chr, method=c("both","entropy","variance"), \dots)
+plot.info(x, chr, method=c("both","entropy","variance"), step=1,
+          off.end=0, error.prob=0.001,
+          map.function=c("haldane","kosambi","c-f","morgan"),
+          \dots)
 }
 
 \arguments{
@@ -18,13 +21,21 @@ plot.info(x, chr, method=c("both","entropy","variance"), \dots)
  \item{chr}{Vector specifying the chromosomes to plot.}
  \item{method}{Indicates whether to plot the entropy version of the
    information, the variance version, or both.}
+ \item{step}{Maximum distance (in cM) between positions at which the
+   missing information is calculated, though for \code{step=0},
+   it is are calculated only at the marker locations.}
+ \item{off.end}{Distance (in cM) past the terminal markers on each
+   chromosome to which the genotype probability calculations will be
+   carried.}
+ \item{error.prob}{Assumed genotyping error rate used in the calculation
+   of the penetrance Pr(observed genotype | true genotype).}
+ \item{map.function}{Indicates whether to use the Haldane, Kosambi or
+   Carter-Falconer map function when converting genetic distances into
+   recombination fractions.} 
  \item{\dots}{Passed to \code{\link[qtl]{plot.scanone}}.}
 }
 
 \details{
-  The missing information is calculated using the multipoint genotype
-  probabilities calculated with \code{\link[qtl]{calc.genoprob}}.
-
   The entropy version of the missing information: for a single
   individual at a single genomic position, we measure the missing
   information as \eqn{H = \sum_g p_g \log p_g / \log n}{H = sum p[g] log
@@ -60,7 +71,6 @@ plot.info(x, chr, method=c("both","entropy","variance"), \dots)
 \examples{
 data(hyper)
 \dontshow{hyper <- subset(hyper,chr=1:4)}
-hyper <- calc.genoprob(hyper, step=2.5, off.end=5)
 plot.info(hyper,chr=c(1,4))
 
 # save the results and view maximum missing info on each chr

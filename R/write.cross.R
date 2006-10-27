@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 #                       and Hao Wu, The Jackson Laboratory
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -23,8 +23,12 @@
 ######################################################################
 
 write.cross <-
-function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, digits=5)
+function(cross, format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtlcart", "gary"),
+         filestem="data", chr, digits=5)
 {
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   format <- match.arg(format)
   if(!missing(chr)) cross <- subset(cross,chr=chr)
 
@@ -40,7 +44,10 @@ function(cross, format=c("csv","mm","qtlcart", "gary"), filestem="data", chr, di
       cross$geno[[i]]$data <- fixX4write(cross$geno[[i]]$data,sex,pgm,crosstype)
   }
 
-  if(format=="csv") write.cross.csv(cross,filestem,digits)
+  if(format=="csv") write.cross.csv(cross,filestem,digits,FALSE,FALSE)
+  else if(format=="csvr") write.cross.csv(cross,filestem,digits,TRUE,FALSE)
+  else if(format=="csvs") write.cross.csv(cross,filestem,digits,FALSE,TRUE)
+  else if(format=="csvsr") write.cross.csv(cross,filestem,digits,TRUE,TRUE)
   else if(format=="mm") write.cross.mm(cross,filestem,digits)
   else if(format=="qtlcart") write.cross.qtlcart(cross, filestem)
   else write.cross.gary(cross, digits)
@@ -182,23 +189,46 @@ function(cross, filestem="data", digits=5)
 ######################################################################
 
 write.cross.csv <-
-function(cross, filestem="data", digits=5)
+function(cross, filestem="data", digits=5, rotate=FALSE, split=FALSE)
 {
+  type <- class(cross)[1]
+  if(type != "f2" && type != "bc" && type != "riself" && type != "risib")
+    stop("write.cross.csv only works for intercross, backcross and RI data.")
+
+  if(!split) 
+    file <- paste(filestem, ".csv", sep="")
+  else {
+    genfile <- paste(filestem, "_gen.csv", sep="")
+    phefile <- paste(filestem, "_phe.csv", sep="")
+  }
+  
+  if(split) { # split files; need individual IDs
+    id <- getid(cross)
+    if(is.null(id)) {
+      cross$pheno$id <- 1:nind(cross)
+      id <- getid(cross)
+    }
+    id.col <- which(colnames(cross$pheno)==attr(id,"phenam"))
+  }
+
   n.ind <- nind(cross)
   tot.mar <- totmar(cross)
   n.phe <- nphe(cross)
   n.chr <- nchr(cross)
   n.mar <- nmar(cross)
   
-  type <- class(cross)[1]
-  if(type != "f2" && type != "bc" && type != "riself" && type != "risib")
-    stop("write.cross.csv only works for intercross, backcross and RI data.")
-
-  file <- paste(filestem, ".csv", sep="")
-  
   geno <- matrix(ncol=tot.mar,nrow=n.ind)
 
-  alleles <- c("A","H","B","D","C")
+  # allele codes to use
+  if("alleles" %in% names(attributes(cross))) {
+    alle <- attr(cross, "alleles")
+    alleles <- c(paste(alle[1],alle[1],sep=""),
+                 paste(alle[1],alle[2],sep=""),
+                 paste(alle[2],alle[2],sep=""),
+                 paste("not ", alle[2],alle[2],sep=""),
+                 paste("not ", alle[1],alle[1],sep=""))
+  }
+  else alleles <- c("A","H","B","D","C")
 
   firstmar <- 1
   for(i in 1:n.chr) {
@@ -214,26 +244,47 @@ function(cross, filestem="data", digits=5)
     if(is.factor(cross$pheno[,i])) pheno[,i] <- as.character(cross$pheno[,i])
   
   if(any(is.na(pheno))) pheno[is.na(pheno)] <- "-"
-  data <- cbind(pheno,geno)
-  colnames(data) <- c(colnames(cross$pheno),
+  thedata <- cbind(pheno,geno)
+  colnames(thedata) <- c(colnames(cross$pheno),
                       unlist(lapply(cross$geno, function(a) colnames(a$data))))
   chr <- rep(names(cross$geno),n.mar)
   pos <- unlist(lapply(cross$geno,function(a) a$map))
   chr <- c(rep("",n.phe),chr)
   pos <- c(rep("",n.phe),as.character(round(pos,digits)))
 
-  # write names
-  write.table(matrix(colnames(data),nrow=1),file,append=FALSE,quote=FALSE,
-              sep=",",row.names=FALSE,col.names=FALSE)
-  # write chr IDs
-  write.table(matrix(chr,nrow=1),file,append=TRUE,quote=FALSE,sep=",",
-              row.names=FALSE,col.names=FALSE)
-  # write marker positions
-  write.table(matrix(pos,nrow=1),file,append=TRUE,quote=FALSE,sep=",",
-              row.names=FALSE,col.names=FALSE)
-  # write phenotype and genotype data
-  write.table(data,file,append=TRUE,quote=FALSE,sep=",",row.names=FALSE,
-              col.names=FALSE)
+  # put it all together
+  thenames <- colnames(thedata)
+  thedata <- matrix(as.character(thedata), ncol=ncol(thedata))
+  thedata <- rbind(thenames, chr, pos, thedata)
+
+  if(!split) {
+    if(!rotate)
+      write.table(thedata, file, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+    else
+      write.table(t(thedata), file, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+  }
+  else { # split files: one for phenotypes and one for genotypes
+    n.phe <- nphe(cross)
+    phe <- thedata[-(2:3),1:n.phe]
+    gen <- cbind(thedata[,id.col], thedata[,-(1:n.phe)])
+
+    if(!rotate) {
+      write.table(gen, genfile, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+      write.table(phe, phefile, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+    }
+    else {
+      write.table(t(gen), genfile, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+      write.table(t(phe), phefile, quote=FALSE, sep=",",
+                  row.names=FALSE, col.names=FALSE)
+    }
+
+  }
+
 
 }
 

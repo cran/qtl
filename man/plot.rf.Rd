@@ -5,11 +5,12 @@
 
 \description{
   Plot a grid showing the recombination fractions for all pairs of
-  markers, or of the LOD scores between pairs of markers.
+  markers, and/or the LOD scores for tests of linkage between pairs of
+  markers. 
 }
 
 \usage{
-plot.rf(x, chr, which=c("both","lod","rf"), \dots)
+plot.rf(x, chr, what=c("both","lod","rf"), \dots)
 }
 
 \arguments{
@@ -17,7 +18,7 @@ plot.rf(x, chr, which=c("both","lod","rf"), \dots)
    \code{\link[qtl]{read.cross}} for details.}
   \item{chr}{Vector specifying which chromosomes to plot
   (optional)}
-  \item{which}{Indicate whether to plot LOD scores, recombination
+  \item{what}{Indicate whether to plot LOD scores, recombination
                fractions or both.}
   \item{\dots}{Ignored at this point.}
 }
@@ -25,7 +26,7 @@ plot.rf(x, chr, which=c("both","lod","rf"), \dots)
 \value{None.}
 
 \details{
-  Uses \code{\link[base]{image}} to plot a grid showing the
+  Uses \code{\link[graphics]{image}} to plot a grid showing the
   recombination fractions and/or LOD scores for all pairs of markers.
   (The LOD scores are for a test of \eqn{r = 1/2}.)
   If both are plotted, the recombination fractions are in the upper left
@@ -47,16 +48,16 @@ badorder <- est.rf(badorder)
 plot.rf(badorder)
 
 # plot just chr 1
-plot.rf(badorder,chr=1)
+plot.rf(badorder, chr=1)
 
 # plot just the recombination fractions
-plot.rf(badorder,which="rf") 
+plot.rf(badorder, what="rf") 
 
 # plot just the LOD scores, and just for chr 2 and 3
-plot.rf(badorder,which="lod")
+plot.rf(badorder, chr=2:3, what="lod")
 }
 
-\seealso{ \code{\link[qtl]{est.rf}}, \code{\link[base]{image}},
+\seealso{ \code{\link[qtl]{est.rf}}, \code{\link[graphics]{image}},
   \code{\link[qtl]{badorder}}, \code{\link[qtl]{ripple}} }
 
 \author{Karl W Broman, \email{kbroman@jhsph.edu} }

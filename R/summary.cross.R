@@ -3,7 +3,7 @@
 # summary.cross.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Jul, 2006
+# last modified Oct, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -16,8 +16,8 @@
 summary.cross <-
 function(object,...)
 {
-#  if(is.na(match("cross",class(object))))
-#    stop("This is not an object of class cross.")
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
     
   n.ind <- nind(object)
   tot.mar <- totmar(object)
@@ -27,10 +27,8 @@ function(object,...)
   type <- class(object)[1]
 
   if(type != "f2" && type != "bc" && type != "4way" &&
-     type != "riself" && type != "risib" && type != "cc") {
-    err <- paste("Cross type", type, "is not suppoted.")
-    stop(err)
-  }
+     type != "riself" && type != "risib" && type != "cc") 
+    stop("Cross type ", type, " is not suppoted.")
 
   if(type=="cc") {
     cat("A Collaborative cross\n")
@@ -88,6 +86,7 @@ function(object,...)
 
   # check that object$geno[[i]]$data has colnames and that they match
   #     the names in object$geno[[i]]$map
+  jitterwarning <- 0
   for(i in 1:n.chr) {
     nam1 <- colnames(object$geno[[i]]$data)
     map <- object$geno[[i]]$map
@@ -104,17 +103,14 @@ function(object,...)
                     "lacks column names")
       warning(warn)
     }
-    if(any(nam1 != nam2)) {
-      warn <- paste("Marker names in the data matrix and genetic map\n",
-                    "for chr ", chr, " do not match.",sep="")
-      stop(warn)
-    }
+    if(any(nam1 != nam2)) 
+      stop("Marker names in the data matrix and genetic map\n",
+                    "for chr ", chr, " do not match.")
       
     if((is.matrix(map) && (any(diff(map[1,])<0) || any(diff(map[2,])<0))) ||
-       (!is.matrix(map) && any(diff(map)<0))) {
-      err <- paste("Markers out of order on chr", chr)
-      stop(err)
-    }
+       (!is.matrix(map) && any(diff(map)<0))) 
+      stop("Markers out of order on chr ", chr)
+
 
     # check that no two markers are on top of each other
     if(is.matrix(map)) { # sex-specific maps
@@ -123,7 +119,7 @@ function(object,...)
         d1 <- diff(map[1,])
         d2 <- diff(map[2,])
         if(any(d1 < 1e-14 & d2 < 1e-14))
-          warning("Some markers at the same position; use jittermap().")
+          jitterwarning <- 1
       }
     }
     else {
@@ -131,12 +127,16 @@ function(object,...)
       if(n > 1) {
         d <- diff(map)
         if(any(d < 1e-14)) 
-          warning("Some markers at the same position; use jittermap().")
+          jitterwarning <- 1
       }
     }
 
   }
     
+  if(jitterwarning)
+    warning("Some markers at the same position; use jittermap().")
+
+
   if(!is.data.frame(object$pheno)) 
     warning("Phenotypes should be a data.frame.")
 
@@ -204,10 +204,10 @@ function(object,...)
   mnames <- NULL
   for(i in 1:nchr(object)) 
     mnames <- c(mnames,colnames(object$geno[[i]]$data))
+#  return(mnames)
   o <- table(mnames)
   if(any(o > 1))
-    warning("Duplicate markers [", paste(mnames[mnames==names(o)[o>1]],
-                                         collapse=", "), "]")
+    warning("Duplicate markers [", paste(names(o)[o>1], collapse=", "), "]")
 
   # make sure the genotype data are matrices rather than data frames
   if(any(sapply(object$geno, function(a) is.data.frame(a$data))))
@@ -235,6 +235,11 @@ function(object,...)
   if(any(chr.class=="X"))
     Xchr <- chr.nam[chr.class == "X"]
   else Xchr <- NULL
+
+  # check individual IDs
+  id <- getid(object)
+  if(!is.null(id) && length(id) != length(unique(id)))
+    warning("The individual IDs are not unique.")
 
   cross.summary <- list(type=type, n.ind = n.ind, n.phe=n.phe, 
 			n.chr=n.chr, n.mar=n.mar,
@@ -281,8 +286,8 @@ function(x,...)
 nind <-
 function(object)
 {
-  if(any(is.na(match(c("pheno","geno"),names(object)))))
-    stop("This is not an object of class cross.")
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
   n.ind1 <- nrow(object$pheno)
   n.ind2 <- sapply(object$geno,function(x) nrow(x$data))
@@ -294,16 +299,17 @@ function(object)
 nchr <-
 function(object)
 {
-  if(any(is.na(match(c("pheno","geno"),names(object)))))
-    stop("This is not an object of class cross.")
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
+
   length(object$geno)
 }
 
 nmar <- 
 function(object)
 {
-  if(any(is.na(match(c("pheno","geno"),names(object)))))
-    stop("This is not an object of class cross.")
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
   if(!is.matrix(object$geno[[1]]$map))
     n.mar1 <- sapply(object$geno, function(x) length(x$map))
@@ -319,8 +325,8 @@ function(object)
 totmar <-
 function(object)
 {
-  if(any(is.na(match(c("pheno","geno"),names(object)))))
-    stop("This is not an object of class cross.")
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
   if(!is.matrix(object$geno[[1]]$map))
     totmar1 <- sum(sapply(object$geno, function(x) length(x$map)))
@@ -333,24 +339,32 @@ function(object)
 }
 
 nphe <-
-function(object) {
-  if(any(is.na(match(c("pheno","geno"),names(object)))))
-    stop("This is not an object of class cross.")
+function(object)
+{
+  if(length(class(object)) < 2 || class(object)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
   ncol(object$pheno)
 }
 
 # count number of missing genotypes for each individual or each marker
 nmissing <-
-function(cross,which=c("ind","mar"))
+function(cross,what=c("ind","mar"))
 {
-  which <- match.arg(which)
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
-  if(which=="ind") {
+  what <- match.arg(what)
+
+  if(what=="ind") {
     n.missing <- rep(0,nind(cross))
     for(i in 1:nchr(cross)) 
       n.missing <- n.missing +
         apply(cross$geno[[i]]$data,1,function(a) sum(is.na(a)))
+
+    # individual IDs
+    id <- getid(cross)
+    if(!is.null(id)) names(n.missing) <- id
   }
   else {
     n.missing <- NULL
@@ -381,7 +395,13 @@ function(x, ...)
 chrlen <-
 function(object)
 {
-  x <- pull.map(object)
+  if(!(class(object)[1] == "map" ||
+     (length(class(object)) >= 2 && class(object)[2] == "cross")))
+    stop("Input should have class \"map\" or \"cross\".")
+  
+  if(class(object)[1] != "map")
+    x <- pull.map(object)
+  else x <- object
 
   if(is.matrix(x[[1]])) 
     return(sapply(x, apply, 1, function(a) diff(range(a))))

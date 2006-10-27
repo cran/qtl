@@ -22,7 +22,7 @@
   A data.frame, each row corresponding to one of the input positions.
   The first column contains the left-flanking markers, the second column
   contains the right-flanking markers, and the third column contains the
-  markers cloest to the specified positions.
+  markers closest to the specified positions.
 }
 
 %\details{

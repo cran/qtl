@@ -4,7 +4,7 @@
 #
 # copyright (c) 2003-4, Hao Wu, The Jackson Laboratory
 #                    with modifications by Karl W. Broman
-# last modified Sep, 2004
+# last modified Oct, 2004
 # first written Jan, 2003
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,6 +20,8 @@ function(cross, pheno.col=1, chr, ylim, gap=25,
          ...)
 {
   mtick <- match.arg(mtick)
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
 
   if(!missing(chr)) cross <- subset(cross,chr=chr)
 

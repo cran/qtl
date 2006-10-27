@@ -4,16 +4,16 @@
 \title{Number of missing genotypes}
 
 \description{
-  Count number of missing genotypes for each individual or each marker
+  Count the number of missing genotypes for each individual or each marker
   in a cross.
 }
 
-\usage{nmissing(cross, which=c("ind","mar"))}
+\usage{nmissing(cross, what=c("ind","mar"))}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See
    \code{\link[qtl]{read.cross}} for details.}
- \item{which}{Indicates whether to count missing genotypes for each
+ \item{what}{Indicates whether to count missing genotypes for each
    individual or each marker.}
 }
 
@@ -31,7 +31,7 @@ data(listeria)
 plot(nmissing(listeria))
 
 # plot number of missing genotypes for each marker
-plot(nmissing(listeria, which="mar"))
+plot(nmissing(listeria, what="mar"))
 }
 
 \seealso{ \code{\link[qtl]{summary.cross}},

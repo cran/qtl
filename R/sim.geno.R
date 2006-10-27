@@ -68,11 +68,8 @@ function(cross, n.draws=16, step=0, off.end=0, error.prob=0.0001,
       cfunc <- "sim_geno_4way"
       one.map <- FALSE
     }
-    else {
-      err <- paste("sim_geno not available for cross type",
-                   type, ".")
-      stop(err)
-    }
+    else 
+      stop("sim_geno not available for cross type ", type, ".")
 
     # genotype data
     gen <- cross$geno[[i]]$data

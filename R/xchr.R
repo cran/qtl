@@ -3,7 +3,7 @@
 # xchr.R
 #
 # copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2006
+# last modified Oct, 2006
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -42,8 +42,10 @@ function(cross)
       if(!is.factor(temp)) temp <- as.factor(temp)
 
       if(length(levels(temp)) == 1) {
-        if(levels(temp) == "F" || levels(temp)=="f") sex <- rep(0,nind(cross))
-        else if(levels(temp) == "M" || levels(temp)=="m") sex <- rep(1,nind(cross))
+        if(levels(temp) == "F" || levels(temp)=="f" ||
+           toupper(levels(temp)) == "FEMALE") sex <- rep(0,nind(cross))
+        else if(levels(temp) == "M" || levels(temp)=="m" ||
+                toupper(levels(temp)) == "MALE") sex <- rep(1,nind(cross))
         else 
           warning("Sex column should be coded as 0=female 1=male; sex ignored.")
       }
@@ -95,6 +97,10 @@ function(type=c("f2","bc","riself","risib","4way"),
          chrtype=c("A","X"), expandX=c("simple","standard","full"),
          sexpgm, cross.attr)
 {  
+  type <- match.arg(type)
+  chrtype <- match.arg(chrtype)
+  expandX <- match.arg(expandX)
+
   if(chrtype=="X") {
     sex <- sexpgm$sex
     pgm <- sexpgm$pgm
@@ -119,10 +125,6 @@ function(type=c("f2","bc","riself","risib","4way"),
     if(length(pgm)>0) pgm <- pgm[!is.na(pgm)]
   }
 
-  type <- match.arg(type)
-  chrtype <- match.arg(chrtype)
-  expandX <- match.arg(expandX)
-
   if(type=="riself" || type=="risib") 
     gen.names <- tempgn[c(1,3)]
 
@@ -141,7 +143,6 @@ function(type=c("f2","bc","riself","risib","4way"),
 
   else if(type == "bc") {
                 
-
     if(chrtype=="A") # autosome
       gen.names <- tempgn[1:2] # AA AB
 
@@ -191,7 +192,7 @@ function(type=c("f2","bc","riself","risib","4way"),
         else { # some of each direction
           if(expandX=="full")
             gen.names <- c(tempgn[1],
-                           paste(tempgn,c("f","r"), sep=""),
+                           paste(tempgn[2],c("f","r"), sep=""),
                            tempgn[3])
           else gen.names <- tempgn[1:3]
         }
@@ -732,7 +733,7 @@ function(type, sexpgm)
   if((type=="bc" && onesex) ||
      (type=="f2" && ((onedir && onesex) || (bothdir && allmale)))) {
     adjustX <- FALSE
-    dfX <- 1
+    parX0 <- 1
     sexpgmcovar <- sexpgmcovar.alt <- NULL
   }
 
@@ -741,7 +742,7 @@ function(type, sexpgm)
   else if((type=="bc" && bothsex) ||
           (type=="f2" && onedir && bothsex)) {
     adjustX <- TRUE
-    dfX <- 2
+    parX0 <- 2
     sexpgmcovar <- cbind(sex)
     sexpgmcovar.alt <- sex+1
   }
@@ -749,7 +750,7 @@ function(type, sexpgm)
   # intercross, both dir and all female
   else if(type=="f2" && bothdir && allfemale) {
     adjustX <- TRUE
-    dfX <- 2
+    parX0 <- 2
     sexpgmcovar <- cbind(pgm)
     sexpgmcovar.alt <- pgm+1
   }
@@ -757,14 +758,14 @@ function(type, sexpgm)
   # intercross, both dir and both sexes
   else {
     adjustX <- TRUE
-    dfX <- 3
+    parX0 <- 3
     sexpgmcovar <- cbind(sex,as.numeric(sex==0 & pgm==1))
     sexpgmcovar.alt <- rep(3,length(sex))
     sexpgmcovar.alt[sex==0 & pgm==0] <- 1
     sexpgmcovar.alt[sex==0 & pgm==1] <- 2
   }
 
-  list(adjustX=adjustX, dfX=dfX, sexpgmcovar=sexpgmcovar,
+  list(adjustX=adjustX, parX0=parX0, sexpgmcovar=sexpgmcovar,
        sexpgmcovar.alt=sexpgmcovar.alt)
 }
 
@@ -776,31 +777,48 @@ function(type, sexpgm)
 revisecovar <-
 function(sexpgm, covar)
 {
-  if(is.null(covar) || (is.null(sexpgm$sex) && is.null(sexpgm$pgm)))
+  if(is.null(covar) || (is.null(sexpgm$sex) && is.null(sexpgm$pgm))) 
     return(covar)
 
   covar <- as.matrix(covar)
 
-  if(!is.null(sexpgm$pgm) && length(unique(sexpgm$pgm))==1) sexpgm$pgm <- NULL
-  if(!is.null(sexpgm$sex) && length(unique(sexpgm$sex))==1) sexpgm$sex <- NULL
+  sex <- sexpgm$sex
+  pgm <- sexpgm$pgm
 
-  if(!is.null(sexpgm$sex)) {
-    if(!is.null(sexpgm$pgm)) {
-      X <- cbind(1,sexpgm$sex, sexpgm$pgm, sexpgm$sex*sexpgm$pgm)
-    }
-    else {
-      X <- cbind(1,sexpgm$sex)
-    }
-  }
+  if(!is.null(pgm) && length(unique(pgm))==1) pgm <- NULL
+  allfemale <- FALSE
+  if(is.null(sex)) allfemale <- TRUE
   else {
-    if(!is.null(sexpgm$pgm)) {
-      X <- cbind(1,sexpgm$pgm)
+    if(all(sex==0)) {
+      allfemale <- TRUE
+      sex <- NULL
     }
-    else {
-      X <- cbind(rep(1,nrow(covar)))
+    else if(all(sex==1)) {
+      allfemale <- FALSE
+      sex <- NULL
     }
   }
-       
+  
+  if(!is.null(pgm)) { # some of each direction
+    if(!is.null(sex)) { # some of each sex
+      femf <- as.numeric(pgm==0 & sex==0)
+      femr <- as.numeric(pgm==1 & sex==0)
+      mal <- sex
+      X <- cbind(femf, femr, mal)
+    }
+    else { # all of one sex
+      if(allfemale)
+        X <- cbind(1-pgm, pgm)
+      else
+        X <- cbind(rep(1, nrow(covar)))
+    }
+  }
+  else { # all of one direction
+    if(!is.null(sex))  # some of each sex
+      X <- cbind(sex, 1-sex)
+    else X <- cbind(rep(1, nrow(covar)))
+  }
+  
   nc <- ncol(X)
 
   keep <- rep(TRUE,ncol(covar))
@@ -808,13 +826,19 @@ function(sexpgm, covar)
     if(qr(cbind(X,covar[,i]))$rank <= nc)
       keep[i] <- FALSE
   }
-  if(!any(keep)) return(NULL)
-  covar[,keep,drop=FALSE]
+  if(!any(keep))
+    covar <- numeric(0)
+  else 
+    covar <- covar[,keep,drop=FALSE]
+
+  attr(covar, "n.dropped") <- sum(!keep)
+  covar
 }
 
 ######################################################################
 # dropXcol: for use with scantwo() for the X chromosome:
-#           figure out what columns to drop
+#           figure out what columns to drop...both for the full model
+#           and for the additive model.
 ######################################################################
 dropXcol <-
 function(type=c("f2","bc"), sexpgm, cross.attr)
