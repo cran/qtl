@@ -612,7 +612,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     z[is.na(z) | z<0] <- 0
 
     w <- marnam
-    o <- grep("^loc\-*[0-9]+",w)
+    o <- grep("^loc-*[0-9]+",w)
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(z) <- w

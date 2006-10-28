@@ -626,7 +626,7 @@ function(x,chr,method=c("both","entropy","variance"), step=1,
                     "Missing information"=info$info2)
 
     w <- names(map)
-    o <- grep("^loc\-*[0-9]+",w)
+    o <- grep("^loc-*[0-9]+",w)
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
     rownames(z) <- w

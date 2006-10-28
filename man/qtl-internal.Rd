@@ -133,9 +133,9 @@ imf.stahl(r, m=0, p=0, tol=1e-12, maxit=1000)
 locatemarker(map, pos, chr, flag)
 locate.xo(cross)
 makeSSmap(cross)
-max.scantwocondensed(object, lodcolumn=1,
-         what=c("best", "full", "add", "int"),
-         df=FALSE, na.rm=TRUE, \dots)
+\method{max}{scantwocondensed}(object, lodcolumn=1,
+    what=c("best", "full", "add", "int"),
+    df=FALSE, na.rm=TRUE, \dots)
 mf.cf(d)
 mf.h(d)
 mf.k(d)
@@ -211,7 +211,7 @@ sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
              partial.missing.prob, keep.errorind, m, p, map.function)
 sim.ril(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
 subrousummaryscantwo(object, for.perm=FALSE)
-summary.scantwocondensed(object, thresholds, 
+\method{summary}{scantwocondensed}(object, thresholds, 
          what=c("best", "full", "add", "int"),
          perms, alphas, lodcolumn=1, pvalues=FALSE,
          df=FALSE, allpairs=TRUE, \dots)

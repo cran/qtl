@@ -100,9 +100,6 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
   }
 
   # beginning and end of chromosomes
-#  temp <- grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",rownames(out))
-#  if(length(temp)==0) temp <- out
-#  else temp <- out[-temp,]
   temp <- out
   begend <- matrix(unlist(tapply(temp[,2],temp[,1],range)),ncol=2,byrow=TRUE)
   rownames(begend) <- unique(out[,1])
@@ -168,7 +165,6 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
     }
     lines(x,y,lwd=lwd[1],lty=lty[1],col=col[1])
     # plot chromosome number
-#    a <- par("usr")
     if(!add && !onechr) {
       tloc <- mean(c(min(x),max(x)))
 #      text(tloc,a[3]-(a[4]-a[3])*0.05,as.character(chr[i]))
@@ -203,8 +199,7 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
     # plot lines or triangles at marker positions
     if(!add) {
       nam <- dimnames(out)[[1]][out[,1]==chr[i]]
-#      wh.genoprob <- (seq(along=nam))[grep("^loc\-*[0-9]+",nam)]
-      wh.genoprob <- (seq(along=nam))[grep("^c[0-9A-Za-z]+\.loc\-*[0-9]+",nam)]
+      wh.genoprob <- grep("^c[0-9A-Za-z]+\\.loc-*[0-9]+", nam)
       if(length(wh.genoprob)==0) wh.genoprob <- seq(along=nam)
       else wh.genoprob <- (seq(along=nam))[-wh.genoprob]
       pos <- out[out[,1]==chr[i],2][wh.genoprob]+start[i]

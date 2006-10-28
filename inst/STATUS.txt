@@ -6,7 +6,7 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.rqtl.org
 ----------------------------------------------------------------------
 
-Version 1.04, 10/27/2006:
+Version 1.04, 10/28/2006:
 
 Major changes:
 

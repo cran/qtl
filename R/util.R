@@ -1971,7 +1971,7 @@ function(object)
     stop("Input should have class \"scanone\".")
 
   rn <- rownames(object)
-  o <- grep("^loc\-*[0-9]+(\.[0-9]+)*\.c[0-9A-Za-z]+$", rn)
+  o <- grep("^loc-*[0-9]+(\\.[0-9]+)*\\.c[0-9A-Za-z]+$", rn)
   if(length(o) > 0) {
     temp <- rn[o]
     temp <- strsplit(temp,"\\.")

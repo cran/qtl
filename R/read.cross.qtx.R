@@ -60,7 +60,7 @@ function(dir, file, estimate.map=TRUE)
   cat(paste("\t", n.ind, "  individuals\n",sep=""))
 
   # determine if individuals can be viewed as numbers
-  g <- grep("^[0-9\.]+$", ind)
+  g <- grep("^[0-9\\.]+$", ind)
   if(length(g) == n.ind)
     ind <- as.numeric(as.character(ind))
 
