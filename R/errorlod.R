@@ -79,7 +79,7 @@ function(cross, error.prob=0.01,
       }
          
       Pr <- cross$geno[[i]]$prob
-      u <- grep("^loc\-*[0-9]+",colnames(Pr))
+      u <- grep("^loc-*[0-9]+",colnames(Pr))
 
       if(length(u) > 0) Pr <- Pr[,-u,]
     }

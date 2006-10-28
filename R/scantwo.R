@@ -332,7 +332,7 @@ function(cross, chr, pheno.col=1,
       if(is.matrix(map)) map <- map[1,] # in case of sex-specific map
   
       w <- names(map)
-      o <- grep("^loc\-*[0-9]+",w)
+      o <- grep("^loc-*[0-9]+",w)
 
       if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
         w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")

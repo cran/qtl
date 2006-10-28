@@ -109,7 +109,7 @@ function(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
     colnames(res)[-(1:2)] <- c("lod.p.mu","lod.p","lod.mu")
 
     w <- names(map)
-    o <- grep("^loc\-*[0-9]+",w)
+    o <- grep("^loc-*[0-9]+",w)
 
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")

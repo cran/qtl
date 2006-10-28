@@ -10,6 +10,8 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
+o Allow changes of colors in effectplot()
+
 o mention getwd(), setwd() and dir() in FAQ
 
 o FAQ: constructing covariate matrices
