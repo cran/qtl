@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-6, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Oct, 2006
+# last modified Nov, 2006
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -289,16 +289,16 @@ function( cross, filestem="data")
       g[ is.na( g ) ] <- 0
       g <- c(-1,0,1,2,10,12)[ 1 + g ]
 
-      if( length( g ) <= 40)
+#      if( length( g ) <= 40)
         write(paste( "      ", paste( g, collapse = " " )), file, append=TRUE)
-      else {
-        lo <- seq( 1, length(g), by=40)
-        hi <- c( lo[-1]-1, length( g ))
-        for(k in seq(along=lo)) {
-          write( paste( "      ", paste( g[lo[k]:hi[k]], collapse = " " )),
-                file, append=TRUE)
-        }
-      }
+#      else {
+#        lo <- seq( 1, length(g), by=40)
+#        hi <- c( lo[-1]-1, length( g ))
+#        for(k in seq(along=lo)) {
+#          write( paste( "      ", paste( g[lo[k]:hi[k]], collapse = " " )),
+#                file, append=TRUE)
+#        }
+#      }
     } # end writing marker data
     p <- c( cross$pheno[ind,])
     tmp <- format( p )

@@ -10,6 +10,11 @@ Karl Broman, <kbroman@jhsph.edu>.
  
 SHORT TERM:
 
+o When covariates must be discarded during a permutation test, we get
+  an enormous number of warning messages.  Give just one.
+
+o geno.image: like plot.missing, but showing colors at the genotypes
+
 o Allow changes of colors in effectplot()
 
 o mention getwd(), setwd() and dir() in FAQ

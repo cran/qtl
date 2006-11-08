@@ -6,6 +6,23 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.rqtl.org
 ----------------------------------------------------------------------
 
+Version 1.05, 11/8/2006:
+
+Major changes:
+
+  Fixed a problem with permutations in scanone and scantwo: covariates
+  weren't being permuted to match the phenotypes.
+
+Minor changes:
+
+  Fixed a slight bug in scanone for model="binary".
+
+  Revised write.cross for the "qtlcart" format; there was a problem in
+  the case that there were many markers on a chromosome.
+
+  Revised the C code for imf_stahl, to better deal with void pointers.
+
+
 Version 1.04, 10/28/2006:
 
 Major changes:
@@ -115,10 +132,10 @@ Major changes:
   to do parallel analysis on a linux cluster.  With the new changes in
   scanone, I found the code to be too cumbersome.
 
-  Added the extended Haley-Knott method (see Feenstra et al.,
-  Genetics, in press) to the scanone function.  This is faster and
+  Added the extended Haley-Knott method (see Feenstra et al., Genetics
+  173:2269-2282, 2006) to the scanone function.  This is faster and
   more robust than standard interval mapping, and is a better
-  approximation (but slower) than regular Haley-Knott.regression.
+  approximation (but slower) than regular Haley-Knott regression.
 
   Revised the sim.cross() function so that, with a backcross, the
   effect in the "model" argument is to be specified as the difference
@@ -166,8 +183,8 @@ Minor changes:
   a phenotype distribution.  
 
   Added a function condense.scantwo for producing condensed versions
-  of scanone and scantwo, containing just the maximum LOD scores on
-  each pair of chromosomes.  One can get summaries from these but not
+  of scantwo output, containing just the maximum LOD scores on each
+  pair of chromosomes.  One can get summaries from these but not
   plots. 
 
   In plot.info, added step, off.end, error.prob and map.function

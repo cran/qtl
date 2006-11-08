@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
 # 
-# last modified Oct, 2006
+# last modified Nov, 2006
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -734,6 +734,7 @@ function(n.perm, cross, pheno.col, model,
   ## local variables
   n.phe <- length(pheno.col)
   n.addcov <- ncol(addcovar)
+  n.intcovar <- ncol(intcovar)
   n.ind <- dim(cross$pheno)[1]
 
   if(method=="mr-imp") # save version with missing genotypes 
@@ -815,7 +816,8 @@ function(n.perm, cross, pheno.col, model,
       else rnd <- 1
     }
 
-    addcovarp <- intcovarp <- NULL
+    addcovarp <- addcovar
+    intcovarp <- intcovar
     if(model=="2part") res <- matrix(ncol=3*n.phe,nrow=n.perm)
     else res <- matrix(0, n.perm, n.phe)
 
@@ -845,8 +847,8 @@ function(n.perm, cross, pheno.col, model,
         o <- sample(1:n.ind)
 
       cross$pheno <- cross$pheno[o,,drop=FALSE]
-      if(!is.null(addcovar)) addcovarp <- addcovar[o,,drop=FALSE]
-      if(!is.null(intcovar)) intcovarp <- intcovar[o,,drop=FALSE]
+      if(!is.null(addcovar)) addcovarp <- addcovarp[o,,drop=FALSE]
+      if(!is.null(intcovar)) intcovarp <- intcovarp[o,,drop=FALSE]
       if(!is.null(weights)) weights <- weights[o]
 
       tem <- scanone(cross,,pheno.col,model,method,addcovarp,

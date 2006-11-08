@@ -5,7 +5,7 @@
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
 #            Hao Wu
 #
-# last modified Oct, 2006
+# last modified Nov, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -1210,9 +1210,10 @@ function(n.perm, cross, pheno.col, model,
       tempcross <- cross
     if(method=="mr-argmax") # impute genotypes
       cross <- fill.geno(cross,method="argmax")
-    addcovarp <- intcovarp <- NULL
     if(!is.null(addcovar)) addcovar <- as.matrix(addcovar)
     if(!is.null(intcovar)) intcovar <- as.matrix(intcovar)
+    addcovarp <- addcovar
+    intcovarp <- intcovar
 
 
     ## initialize result
@@ -1249,8 +1250,8 @@ function(n.perm, cross, pheno.col, model,
         o <- sample(1:n.ind)
 
       cross$pheno <- cross$pheno[o,,drop=FALSE]
-      if(!is.null(addcovar)) addcovarp <- addcovar[o,,drop=FALSE]
-      if(!is.null(intcovar)) intcovarp <- intcovar[o,,drop=FALSE]
+      if(!is.null(addcovar)) addcovarp <- addcovarp[o,,drop=FALSE]
+      if(!is.null(intcovar)) intcovarp <- intcovarp[o,,drop=FALSE]
       tem <- scantwo(cross,  pheno.col=pheno.col, model=model, 
                      method=method, addcovar=addcovarp, intcovar=intcovarp,
                      weights=weights, use=use, 

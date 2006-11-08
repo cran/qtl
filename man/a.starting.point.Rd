@@ -239,7 +239,7 @@ aspects of the output.  For each pair of chromosomes \eqn{(k,l)}, it
 calculates the maximum LOD score for the full model, \eqn{M_f(k,l)}; a
 LOD score indicating evidence for a second QTL, allowing for epistasis),
 \eqn{M_{fv1}(k,l)}{M_fv1(k,l)}; a LOD score indicating evidence for
-epistasis,\eqn{M_i(k,l)}; the LOD score for the additive QTL model,
+epistasis, \eqn{M_i(k,l)}; the LOD score for the additive QTL model,
 \eqn{M_a(k,l)}; and a LOD score indicating evidence for a second QTL,
 assuming no epistasis, \eqn{M_{av1}(k,l)}{M_av1(k,l)}.  
 
