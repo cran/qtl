@@ -30,6 +30,13 @@
  *
  **********************************************************************/
 
+/* structure used by imf_stahl and imf_stahl_sub */
+struct imf_stahl_data {
+  double r;
+  int m;
+  double p;
+};
+
 /**********************************************************************
  * 
  * est_map_bci

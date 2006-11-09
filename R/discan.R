@@ -3,7 +3,7 @@
 # discan.R
 #
 # copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2006
+# last modified Nov, 2006
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -223,7 +223,7 @@ function(cross, pheno, method=c("em","mr"),
         if(n.ac > 0) {
           nullfitX <- glm(pheno ~ ac+sexpgmcovar,
                          family=binomial(link="logit"))
-          parX0 <- lm(pheno~acd+sexpgmcovar)$rank
+          parX0 <- lm(pheno~ac+sexpgmcovar)$rank
         }
         else 
           nullfitX <- glm(pheno ~ sexpgmcovar,

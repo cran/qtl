@@ -5,7 +5,7 @@
  * copyright (c) 2006, Karl W Broman, Johns Hopkins University
  *         (Some code adapted from code from Nicola Armstrong)
  *
- * last modified Aug, 2006
+ * last modified Nov, 2006
  * first written Aug, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -385,15 +385,14 @@ void R_imf_stahl(int *n_r, double *r, int *m, double *p,
 double imf_stahl(double r, int m, double p, double tol, int maxit)
 {
   double result;
-  double info[3];
+  struct imf_stahl_data info;
 
-  info[0] = r;
-  info[1] = (double)m;
-  info[2] = p;
+  info.r = r;
+  info.m = m;
+  info.p = p;
   
   result = R_zeroin(r, -log(1.0-2.0*r)/2.0,  /* lower and upper of range */
-		    imf_stahl_sub, (void *)info,
-		    &tol, &maxit);
+		    imf_stahl_sub, (void *)(&info), &tol, &maxit);
   return(result);
 }
   
@@ -410,17 +409,15 @@ double imf_stahl(double r, int m, double p, double tol, int maxit)
 double imf_stahl_sub(double d, void *info)
 {
   int m;
-  double r, *temp, p;
+  double r, p;
   double result;
+  struct imf_stahl_data temp;
 
-  temp = (double *)info;
-  r = temp[0];
-  m = (int)temp[1];
-  p = temp[2];
+  temp = *((struct imf_stahl_data *)info);
 
-  result = mf_stahl(d, m, p);
+  result = mf_stahl(d, temp.m, temp.p);
   
-  return(result - r);
+  return(result - temp.r);
 }
 
 /**********************************************************************

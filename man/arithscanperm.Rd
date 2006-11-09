@@ -4,7 +4,7 @@
 \alias{+.scantwoperm}
 \alias{-.scantwoperm}
 
-\title{Arithmetic Operators for scanone permutation results}
+\title{Arithmetic Operators for permutation results}
 
 \description{
   Add or subtract LOD scores in permutation results from

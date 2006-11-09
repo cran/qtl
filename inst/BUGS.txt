@@ -22,6 +22,9 @@ Version 1.04 bugs:
        re-write this so that all genotypes but that under test are
        assumed to be correct.  
 
+    3. Bug in scanone and scantwo permutations: covariates aren't
+       permuted to match the phenotypes.  [Fixed in Version 1.05.]
+
 
 Version 1.03 bugs:
 

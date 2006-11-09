@@ -1,7 +1,6 @@
 +.scanone               Arithmetic Operators for scanone and scantwo
                         results
-+.scanoneperm           Arithmetic Operators for scanone permutation
-                        results
++.scanoneperm           Arithmetic Operators for permutation results
 A starting point        Introductory comments
 argmax.geno             Reconstruct underlying genotypes
 badorder                An intercross with misplaced markers
