@@ -2,7 +2,7 @@
 #
 # simulate.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # last modified Sep, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
@@ -187,9 +187,6 @@ function(map,model,n.ind,error.prob,missing.prob,
     if(any(model[,1] < 0 | model[,1] > n.chr))
       stop("Chromosome indicators in model matrix out of range.")
     model[,2] <- model[,2]+1e-14 # so QTL not on top of marker
-
-    # effect should be difference between the groups
-    model[,3] <- model[,3]*2  
   }
 
   # if any QTLs, place qtls on map
@@ -248,7 +245,6 @@ function(map,model,n.ind,error.prob,missing.prob,
     # incorporate QTL effects
     for(i in 1:n.qtl) {
       QTL.geno <- geno[[QTL.chr[i]]]$data[,QTL.loc[i]]
-      pheno[QTL.geno==1] <- pheno[QTL.geno==1] - model[i,3]
       pheno[QTL.geno==2] <- pheno[QTL.geno==2] + model[i,3]
     }
 

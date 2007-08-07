@@ -2,7 +2,7 @@
 #
 # plot.scanone.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # 
 # last modified Oct, 2006
 # first written Feb, 2001

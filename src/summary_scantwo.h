@@ -2,7 +2,7 @@
  * 
  * summary_scantwo.h
  *
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman
  *
  * last modified Oct, 2006
  * first written Oct, 2006

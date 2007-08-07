@@ -60,6 +60,6 @@ plot.rf(badorder, chr=2:3, what="lod")
 \seealso{ \code{\link[qtl]{est.rf}}, \code{\link[graphics]{image}},
   \code{\link[qtl]{badorder}}, \code{\link[qtl]{ripple}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}

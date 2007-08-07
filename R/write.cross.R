@@ -2,9 +2,8 @@
 #
 # write.cross.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-#                       and Hao Wu, The Jackson Laboratory
-# last modified Oct, 2006
+# copyright (c) 2001-7, Karl W Broman and Hao Wu
+# last modified Jul, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -322,19 +321,20 @@ function(cross, digits)
 #    else chrname <- as.numeric(chrname)
     chrid <- c(chrid, rep(chrname, n.mar[i]))
   }
-  write.table(chrid, file="chrid.dat", quote=F, row.names=F,
-              col.names=F)
+  write.table(chrid, file="chrid.dat", quote=FALSE, row.names=FALSE,
+              col.names=FALSE)
 
   # marker position file
   markpos <- NULL
   for(i in 1:n.chr)
     markpos <- c(markpos, cross$geno[[i]]$map)
-  write.table(markpos, file="markerpos.txt", quote=F, sep="\t",
-              row.names=T, col.names=F)
+  write.table(markpos, file="markerpos.txt", quote=FALSE, sep="\t",
+              row.names=TRUE, col.names=FALSE)
 
   # marker names
   mnames <- names(markpos)
-  write.table(mnames, file="mnames.txt", quote=F, row.name=F, col.names=F)
+  write.table(mnames, file="mnames.txt", quote=FALSE, row.name=FALSE,
+              col.names=FALSE)
 
   # genotype
   geno <- NULL
@@ -343,19 +343,19 @@ function(cross, digits)
   # note that gary's format codes genotype from 0
   # and 9 is for NA
   geno <- geno - 1 # note NA will still be NA
-  write.table(geno, file="geno.dat", quote=F, row.name=F, col.name=F,
-              sep="\t", na="9")
+  write.table(geno, file="geno.dat", quote=FALSE, row.name=FALSE,
+              col.name=FALSE, sep="\t", na="9")
 
   # phenotype
   pheno <- matrix(as.character(round(unlist(cross$pheno),digits)),nrow=n.ind)
   for(i in 1:nphe(cross)) 
     if(is.factor(cross$pheno[,i])) pheno[,i] <- as.character(cross$pheno[,i])
 
-  write.table(pheno, file="pheno.dat", quote=F, row.names=F,
-              col.names=F, sep="\t", na="-999")
+  write.table(pheno, file="pheno.dat", quote=FALSE, row.names=FALSE,
+              col.names=FALSE, sep="\t", na="-999")
   # phenotype names
-  write.table(names(cross$pheno), file="pnames.txt", quote=F, row.names=F,
-              col.names=F, sep="\t", na="-999")
+  write.table(names(cross$pheno), file="pnames.txt", quote=FALSE,
+              row.names=FALSE, col.names=FALSE, sep="\t", na="-999")
 
 }
                           
@@ -375,11 +375,10 @@ function(geno,sex,pgm,crosstype)
   }
 
   if(crosstype == "f2") {
-
     # females
     if(!is.null(pgm)) {
-      if(!is.null(sex) & any(sex==0)) {
-        if(any(pgm==1)) {
+      if(!is.null(sex)) {
+        if(any(pgm==1 & sex==0)) {
           temp <- geno[sex==0 & pgm==1,,drop=FALSE]
           temp[temp==1] <- 3
           geno[sex==0 & pgm==1,] <- temp

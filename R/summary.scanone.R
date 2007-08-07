@@ -1,10 +1,10 @@
-#####################################################################
+######################################################################
 #
 # summary.scanone.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # 
-# last modified Oct, 2006
+# last modified Dec, 2006
 # first written Sep, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -52,9 +52,9 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
     if(!missing(lodcolumn) && length(lodcolumn) > 1) {
       warning("With format=\"onepheno\", lodcolumn should have length 1.")
       lodcolumn <- lodcolumn[1]
-      if(lodcolumn < 1 || lodcolumn > ncol.object)
-        stop("lodcolumn should be between 1 and no. LOD columns.")
     }
+    if(lodcolumn < 1 || lodcolumn > ncol.object)
+      stop("lodcolumn should be between 1 and no. LOD columns.")
   }
 
   if(!missing(alpha) && length(alpha) > 1) {
@@ -84,12 +84,6 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
         threshold <- rep(threshold, ncol.object)
       else if(length(threshold) != ncol.object)
         stop("threshold should have length 1 or match number LOD scores in scanone input.")
-    }
-    if(!missing(alpha)) {
-      if(length(alpha)==1) 
-        alpha <- rep(alpha, ncol.object)
-      else if(length(alpha) != ncol.object)
-        stop("alpha should have length 1 or match number LOD scores in scanone input.")
     }
   }
     
@@ -125,7 +119,7 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
     thechr <- as.character(object[wh,1])
 
     if(!missing(threshold)) 
-      wh <- wh[object[wh,lodcolumn] >= threshold]
+      wh <- wh[object[wh,lodcolumn] > threshold]
     else if(!missing(alpha)) {
       thr <- summary(perms, alpha)
       if("xchr" %in% names(attributes(perms))) {
@@ -133,12 +127,12 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
         xchr <- attr(perms, "xchr")
         xchr <- names(xchr)[xchr]
         xchr <- thechr %in% xchr
-        wh <- wh[(!xchr & object[wh,lodcolumn] >= thr[1]) |
-                 (xchr & object[wh,lodcolumn] >= thr[2])]
+        wh <- wh[(!xchr & object[wh,lodcolumn] > thr[1]) |
+                 (xchr & object[wh,lodcolumn] > thr[2])]
       }
       else {
         thr <- thr[,lodcolumn-2]
-        wh <- wh[object[wh,lodcolumn] >= thr]
+        wh <- wh[object[wh,lodcolumn] > thr]
       }
     }
 
@@ -160,7 +154,7 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
     if(!missing(threshold)) { # rows with at least one LOD > threshold
       for(lodcolumn in 1:ncol.object) {
         temp <- wh[[lodcolumn]]
-        wh[[lodcolumn]] <- temp[object[temp,lodcolumn+2] >= threshold[lodcolumn]]
+        wh[[lodcolumn]] <- temp[object[temp,lodcolumn+2] > threshold[lodcolumn]]
       }
     }
     else if(!missing(alpha)) {
@@ -173,14 +167,14 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
           temp <- wh[[lodcolumn]]
           thechr <- as.character(object[temp,1])
           xchr <- thechr %in% xchr
-          wh[[lodcolumn]] <- temp[(!xchr & object[temp,lodcolumn+2] >= thr$A[lodcolumn]) |
-                                  (xchr & object[temp,lodcolumn+2] >= thr$X[lodcolumn])]
+          wh[[lodcolumn]] <- temp[(!xchr & object[temp,lodcolumn+2] > thr$A[lodcolumn]) |
+                                  (xchr & object[temp,lodcolumn+2] > thr$X[lodcolumn])]
         }
       }
       else {
         for(lodcolumn in 1:ncol.object) {
           temp <- wh[[lodcolumn]]
-          wh[[lodcolumn]] <- temp[object[temp,lodcolumn+2] >= thr[lodcolumn]]
+          wh[[lodcolumn]] <- temp[object[temp,lodcolumn+2] > thr[lodcolumn]]
         }
       }
     }
@@ -255,6 +249,8 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
   }    
 
   if(pvalues && nrow(result) > 0) { # get p-values and add to the results
+    rn <- rownames(result)
+
     if("xchr" %in% names(attributes(perms))) {
       xchr <- attr(perms, "xchr")
       xchr <- names(xchr)[xchr]
@@ -310,11 +306,14 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
       }
     }
     result <- temp
+    rownames(result) <- rn
   }
   
   if(df && "df" %in% names(attributes(object)))
     attr(result, "df") <- attr(object, "df")
   if(!df) attr(result, "df") <- NULL
+
+  if(format=="allpeaks") rownames(result) <- as.character(result$chr)
 
   class(result) <- c("summary.scanone", "data.frame")
   result
@@ -324,7 +323,6 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
 print.summary.scanone <-
 function(x, ...)
 {
-
   if(nrow(x) == 0) {
     cat("    There were no LOD peaks above the threshold.\n")
     return(invisible(NULL))
@@ -358,9 +356,14 @@ function(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, ...)
     thedf <- attr(object, "df")
   else thedf <- NULL
 
+  if(lodcolumn < 1 || lodcolumn+2 > ncol(object))
+    stop("Argument lodcolumn misspecified.")
+
   if(missing(chr)) {
     maxlod <- max(object[,lodcolumn+2],na.rm=TRUE)
-    object <- object[!is.na(object[,lodcolumn+2]) & object[,lodcolumn+2]==maxlod,]
+    wh <- which(!is.na(object[,lodcolumn+2]) & object[,lodcolumn+2]==maxlod)
+    if(length(wh) > 1) wh <- sample(wh, 1)
+    object <- object[wh,]
 
     object[,1] <- factor(as.character(unique(object[,1])))
 
@@ -372,7 +375,9 @@ function(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, ...)
     for(i in seq(along=chr)) {
       temp <- object[object[,1]==chr[i],]
       maxlod <- max(temp[,lodcolumn+2],na.rm=TRUE)
-      temp <- temp[!is.na(temp[,lodcolumn+2]) & temp[,lodcolumn+2]==maxlod,]
+      wh <- which(!is.na(temp[,lodcolumn+2]) & temp[,lodcolumn+2]==maxlod)
+      if(length(wh) > 1) wh <- sample(wh, 1)
+      temp <- temp[wh,]
       res <- rbind(res,temp)
     }
 

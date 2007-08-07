@@ -2,19 +2,20 @@
  * 
  * hmm_bci.c
  * 
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006-7, Karl W Broman
  *         (Some code adapted from code from Nicola Armstrong)
  *
- * last modified Nov, 2006
+ * last modified Mar, 2007
  * first written Aug, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
  *
  * C functions for the R/qtl package
  *
- * Contains: est_map_bci, emit_bci, nrec_bci, R_est_map_bci,
- *           mf_stahl, R_mf_stahl, imf_stahl, R_imf_stahl,
- *           imf_stahl_sub
+ * Contains: est_map_bci, 
+ *           R_est_map_bci, 
+ *           emit_bci, nrec_bci, step_bci,
+ *           tm_bci, fms_bci, distinct_tm_bci
  *
  * These are functions for the HMM under the Stahl model
  * (with chiasmata coming from two mechanisms: one following a 
@@ -22,8 +23,9 @@
  * m = interference parameter in the chi-square model (m=0 == NI)
  * p = proportion of chiasmata from the NI model (p=1 == NI)
  *
- * This is exclusively for a backcross.
+ * Code for is for a backcross.
  *
+ * BACKCROSS:
  * Genotype codes:  0, ..., 2(m+1) - 1, with the first (m+1) 
  *                  corresponding to AA and the others to AB
  * Phenotype codes: 0=missing; 1=AA; 2=AB
@@ -39,20 +41,18 @@
 #include <R_ext/Applic.h>
 #include "util.h"
 #include "hmm_bci.h"
+#include "stahl_mf.h"
 
 /**********************************************************************
  * 
  * est_map_bci
  *
  * This function re-estimates the genetic map for a chromosome
- * with the Stahl model, taking m and p known
+ * with the Stahl model, taking m and p known, for a backcross
  *
  * n_ind        Number of individuals
  *
  * n_mar        Number of markers 
- *
- * n_gen        Number of different genotypes (strictly = 2), 
- *              but included for later expansion to intercross
  *
  * geno         Genotype data, as a single vector storing the matrix 
  *              by columns, with each column corresponding to a marker
@@ -66,13 +66,6 @@
  *
  * error_prob   Genotyping error probability
  *
- * emitf        Function returning log Pr(O_i | g_i)
- * 
- * stepf        Function returning log Pr(g_2 | g_1)
- *
- * nrecf        Function returning number of recombinations associated
- *              with (g_1, g_2)
- *
  * loglik       Loglik at final estimates of recombination fractions
  *
  * maxit        Maximum number of iterations to perform
@@ -81,15 +74,8 @@
  * 
  **********************************************************************/
 
-/* Note: true genotypes coded as 0, 1, ...
-   but in the alpha's and beta's, we use 0, 1, ... */
-
-void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d, 
+void est_map_bci(int n_ind, int n_mar, int *geno, double *d, 
 		 int m, double p, double error_prob, 
-		 double emitf(int, int, double, int),
-		 void stepf(int, int, double ***, double *, int, double, 
-			    int, double), 
-		 double nrecf(int, int, int), 
 		 double *loglik, int maxit, double tol, int verbose)
 {
   int i, j, j2, v, v2, it, flag=0, **Geno, n_states;
@@ -98,7 +84,7 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
   double curloglik;
   double initprob;
   
-  n_states = 2*(m+1); /* number of states in the HMM */
+  n_states = 2*(m+1);  
   initprob = -log((double)n_states);
 
   /* allocate space for beta and reorganize geno */
@@ -147,9 +133,11 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 
     for(i=0; i<n_ind; i++) { /* i = individual */
 
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* initialize alpha and beta */
       for(v=0; v<n_states; v++) {
-	alpha[v][0] = initprob + emitf(Geno[0][i], v, error_prob, m);
+	alpha[v][0] = initprob + emit_bci(Geno[0][i], v, error_prob, m);
 	beta[v][n_mar-1] = 0.0;
       }
 
@@ -160,17 +148,17 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 	  alpha[v][j] = alpha[0][j-1] + tm[0][v][j-1];
 	  
 	  beta[v][j2] = beta[0][j2+1] + tm[v][0][j2] +
-	    emitf(Geno[j2+1][i], 0, error_prob, m);
+	    emit_bci(Geno[j2+1][i], 0, error_prob, m);
 	  
 	  for(v2=1; v2<n_states; v2++) {
 	    alpha[v][j] = addlog(alpha[v][j], alpha[v2][j-1] + 
 				 tm[v2][v][j-1]);
 	    beta[v][j2] = addlog(beta[v][j2], beta[v2][j2+1] + 
 				 tm[v][v2][j2] +
-				 emitf(Geno[j2+1][i], v2, error_prob, m));
+				 emit_bci(Geno[j2+1][i], v2, error_prob, m));
 	  }
 	  
-	  alpha[v][j] += emitf(Geno[j][i], v, error_prob, m);
+	  alpha[v][j] += emit_bci(Geno[j][i], v, error_prob, m);
 		 
 	}
 
@@ -182,7 +170,7 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 	for(v=0, s=0.0; v<n_states; v++) {
 	  for(v2=0; v2<n_states; v2++) {
 	    gamma[v][v2] = alpha[v][j] + beta[v2][j+1] + 
-	      emitf(Geno[j+1][i], v2, error_prob, m) +
+	      emit_bci(Geno[j+1][i], v2, error_prob, m) +
 	      tm[v][v2][j];
 
 	    if(v==0 && v2==0) s = gamma[v][v2];
@@ -192,7 +180,7 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 
 	for(v=0; v<n_states; v++) {
 	  for(v2=0; v2<n_states; v2++) {
-	    rf[j] += nrecf(v, v2, m) * exp(gamma[v][v2] - s);
+	    rf[j] += nrec_bci(v, v2, m) * exp(gamma[v][v2] - s);
 	  }
 	}
       }
@@ -214,7 +202,7 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
       if(verbose == 2) Rprintf("Iteration");
       Rprintf(" %4d ", it+1);
       if(verbose > 2) 
-	for(j=0; j<n_mar-1; j++) Rprintf("%.3lf ", d[j]*100);
+	for(j=0; j<n_mar-1; j++) Rprintf("%.3lf ", d[j]*100.0);
       Rprintf("\n"); 
     }
 
@@ -238,9 +226,12 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
   /* calculate log likelihood */
   *loglik = 0.0;
   for(i=0; i<n_ind; i++) { /* i = individual */
+
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* initialize alpha */
     for(v=0; v<n_states; v++) 
-      alpha[v][0] = initprob + emitf(Geno[0][i], v, error_prob, m);
+      alpha[v][0] = initprob + emit_bci(Geno[0][i], v, error_prob, m);
 
     /* forward equations */
     for(j=1; j<n_mar; j++) {
@@ -249,7 +240,7 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 	for(v2=1; v2<n_states; v2++) 
 	  alpha[v][j] = addlog(alpha[v][j], alpha[v2][j-1] + 
 			       tm[v2][v][j-1]);
-	alpha[v][j] += emitf(Geno[j][i], v, error_prob, m);
+	alpha[v][j] += emit_bci(Geno[j][i], v, error_prob, m);
       }
     }
 
@@ -274,12 +265,13 @@ void est_map_bci(int n_ind, int n_mar, int n_gen, int *geno, double *d,
 }
 
 
-
+/**********************************************************************
+ * emit_bci: log Pr(obs_gen | true_gen)
+ **********************************************************************/
 double emit_bci(int obs_gen, int true_gen, double error_prob,
 		int m)
 {
-  if(true_gen < m+1) true_gen = 1;
-  else true_gen = 2;
+  true_gen = true_gen / (m+1) + 1;
 
   switch(obs_gen) {
   case 0: return(0.0);
@@ -290,135 +282,28 @@ double emit_bci(int obs_gen, int true_gen, double error_prob,
   return(0.0); /* shouldn't get here */
 }
 
-double nrec_bci(int gen1, int gen2, int m)  
+/**********************************************************************
+ * nrec_bci: proportion of recombinantion events
+ **********************************************************************/
+double nrec_bci(int gen1, int gen2, int m)
 {
-  if(gen1 < m+1) gen1=0;
-  else gen1=1;
-  if(gen2 < m+1) gen2=0;
-  else gen2=1;
+  gen1 /= (m+1); /* =0 if < m+1;   =1 otherwise */
+  gen2 /= (m+1);
 
   if(gen1==gen2) return(0.0);
   else return(1.0);
 }
 
-/* R wrapper for est_map_bci */
+
+/* R wrapper for est_map_stahl for backcross */
 void R_est_map_bci(int *n_ind, int *n_mar, int *geno, double *d, 
 		   int *m, double *p, double *error_prob, 
 		   double *loglik, int *maxit, double *tol, int *verbose)
 {
-
-  est_map_bci(*n_ind, *n_mar, 2, geno, d, *m, *p,
-	      *error_prob, emit_bci, step_bci, nrec_bci,
-	      loglik, *maxit, *tol, *verbose);
+  est_map_bci(*n_ind, *n_mar, geno, d, *m, *p,
+	      *error_prob, loglik, *maxit, *tol, *verbose);
 }
 
-
-/***********************************************************************
- * R_mf_stahl: wrapper for R
- * 
- * n_d = length of vector d
- * d   = genetic distances (in Morgans)
- * m   = interference parameter (non-negative integer)
- * p   = proportion of chiasmata from the NI mechanism (double in [0,1])
- * result = vector of length n_d to contain the results
- **********************************************************************/
-void R_mf_stahl(int *n_d, double *d, int *m, double *p, double *result)
-{
-  int i;
-  
-  for(i=0; i<*n_d; i++)
-    result[i] = mf_stahl(d[i], *m, *p);
-}
-  
-/**********************************************************************
- * mf_stahl: map function for Stahl model
- * 
- * d   = genetic distances (in cM)
- * m   = interference parameter (non-negative integer)
- * p   = proportion of chiasmata from the NI mechanism (double in [0,1])
- **********************************************************************/
-double mf_stahl(double d, int m, double p)
-{
-  int i;
-  double result, lam1, lam2;
-  
-  lam1 = (double)(m+1) * d *(1.0-p) * 2.0;
-  lam2 = d * p * 2.0;
-
-  result = 0.0;
-  for(i=0; i<m+1; i++)
-    result += (1.0 - (double)i/(double)(m+1))*dpois((double)i, lam1, 0);
-
-  return(0.5*(1.0 - result * exp(-lam2)));
-}
-
-/**********************************************************************
- * R_imf_stahl: wrapper for R
- * 
- * n_r = length of vector r
- * r   = recombination fractions
- * m   = interference parameter (non-negative integer)
- * p   = proportion of chiasmata from the NI mechanism (double in [0,1])
- * result = vector of length n_r to contain the results
- * tol = tolerance for convergence
- * maxit = number of interations
- **********************************************************************/
-void R_imf_stahl(int *n_r, double *r, int *m, double *p,
-		 double *result, double *tol, int *maxit)
-{
-  int i;
-  
-  for(i=0; i<*n_r; i++)
-    result[i] = imf_stahl(r[i], *m, *p, *tol, *maxit);
-}
-
-
-/**********************************************************************
- * imf_stahl: inverse map function for chi-square model
- * 
- * r   = recombination fraction
- * m   = interference parameter (non-negative integer)
- * p   = proportion of chiasmata from the NI mechanism (double in [0,1])
- * tol = tolerance for convergence
- * maxit = number of interations
- **********************************************************************/
-double imf_stahl(double r, int m, double p, double tol, int maxit)
-{
-  double result;
-  struct imf_stahl_data info;
-
-  info.r = r;
-  info.m = m;
-  info.p = p;
-  
-  result = R_zeroin(r, -log(1.0-2.0*r)/2.0,  /* lower and upper of range */
-		    imf_stahl_sub, (void *)(&info), &tol, &maxit);
-  return(result);
-}
-  
-
-/**********************************************************************
- * imf_stahl_sub: utility function for imf_stahl
- * 
- * r   = recombination fraction
- * m   = interference parameter (non-negative integer)
- * p   = proportion of chiasmata from the NI mechanism (double in [0,1])
- * tol = tolerance for convergence
- * maxit = number of interations
- **********************************************************************/
-double imf_stahl_sub(double d, void *info)
-{
-  int m;
-  double r, p;
-  double result;
-  struct imf_stahl_data temp;
-
-  temp = *((struct imf_stahl_data *)info);
-
-  result = mf_stahl(d, temp.m, temp.p);
-  
-  return(result - temp.r);
-}
 
 /**********************************************************************
  * step_bci
@@ -438,6 +323,8 @@ void step_bci(int n_mar, int n_states, double ***tm, double *d,
   allocate_double(3*m+2, &the_distinct_tm);
 
   for(i=0; i<n_mar-1; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     lambda1 = d[i]*(1-p)*(double)(m+1)*2.0;
     lambda2 = d[i]*p*2.0;
     rfp = 0.5*(1.0 - exp(-lambda2));
@@ -447,10 +334,10 @@ void step_bci(int n_mar, int n_states, double ***tm, double *d,
 
     for(v1=0; v1<n_states; v1++) {
       for(v2=0; v2<n_states; v2++) {
-	tm[v1][v2][i] = alltm_bci(v1, v2, the_distinct_tm, m);
+	tm[v1][v2][i] = tm_bci(v1, v2, the_distinct_tm, m);
 	if(p > 0) 
 	  tm[v1][v2][i] = (1.0-rfp)*tm[v1][v2][i] + 
-	    rfp*alltm_bci(v1, (v2+m+1) % (2*m+2), the_distinct_tm, m);
+	    rfp*tm_bci(v1, (v2+m+1) % (2*m+2), the_distinct_tm, m);
 	tm[v1][v2][i] = log(tm[v1][v2][i]);
       }
     }
@@ -458,13 +345,12 @@ void step_bci(int n_mar, int n_states, double ***tm, double *d,
 } 
 
 
-
 /*****************************************************************************
- * alltm_bci: this function calculates the required transition probability for the
+ * tm_bci: this function calculates the required transition probability for the
  * backcross case
  ****************************************************************************/
 
-double alltm_bci(int i, int j, double *the_distinct_tm, int m)
+double tm_bci(int i, int j, double *the_distinct_tm, int m)
 {
   int s, tempi, tempj;
   

@@ -89,7 +89,7 @@ sim.cross(map, model=NULL, n.ind=100, type=c("f2", "bc", "4way"),
   with 1's indicating simulated genotyping errors.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \seealso{ \code{\link[qtl]{sim.map}}, \code{\link[qtl]{read.cross}},
     \code{\link[qtl]{fake.f2}}, \code{\link[qtl]{fake.bc}}

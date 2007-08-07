@@ -2,9 +2,9 @@
  * 
  * scantwo_binary_em.c
  *
- * copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2004-6, Karl W Broman
  *
- * last modified Oct, 2006
+ * last modified Dec, 2006
  * first written Dec, 2004
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -29,6 +29,7 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Linpack.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scantwo_binary_em.h"
 #define TOL 1e-12
@@ -189,6 +190,9 @@ void scantwo_1chr_binary_em(int n_ind, int n_pos, int n_gen,
 	  for(j=0; j<n_col[m]; j++) param[j] = oldparam[j]; 
 
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
+
+	    R_CheckUserInterrupt(); /* check for ^C */
+
 	    scantwo_binary_em_estep(n_ind, n_gen, n_gen, Probs, Wts12, 
 				    Addcov, n_addcov, Intcov, 
 				    n_intcov, pheno, oldparam, m, 1,
@@ -420,6 +424,9 @@ void scantwo_2chr_binary_em(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	  for(j=0; j<n_col[m]; j++) param[j] = oldparam[j]; 
 
 	  for(r=0; r<maxit; r++) { /* loop over iterations */
+
+	    R_CheckUserInterrupt(); /* check for ^C */
+
 	    scantwo_binary_em_estep(n_ind, n_gen1, n_gen2, Probs, Wts12, 
 				    Addcov, n_addcov, Intcov, 
 				    n_intcov, pheno, oldparam, m, 1,

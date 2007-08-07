@@ -2,9 +2,9 @@
  * 
  * discan_covar.c
  *
- * copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2004-6, Karl W Broman
  *
- * last modified Nov, 2005
+ * last modified Dec, 2006
  * first written Dec, 2004
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Linpack.h>
 #include "util.h"
@@ -161,6 +162,8 @@ double discan_covar_em(int n_ind, int pos, int n_gen, int n_par,
     Rprintf("        %10.5f\n", curllik);
 
   for(s=0; s<maxit; s++) {
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     /****** M STEP ******/
 

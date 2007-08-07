@@ -2,8 +2,7 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
-#                     and Karl W. Broman, Johns Hopkins University
+# copyright (c) 2002-6, Hao Wu and Karl W. Broman
 # last modified Oct, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
@@ -392,7 +391,8 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       # LOD score
       result[i,3] <- result.full[1,4] - z$lod
       # % variance explained
-      result[i,4] <- result.full[1,5] - 100*(1 - exp(-2*z$lod*log(10)/n.ind))
+      result[i,4] <- result.full[1,5] - 100*(1 - 10^(-2*z$lod/n.ind))      
+
       # Type III SS for this term - computed from %var
       result[i,2] <- result.full[3,2] * result[i,4] / 100
       # F value

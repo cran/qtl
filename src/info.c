@@ -2,9 +2,9 @@
  * 
  * info.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Oct, 2001
+ * last modified Dec, 2006
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -24,6 +24,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "info.h"
 
@@ -62,6 +63,8 @@ void R_info(int *n_ind, int *n_pos, int *n_gen, double *genoprob,
   reorg_genoprob(*n_ind, *n_pos, *n_gen, genoprob, &Genoprob);
 
   for(i=0; i< *n_pos; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     info1[i] = info2[i] = 0.0;
     for(j=0; j< *n_ind; j++) {
       s=ss=0.0;

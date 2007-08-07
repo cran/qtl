@@ -2,10 +2,9 @@
 #
 # scantwo.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
-#            Hao Wu
+# copyright (c) 2001-7, Karl W Broman and Hao Wu
 #
-# last modified Nov, 2006
+# last modified Apr, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -130,6 +129,7 @@ function(cross, chr, pheno.col=1,
     }
     attr(output,"fullmap") <- fullmap
     attr(output,"phenotypes") <- colnames(cross$pheno)[pheno.col]
+    names(output$map)[2] <- "pos"
     return(output)
   }
 
@@ -175,7 +175,7 @@ function(cross, chr, pheno.col=1,
     sexpgm <- getsex(cross)
 
     addcovarX <- revisecovar(sexpgm,addcovar)
-    if(!is.null(addcovar) && (nd <- attr(addcovarX, "n.dropped")) > 0)
+    if(!is.null(addcovar) && (nd <- attr(addcovarX, "n.dropped")) > 0 && n.perm > -2)
       warning("Dropped ", nd, " additive covariates on X chromosome.")
     if(length(addcovarX)==0) {
       n.acX <- 0
@@ -184,7 +184,7 @@ function(cross, chr, pheno.col=1,
     else n.acX <- ncol(addcovarX)
 
     intcovarX <- revisecovar(sexpgm,intcovar)
-    if(!is.null(intcovar) && (nd <- attr(intcovarX, "n.dropped")) > 0)
+    if(!is.null(intcovar) && (nd <- attr(intcovarX, "n.dropped")) > 0 && n.perm > -2)
       warning("Dropped ", nd, " interactive covariates on X chromosome.")
     if(length(intcovarX)==0) {
       n.icX <- 0
@@ -196,11 +196,11 @@ function(cross, chr, pheno.col=1,
   if(model=="binary") {
     if(method != "em") {
       method <- "em"
-      warning("Only EM algorithm coded for binary traits")
+      if(n.perm > -2) warning("Only EM algorithm coded for binary traits")
     }
     if(!is.null(weights)) {
       weights <- NULL
-      warning("weights ignored for binary traits.")
+      if(n.perm > -2) warning("weights ignored for binary traits.")
     }
 
     u <- unique(pheno)
@@ -262,7 +262,7 @@ function(cross, chr, pheno.col=1,
       for(i in 1:n.chr) {
         if(!("draws" %in% names(cross$geno[[i]]))) {
           # need to run sim.geno
-          warning("First running sim.geno.")
+          if(n.perm > -2) warning("First running sim.geno.")
           cross <- sim.geno(cross)
         }
         steps[i] <- attr(cross$geno[[i]]$draws,"step")
@@ -271,7 +271,7 @@ function(cross, chr, pheno.col=1,
       # make sure all chromosomes have the same number of imputations
       n.draws <- sapply(cross$geno, function(a) dim(a$draws)[3])
       if(length(unique(n.draws)) > 1) {
-        warning("Re-running sim.geno to have a fixed number of imputations.")
+        if(n.perm > -2) warning("Re-running sim.geno to have a fixed number of imputations.")
         cross <- sim.geno(cross, n.draws=max(n.draws),
                           step=attr(cross$geno[[1]]$draws,"step"),
                           off.end=attr(cross$geno[[1]]$draws,"off.end"))
@@ -282,7 +282,7 @@ function(cross, chr, pheno.col=1,
       for(i in 1:n.chr) {
         if(!("prob" %in% names(cross$geno[[i]]))) {
           # need to run calc.genoprob
-          warning("First running calc.genoprob.")
+          if(n.perm > -2) warning("First running calc.genoprob.")
           cross <- calc.genoprob(cross)
         }
         steps[i] <- attr(cross$geno[[i]]$prob,"step")
@@ -347,7 +347,7 @@ function(cross, chr, pheno.col=1,
         eq.sp.pos <- seq(min(map[,2]),max(map[,2]),by=steps[i])
         wh.eq.sp <- match(eq.sp.pos,map[,2])
         if(any(is.na(wh.eq.sp))) { # this shouldn't happen
-          warning("Possible error in determining the equally spaced positions.")
+          if(n.perm > -2) warning("Possible error in determining the equally spaced positions.")
           wh.eq.sp <- wh.eq.sp[!is.na(wh.eq.sp)]
         }
         eq.sp.pos <- rep(0,nrow(map))
@@ -935,8 +935,8 @@ function(cross, chr, pheno.col=1,
       
     if(adjustX) {
       if(method=="mr" && any(is.na(pull.geno(cross)))) 
-        warning("Scantwo with the X chr doesn't work quite right when method=\"mr\"\n",
-                "    when there is missing genotype data.")
+        if(n.perm > -2) warning("Scantwo with the X chr doesn't work quite right when method=\"mr\"\n",
+                                "    when there is missing genotype data.")
 
       if(model=="binary") {
         if(n.ac > 0) {
@@ -1049,11 +1049,11 @@ function(cross, chr, pheno.col=1,
   
 #  if(any(is.na(results) | results < -1e-6 | results == Inf))
 #    warning("Some LOD scores NA, Inf or < 0")
-  if(any(is.na(results)))
+  if(any(is.na(results)) && n.perm > -2)
     warning("Some LOD scores NA")
-  if(any(!is.na(results) & results < 0))
+  if(any(!is.na(results) & results < 0) && n.perm > -2)
     warning("Some LOD scores < 0")
-  if(any(!is.na(results) & (results == Inf | results == -Inf)))
+  if(any(!is.na(results) & (results == Inf | results == -Inf)) && n.perm > -2)
     warning("Some LOD scores = Inf or -Inf")
   
   if(!is.null(scanoneX)) scanoneX <- as.matrix(scanoneX)
@@ -1088,6 +1088,7 @@ function(cross, chr, pheno.col=1,
     out <- clean(out)
 
   attr(out, "phenotypes") <- colnames(pheno)
+  names(out$map)[2] <- "pos"
   out
 }
 
@@ -1219,10 +1220,10 @@ function(n.perm, cross, pheno.col, model,
     ## initialize result
     temp <- matrix(ncol=n.phe, nrow=n.perm)
     perm.result <- list("full"=temp,
-                        "2v1.int"=temp,
+                        "fv1"=temp,
                         "int"=temp,
                         "add"=temp,
-                        "2v1.add"=temp)
+                        "av1"=temp)
       
     ## permutation loop
     for(i in 1:n.perm) {
@@ -1257,7 +1258,7 @@ function(n.perm, cross, pheno.col, model,
                      weights=weights, use=use, 
                      incl.markers=incl.markers, clean.output=clean.output,
                      maxit=maxit, tol=tol,
-                     verbose=FALSE, n.perm=-i, perm.strata=perm.strata)
+                     verbose=FALSE, n.perm= -i, perm.strata=perm.strata)
 
       if(clean.output) tem <- clean.output(tem)
 

@@ -46,7 +46,7 @@ The six functions described here return the following values.
   \item{nphe}{The number of phenotypes.} 
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

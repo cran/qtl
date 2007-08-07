@@ -2,9 +2,9 @@
 #
 # plot.R
 #
-# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2000-7, Karl W Broman
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Oct, 2006
+# last modified Aug, 2007
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -23,10 +23,7 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
   if(!missing(chr)) cross <- subset(cross,chr=chr)
   
   # get full genotype data into one matrix
-  Geno <- cross$geno[[1]]$data
-  if(length(cross$geno) > 1) 
-    for(i in 2:length(cross$geno))
-      Geno <- cbind(Geno,cross$geno[[i]]$data)
+  Geno <- pull.geno(cross)
 
   # reorder the individuals according to their phenotype
   o <- 1:nrow(Geno)
@@ -92,8 +89,109 @@ function(x, chr, reorder=FALSE, main="Missing genotypes", ...)
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:n.chr)
-    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,names(cross$geno)[i])
+  x <- 1:n.chr
+  for(i in 1:n.chr) 
+    x[i] <- mean(wh[i+c(0,1)])
+  axis(side=3, at=x, names(cross$geno), tick=FALSE, line=-0.5)
+
+  title(main=main)
+  invisible()
+}
+
+geno.image <-
+function(x, chr, reorder=FALSE, main="Genotype data", ...) 
+{
+  cross <- x
+  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+    stop("Input should have class \"cross\".")
+  if(!missing(chr)) cross <- subset(cross,chr=chr)
+  
+  type <- class(cross)[1]
+
+  # revise X chromosome data
+  if(type=="bc" || type=="f2") {
+    chrtype <- sapply(cross$geno, class)
+    if(any(chrtype=="X")) {
+      for(i in which(chrtype=="X"))
+        cross$geno[[i]]$data <- reviseXdata(type, "simple", getsex(cross),
+                                            geno=cross$geno[[i]]$data,
+                                            cross.attr=attributes(cross))
+    }
+  }
+
+  # get full genotype data into one matrix
+  Geno <- pull.geno(cross)
+
+  # colors to use
+  if(type != "4way") {
+    thecolors <- c("white", "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")
+    thebreaks <- seq(-0.5, 5.5, by=1)
+  }
+  else {
+    if(max(Geno,na.rm=TRUE) <= 5) {
+      thecolors <- c("white", "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")
+      thebreaks <- seq(-0.5, 5.5, by=1)
+    }
+    else {
+      thecolors <- c("white",  "#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072",
+                     "#80B1D3", "#FDB462", "#B3DE69", "#FCCDE5", "#D9D9D9", "#BC80BD")
+      thebreaks <- seq(-0.5, 10.5, by=1)
+    }
+  }
+
+  # reorder the individuals according to their phenotype
+  o <- 1:nrow(Geno)
+  if(reorder) {
+    # if reorder is a number, use the corresponding phenotype
+    if(is.numeric(reorder)) {
+      if(reorder < 1 || reorder > nphe(cross)) 
+        stop("reorder should be TRUE, FALSE, or an integer between 1 and", nphe(cross))
+
+      o <- order(cross$pheno[,reorder])
+    }
+
+    # otherwise, order according to the sum of the numeric phenotypes
+    else {
+      wh <- sapply(cross$pheno, is.numeric)
+      o <- order(apply(cross$pheno[,wh,drop=FALSE],1,sum))
+    }
+  }
+
+  g <- t(Geno[o,])
+  g[is.na(g)] <- 0
+
+  # make matrix with  0 where genotype data is missing
+  #                   1 where data is not missing
+  #                 0.5 where data is partially missing
+  old.xpd <- par("xpd")
+  old.las <- par("las")
+  par(xpd=TRUE,las=1)
+  on.exit(par(xpd=old.xpd,las=old.las))
+
+  # plot grid with black pixels where there is missing data
+  image(1:nrow(g),1:ncol(g),g,ylab="Individuals",xlab="Markers",col=thecolors,
+        breaks=thebreaks)
+
+  # plot lines at the chromosome boundaries
+  n.mar <- nmar(cross)
+  n.chr <- nchr(cross)
+  a <- c(0.5,cumsum(n.mar)+0.5)
+
+  # the following makes the lines go slightly above the plotting region
+  b <- par("usr")
+  segments(a,b[3],a,b[4]+diff(b[3:4])*0.02)
+
+  # this line adds a line above the image
+  #     (the image function seems to leave it out)
+  abline(h=0.5+c(0,ncol(g)),xpd=FALSE)
+
+  # add chromosome numbers
+  a <- par("usr")
+  wh <- cumsum(c(0.5,n.mar))
+  x <- 1:n.chr
+  for(i in 1:n.chr) 
+    x[i] <- mean(wh[i+c(0,1)])
+  axis(side=3, at=x, names(cross$geno), tick=FALSE, line=-0.5)
 
   title(main=main)
   invisible()
@@ -393,6 +491,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   use.id <- FALSE
   if(!missing(ind)) {
     if(is.null(getid(cross))) cross$pheno$id <- 1:nind(cross)
+    if(!is.logical(ind)) ind <- unique(ind)  
     cross <- subset(cross, ind=ind)
     use.id <- TRUE
   }
@@ -778,13 +877,16 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   }
   x <- x[, 1]
 
+  observed <- sort(unique(x))
+  x <- match(x, observed)
+
   # amount of jitter 
   u <- runif(nind(cross), -jitter, jitter)
   r <- (1 - 2 * jitter)/2
 
   # create plot
   plot(x + u, y, xlab = "Genotype", ylab = ylab, type = "n", 
-       main = "", xlim = c(1 - r + jitter, prod(n.gen) + r + 
+       main = "", xlim = c(1 - r + jitter, length(observed) + r + 
                     jitter), xaxt = "n")
 
   # marker names at top
@@ -808,7 +910,7 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   sux = sort(unique(x))
 
   # add confidence intervals
-  me <- se <- array(NA, prod(n.gen))
+  me <- se <- array(NA, length(observed))
   me[sux] <- tapply(y, x, mean, na.rm = TRUE)
   se[sux] <- tapply(y, x, function(a) sd(a, na.rm = TRUE)/sqrt(sum(!is.na(a))))
   thecolors <- c("black", "blue", "red", "purple", "green", "orange")
@@ -820,18 +922,18 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
       col <- c("blue", "red")
   }
 
-  segments(seq(prod(n.gen)) + jitter * 2, me, seq(prod(n.gen)) + 
+  segments(seq(length(observed)) + jitter * 2, me, seq(length(observed)) + 
            jitter * 4, me, lwd = 2, col = col)
-  segments(seq(prod(n.gen)) + jitter * 3, me - se, seq(prod(n.gen)) + 
+  segments(seq(length(observed)) + jitter * 3, me - se, seq(length(observed)) + 
            jitter * 3, me + se, lwd = 2, col = col)
-  segments(seq(prod(n.gen)) + jitter * 2.5, me - se, seq(prod(n.gen)) + 
+  segments(seq(length(observed)) + jitter * 2.5, me - se, seq(length(observed)) + 
            jitter * 3.5, me - se, lwd = 2, col = col)
-  segments(seq(prod(n.gen)) + jitter * 2.5, me + se, seq(prod(n.gen)) + 
+  segments(seq(length(observed)) + jitter * 2.5, me + se, seq(length(observed)) + 
            jitter * 3.5, me + se, lwd = 2, col = col)
 
   # add genotypes below
   u <- par("usr")
-  segments(1:prod(n.gen), u[3], 1:prod(n.gen), u[3] - diff(u[3:4]) * 
+  segments(1:length(observed), u[3], 1:length(observed), u[3] - diff(u[3:4]) * 
            0.015, xpd = TRUE)
   if(n.mark == 1) 
     tmp <- gen.names[[1]]
@@ -845,11 +947,12 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
       tmp[, i] <- tmpi
     }
     tmp <- apply(tmp, 1, function(x) paste(x, collapse = "\n"))
+    tmp <- tmp[!is.na(match(1:prod(n.gen), observed))]
   }
-#  text(1:prod(n.gen), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
+#  text(1:length(observed), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
 #       cex = ifelse(n.mark==1, 1, 0.8))
   cxaxis <- par("cex.axis") 
-  axis(side=1, at=1:prod(n.gen), labels=tmp,
+  axis(side=1, at=1:length(observed), labels=tmp,
        cex=ifelse(n.mark==1, cxaxis, cxaxis*0.8))
 
   invisible(data)

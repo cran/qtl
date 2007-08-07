@@ -2,9 +2,9 @@
  * 
  * hmm_main.h
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2004
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -13,7 +13,7 @@
  *
  * These functions are for the main HMM engine
  *
- * Contains: calc_genoprob, sim_geno, est_map, argmax_geno,
+ * Contains: calc_genoprob, calc_genoprob_special, sim_geno, est_map, argmax_geno,
  *           calc_errorlod, est_rf, calc_pairprob
  *  
  **********************************************************************/
@@ -72,6 +72,26 @@ void calc_genoprob(int n_ind, int n_pos, int n_gen, int *geno,
 		   double emitf(int, int, double),
 		   double stepf(int, int, double, double));
 
+
+/**********************************************************************
+ * 
+ * calc_genoprob_special
+ *
+ * This is a special version of calc_genoprob, rerun specially for
+ * each individual at each marker, assuming that that genotype may
+ * be in error but others are without error
+ *
+ **********************************************************************/
+
+/* Note: true genotypes coded as 1, 2, ...
+   but in the alpha's and beta's, we use 0, 1, ... */
+
+void calc_genoprob_special(int n_ind, int n_pos, int n_gen, int *geno, 
+			   double *rf, double *rf2, 
+			   double error_prob, double *genoprob, 
+			   double initf(int), 
+			   double emitf(int, int, double),
+			   double stepf(int, int, double, double));
 
 /**********************************************************************
  * 

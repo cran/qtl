@@ -2,8 +2,7 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
-#                     and Karl W. Broman, Johns Hopkins University
+# copyright (c) 2002-6, Hao Wu and Karl W. Broman
 # last modified Oct, 2006
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)

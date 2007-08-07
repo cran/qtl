@@ -28,7 +28,7 @@
 }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(badorder)

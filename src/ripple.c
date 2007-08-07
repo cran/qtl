@@ -2,9 +2,9 @@
  * 
  * ripple.c
  *
- * copyright (c) 2002, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2002-6, Karl W Broman
  *
- * last modified Apr, 2002
+ * last modified Dec, 2006
  * first written Mar, 2002
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "ripple.h"
 
@@ -74,6 +75,8 @@ void ripple(int n_ind, int n_mar, int n_gen, int *geno,
   reorg_geno(n_orders, n_mar, orders, &Orders);
   
   for(i=0; i<n_orders; i++) { /* loop over possible orders */
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     /*    if(((int)((i+1)/print_by))*print_by == i+1) 
 	  printf("    --Order %d\n", i+1); */

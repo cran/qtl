@@ -2,8 +2,7 @@
 #
 # effectscan.R
 #
-# copyright (c) 2003-4, Hao Wu, The Jackson Laboratory
-#                    with modifications by Karl W. Broman
+# copyright (c) 2003-4, Hao Wu, with modifications by Karl W. Broman
 # last modified Oct, 2004
 # first written Jan, 2003
 # Licensed under the GNU General Public License version 2 (June, 1991)

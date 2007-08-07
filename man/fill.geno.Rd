@@ -51,6 +51,6 @@ plot(out.mr)
 \seealso{ \code{\link[qtl]{sim.geno}},
           \code{\link[qtl]{argmax.geno}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{utilities}

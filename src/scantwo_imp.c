@@ -2,10 +2,9 @@
  *
  * scantwo_imp.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                     and Hao Wu, The Jackson Lab
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
- * last modified Oct, 2006 
+ * last modified Dec, 2006 
  * first written Nov, 2001 
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +25,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "lapackutil.h"
 #include "scantwo_imp.h"
@@ -241,6 +241,8 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
     for(i1=0; i1<n_pos1-1; i1++) {
       for (i2=i1+1; i2<n_pos1; i2++) {
 	for(j=0; j<n_draws; j++) { /* loop over imputations */
+	  R_CheckUserInterrupt(); /* check for ^C */
+
           /* calculate rss */
           memcpy(tmppheno, pheno, n_ind*nphe*sizeof(double));
           altRss2(tmppheno, pheno, nphe, n_ind, n_gen1, n_gen1, Draws1[j][i1],
@@ -285,6 +287,8 @@ void scantwo_imp(int n_ind, int same_chr, int n_pos1, int n_pos2,
     for(i1=0; i1<n_pos1; i1++) { /* loop over markers on chr 1 */
       for(i2=0; i2<n_pos2; i2++) { /* loop over markers on chr 2 */
 	for(j=0; j<n_draws; j++) { /* loop over imputations */
+	  R_CheckUserInterrupt(); /* check for ^C */
+
 	  /* rss for alternative model */
           altRss2(tmppheno, pheno, nphe, n_ind, n_gen1, n_gen2, Draws1[j][i1],
 		  Draws2[j][i2], Addcov, n_addcov, Intcov, n_intcov,

@@ -2,8 +2,8 @@
 #
 # arithscan.R
 #
-# copyright (c) 2005-6, Karl W Broman, Johns Hopkins University
-# last modified Oct, 2006
+# copyright (c) 2005-6, Karl W Broman
+# last modified Dec, 2006
 # first written Mar, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -56,6 +56,12 @@ function(e1,e2)
   nc <- min(c(nc1,nc2))
   e1 <- e1[,1:nc]
   e1[,3:nc] <- e1[,3:nc] - e2[,3:nc]
+
+  # zero out small stuff
+  temp <- e1[,3:nc]
+  temp[!is.na(temp) & abs(temp) < 1e-6] <- 0
+  e1[,3:nc] <- temp
+  
   class(e1) <- c("scanone","data.frame")
 
   if(!is.null(df1) && !is.null(df2)) {
@@ -161,9 +167,17 @@ function(e1, e2)
   if(e1.x) {
     e1$A <- e1$A - e2$A
     e1$X <- e1$X - e2$X
+
+    # zero out small stuff
+    e1$A[!is.na(e1$A) & abs(e1$A) < 1e-6] <- 0
+    e1$X[!is.na(e1$X) & abs(e1$X) < 1e-6] <- 0
   }
   else {
     e1 <- unclass(e1) - unclass(e2)
+
+    # zero out small stuff
+    e1[!is.na(e1) & abs(e1) < 1e-6] <- 0
+
     class(e1) <- "scanoneperm"
   }
 

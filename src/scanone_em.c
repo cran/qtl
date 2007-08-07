@@ -2,9 +2,9 @@
  * 
  * scanone_em.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scanone_em.h"
 #include "scanone_em_covar.h"
@@ -167,6 +168,8 @@ void scanone_em(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 
     for(s=0; s < maxit; s++) { /* EM iterations */
     
+      R_CheckUserInterrupt(); /* check for ^C */
+
       for(k=0; k<n_gen; k++) 
 	means[k] = work[2][k] = work[3][k] = 0.0;
       sigma=0.0;

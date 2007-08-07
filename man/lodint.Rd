@@ -8,12 +8,14 @@
   using output from scanone.
 }
 
-\usage{lodint(results, chr, drop=1.5)}
+\usage{lodint(results, chr, drop=1.5, lodcolumn=1)}
 
 \arguments{
  \item{results}{Output from \code{\link[qtl]{scanone}}.}
  \item{chr}{A chromosome ID.}
  \item{drop}{LOD units to drop to form the interval.}
+ \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
+   of the LOD score columns should be plotted (generally this is 1).}
 }
 
 \value{
@@ -22,7 +24,7 @@
   for the LOD support interval.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(hyper)

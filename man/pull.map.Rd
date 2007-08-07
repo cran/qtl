@@ -26,7 +26,7 @@
   marker locations.  The map itself is given class \code{map}.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

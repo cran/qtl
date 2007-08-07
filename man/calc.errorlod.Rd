@@ -10,7 +10,8 @@
 
 \usage{
 calc.errorlod(cross, error.prob=0.01,
-              map.function=c("haldane","kosambi","c-f","morgan"))
+              map.function=c("haldane","kosambi","c-f","morgan"),
+              version=c("new","old"))
 }
 
 \arguments{
@@ -21,12 +22,21 @@ calc.errorlod(cross, error.prob=0.01,
  \item{map.function}{Indicates whether to use the Haldane, Kosambi,
    Carter-Falconer, or Morgan map function when converting genetic
    distances into recombination fractions.}
+ \item{version}{Specifies whether to use the original version of this
+   function or the current (preferred) version.}
 }
 
 \details{
   Calculates, for each individual at each marker, a LOD score
   measuring the strength of evidence for a genotyping error, as
   described by Lincoln and Lander (1992). 
+
+  In the latest version, evidence for a genotype being in
+  error is considered assuming that all other genotypes (for that
+  individual, on that chromosome) are correct.  The argument
+  \code{version} allows one to specify whether this new version is used,
+  or whether the original (old) version of the calculation is
+  performed. 
 
   Note that values below 4 are generally not interesting.  Also note
   that if markers are extremely tightly linked, \emph{recombination
@@ -49,7 +59,7 @@ calc.errorlod(cross, error.prob=0.01,
   argument, for later reference.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \references{
   Lincoln, S. E. and Lander, E. S. (1992) Systematic detection of

@@ -2,7 +2,7 @@
  * 
  * ripple.h
  *
- * copyright (c) 2002, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2002, Karl W Broman
  *
  * last modified Mar, 2002
  * first written Mar, 2002

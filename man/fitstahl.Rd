@@ -30,7 +30,8 @@ fitstahl(cross, chr, m, p, error.prob=0.0001, maxit=4000, tol=1e-4,
 }
 
 \details{
-  This function is currently only available for backcrosses.
+  This function is currently only available for backcrosses and
+  intercrosses. 
 
   The Stahl model of crossover interference (of which the chi-square
   model is a special case) is fit.      In the chi-square model, points
@@ -66,7 +67,7 @@ fitstahl(cross, chr, m, p, error.prob=0.0001, maxit=4000, tol=1e-4,
   provided in the results.  
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 \dontshow{set.seed(12201969)}

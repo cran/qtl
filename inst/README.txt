@@ -3,7 +3,7 @@ README file for the qtl package
 ----------------------------------------------------------------------
 This explains the installation of the qtl package for R.  If you have
 any problems with installation, send an email to Karl Broman
-<kbroman@jhsph.edu>.
+<kbroman@biostat.wisc.edu>.
 ----------------------------------------------------------------------
 
 OBTAINING R
@@ -157,7 +157,7 @@ CITING R/QTL
 QUESTIONS/COMMENTS/CONCERNS
 
   If you have any questions, suggestions, problems or complaints
-  regarding R/qtl, please email Karl Broman <kbroman@jhsph.edu>.
+  regarding R/qtl, please email Karl Broman <kbroman@biostat.wisc.edu>.
   
 ----------------------------------------------------------------------
 end of README.txt

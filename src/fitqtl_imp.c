@@ -2,10 +2,10 @@
  * 
  * fitqtl_imp.c
  *
- * copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+ * copyright (c) 2002-6, Hao Wu
  *     Modified by Karl W. Broman to get estimates of QTL effects
  *
- * last modified Nov, 2005
+ * last modified Dec, 2006
  * first written Apr, 2002
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Linpack.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "fitqtl_imp.h"
 #define TOL 1e-12
@@ -165,6 +166,9 @@ void fitqtl_imp(int n_ind, int n_qtl, int *n_gen, int n_draws,
 
   /* loop over imputations */
   for(i=0; i<n_draws; i++) {
+
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* calculate alternative model RSS */
     lrss = log10( galtRss(pheno, n_ind, n_gen, n_qtl, Draws[i], 
 			  Cov, n_cov, model, n_int, dwork, iwork, sizefull,

@@ -2,9 +2,9 @@
  * 
  * vbscan.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written May, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include "R.h"
 #include "Rmath.h"
+#include <R_ext/Utils.h>
 #include "vbscan.h"
 #include "util.h"
 
@@ -92,6 +93,8 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
       
     for(k=0; k<maxit; k++) { /* loop over iterations */
 
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* E step */
       for(i=0; i<n_ind; i++) {
 	s1=0.0;
@@ -157,6 +160,8 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
     for(j=0; j<n_gen; j++) mu_prev[j] = mu[j];
     sig_prev = sig;
     for(k=0; k<maxit; k++) { /* loop over iterations */
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* E step */
       for(i=0; i<n_ind; i++) {
 	s1=0.0;
@@ -211,6 +216,8 @@ void vbscan(int n_pos, int n_ind, int n_gen, double *genoprob, double *pheno,
 
     /* repeat with mu's constant */
     for(k=0; k<maxit; k++) { /* loop over iterations */
+
+      R_CheckUserInterrupt(); /* check for ^C */
 
       for(j=0; j<n_gen; j++) pi_prev[j] = pi[j];
 

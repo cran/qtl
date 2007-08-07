@@ -64,19 +64,19 @@ location of the sampledata directory (for example,
 
    Files:
 
-       listeria.raw    "raw" file (with genotype and phenotype data)
-       listeria.map    Genetic map information (markers must be in
-                       order; map positions are not required)
-       listeria.maps   Genetic map information, as produced by 
-                       Mapmaker/exp
+       listeria_raw.txt   "raw" file (with genotype and phenotype data)
+       listeria_map.txt    Genetic map information (markers must be in
+                           order; map positions are not required)
+       listeria_maps.txt   Genetic map information, as produced by 
+                           Mapmaker/exp
 
    Data import:
 
        listeria.b <- read.cross("mm", ".../sampledata",
-                                "listeria.raw",,"listeria.map")
+                                "listeria_raw.txt",,"listeria_map.txt")
 
        listeria.bb <- read.cross("mm", ".../sampledata",
-                                 "listeria.raw",,"listeria.maps")
+                                 "listeria_raw.txt",,"listeria_maps.txt")
 
 
 6. "qtx" (Mapmanager QTX) format
@@ -94,13 +94,13 @@ location of the sampledata directory (for example,
 
    Files:
 
-        listeria_qc.cro    Genotype/phenotype data
-        listeria_qc.map    Genetic map information
+        listeria_qc_cro.txt    Genotype/phenotype data
+        listeria_qc_map.txt    Genetic map information
 
    Data import:
 
         listeria.d <- read.cross("qtlcart", ".../sampledata", 
-                                 "listeria_qc.cro", "listeria_qc.map")
+                                 "listeria_qc_cro.txt", "listeria_qc_map.txt")
 
 
 8. "karl" format

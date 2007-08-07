@@ -2,8 +2,8 @@
 #
 # sim_ril.R
 #
-# copyright (c) 2004-5, Karl W Broman, Johns Hopkins University
-# last modified Mar, 2005
+# copyright (c) 2004-6, Karl W Broman
+# last modified Dec, 2006
 # first written May, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -16,17 +16,29 @@
 #
 # sim.ril
 #
-# Simulate RILs by sibling mating from 2, 4, or 8 parental strains
+# Simulate RILs by selfing or sibling mating from 2, 4, or 8
+# parental strains
 # map = map in the usual R/qtl map format
 # m = interference parameter (0 is no interference)
 ######################################################################
 sim.ril <-
-function(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
+function(map, n.ril=1, type=c("sibmating", "selfing"), n.str=c("2","4","8"),
+         m=0, p=0, random.cross=TRUE)
 {
+  type <- match.arg(type)
+  if(type=="sibmating") selfing <- 0
+  else selfing <- 1
   n.str <- as.numeric(match.arg(n.str))
   n.chr <- length(map)
   n.mar <- sapply(map,length)
   tot.mar <- sum(n.mar)
+
+  if(m < 0) stop("Must have m >= 0.")
+  if(p < 0 || p > 1) stop("Must have 0 <= p <= 1.")
+  if(p == 1) {
+    p <- 0
+    m <- 0
+  }
 
   map <- lapply(map, function(a) a-min(a))
 
@@ -41,20 +53,22 @@ function(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
           as.double(unlist(map)),
           as.integer(n.str),
           as.integer(m),
+          as.double(p),
           as.integer(include.x),
           as.integer(random.cross),
+          as.integer(selfing),
           cross=as.integer(rep(0,n.ril*n.str)),
           res=as.integer(rep(0,tot.mar*n.ril)),
           PACKAGE="qtl")
 
   cross <- t(matrix(x$cross,ncol=n.ril,nrow=n.str))
   x <- t(matrix(x$res,nrow=tot.mar,ncol=n.ril))
-  
+
   geno <- vector("list", n.chr)
   names(geno) <- names(map)
   cur <- 0
   for(i in 1:n.chr) {
-    geno[[i]]$data <- x[,cur + 1:n.mar[i]]
+    geno[[i]]$data <- x[,cur + 1:n.mar[i],drop=FALSE]
     colnames(geno[[i]]$data) <- names(map[[i]])
     geno[[i]]$map <- map[[i]]
     cur <- cur + n.mar[i]
@@ -62,7 +76,20 @@ function(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
   }
   pheno <- data.frame(line=1:n.ril)
   x <- list(geno=geno,pheno=pheno,cross=cross)
-  class(x) <- c(paste("risib",n.str,sep=""),"cross")
+
+  if(type=="sibmating") {
+    if(n.str=="2")
+      class(x) <- c("risib","cross")
+    else
+      class(x) <- c(paste("risib",n.str,sep=""),"cross")
+  }
+  else {
+    if(n.str=="2")
+      class(x) <- c("riself","cross")
+    else
+      class(x) <- c(paste("riself",n.str,sep=""),"cross")
+  }
+  
   x
 }
 
@@ -85,8 +112,10 @@ function(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
 # step = step size for intermediate loci to be simulated
 ######################################################################
 sim.cc <-
-function(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
+function(parents, n.ril=1, type=c("sibmating", "selfing"),
+         error.prob=0, missing.prob=0, m=0, p=0, step=0)
 {
+  type <- match.arg(type)
   map <- lapply(parents, function(a) a$map)
   markers <- vector("list",length(map))
   if(step<1e-8) {
@@ -105,7 +134,14 @@ function(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
     }
   }
 
-  cc <- sim.ril(fmap, n.ril, "8", m, TRUE)
+  if(m < 0) stop("Must have m >= 0.")
+  if(p < 0 || p > 1) stop("Must have 0 <= p <= 1.")
+  if(p == 1) {
+    p <- 0
+    m <- 0
+  }
+
+  cc <- sim.ril(fmap, n.ril, type, "8", m, p, TRUE)
   cc$truth <- cc$geno
   g <- pull.geno(cc)[,unlist(markers)]
   pg <- NULL
@@ -136,7 +172,6 @@ function(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
         colnames(y) <- NULL
         y
       }
-
 
   # get genotype data back into cross
   cur <- 0

@@ -2,9 +2,9 @@
  * 
  * scanone_em_covar.c
  *
- * copyright (c) 2001-5, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2005
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -27,6 +27,7 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Linpack.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scanone_em.h"
 #include "scanone_em_covar.h"
@@ -166,6 +167,9 @@ void scanone_em_covar(int n_ind, int n_pos, int n_gen,
       
       /* begin EM iterations */
       for(j=0; j<maxit; j++) {
+
+	R_CheckUserInterrupt(); /* check for ^C */
+
 	estep_em_covar(n_ind, n_gen, i, Genoprob, Addcov, n_addcov,
 		       Intcov, n_intcov, pheno, weights, wts, oldparam, 1);
 	mstep_em_covar(n_ind, n_gen, Addcov, n_addcov, Intcov, n_intcov,

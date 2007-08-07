@@ -89,7 +89,7 @@ write.cross(fake.bc, "qtlcart", "Data/fakebc", c(1,5,13))
 # Gary's format
 write.cross(fake.bc, "gary", c(1,5,13))} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu}; Hao Wu; Brian S. Yandell}
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu}; Hao Wu; Brian S. Yandell}
 
 \seealso{ \code{\link[qtl]{read.cross}} }
 

@@ -8,19 +8,36 @@ The list is not comprehensive.
 
 If you find a potential bug in R/qtl, please send an email, with as
 many details as possible and possibly example data, to Karl Broman,
-<kbroman@jhsph.edu>.
+<kbroman@biostat.wisc.edu>.
 ----------------------------------------------------------------------
+
+Version 1.05 bugs:
+
+    1. Bug in sim.cross regarding the QTL effects for a backcross.
+       [Fixed in Version 1.06.]
+    
+    2. Bug in write.cross concerning X chromosome genotypes in an
+       intercross with all males and all pgm==1. 
+       [Fixed in Version 1.06.]
+
+    3. Bug in 2d scans via scanqtl; the first row of LOD scores are
+       wrong. [Fixed in Version 1.06.]
+
+
 
 Version 1.04 bugs:
 
 >>  1. scanone with method="ehk" still shows convergences problems in
        the presence of interactive covariates, in some cases.
 
->>  2. I don't completely trust the results of calc.errorlod.  It
+    2. I don't completely trust the results of calc.errorlod.  It
        seems to me that the LODs should be larger with a larger error
        probability, but this is not the case.  I think I need to
        re-write this so that all genotypes but that under test are
-       assumed to be correct.  
+       assumed to be correct.  [Fixed in version 1.06; that the LOD
+       scores decrease with increases in error probability appears to
+       be correct, but the previous version missing cases of the
+       following form:  1-1-1-...-1-1-1-2-1-2-2-2-...-2-2-2.]
 
     3. Bug in scanone and scantwo permutations: covariates aren't
        permuted to match the phenotypes.  [Fixed in Version 1.05.]
@@ -52,8 +69,9 @@ Version 1.01 bugs:
        the line became too long.  Maybe this is true whenever an item
        doesn't match what is expected.
 
->>  5. summary.scantwo doesn't work if there's just two positions on a
-       chromosome (or maybe it's for one position).
+    5. summary.scantwo doesn't work if there's just two positions on a
+       chromosome (or maybe it's for one position).  [Fixed in version 
+       1.05.]
 
 
 Version 0.99 bugs:

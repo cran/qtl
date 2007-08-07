@@ -2,6 +2,9 @@
                         results
 +.scanoneperm           Arithmetic Operators for permutation results
 A starting point        Introductory comments
+add.cim.covar           Indicate marker covariates from composite
+                        interval mapping
+add.threshold           Add significance threshold to plot
 argmax.geno             Reconstruct underlying genotypes
 badorder                An intercross with misplaced markers
 bayesint                Bayesian credible interval
@@ -17,6 +20,7 @@ cbind.scanoneperm       Combine columns from multiple scanone
                         permutation results
 checkAlleles            Identify markers with switched alleles
 chrlen                  Chromosome lengths in QTL experiment
+cim                     Composite interval mapping
 clean.cross             Remove derived data
 clean.scantwo           Clean up scantwo output
 comparecrosses          Compare two cross objects.
@@ -39,11 +43,13 @@ fake.f2                 Simulated data for an F2 intercross
 fill.geno               Fill holes in genotype data
 find.flanking           Find flanking markers for a specified position
 find.marker             Find marker closest to a specified position
+find.markerpos          Find position of a marker.
 find.pheno              Find column number for a particular phenotype.
 find.pseudomarker       Find the pseudomarker closest to a specified
                         position
 fitqtl                  Fit a multiple-QTL model
 fitstahl                Fit Stahl interference model
+geno.image              Plot grid of genotype data
 geno.table              Create table of genotype distributions
 hyper                   Data on hypertension
 jittermap               Jitter marker positions in a genetic map
@@ -75,6 +81,8 @@ read.cross              Read data for a QTL experiment
 replace.map             Replace the genetic map of a cross
 ripple                  Compare marker orders
 scanone                 Genome scan with a single QTL model
+scanoneboot             Bootstrap to get interval estimate of QTL
+                        location
 scanqtl                 General QTL scan
 scantwo                 Two-dimensional genome scan with a two-QTL
                         model
@@ -90,6 +98,7 @@ summary.fitqtl          Summary of fit of qtl model
 summary.map             Print summary of a genetic map
 summary.ripple          Print summary of ripple results
 summary.scanone         Summarize the results of a genome scans
+summary.scanoneboot     Bootstrap confidence interval for QTL location
 summary.scanoneperm     LOD thresholds from scanone permutation results
 summary.scantwo         Summarize the results of a two-dimensional
                         genome scan

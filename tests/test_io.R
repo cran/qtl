@@ -2,7 +2,7 @@
 #
 # TestIO/input.R
 #
-# copyright (c) 2002, Karl W Broman, Johns Hopkins University
+# copyright (c) 2002, Karl W Broman
 # last modified Feb, 2002
 # first written Feb, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)

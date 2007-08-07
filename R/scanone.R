@@ -2,9 +2,9 @@
 #
 # scanone.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-7, Karl W Broman
 # 
-# last modified Nov, 2006
+# last modified Aug, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -149,7 +149,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
   # weights for model="normal"
   if(model != "normal") {
-    if(!is.null(weights) && !all(weights==1)) 
+    if(!is.null(weights) && !all(weights==1) && n.perm > -2)
       warning("weights used only for normal model.")
   }
   else {
@@ -165,25 +165,25 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
   if(model=="binary") {
     if(method=="imp" || method=="hk") {
-      warning("Methods imp and hk not available for binary model; using em")
+      if(n.perm > -2) warning("Methods imp and hk not available for binary model; using em")
       method <- "em"
     }
-    return(discan(cross, pheno, method, addcovar, intcovar, maxit, tol, verbose))
+    return(discan(cross, pheno, method, addcovar, intcovar, maxit, tol, verbose, n.perm > -2))
   }
   else if(model=="2part") {
-    if(n.addcovar > 0 || n.intcovar > 0)
+    if((n.addcovar > 0 || n.intcovar > 0) && n.perm > -2)
       warning("Covariates ignored for the two-part model.")
     if(method!="em") {
-      warning("Only em method is available for the two-part model")
+      if(n.perm > -2) warning("Only em method is available for the two-part model")
       method <- "em"
     }
     return(vbscan(cross, pheno.col, upper, method, maxit, tol))
   }
   else if(model=="np") {
-    if(n.addcovar > 0 || n.intcovar > 0)
+    if((n.addcovar > 0 || n.intcovar > 0) && n.perm > -2)
       warning("Covariates ignored for non-parametric interval mapping.")
     if(method!="em") {
-      warning("Method argument ignored for non-parametric interval mapping.")
+      if(n.perm > -2) warning("Method argument ignored for non-parametric interval mapping.")
       method <- "em"
     }
   }
@@ -222,7 +222,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     if(chrtype=="X") {
       sexpgm <- getsex(cross)
       ac <- revisecovar(sexpgm,addcovar)
-      if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0)
+      if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0 && n.perm > -2)
         warning("Dropped ", nd, " additive covariates on X chromosome.")
       if(length(ac)==0) {
         n.ac <- 0
@@ -230,7 +230,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
       }
       else n.ac <- ncol(ac)
       ic <- revisecovar(sexpgm,intcovar)
-      if(!is.null(intcovar) && (nd <- attr(ic, "n.dropped")) > 0)
+      if(!is.null(intcovar) && (nd <- attr(ic, "n.dropped")) > 0 && n.perm > -2)
         warning("Dropped ", nd, " interactive covariates on X chromosome.")
       if(length(ic)==0) {
         n.ic <- 0
@@ -287,7 +287,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     else if(method == "imp") {
       if(!("draws" %in% names(cross$geno[[i]]))) {
         # need to run sim.geno
-        warning("First running sim.geno.")
+        if(n.perm > -2) warning("First running sim.geno.")
         cross <- sim.geno(cross)
       }
 
@@ -321,7 +321,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     else {
       if(!("prob" %in% names(cross$geno[[i]]))) {
         # need to run calc.genoprob
-        warning("First running calc.genoprob.")
+        if(n.perm > -2) warning("First running calc.genoprob.")
         cross <- calc.genoprob(cross)
       }
       genoprob <- cross$geno[[i]]$prob
@@ -703,7 +703,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
     res <- list("A"=resA, "X"=resX)
     attr(res, "xchr") <- xchr
     attr(res, "L") <- c("A"=La, "X"=Lx)
-    attr(res, "df") <- c(attr(resA, "df"), attr(resX, "df"))
+    attr(res, "df") <- rbind(attr(resA, "df"), attr(resX, "df"))
     attr(res$A, "df") <- attr(res$X, "df") <- NULL
   }
 
@@ -801,7 +801,7 @@ function(n.perm, cross, pheno.col, model,
     pheno.col <- 1:n.perm
     tem <- scanone(cross,,pheno.col,model,method,addcovar,
                    intcovar, weights, use, upper,ties.random,start,
-                   maxit,tol,n.perm= -1, perm.Xsp, perm.strata, FALSE)
+                   maxit,tol,n.perm= -1, perm.Xsp=FALSE, perm.strata, verbose=FALSE)
 
     res <- matrix(apply(tem[,-(1:2),drop=FALSE], 2, max, na.rm=TRUE), ncol=1)
     attr(res, "df") <- attr(tem, "df")
@@ -853,7 +853,7 @@ function(n.perm, cross, pheno.col, model,
 
       tem <- scanone(cross,,pheno.col,model,method,addcovarp,
                      intcovarp,weights,use,upper,ties.random,start,
-                     maxit,tol,n.perm= -i, perm.Xsp, perm.strata)
+                     maxit,tol,n.perm= -i, perm.Xsp=FALSE, perm.strata, verbose=FALSE)
       
       res[i,] <- apply(tem[,-(1:2),drop=FALSE], 2, max, na.rm=TRUE)
 

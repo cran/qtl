@@ -38,6 +38,6 @@ out2 <- clean(out2)
 \seealso{ \code{\link[qtl]{scantwo}},
   \code{\link[qtl]{summary.scantwo}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{manip}

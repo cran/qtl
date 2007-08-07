@@ -8,12 +8,14 @@
   chromosome, using output from \code{\link[qtl]{scanone}}.
 }
 
-\usage{bayesint(results, chr, prob=0.95)}
+\usage{bayesint(results, chr, prob=0.95, lodcolumn=1)}
 
 \arguments{
  \item{results}{Output from \code{\link[qtl]{scanone}}.}
  \item{chr}{A chromosome ID.}
  \item{prob}{Probability coverage of the interval.}
+ \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
+   of the LOD score columns should be plotted (generally this is 1).}
 }
 
 \value{
@@ -28,7 +30,7 @@
   and having coverage matching the target probability.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(hyper)

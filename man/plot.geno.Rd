@@ -61,6 +61,6 @@ plot.geno(hyper, chr=1, ind=160:200, cutoff=7, min.sep=2)
   \code{\link[qtl]{top.errorlod}} }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}

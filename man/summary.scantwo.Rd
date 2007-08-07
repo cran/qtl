@@ -30,8 +30,10 @@
    to calculate thresholds for determining which peaks to pull out.  It
    should be a vector of length 5, giving significance levels 
    for the full, conditional-interactive, interaction, additive, and
-   conditional-additive LOD scores.
-   If \code{thresholds} is specified, \code{alphas} should not be.}
+   conditional-additive LOD scores.  (It can also be a single number, in
+   which case it is assumed that the same value is used for all five LOD
+   scores.)  If \code{thresholds} is specified, \code{alphas} should not
+   be.} 
  \item{lodcolumn}{If the scantwo results contain LOD scores for
     multiple phenotypes, this argument indicates which to use in the
     summary.  Only one LOD score column may be considered at a time.} 
@@ -112,7 +114,7 @@
 }
   
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu}}
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu}}
 
 \examples{
 data(fake.f2)

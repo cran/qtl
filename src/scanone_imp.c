@@ -2,13 +2,12 @@
  * 
  * scanone_imp.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                 and Hao Wu, The Jackson Laboratory
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
  * This file is written by Hao Wu 
  * with slight modifications by Karl Broman.
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -29,6 +28,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "lapackutil.h"
 #include "scanone_imp.h"
@@ -185,6 +185,8 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
 
   /* Call nullRss to calculate the RSS for the null model */
   for (i=0; i<n_draws; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
   /* make a copy of phenotypes. I'm doing this because 
     dgelss will destroy the input rhs array */
     memcpy(tmppheno, pheno, n_ind*nphe*sizeof(double));
@@ -197,6 +199,8 @@ void scanone_imp(int n_ind, int n_pos, int n_gen, int n_draws,
   for(i=0; i<n_pos; i++) { /* loop over positions */
 
     for(j=0; j<n_draws; j++) { /* loop over imputations */
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* loop over imputations */
       /* call altRss to calcualte the RSS for alternative model,
       given marker and imputatin number */
