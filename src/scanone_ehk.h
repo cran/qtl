@@ -2,7 +2,7 @@
  * 
  * scanone_ehk.h
  *
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman
  *
  * last modified Jul, 2006
  * first written Jul, 2006

@@ -178,7 +178,7 @@ linkage to the X chromosome.  (See the help file for
   \emph{Theor. Appl. Genet.} \bold{47}, 35--39. 
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu}; Hao Wu}
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu}; Hao Wu}
 
 \examples{
 data(fake.f2)

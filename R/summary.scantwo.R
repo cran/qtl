@@ -2,10 +2,9 @@
 #
 # summary.scantwo.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
-#            Hao Wu, and Brian Yandell
+# copyright (c) 2001-7, Karl W Broman, Hao Wu, and Brian Yandell
 #
-# last modified Oct, 2006
+# last modified Jul, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -43,8 +42,12 @@ function(object, thresholds,
   }
 
   if(!missing(alphas)) {
-    if(length(alphas) != 5)
-      stop("If alphas are given, there must be 5 of them.")
+    if(length(alphas) != 5) {
+      if(length(alphas)==1) 
+        alphas <- rep(alphas, 5)
+      else
+        stop("If alphas are given, there must be 5 of them.")
+    }
     else if(!is.numeric(alphas))
       stop("alphas should be a numeric vector")
   }
@@ -128,9 +131,9 @@ function(object, thresholds,
 
     lf <- out$jnt.lod.full
     li <- out$jnt.lod.full - out$add.lod.add
-    l2v1i <- out$jnt.lod.full - out$lod.1qtl
+    lfv1 <- out$jnt.lod.full - out$lod.1qtl
     la <- out$add.lod.add
-    l2v1a <- out$add.lod.add - out$lod.1qtl
+    lav1 <- out$add.lod.add - out$lod.1qtl
   }
   else if(what=="full") {
     p1.f <- p1.a <- out$pos1.jnt
@@ -138,9 +141,9 @@ function(object, thresholds,
 
     lf <- out$jnt.lod.full
     li <- out$jnt.lod.full - out$jnt.lod.add
-    l2v1i <- out$jnt.lod.full - out$lod.1qtl
+    lfv1 <- out$jnt.lod.full - out$lod.1qtl
     la <- out$jnt.lod.add
-    l2v1a <- out$jnt.lod.add - out$lod.1qtl
+    lav1 <- out$jnt.lod.add - out$lod.1qtl
   }
   else if(what=="add") {
     p1.f <- p1.a <- out$pos1.add
@@ -148,9 +151,9 @@ function(object, thresholds,
 
     lf <- out$add.lod.full
     li <- out$add.lod.full - out$add.lod.add
-    l2v1i <- out$add.lod.full - out$lod.1qtl
+    lfv1 <- out$add.lod.full - out$lod.1qtl
     la <- out$add.lod.add
-    l2v1a <- out$add.lod.add - out$lod.1qtl
+    lav1 <- out$add.lod.add - out$lod.1qtl
   }
   else { # what == "int"
     p1.f <- p1.a <- out$pos1.int
@@ -158,19 +161,19 @@ function(object, thresholds,
 
     lf <- out$int.lod.full
     li <- out$int.lod.full - out$int.lod.add
-    l2v1i <- out$int.lod.full - out$lod.1qtl
+    lfv1 <- out$int.lod.full - out$lod.1qtl
     la <- out$int.lod.add
-    l2v1a <- out$int.lod.add - out$lod.1qtl
+    lav1 <- out$int.lod.add - out$lod.1qtl
   }
 
 
   out <- data.frame(chr1=out$chr1, chr2=out$chr2,
                     pos1f=p1.f,
                     pos2f=p2.f,
-                    lod.full=lf, lod.fv1=l2v1i, lod.int=li, 
+                    lod.full=lf, lod.fv1=lfv1, lod.int=li, 
                     pos1a=p1.a,
                     pos2a=p2.a,
-                    lod.add=la, lod.av1=l2v1a)
+                    lod.add=la, lod.av1=lav1)
                     
   if(what != "best") {
     out <- out[,-(8:9)]
@@ -434,9 +437,9 @@ function(object, lodcolumn=1,
 
     lf <- out$jnt.lod.full[wh]
     li <- out$jnt.lod.full[wh] - out$add.lod.add[wh]
-    l2v1i <- out$jnt.lod.full[wh] - out$lod.1qtl[wh]
+    lfv1 <- out$jnt.lod.full[wh] - out$lod.1qtl[wh]
     la <- out$add.lod.add[wh]
-    l2v1a <- out$add.lod.add[wh] - out$lod.1qtl[wh]
+    lav1 <- out$add.lod.add[wh] - out$lod.1qtl[wh]
   }
   else if(what=="full") {
     wh <- which(!is.na(out$jnt.lod.full) & out$jnt.lod.full==max(out$jnt.lod.full, na.rm=TRUE))
@@ -445,9 +448,9 @@ function(object, lodcolumn=1,
 
     lf <- out$jnt.lod.full[wh]
     li <- out$jnt.lod.full[wh] - out$jnt.lod.add[wh]
-    l2v1i <- out$jnt.lod.full[wh] - out$lod.1qtl[wh]
+    lfv1 <- out$jnt.lod.full[wh] - out$lod.1qtl[wh]
     la <- out$jnt.lod.add[wh]
-    l2v1a <- out$jnt.lod.add[wh] - out$lod.1qtl[wh]
+    lav1 <- out$jnt.lod.add[wh] - out$lod.1qtl[wh]
   }
   else if(what=="add") {
     wh <- which(!is.na(out$add.lod.add) & out$add.lod.add==max(out$add.lod.add, na.rm=TRUE))
@@ -456,9 +459,9 @@ function(object, lodcolumn=1,
 
     lf <- out$add.lod.full[wh]
     li <- out$add.lod.full[wh] - out$add.lod.add[wh]
-    l2v1i <- out$add.lod.full[wh] - out$lod.1qtl[wh]
+    lfv1 <- out$add.lod.full[wh] - out$lod.1qtl[wh]
     la <- out$add.lod.add[wh]
-    l2v1a <- out$add.lod.add[wh] - out$lod.1qtl[wh]
+    lav1 <- out$add.lod.add[wh] - out$lod.1qtl[wh]
   }
   else { # what == "int"
     lod.int <- out$int.lod.full - out$int.lod.add
@@ -468,18 +471,18 @@ function(object, lodcolumn=1,
 
     lf <- out$int.lod.full[wh]
     li <- out$int.lod.full[wh] - out$int.lod.add[wh]
-    l2v1i <- out$int.lod.full[wh] - out$lod.1qtl[wh]
+    lfv1 <- out$int.lod.full[wh] - out$lod.1qtl[wh]
     la <- out$int.lod.add[wh]
-    l2v1a <- out$int.lod.add[wh] - out$lod.1qtl[wh]
+    lav1 <- out$int.lod.add[wh] - out$lod.1qtl[wh]
   }
 
   out <- data.frame(chr1=out$chr1[wh], chr2=out$chr2[wh],
                     pos1f=p1.f,
                     pos2f=p2.f,
-                    lod.full=lf, lod.fv1=l2v1i, lod.int=li, 
+                    lod.full=lf, lod.fv1=lfv1, lod.int=li, 
                     pos1a=p1.a,
                     pos2a=p2.a,
-                    lod.add=la, lod.av1=l2v1a)
+                    lod.add=la, lod.av1=lav1)
                     
   if(what != "best") {
     out <- out[,-(8:9)]

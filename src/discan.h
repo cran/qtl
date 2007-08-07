@@ -2,7 +2,7 @@
  * 
  * discan.h
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
  * last modified Feb, 2006
  * first written Oct, 2001

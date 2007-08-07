@@ -22,7 +22,7 @@ genotypes.}
 genotypes for individuals i and j.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(listeria)

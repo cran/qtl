@@ -2,18 +2,18 @@
 #
 # util.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-7, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
 #
-# last modified Oct, 2006
+# last modified Jul, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: pull.map, replace.map, c.cross, create.map,
 #           clean, clean.cross, drop.nullmarkers,
-#           drop.markers, geno.table,
+#           drop.markers, geno.table, genotab.em
 #           mf.k, mf.h, imf.k, imf.h, mf.cf, imf.cf, mf.m, imf.m,
 #           mf.stahl, imf.stahl
 #           switch.order, makeSSmap,
@@ -24,7 +24,8 @@
 #           print.summary.map, find.pheno,
 #           convert, convert.scanone, convert.scantwo
 #           find.flanking, strip.partials, comparegeno
-#           qtlversion, locate.xo, jittermap, getid
+#           qtlversion, locate.xo, jittermap, getid,
+#           find.markerpos
 #
 ######################################################################
 
@@ -206,10 +207,10 @@ function(map, step, off.end, stepwidth = c("fixed", "variable"))
       ## Create pseudomarker map.
       a <- min(map[1, ]) + cumsum(c(0, rep(dif / expand, expand)))
       b <- min(map[2, ]) + cumsum(c(0, rep(diff(map[2, ]) / expand, expand)))
-      map <- rbind(a,b)
 
       namesa <- paste("loc", seq(length(a)), sep = "")
       namesa[cumsum(c(1, expand))] <- dimnames(map)[[2]]
+      map <- rbind(a,b)
       dimnames(map) <- list(NULL, namesa)
 
       return(unclass(map))
@@ -340,6 +341,9 @@ function(object)
     stop("Input should have class \"cross\".")
 
   cross2 <- list(geno=object$geno,pheno=object$pheno)
+
+  if(!is.null(attr(object, "alleles")))
+    attr(cross2, "alleles") <- attr(object, "alleles")
 
   for(i in 1:length(object$geno)) {
     cross2$geno[[i]] <- list(data=object$geno[[i]]$data,
@@ -481,7 +485,7 @@ function(cross, markers)
       cross$geno[[i]]$data <- cross$geno[[i]]$data[,!o,drop=FALSE]
 
       if(is.matrix(cross$geno[[i]]$map)) 
-          x <- cross$geno[[i]]$map[,!o,drop=FALSE]
+        cross$geno[[i]]$map <- cross$geno[[i]]$map[,!o,drop=FALSE]
       else 
         cross$geno[[i]]$map <- cross$geno[[i]]$map[!o]
 
@@ -519,7 +523,6 @@ function(cross, markers)
   cross
 }
 
-    
 ######################################################################
 #
 # geno.table
@@ -530,14 +533,22 @@ function(cross, markers)
 ######################################################################
 
 geno.table <- 
-function(cross)
+function(cross, chr)
 {
   if(length(class(cross)) < 2 || class(cross)[2] != "cross")
     stop("Input should have class \"cross\".")
 
+  if(!missing(chr))
+    cross <- subset(cross, chr=chr)
+
   n.chr <- nchr(cross)
 
   type <- class(cross)[1]
+  chrtype <- sapply(cross$geno, class)
+  allchrtype <- rep(chrtype, nmar(cross))
+  chrname <- names(cross$geno)
+  allchrname <- rep(chrname, nmar(cross))
+  
   if(type == "f2") {
     n.gen <- 5
     temp <- getgenonames("f2", "A", cross.attr=attributes(cross))
@@ -549,7 +560,7 @@ function(cross)
   }
   else if(type == "4way") {
     n.gen <- 10
-    temp <- getgenonames("4way", "A", cross.attr=attributes(object))
+    temp <- getgenonames("4way", "A", cross.attr=attributes(cross))
     gen.names <- c(temp,
                    paste(temp[c(1,3)], collapse="/"),
                    paste(temp[c(2,4)], collapse="/"),
@@ -564,47 +575,127 @@ function(cross)
                 a <- a$data; a[is.na(a)] <- 0
                 apply(a,2,function(b,ngen) table(factor(b,levels=0:ngen)),ngen)
                 },n.gen)
+
   results <- NULL
   for(i in 1:length(res)) 
     results <- rbind(results,t(res[[i]]))
+
   colnames(results) <- c("missing",gen.names)
   rownames(results) <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
 
   pval <- rep(NA,nrow(results))
   if(type=="bc" || type=="risib" || type=="riself") {
-    for(i in 1:length(pval)) {
-      x <- results[i,2:3]
-      if(sum(x) > 0)
-        pval[i] <- chisq.test(x,p=c(0.5,0.5))$p.value
+    sexpgm <- getsex(cross)
+    if(type == "bc" && any(chrtype == "X") && !is.null(sexpgm$sex) && any(sexpgm$sex==1)) {
+      for(i in which(allchrtype=="A")) {
+        x <- results[i,2:3]
+        if(sum(x) > 0)
+          pval[i] <- chisq.test(x,p=c(0.5,0.5))$p.value
+        else pval[i] <- 1
+      }
+      
+      gn <- getgenonames("bc","X", "full", sexpgm, attributes(cross))
+      wh <- which(is.na(match(gn, colnames(results))))
+      temp <- matrix(0, nrow=nrow(results), ncol=length(wh))
+      colnames(temp) <- gn[wh]
+      results <- cbind(results, temp)
+
+      for(i in which(chrtype=="X")) {
+        cat(i,"\n")
+        dat <- reviseXdata("bc", "full", sexpgm, geno=cross$geno[[i]]$data,
+                           cross.attr=attributes(cross))
+        tab <- t(apply(dat, 2, function(x) table(factor(x, levels=0:length(gn)))))
+        colnames(tab) <- c("missing", gn)
+        results[allchrname==chrname[i],] <- 0
+        results[allchrname==chrname[i],colnames(tab)] <- tab
+
+        for(j in 1:ncol(dat)) {
+           stat <- apply(table(sexpgm$sex, cross$geno[[i]]$data[,j]),1,
+                         function(a) if(sum(a)>0) return(chisq.test(a,p=c(0.5,0.5))$stat)
+                         else return(0))
+           pval[allchrname==chrname[i]][j] <- 1-pchisq(sum(stat),length(stat))
+         }
+      }
+      results <- cbind(results, P.value=pval)
     }
-    results <- cbind(results, P.value=pval)
+    else {
+      for(i in 1:length(pval)) {
+        x <- results[i,2:3]
+        if(sum(x) > 0)
+          pval[i] <- chisq.test(x,p=c(0.5,0.5))$p.value
+        else
+          pval[i] <- 1
+      }
+      results <- cbind(results, P.value=pval)
+    }
   }
   else if(type=="f2") {
-    # determine whether marker is autosomal or X-linked
-    mar.type <- unlist(sapply(cross$geno,function(a) rep(class(a),ncol(a$data))))
+    sexpgm <- getsex(cross)
 
-    for(i in 1:length(pval)) {
-      if(mar.type[i] == "A") {
-        x <- results[i,2:4]
-        y <- results[i,5:6]
-        if(sum(x) > 0 && sum(y)==0)
-          pval[i] <- chisq.test(x,p=c(0.25,0.5,0.25))$p.value
-      }
-      else {
-        x <- results[i,2:3]
-        y <- results[i,4:6]
-        if(sum(x) > 0 && sum(y)==0)
-          pval[i] <- chisq.test(x,p=c(0.5,0.5))$p.value
+    for(i in which(allchrtype=="A")) {
+      dat <- results[i,2:6]
+      if(sum(dat)==0) pval[i] <- 1
+      else if(dat[4]==0 && dat[5]==0) 
+        pval[i] <- chisq.test(dat[1:3],p=c(0.25,0.5,0.25))$p.value
+      else if(all(dat[2:4]==0))
+        pval[i] <- chisq.test(dat[c(1,5)],p=c(0.25,0.75))$p.value
+      else if(all(dat[c(1,2,5)]==0))
+        pval[i] <- chisq.test(dat[3:4],p=c(0.25,0.75))$p.value
+      else { # this is harder: some dominant and some not
+        pval[i] <- genotab.em(dat)
       }
     }
+
+    for(i in which(chrtype=="X")) {
+      gn <- getgenonames("f2","X","full", getsex(cross), attributes(cross))
+      wh <- which(is.na(match(gn, colnames(results))))
+      temp <- matrix(0, nrow=nrow(results), ncol=length(wh))
+      colnames(temp) <- gn[wh]
+      results <- cbind(results, temp)
+
+      dat <- reviseXdata("f2", "full", sexpgm, geno=cross$geno[[i]]$data,
+                         cross.attr=attributes(cross))
+      tab <- t(apply(dat, 2, function(x) table(factor(x, levels=0:length(gn)))))
+      colnames(tab) <- c("missing", gn)
+      results[allchrname==chrname[i],] <- 0
+      results[allchrname==chrname[i],colnames(tab)] <- tab
+      
+      cn <- colnames(results)
+      f <- grep("f$", cn)
+      r <- grep("r$", cn)
+      if(length(f)>0 && length(r)>0) {
+        results <- results[,c(1:2,f,3,r,(1:ncol(results))[-c(1:3,f,r)])]
+        colnames(results) <- cn[c(1:2,f,3,r,(1:ncol(results))[-c(1:3,f,r)])]
+      }
+
+      sex <- sexpgm$sex
+      pgm <- sexpgm$pgm
+      for(j in 1:ncol(dat)) {
+        g <- cross$geno[[i]]$data[,j]
+        if(!is.null(sex)) {
+          if(!is.null(pgm)) 
+            g <- matrix(as.numeric(table(g,sex,pgm)),ncol=2,byrow=TRUE)
+          else 
+            g <- matrix(as.numeric(table(g,sex)),ncol=2,byrow=TRUE)
+        }
+        else {
+          if(!is.null(pgm)) {
+            g <- matrix(as.numeric(table(g,pgm)),ncol=2,byrow=TRUE)
+          }
+          else g <- matrix(table(g),ncol=2,byrow=TRUE)
+        }
+        stat <- apply(g, 1, 
+                      function(a) if(sum(a)>0) return(chisq.test(a,p=c(0.5,0.5))$stat)
+                      else return(0))
+        pval[allchrname==chrname[i]][j] <- 1-pchisq(sum(stat),length(stat))
+      }
+    }
+
     results <- cbind(results, P.value=pval)
   }    
   else if(type == "4way") {
-    # determine whether marker is autosomal or X-linked
-    mar.type <- unlist(sapply(cross$geno,function(a) rep(class(a),ncol(a$data))))
-
     for(i in 1:length(pval)) {
-      if(mar.type[i] == "A") {
+      if(allchrtype[i] == "A") {
         x <- results[i,2:5]
         y <- results[i,-(1:5)]
         if(sum(x) > 0 && sum(y)==0)
@@ -616,6 +707,58 @@ function(cross)
 
   data.frame(chr=rep(names(cross$geno),nmar(cross)),results)
 }
+
+
+
+genotab.em <-
+function(dat, tol=1e-6, maxit=10000, verbose=FALSE)
+{
+
+  genotab.ll <-
+    function(dat, gam)
+      {
+        p <- c(0.25*(1-gam[2]),0.5*gam[1],0.25*(1-gam[3]),gam[2]*0.75, gam[3]*0.75)
+        if(any(p==0 & dat > 0)) return(-Inf)
+        return( sum((dat*log(p))[dat>0 & p>0]) )
+      }
+
+  n <- sum(dat)
+
+  gam <- c(sum(dat[1:3]), dat[4], dat[5])/n
+
+  curll <- genotab.ll(dat, gam)
+
+  flag <- 0
+  if(verbose) cat(0, gam, curll, "\n")
+  for(i in 1:maxit) {
+    # estep
+    zAA <- dat[1]*gam[3]/(gam[1]+gam[3])
+    zBB <- dat[3]*gam[2]/(gam[1]+gam[2])
+
+    # mstep
+    gamnew <- c(sum(dat[1:3])-zAA-zBB, dat[4]+zBB, dat[5]+zAA)/n
+                             
+    newll <- genotab.ll(dat, gamnew)
+
+    if(verbose) cat(i, gamnew, newll, "\n")
+
+    if(abs(curll-newll) < tol) {
+      flag <- 1
+      break
+    }
+    gam <- gamnew
+    curll <- newll
+  }
+  if(!flag) warning("Didn't converge.")
+
+  gam <- gamnew
+  p <- c(0.25*(1-gam[2]),0.5*gam[1],0.25*(1-gam[3]),gam[2]*0.75, gam[3]*0.75)
+  ex <- p*n
+  1-pchisq(sum(((dat-ex)^2/ex)[ex>0]), 2)
+}
+
+    
+
     
 # map functions
 mf.k <- function(d) 0.5*tanh(d/50)
@@ -649,7 +792,8 @@ function(d)
 
 switch.order <-
 function(cross, chr, order, error.prob=0.0001,
-         map.function=c("haldane","kosambi","c-f","morgan"))
+         map.function=c("haldane","kosambi","c-f","morgan"),
+         maxit=4000, tol=1e-4, sex.sp=TRUE)
 {
   if(length(class(cross)) < 2 || class(cross)[2] != "cross")
     stop("Input should have class \"cross\".")
@@ -713,7 +857,8 @@ function(cross, chr, order, error.prob=0.0001,
 
   # re-estimate map
   newmap <- est.map(subset(cross,chr=chr),
-                    error.prob=error.prob, map.function=map.function)
+                    error.prob=error.prob, map.function=map.function,
+                    maxit=maxit, tol=tol, sex.sp=sex.sp)
 
   if(!is.matrix(newmap[[1]]))
      cross$geno[[chr]]$map <- newmap[[1]] + first
@@ -900,8 +1045,6 @@ function(...)
       stop("Experiments must be either the same type or be bc/f2.")
     allsame <- FALSE
     type <- "f2"
-    which <- rep(c(0,1)[match(classes,c("bc","f2"))],n.ind)
-    pheno <- cbind(pheno,which)
   }
 
   if(length(unique(sapply(args, nchr))) > 1) 
@@ -987,6 +1130,12 @@ function(...)
   pheno <- matrix(nrow=sum(n.ind),ncol=length(phenam))
   colnames(pheno) <- phenam
   pheno <- as.data.frame(pheno)
+
+  if(!allsame) {
+    crosstype <- factor(rep(c("bc","f2")[match(classes,c("bc","f2"))],n.ind),
+                        levels=c("bc","f2"))
+    pheno <- cbind(pheno,crosstype=crosstype)
+  }
 
   for(i in 1:length(phenam)) {
     phe <- vector("list",n.args)
@@ -1309,11 +1458,11 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
 
   if(n.addcovar > 0) { # check rank
     if(qr(cbind(1,addcovar))$rank < n.addcovar+1)
-      warning("addcovar appears to be over-specified; consider dropping columns.\n")
+      if(verbose) warning("addcovar appears to be over-specified; consider dropping columns.\n")
   }
   if(n.intcovar > 0) { # check rank
     if(qr(cbind(1,intcovar))$rank < n.intcovar+1)
-      warning("intcovar appears to be over-specified; consider dropping columns.\n")
+      if(verbose) warning("intcovar appears to be over-specified; consider dropping columns.\n")
   }
 
   pheno <- as.matrix(pheno)
@@ -1495,18 +1644,21 @@ function(cross, chr)
 # lodint: function to get lod support interval
 ######################################################################
 lodint <-
-function(results, chr, drop=1.5)
+function(results, chr, drop=1.5, lodcolumn=1)
 {
   if(class(results)[1] != "scanone")
     stop("Input must have class \"scanone\".")
 
+  if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
+    stop("Argument lodcolumn misspecified.")
+
   results <- results[results[,1]==chr,]
 
-  if(all(is.na(results[,3]))) return(NULL)
+  if(all(is.na(results[,lodcolumn+2]))) return(NULL)
 
-  maxlod <- max(results[,3],na.rm=TRUE)
-  w <- which(!is.na(results[,3]) & results[,3] == maxlod)
-  o <- range(which(!is.na(results[,3]) & results[,3] > maxlod-drop))
+  maxlod <- max(results[,lodcolumn+2],na.rm=TRUE)
+  w <- which(!is.na(results[,lodcolumn+2]) & results[,lodcolumn+2] == maxlod)
+  o <- range(which(!is.na(results[,lodcolumn+2]) & results[,lodcolumn+2] > maxlod-drop))
 
   if(length(o)==0) o <- c(1,nrow(results))
 
@@ -1526,22 +1678,25 @@ function(results, chr, drop=1.5)
 # bayesint: function to get Bayesian probability interval
 ######################################################################
 bayesint <-
-function(results, chr, prob=0.95)
+function(results, chr, prob=0.95, lodcolumn=1)
 {
   if(class(results)[1] != "scanone")
     stop("Input should have class \"scanone\".")
 
+  if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
+    stop("Argument lodcolumn misspecified.")
+
   results <- results[results[,1]==chr,]
   
-  if(all(is.na(results[,3]))) return(NULL)
+  if(all(is.na(results[,lodcolumn+2]))) return(NULL)
   
   loc <- results[,2]
   width <- diff(( c(loc[1],loc) + c(loc, loc[length(loc)]) )/ 2)
   
-  area <- 10^results[,3]*width
+  area <- 10^results[,lodcolumn+2]*width
   area <- area/sum(area)
   
-  o <- rev(order(results[,3]))
+  o <- rev(order(results[,lodcolumn+2]))
   
   cs <- cumsum(area[o])
   
@@ -1759,8 +1914,9 @@ function(cross, marker, newchr, newpos)
           colnames(map)[ncol(map)] <- marker
         }
         else {
-          left <- map[,wh]
-          right <- map[,wh+1]
+          left <- map[,wh,drop=FALSE]
+          right <- map[,wh+1,drop=FALSE]
+
           newpos2 <- (newpos-left[1])/(right[1]-left[1])*(right[2]-left[2])+left[2]
           map <- cbind(map[,1:wh], c(newpos,newpos2), map[,-(1:wh)])
           colnames(map)[wh+1] <- marker
@@ -1802,7 +1958,10 @@ function(cross, marker, newchr, newpos)
     cross$geno[[newchr]]$data <- dat
     
     # make sure the marker names for the data and the genetic map match
-    colnames(cross$geno[[newchr]]$data) <- names(cross$geno[[newchr]]$map)
+    if(is.matrix(cross$geno[[newchr]]$map))
+      colnames(cross$geno[[newchr]]$data) <- colnames(cross$geno[[newchr]]$map)
+    else 
+      colnames(cross$geno[[newchr]]$data) <- names(cross$geno[[newchr]]$map)
   }
 
   # update genoprob, errorlod, argmax, draws, rf
@@ -2186,16 +2345,11 @@ function(cross)
           location=as.double(rep(0,n.ind*2*(n.mar-1))),
           nseen=as.integer(rep(0,n.ind)),
           PACKAGE="qtl")
-  location <- matrix(z$location, nrow=n.ind)
+  location <- t(matrix(z$location, nrow=n.ind))
   nseen <- z$nseen
 
-  lo <- vector("list",n.ind)
-  for(i in 1:n.ind) {
-    if(nseen[i] > 0) 
-      lo[[i]] <- location[i,1:nseen[i]]
-  }
-
-  lo
+  lapply(as.data.frame(rbind(nseen, location)),
+         function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
 }
 
 # jittermap: make sure no two markers are at precisely the same position
@@ -2313,6 +2467,55 @@ function(cross)
   else id <- NULL
 
   id
+}
+
+######################################################################
+# find the chromosome and position of a vector of markers
+######################################################################
+find.markerpos <-
+function(cross, marker)
+{
+  output <- data.frame(chr=rep("", length(marker)),
+                       pos=rep(NA, length(marker)))
+  output$chr <- as.character(output$chr)
+  rownames(output) <- marker
+  
+  map <- pull.map(cross)
+  n.mar <- nmar(cross)
+  chr <- rep(names(map), n.mar)
+
+  if(!is.matrix(map[[1]])) {
+    pos <- unlist(map)
+    onemap <- TRUE
+  }
+  else {
+    pos <- unlist(lapply(map, function(a) a[1,]))
+    pos2 <- unlist(lapply(map, function(a) a[2,]))
+    onemap <- FALSE
+    output <- cbind(output, pos2=rep(NA, length(marker)))
+  }
+  
+  mnam <- colnames(pull.geno(cross))
+  
+  for(i in seq(along=marker)) {
+    
+    wh <- match(marker[i], mnam)
+    if(is.na(wh)) {
+      output[i,1] <- NA
+      output[i,2] <- NA
+    }
+    else {
+      if(length(wh) > 1) {
+        warning("Marker ", marker[i], " found multiple times.")
+        wh <- sample(wh, 1)
+      }
+      output[i,1] <- chr[wh]
+      output[i,2] <- pos[wh]
+      if(!onemap) output[i,3] <- pos2[wh]
+    }
+  }
+
+  output
 }
 
 

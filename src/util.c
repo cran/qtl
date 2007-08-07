@@ -2,13 +2,12 @@
  * 
  * util.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                       and Hao Wu, The Jackson Laboratory
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -35,6 +34,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include <R_ext/Lapack.h>
 
@@ -481,6 +481,8 @@ void comparegeno(int **Geno, int n_ind, int n_mar,
     }
 
     for(j=(i+1); j<n_ind; j++) {
+      R_CheckUserInterrupt(); /* check for ^C */
+
       for(k=0; k<n_mar; k++) {
 	if(Geno[k][i]==0 || Geno[k][j]==0) (N_Missing[i][j])++;
 	else if(Geno[k][i] == Geno[k][j]) (N_Match[i][j])++;
@@ -541,6 +543,8 @@ void locate_xo(int n_ind, int n_mar, int type, int **Geno,
   double curpos;
 
   for(i=0; i<n_ind; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     curgen = Geno[0][i];
     curpos = map[0];
     nseen[i]=0;

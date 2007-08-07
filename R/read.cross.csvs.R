@@ -2,8 +2,8 @@
 #
 # read.cross.csvs.R
 #
-# copyright (c) 2006, Karl W Broman, Johns Hopkins University
-# last modified Feb, 2006
+# copyright (c) 2006-7, Karl W Broman
+# last modified Jul, 2007
 # first written Oct, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -100,7 +100,9 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
 
   wh <- which(pheno[1,] == indname)
   if(length(wh) < 1) 
-    stop("Can't find the individual ID column in the phenotype file.")
+#    stop("Can't find the individual ID column in the phenotype file.")
+    stop("Can't find the individual ID column (expected '", indname,
+         "') in the phenotype file.")
   
   pheind <- pheno[-1,wh[1]]
 
@@ -126,7 +128,17 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   mnames <- unlist(gen[1,])
   if(any(is.na(mnames)))  stop("There are missing marker names.")
   chr <- unlist(gen[2,])
-  if(any(is.na(chr))) stop("There are missing chromosome IDs.")
+#  if(any(is.na(chr))) stop("There are missing chromosome IDs.")
+  if(any(is.na(chr))) {
+    na.positions <- which(is.na(chr))
+    na.positions.str <- ""
+    if (length(na.positions)<10) {
+      na.positions.str <- paste(" at position(s) ",
+                                paste(na.positions,collapse=",",sep=""),sep="")
+    }
+    stop("There are ", length(na.positions), " missing chromosome IDs",
+         na.positions.str, ".")
+  }
 
   # look for strange entries in the genotype data
   if(length(genotypes) > 0) {

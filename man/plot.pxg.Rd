@@ -72,6 +72,6 @@ plot.pxg(fake.f2, c(mname2,mname))
   \code{\link[qtl]{find.flanking}}, \code{\link[qtl]{effectscan}} }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian Yandell }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu}; Brian Yandell }
 
 \keyword{hplot}

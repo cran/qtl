@@ -81,7 +81,7 @@ summary(info)
 \seealso{ \code{\link[qtl]{plot.scanone}},
   \code{\link[qtl]{plot.missing}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}
 \keyword{univar}

@@ -2,9 +2,8 @@
 #
 # plot.scantwo.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
-#                       Hao Wu and Brian Yandell
-# last modified Jun, 2006
+# copyright (c) 2001-7, Karl W Broman, Hao Wu and Brian Yandell
+# last modified Jul, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -42,6 +41,11 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 
   if(!missing(chr)) x <- subset(x, chr=chr)
   chr <- as.character(unique(x$map[,1]))
+
+  if(length(lower)==1 && lower == "fv1") lower <- "cond-int"
+  if(length(lower)==1 && lower == "av1") lower <- "cond-add"
+  if(length(upper)==1 && upper == "fv1") upper <- "cond-int"
+  if(length(upper)==1 && upper == "av1") upper <- "cond-add"
 
   lower <- match.arg(lower)
   upper <- match.arg(upper)
@@ -295,6 +299,10 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 #               0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
       axis(side=2, at=mean(wh[i+c(0,1)]), labels=chr[i])
     }
+  }
+  else {
+    u <- par("usr")
+    abline(v=u[1:2], h=u[3:4])
   }
 
   # add title

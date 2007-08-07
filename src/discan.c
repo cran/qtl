@@ -2,9 +2,9 @@
  * 
  * discan.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Oct, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "discan.h"
 
@@ -108,6 +109,8 @@ void discan_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   allocate_int(n_gen, &np);
 
   for(i=0; i<n_pos; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     result[i] = 0.0; n=tp=0; 
     for(j=0; j< n_gen; j++) {
       ng[j] = np[j] = 0;
@@ -191,6 +194,8 @@ void discan_im(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 
     for(s=0; s < maxit; s++) { /* EM iterations */
     
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* copy over current estimates */
       for(k=0; k<n_gen; k++) {
 	work[0][k] = means[k]; 

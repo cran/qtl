@@ -2,7 +2,7 @@
 #
 # calc.pairprob.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # last modified Oct, 2006
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)

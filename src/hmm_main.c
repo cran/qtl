@@ -2,9 +2,9 @@
  * 
  * hmm_main.c
  *
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2004
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -13,7 +13,7 @@
  *
  * These functions are for the main HMM engine
  *
- * Contains: calc_genoprob, sim_geno, est_map, argmax_geno
+ * Contains: calc_genoprob, calc_genoprob_special, sim_geno, est_map, argmax_geno
  *           calc_errorlod, est_rf, calc_pairprob
  *  
  **********************************************************************/
@@ -24,6 +24,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include "hmm_main.h"
 #include "util.h"
 
@@ -89,6 +90,8 @@ void calc_genoprob(int n_ind, int n_pos, int n_gen, int *geno,
 
   for(i=0; i<n_ind; i++) { /* i = individual */
 
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* initialize alpha and beta */
     for(v=0; v<n_gen; v++) {
       alpha[v][0] = initf(v+1) + emitf(Geno[0][i], v+1, error_prob);
@@ -141,6 +144,105 @@ void calc_genoprob(int n_ind, int n_pos, int n_gen, int *geno,
   } /* loop over individuals */
   
 
+}
+
+
+
+/**********************************************************************
+ * 
+ * calc_genoprob_special
+ *
+ * This is a special version of calc_genoprob, rerun specially for
+ * each individual at each marker, allowing that genotype to 
+ * be in error but assuming all others are without error
+ *
+ **********************************************************************/
+
+/* Note: true genotypes coded as 1, 2, ...
+   but in the alpha's and beta's, we use 0, 1, ... */
+
+void calc_genoprob_special(int n_ind, int n_pos, int n_gen, int *geno, 
+			   double *rf, double *rf2, 
+			   double error_prob, double *genoprob, 
+			   double initf(int), 
+			   double emitf(int, int, double),
+			   double stepf(int, int, double, double)) 
+{
+  int i, j, j2, v, v2, curpos;
+  double s, **alpha, **beta;
+  int **Geno;
+  double ***Genoprob;
+  
+  /* allocate space for alpha and beta and 
+     reorganize geno and genoprob */
+  reorg_geno(n_ind, n_pos, geno, &Geno);
+  reorg_genoprob(n_ind, n_pos, n_gen, genoprob, &Genoprob);
+  allocate_alpha(n_pos, n_gen, &alpha);
+  allocate_alpha(n_pos, n_gen, &beta);
+
+  for(i=0; i<n_ind; i++) { /* i = individual */
+
+    for(curpos=0; curpos < n_pos; curpos++) {
+
+      if(!Geno[curpos][i]) continue;
+
+      R_CheckUserInterrupt(); /* check for ^C */
+
+      /* initialize alpha and beta */
+      for(v=0; v<n_gen; v++) {
+	if(curpos==0) 
+	  alpha[v][0] = initf(v+1) + emitf(Geno[0][i], v+1, error_prob);
+	else
+	  alpha[v][0] = initf(v+1) + emitf(Geno[0][i], v+1, TOL);
+	beta[v][n_pos-1] = 0.0;
+      }
+
+      /* forward-backward equations */
+      for(j=1,j2=n_pos-2; j<n_pos; j++, j2--) {
+      
+	for(v=0; v<n_gen; v++) {
+	  alpha[v][j] = alpha[0][j-1] + stepf(1, v+1, rf[j-1], rf2[j-1]);
+	
+	  if(curpos==j2+1)
+	    beta[v][j2] = beta[0][j2+1] + stepf(v+1,1,rf[j2], rf2[j2]) + 
+	      emitf(Geno[j2+1][i],1,error_prob);
+	  else 
+	    beta[v][j2] = beta[0][j2+1] + stepf(v+1,1,rf[j2], rf2[j2]) + 
+	      emitf(Geno[j2+1][i],1,TOL);
+
+	  for(v2=1; v2<n_gen; v2++) {
+	    alpha[v][j] = addlog(alpha[v][j], alpha[v2][j-1] + 
+				 stepf(v2+1,v+1,rf[j-1],rf2[j-1]));
+	    if(curpos==j2+1)
+	      beta[v][j2] = addlog(beta[v][j2], beta[v2][j2+1] + 
+				   stepf(v+1,v2+1,rf[j2],rf2[j2]) +
+				   emitf(Geno[j2+1][i],v2+1,error_prob));
+	    else
+	      beta[v][j2] = addlog(beta[v][j2], beta[v2][j2+1] + 
+				   stepf(v+1,v2+1,rf[j2],rf2[j2]) +
+				   emitf(Geno[j2+1][i],v2+1,TOL));
+
+	  }
+
+	  if(curpos==j)
+	    alpha[v][j] += emitf(Geno[j][i],v+1,error_prob);
+	  else
+	    alpha[v][j] += emitf(Geno[j][i],v+1,TOL);
+	}
+      }
+
+      /* calculate genotype probabilities */
+      s = Genoprob[0][curpos][i] = alpha[0][curpos] + beta[0][curpos];
+      for(v=1; v<n_gen; v++) {
+	Genoprob[v][curpos][i] = alpha[v][curpos] + beta[v][curpos];
+	s = addlog(s, Genoprob[v][curpos][i]);
+      }
+      for(v=0; v<n_gen; v++) 
+	Genoprob[v][curpos][i] = exp(Genoprob[v][curpos][i] - s);
+
+    } /* end loop over current position */
+
+  } /* loop over individuals */
 }
 
 
@@ -209,6 +311,8 @@ void sim_geno(int n_ind, int n_pos, int n_gen, int n_draws,
   GetRNGstate();
 
   for(i=0; i<n_ind; i++) { /* i = individual */
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     /* do backward equations */
     /* initialize beta */
@@ -352,6 +456,8 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
 
     for(i=0; i<n_ind; i++) { /* i = individual */
 
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* initialize alpha and beta */
       for(v=0; v<n_gen; v++) {
 	alpha[v][0] = initf(v+1) + emitf(Geno[0][i], v+1, error_prob);
@@ -416,6 +522,7 @@ void est_map(int n_ind, int n_mar, int n_gen, int *geno, double *rf,
 	if(rf2[j] < tol/100.0) rf2[j] = tol/100.0;
 	else if(rf2[j] > 0.5-tol) rf2[j] = 0.5-tol/100.0;
       }
+      else rf2[j] = rf[j];
     }
 
     /* check convergence */
@@ -537,6 +644,8 @@ void argmax_geno(int n_ind, int n_pos, int n_gen, int *geno,
 
   for(i=0; i<n_ind; i++) { /* i = individual */
 
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* begin viterbi algorithm */
     if(n_pos > 1) { /* multiple markers */
       for(v=0; v<n_gen; v++) 
@@ -629,6 +738,8 @@ void calc_errorlod(int n_ind, int n_mar, int n_gen, int *geno,
   allocate_double(n_gen, &p);
 
   for(i=0; i<n_ind; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     for(j=0; j<n_mar; j++) {
       for(k=0; k<n_gen; k++) p[k] = Genoprob[k][j][i];
       Errlod[j][i] = errorlod(Geno[j][i], p, error_prob);
@@ -693,6 +804,8 @@ void est_rf(int n_ind, int n_mar, int *geno, double *rf,
       if(Geno[j1][i] != 0) n_mei += 2;
     Rf[j1][j1] = (double) n_mei;
     
+    R_CheckUserInterrupt(); /* check for ^C */
+
     for(j2=j1+1; j2<n_mar; j2++) {
       
       /* count meioses */
@@ -816,6 +929,8 @@ void calc_pairprob(int n_ind, int n_pos, int n_gen, int *geno,
   allocate_alpha(n_pos, n_gen, &beta);
 
   for(i=0; i<n_ind; i++) { /* i = individual */
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     /* initialize alpha and beta */
     for(v=0; v<n_gen; v++) {

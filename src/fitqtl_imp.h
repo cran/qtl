@@ -2,7 +2,7 @@
  * 
  * fitqtl_imp.h
  *
- * copyright (c) 2002-5, Hao Wu, The Jackson Laboratory
+ * copyright (c) 2002-5, Hao Wu
  *     Modified by Karl W. Broman to get estimates of QTL effects
  *
  * last modified Aug, 2005

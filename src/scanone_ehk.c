@@ -2,9 +2,9 @@
  * 
  * scanone_ehk.c
  *
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman
  *
- * last modified Aug, 2006
+ * last modified Dec, 2006
  * first written Jul, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Linpack.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scanone_ehk.h"
 #define TOL 1e-12
@@ -138,6 +139,8 @@ void scanone_ehk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
   /* note: weights are really square-root of weights */
 
   for(i=0; i<n_pos; i++) { /* loop over positions */
+    R_CheckUserInterrupt(); /* check for ^C */
+
     error_flag = flag = 0;
 
 #ifdef DEBUG
@@ -188,6 +191,8 @@ void scanone_ehk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 #endif
 
     for(s=0; s<maxit; s++) {
+
+      R_CheckUserInterrupt(); /* check for ^C */
 
       /* right-hand side of equations to be solved */
       for(k=0; k<n_gen; k++) {

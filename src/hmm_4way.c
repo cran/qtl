@@ -2,9 +2,9 @@
  * 
  * hmm_4way.c
  * 
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-7, Karl W Broman
  * 
- * last modified Nov, 2004
+ * last modified Jun, 2007
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -12,7 +12,7 @@
  * C functions for the R/qtl package
  * 
  * Contains: init_4way, emit_4way, step_4way, nrec_4way, nrec_4way1,
- *           nrec_4way2, calc_genoprob_4way, sim_geno_4way, 
+ *           nrec_4way2, calc_genoprob_4way, calc_genoprob_special_4way, sim_geno_4way, 
  *           est_map_4way, argmax_geno_4way, errorlod_4way, 
  *           calc_errorlod_4way, nrec2_4way, logprec_4way, est_rf_4way
  *           calc_pairprob_4way
@@ -37,7 +37,7 @@
 
 double init_4way(int true_gen)
 {
-  return(log(0.25));
+  return(LN_025);
 }
 
 double emit_4way(int obs_gen, int true_gen, double error_prob)
@@ -206,6 +206,14 @@ void calc_genoprob_4way(int *n_ind, int *n_mar, int *geno,
 		init_4way, emit_4way, step_4way);
 }
 
+void calc_genoprob_special_4way(int *n_ind, int *n_mar, int *geno, 
+				double *rf1, double *rf2, double *error_prob, 
+				double *genoprob) 
+{
+  calc_genoprob_special(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, genoprob,
+			init_4way, emit_4way, step_4way);
+}
+
 void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		   double *rf1, double *rf2, double *error_prob, int *draws)
 {
@@ -217,9 +225,15 @@ void est_map_4way(int *n_ind, int *n_mar, int *geno, double *rf1, double *rf2,
 		  double *error_prob, double *loglik, int *maxit, 
 		  double *tol, int *sexsp, int *verbose)
 {
-  est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
-	  init_4way, emit_4way, step_4way, nrec_4way1, nrec_4way2, 
-	  loglik, *maxit, *tol, *sexsp, *verbose);
+  if(*sexsp) 
+    est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
+	    init_4way, emit_4way, step_4way, nrec_4way1, nrec_4way2, 
+	    loglik, *maxit, *tol, *sexsp, *verbose);
+  else
+    est_map(*n_ind, *n_mar, 4, geno, rf1, rf2, *error_prob, 
+	    init_4way, emit_4way, step_4way, nrec_4way, nrec_4way, 
+	    loglik, *maxit, *tol, *sexsp, *verbose);
+
 }
 
 void argmax_geno_4way(int *n_ind, int *n_pos, int *geno, 
@@ -391,29 +405,29 @@ double logprec_4way(int obs1, int obs2, double rf)
     }
   case 5: 
     switch(obs2) {
-    case 5: return(log(1.0-rf));
-    case 6: return(log(rf));
+    case 5: return(log(2.0)+log(1.0-rf));
+    case 6: return(log(2.0)+log(rf));
     case 7: case 8: case 9: case 10: return(0.0);
     }
   case 6: 
     switch(obs2) {
-    case 6: return(log(1.0-rf));
+    case 6: return(log(2.0)+log(1.0-rf));
     case 7: case 8: case 9: case 10: return(0.0);
     }
   case 7:
     switch(obs2) {
-    case 7: return(log(1.0-rf));
-    case 8: return(log(rf));
+    case 7: return(log(2.0)+log(1.0-rf));
+    case 8: return(log(2.0)+log(rf));
     case 9: case 10: return(0.0);
     }
   case 8:
     switch(obs2) {
-    case 8: return(log(1.0-rf));
+    case 8: return(log(2.0)+log(1.0-rf));
     case 9: case 10: return(0.0);
     }
   case 9: case 10: 
-    if(obs1==obs2) return(log(rf*rf+(1.0-rf)*(1.0-rf)));
-    else return(log(2.0)+log(rf)+log(1.0-rf));
+    if(obs1==obs2) return(log(2.0)+log(rf*rf+(1.0-rf)*(1.0-rf)));
+    else return(log(4.0)+log(rf)+log(1.0-rf));
   }
   return(log(-1.0)); /* shouldn't get here */
 }

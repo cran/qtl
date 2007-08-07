@@ -2,9 +2,9 @@
  * 
  * scanone_mr.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scanone_mr.h"
 #define TOL 1e-12
@@ -120,6 +121,8 @@ void scanone_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   /* note: weights are really square-root of weights */
 
   for(i=0; i<n_pos; i++) {
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     /* genotyped individuals at this marker */
     for(j=0, this_n_ind=0; j<n_ind; j++) {

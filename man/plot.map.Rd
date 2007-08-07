@@ -58,6 +58,6 @@ plot.map(fake.bc, show.marker.names=TRUE)
 
 \seealso{ \code{\link[qtl]{est.map}}, \code{\link[qtl]{plot.cross}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}

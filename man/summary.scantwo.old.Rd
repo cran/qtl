@@ -65,7 +65,7 @@
 }
 
 \author{Hao Wu; Karl W Broman,
-  \email{kbroman@jhsph.edu}; Brian Yandell } 
+  \email{kbroman@biostat.wisc.edu}; Brian Yandell } 
 
 \examples{
 data(fake.f2)

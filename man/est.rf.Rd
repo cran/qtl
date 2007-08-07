@@ -38,7 +38,7 @@ est.rf(cross, maxit=4000, tol=1e-4)
   the 4-way cross, we estimate sex-averaged recombination fractions.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(badorder)

@@ -2,7 +2,7 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # last modified Jul, 2006
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)

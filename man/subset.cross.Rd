@@ -26,7 +26,7 @@
 \value{The input \code{cross} object, but with only the specified subset
   of the data.}
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

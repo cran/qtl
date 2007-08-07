@@ -2,9 +2,9 @@
  * 
  * hmm_f2.h
  * 
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2004
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -12,7 +12,7 @@
  * C functions for the R/qtl package
  *
  * Contains: init_f2, emit_f2, step_f2, init_f2b, emit_f2b, step_f2b,
- *           calc_genoprob_f2, sim_genoprob_f2, est_map_f2, 
+ *           calc_genoprob_f2, calc_genoprob_special_f2, sim_genoprob_f2, est_map_f2, 
  *           argmax_geno_f2, errorlod_f2, calc_errorlod_f2, nrec2_f2,
  *           logprec_f2, est_rf_f2, calc_pairprob_f2
  *
@@ -41,6 +41,9 @@ double nrec_f2b(int gen1, int gen2);
 void calc_genoprob_f2(int *n_ind, int *n_mar, int *geno, 
 		      double *rf, double *error_prob, double *genoprob);
   
+void calc_genoprob_special_f2(int *n_ind, int *n_mar, int *geno, 
+			      double *rf, double *error_prob, double *genoprob);
+
 void sim_geno_f2(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		 double *rf, double *error_prob, int *draws);
 

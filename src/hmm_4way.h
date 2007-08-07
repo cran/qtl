@@ -2,9 +2,9 @@
  * 
  * hmm_4way.h
  * 
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  * 
- * last modified Nov, 2004
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -12,7 +12,7 @@
  * C functions for the R/qtl package
  * 
  * Contains: init_4way, emit_4way, step_4way, nrec_4way, nrec_4way1,
- *           nrec_4way2, calc_genoprob_4way, sim_geno_4way, 
+ *           nrec_4way2, calc_genoprob_4way, calc_genoprob_special_4way, sim_geno_4way, 
  *           est_map_4way, argmax_geno_4way, errorlod_4way, 
  *           calc_errorlod_4way, nrec2_4way, logprec_4way, est_rf_4way
  *           calc_pairprob_4way
@@ -42,6 +42,10 @@ double nrec_4way2(int gen1, int gen2);
 void calc_genoprob_4way(int *n_ind, int *n_mar, int *geno, 
 			double *rf1, double *rf2, double *error_prob, 
 			double *genoprob);
+
+void calc_genoprob_special_4way(int *n_ind, int *n_mar, int *geno, 
+				double *rf1, double *rf2, double *error_prob, 
+				double *genoprob);
 
 void sim_geno_4way(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		   double *rf1, double *rf2, double *error_prob, int *draws);

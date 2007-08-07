@@ -2,7 +2,7 @@
 #
 # xchr.R
 #
-# copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2004-6, Karl W Broman
 # last modified Oct, 2006
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)

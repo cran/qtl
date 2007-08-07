@@ -2,8 +2,7 @@
 #
 # summary.scantwo.old.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University,
-#            Hao Wu, and Brian Yandell
+# copyright (c) 2001-6, Karl W Broman, Hao Wu, and Brian Yandell
 #
 # last modified Oct, 2006
 # first written Nov, 2001

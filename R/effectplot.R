@@ -2,10 +2,9 @@
 #
 # effectplot.R
 #
-# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
-#                     and Karl W. Broman, Johns Hopkins University
+# copyright (c) 2002-7, Hao Wu and Karl W. Broman
 # 
-# Last modified Oct, 2006
+# Last modified Apr, 2007
 # first written Jul, 2002
 #
 # Modified by Hao Wu Feb 2005 for the following:
@@ -22,8 +21,8 @@
 
 effectplot <-
 function (cross, pheno.col = 1, mname1, mark1, geno1, mname2, 
-          mark2, geno2, main, ylim, add.legend = TRUE, draw=TRUE, 
-          var.flag=c("pooled","group")) 
+          mark2, geno2, main, ylim, xlab, ylab, col, add.legend = TRUE,
+          legend.lab, draw=TRUE, var.flag=c("pooled","group")) 
 {
   if(!sum(class(cross) == "cross")) 
     stop("The first input variable must be an object of class cross")
@@ -274,10 +273,17 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
     on.exit(par(xpd = old.xpd, las = old.las))
     
     # colors (for case of two markers)
-    if(ngen1 <= 5) 
-      int.color <- c("black", "red", "blue", "orange", "green")[1:ngen1]
-    else int.color <- c("black", rainbow(ngen1 - 1, start = 0, 
-                                         end = 2/3))
+    if(missing(col)) {
+      if(ngen1 <= 5) {
+        if(ngen1 == 1) int.color <- "black"
+        else if(ngen1 == 2) int.color <- c("red", "blue")
+        else int.color <- c("black", "red", "blue", "orange", "green")[1:ngen1]
+      }
+      else
+        int.color <- c("black", rainbow(ngen1-1, start=0, end=2/3))
+    }
+    else int.color <- col
+
     # plot title
     if(missing(main)) {
       if(is.null(mark2)) 
@@ -310,14 +316,18 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
     xlimits <- c(1 - d/4, length(u) + d/4)
 
     if(is.null(mark2)) { # single marker
+      if(missing(xlab)) xlab <- mname1
+      if(missing(ylab)) ylab <- names(cross$pheno)[pheno.col]
+      if(missing(col)) col <- "black"
+
       # plot the means
-      plot(1:ngen1, means, main = main, xlab = mname1, ylab = names(cross$pheno)[pheno.col], 
-           pch = 1, col = "black", ylim = ylimits, xaxt = "n", 
+      plot(1:ngen1, means, main = main, xlab = xlab, ylab = ylab, 
+           pch = 1, col = col[1], ylim = ylimits, xaxt = "n", 
            type = "b", xlim = xlimits)
       # confidence limits
       for(i in 1:ngen1) {
         if(!is.na(lo[i]) && !is.na(hi[i])) 
-          lines(c(i, i), c(lo[i], hi[i]), pch = 3, col = "black", 
+          lines(c(i, i), c(lo[i], hi[i]), pch = 3, col = col[1],
                 type = "b", lty = 3)
       }
 
@@ -326,15 +336,18 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       ystart <- a[3]
       yend <- ystart - diff(a[3:4]) * 0.02
       ytext <- ystart - diff(a[3:4]) * 0.05
-      for(i in 1:ngen1) {
-        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
-        text(i, ytext, geno1[i], xpd = TRUE)
-      }
+#      for(i in 1:ngen1) {
+#        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
+#        text(i, ytext, geno1[i], xpd = TRUE)
+#      }
+      axis(side=1, at=1:ngen1, labels=geno1)
     }
     else { # two markers
+      if(missing(xlab)) xlab <- mname2
+      if(missing(ylab)) ylab <- names(cross$pheno)[pheno.col]
       # plot the first genotype of marker 1
-      plot(1:ngen2, means[1, ], main = main, xlab = mname2, 
-           ylab = names(cross$pheno)[pheno.col], pch = 1, col = int.color[1], 
+      plot(1:ngen2, means[1, ], main = main, xlab = xlab, 
+           ylab = ylab, pch = 1, col = int.color[1], 
            ylim = ylimits, xaxt = "n", type = "b", xlim = xlimits)
       # confidence limits
       for(i in 1:ngen2) {
@@ -358,10 +371,11 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
       ystart <- a[3]
       yend <- ystart - diff(a[3:4]) * 0.02
       ytext <- ystart - diff(a[3:4]) * 0.05
-      for(i in 1:ngen2) {
-        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
-        text(i, ytext, geno2[i], xpd = TRUE)
-      }
+#      for(i in 1:ngen2) {
+#        lines(x = c(i, i), y = c(ystart, yend), xpd = TRUE)
+#        text(i, ytext, geno2[i], xpd = TRUE)
+#      }
+      axis(side=1, at=1:ngen2, labels=geno2)
 
       # add legend
       if(add.legend) {
@@ -372,7 +386,8 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
         y.leg2 <- a[4] - diff(a[3:4]) * 0.03
         legend(x.leg, y.leg, geno1, lty = 1, pch = 1, col = col, 
                cex = 1, xjust = 0.5)
-        text(x.leg, y.leg2, mname1)
+        if(missing(legend.lab)) legend.lab <- mname1
+        text(x.leg, y.leg2, legend.lab)
       }
     }
   }
@@ -395,21 +410,21 @@ effectplot.getmark <- function (cross, mname) {
   # determine marker type - it could be a marker, a pseudomarker or a phenotype
   mar.type <- "none"
   # regular expression pattern for a pseudomarker names
-  pm.pattern <- "c[0-9,X]*\\.loc*" # pseudomarker names will be like "c1.loc10"
+  pm.pattern <- "c[0-9,X]*\\.loc.*" # pseudomarker names will be like "c1.loc10"
   if(mname %in% names(cross$pheno)) { # this is a phenotype
     mar.type <- "pheno"
     idx.pos <- which(mname==names(cross$pheno))
   }
-  else if(length(grep(pm.pattern, mname)) > 0) { # the mname is like "c1.loc10", this is a pseudomarker
+  else if(length(grep(pm.pattern, mname)) > 0) { # like "c1.loc10", this is a pseudomarker
     # note that the column names for draws is like "loc10",
     # so I need to take the part after "." in mname
     tmp <- unlist(strsplit(mname, "\\."))
-    chr <- substr(tmp[1],2,10000) # this will be like 1 or "X"
+    chr <- substr(tmp[1],2,nchar(tmp[1])) # this will be like 1 or "X"
     if( !(chr %in% names(cross$geno)) )
       stop("Couldn't find marker ", mname)
     mar.type <- "pm"
     chrtype <- class(cross$geno[[chr]])
-    pm.name <- tmp[2] # this will be like loc10
+    pm.name <- paste(tmp[-1],collapse=".") # this will be like loc10
     idx.pos <- which(pm.name==colnames(cross$geno[[chr]]$draws))
     if(length(idx.pos) == 0)
       stop("Couldn't find marker ", mname)

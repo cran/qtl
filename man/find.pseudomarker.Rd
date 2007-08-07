@@ -36,7 +36,7 @@
   correspond to the female genetic map.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(listeria)
@@ -46,6 +46,7 @@ find.pseudomarker(listeria, c(1, 5, 13), c(81, 28, 26), "prob")
 }
 
 \seealso{ \code{\link[qtl]{find.flanking}}, \code{\link[qtl]{plot.pxg}},
-\code{\link[qtl]{effectplot}}, \code{\link[qtl]{find.marker}} }
+\code{\link[qtl]{effectplot}}, \code{\link[qtl]{find.marker}},
+\code{\link[qtl]{find.markerpos}}  }
 
 \keyword{utilities}

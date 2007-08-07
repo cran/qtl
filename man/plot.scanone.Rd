@@ -78,6 +78,6 @@ plot(out.hk, chr=13, show.marker.names=TRUE)
   \code{\link[qtl]{summary.scanone}}, \code{\link[graphics]{par}},
   \code{\link[grDevices]{colors}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}

@@ -2,8 +2,7 @@
  * 
  * scanone_imp.h
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                 and Hao Wu, The Jackson Laboratory
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
  * This file is written by Hao Wu
  * with slight modifications by Karl Broman.

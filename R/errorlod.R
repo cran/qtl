@@ -2,7 +2,7 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001-6, Karl W Broman
 # last modified Oct, 2006
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
@@ -21,8 +21,11 @@
 
 calc.errorlod <-
 function(cross, error.prob=0.01,
-         map.function=c("haldane","kosambi","c-f","morgan"))
+         map.function=c("haldane","kosambi","c-f","morgan"),
+         version=c("new","old"))
 {
+  version <- match.arg(version)
+
   if(length(class(cross)) < 2 || class(cross)[2] != "cross")
     stop("Input should have class \"cross\".")
 
@@ -60,30 +63,25 @@ function(cross, error.prob=0.01,
     # skip chromosomes with only 1 marker
     if(n.mar[i] < 2) next
 
-    if(!("prob" %in% names(cross$geno[[i]]))) {
-      # need to run calc.genoprob
-      cross <- calc.genoprob(cross,error.prob=error.prob,
-                             map.function=map.function)
-      Pr <- cross$geno[[i]]$prob
-    }
-    else {
-      # if error.prob doesn't correspond to what was used when
-      #     running calc.genoprob(), re-run calc.genoprob()
-      if(abs(attr(cross$geno[[i]]$prob,"error.prob")
-             - error.prob) > 1e-9) {
-        cross <-
-          calc.genoprob(cross,error.prob=error.prob,
-                        step=attr(cross$geno[[i]]$prob,"step"),
-                        off.end=attr(cross$geno[[i]]$prob,"off.end"),
-                        map.function=attr(cross$geno[[i]]$prob,"map.function"))
+    if(version=="old") {
+      if((!("prob" %in% names(cross$geno[[i]])) ||
+          abs(attr(cross$geno[[i]]$prob,"error.prob")
+              - error.prob) > 1e-9)) {
+        # need to run calc.genoprob
+        cross <- calc.genoprob(cross,error.prob=error.prob,
+                               map.function=map.function)
       }
-         
+
       Pr <- cross$geno[[i]]$prob
       u <- grep("^loc-*[0-9]+",colnames(Pr))
-
       if(length(u) > 0) Pr <- Pr[,-u,]
     }
-    
+    else { # new version
+      cross <- calc.genoprob.special(cross,error.prob=error.prob,
+                                     map.function=map.function)
+      Pr <- cross$geno[[i]]$prob
+    }
+         
     nm <- dim(Pr)[2]
     dat <- cross$geno[[i]]$data
     dat[is.na(dat)] <- 0
@@ -98,6 +96,7 @@ function(cross, error.prob=0.01,
             PACKAGE="qtl")
 
     errlod <- array(z$errlod, dim=dim(Pr)[1:2])
+    if(version=="new") errlod[dat==0] <- -99
 
     dimnames(errlod) <- list(NULL,colnames(cross$geno[[i]]$data))
     origcross$geno[[i]]$errorlod <- errlod

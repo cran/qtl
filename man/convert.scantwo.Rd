@@ -29,7 +29,7 @@
   additive QTL models.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 \dontrun{out2.new <- convert(out2.old)}

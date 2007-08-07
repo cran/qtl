@@ -2,9 +2,9 @@
  * 
  * scanone_np.c
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2001
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scanone_np.h"
 
@@ -79,6 +80,8 @@ void scanone_np(int n_ind, int n_pos, int n_gen,
   double sp, ssp, sr, temp;
 
   for(i=0; i<n_pos; i++) {
+
+    R_CheckUserInterrupt(); /* check for ^C */
 
     result[i] = 0.0;
     for(k=0; k<n_gen; k++) {

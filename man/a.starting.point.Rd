@@ -45,7 +45,7 @@ described in the help file for \code{\link[qtl]{read.cross}}.  We won't
 discuss data import any further here, except to say that the
 comma-delimited format (\code{"csv"}) is recommended.  If you have
 trouble importing data, send an email to Karl Broman,
-\email{kbroman@jhsph.edu}, perhaps attaching examples of your data
+\email{kbroman@biostat.wisc.edu}, perhaps attaching examples of your data
 files.  (Such data will be kept confidential.)  Also see the sample data
 files and code at \url{http://www.rqtl.org/sampledata}.
 
@@ -294,6 +294,6 @@ maxima of the above five LOD scores for each of the imputations.
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{models}

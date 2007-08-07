@@ -2,7 +2,7 @@
  *
  * lapackutil.h
  *
- * copyright (c) 2006, Hao Wu, Johns Hopkins University
+ * copyright (c) 2006, Hao Wu
  *
  * last modified Feb, 2006 
  * first written Jan, 2006 

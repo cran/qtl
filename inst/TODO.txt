@@ -5,27 +5,48 @@ This file is intended to contain a list of many of the additions and
 revisions that are planned for the R/qtl package.  
 
 If you any additions or revisions to suggest, please send an email to
-Karl Broman, <kbroman@jhsph.edu>.
+Karl Broman, <kbroman@biostat.wisc.edu>.
 ----------------------------------------------------------------------
  
 SHORT TERM:
 
-o When covariates must be discarded during a permutation test, we get
-  an enormous number of warning messages.  Give just one.
+o incorporate revised code from Steffen Moeller.
 
-o geno.image: like plot.missing, but showing colors at the genotypes
+o incorporate effectoutput.R from Qian Li and Sharon Tsaih
 
-o Allow changes of colors in effectplot()
+o Fix the help file for fitqtl() to emphasize that interactions among
+  covariates are not allowed, but must be set up in advance.
+ 
+o Add an explanation regarding the coding in the coefficient 
+  estimates in fitqtl().  Add text to the help file for
+  summary.fitqtl(). 
 
-o mention getwd(), setwd() and dir() in FAQ
+o refineqtl -- like fitqtl, but refines the locations of the QTLs as
+  in Zhao-Bang's MIM; the output could include both the final qtl
+  object plus the set of LOD curves, and have class "refineqtl", with
+  functions summary.refineqtl() to give the final positions and
+  plot.refineqtl() to give a plot like Z-B's.
 
-o FAQ: constructing covariate matrices
-       
-o plot.pxg: In the case of two markers on X chromosome, need to drop
-  some columns; there should already be code for that.
+o write tools for converting the output from scanqtl() to the format
+  for scanone() or scantwo(), according to whether it's a 1-d or
+  2-d search, or print a warning otherwise.
 
-o Re-write calc.errorlod to assume error.prob=0 for all but the marker
-  under test.  Need a special version of calc.genoprob.
+o conditional LOD scores from scantwo output.
+
+o Documentation for makeqtl/fitqtl/scanqtl
+
+o FAQ: - constructing covariate matrices
+
+----------------------------------------------------------------------
+
+MEDIUM-SHORT TERM:
+
+o Tabbing in "allpheno" from summary.scanone output looks odd...maybe
+  use spaces?
+
+o Test scanone with method="ehk", especially regarding interactions.
+
+o Include Bjarke's code on eHK for scantwo.
 
 o Fix plot.scantwo for the case that incl.markers=TRUE, so that
   positions are not equally spaced, but are according to the genetic
@@ -40,12 +61,6 @@ o Go through all of the various plot functions and make sure that
 o Turn the tutorial into a Sweave vingette, to conform to the
   Bioconductor requirements?
 
-o covariates with 2part model in scanone
-
-o Test scanone with method="ehk", especially regarding interactions.
-
-o Include Bjarke's code on eHK for scantwo.
-
 o Revise plot.rf so that it can have different color schemes, as in
   plot.scantwo. 
 
@@ -58,35 +73,11 @@ o Add cross type "dh" for doubled haploids.  Treat this just like
   AA and BB, the thing is called DH by default.  Maybe add an 
   argument to read.cross so that one may specify the cross type.
 
-o refineqtl -- like fitqtl, but refines the locations of the QTLs as
-  in Zhao-Bang's MIM; the output could include both the final qtl
-  object plus the set of LOD curves, and have class "refineqtl", with
-  functions summary.refineqtl() to give the final positions and
-  plot.refineqtl() to give a plot like Z-B's.
-
-o Documentation for makeqtl/fitqtl/scanqtl (especially summary.fitqtl).
-
 o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
   + help file
 
-o write tools for converting the output from scanqtl() to the format
-  for scanone() or scantwo(), according to whether it's a 1-d or
-  2-d search, or print a warning otherwise.
-
-o Fix the help file for fitqtl() to emphasize that interactions among
-  covariates are not allowed, but must be set up in advance.
- 
-o Add an explanation regarding the coding in the coefficient 
-  estimates in fitqtl().  Add text to the help file for
-  summary.fitqtl(). 
-
 o Finish off the work to get coefficient estimates by imputation in
   fitqtl for the X chromosome in BC and F2. 
-
-o geno.table(): the X chromosome needs special treatment.
-
-o P-values from geno.table() when an intercross has some dominant
-  markers.  
 
 o Revise c.cross so that you can combine crosses even if there are
   different numbers of chromosomes
@@ -97,9 +88,11 @@ o Ensure consistency in use of chromosome numbers vs names/IDs when
 
 o Documentation on RI lines.
 
-
+----------------------------------------------------------------------
 
 MEDIUM TERM:
+
+o covariates with 2part model in scanone
 
 o Analysis of censored phenotypes.
 
@@ -108,7 +101,7 @@ o Analysis of residuals.
 o plot.scanone for *many* phenotypes: an image-type plot
 
 o Effectscan for X chromosome. Plus make it use the imputations, as in
-  effectplot.
+  effectplot.  And have it give output (silently)
 
 o read.cross for "qtx" sometimes doesn't seem to take the
   genotype pattern appropriately; read in a backcross as if it
@@ -144,8 +137,6 @@ o scanone with additive alleles at QTL
 
 o Pull out results for an interval.
 
-o Function to calculate variance due to QTL
-
 o Modify the map expansion for RI lines for the X chromosome.
   [really need to add additional functions for mapping, as
    the marginal genotype distribution is 2:1 rather than 1:1]
@@ -157,12 +148,7 @@ o Ability to get at the individual contributions to the LOD score?
 o Incorporate the code from Brian Yandell, Fei Zou and Amy Jin on
   semi-parametric QTL mapping methods.
 
-o Have effectscan give output (silently)
-
-o Allow plot.missing to give results color coded by marker genotype
-  (like Saunak's cool plots).
-
-o effectscan and effectplot: SEs and so forth using imputations
+o effectscan: SEs and so forth using imputations
 
 o effectscan: if one chromosome, plot map positions on the x-axis 
   rather than the chromosome ID.
@@ -176,12 +162,7 @@ o Include widgets for getting more easy access to the data.
 o Calculate pairwise QTL probabilities by the more simple method,
   assuming independence, in scantwo.
 
-o Permutation tests with scantwo should include the results comparing
-  2 vs 1 QTL.
-
-o Modify plot.rf and plot.errorlod to allow plot of a color scale, as
-  in plot.scantwo.  
-
+----------------------------------------------------------------------
 
 LONG TERM:
 
@@ -191,8 +172,6 @@ o Allow phenotypes on multiple individuals (esp for recombinant inbred
   lines). 
 
 o "embarassing parallel" processing for permutation tests (Rmpi, snow)
-
-o Composite interval mapping, in an automated way.
 
 o Imprinting/parent-of-origin effects.
 

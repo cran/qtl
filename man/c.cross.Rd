@@ -33,7 +33,7 @@
   common between crosses must be precisely the same in the different crosses.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

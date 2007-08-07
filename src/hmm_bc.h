@@ -2,9 +2,9 @@
  * 
  * hmm_bc.h
  * 
- * copyright (c) 2001-4, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Nov, 2004
+ * last modified Dec, 2006
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -12,6 +12,7 @@
  * C functions for the R/qtl package
  *
  * Contains: init_bc, emit_bc, step_bc, nrec_bc, calc_genoprob_bc,
+ *           calc_genoprob_special_bc, 
  *           sim_geno_bc, est_map_bc, argmax_geno_bc, errorlod_bc,
  *           calc_errorlod_bc, est_rf_bc, calc_pairprob_bc
  *
@@ -33,6 +34,9 @@ double nrec_bc(int gen1, int gen2);
 
 void calc_genoprob_bc(int *n_ind, int *n_mar, int *geno, 
 		      double *rf, double *error_prob, double *genoprob);
+
+void calc_genoprob_special_bc(int *n_ind, int *n_mar, int *geno, 
+			      double *rf, double *error_prob, double *genoprob);
 
 void sim_geno_bc(int *n_ind, int *n_pos, int *n_draws, int *geno,
 		 double *rf, double *error_prob, int *draws);

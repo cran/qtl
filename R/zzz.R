@@ -2,7 +2,7 @@
 #
 # zzz.R
 #
-# copyright (c) 2001, Karl W Broman, Johns Hopkins University
+# copyright (c) 2001, Karl W Broman
 # written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #

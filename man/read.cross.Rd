@@ -369,7 +369,7 @@ dat7 <- read.cross("karl", dir="Mydata", genfile="gen.txt",
                    phefile="phe.txt", mapfile="map.txt")}
 } 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu}; Brian S. Yandell}
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu}; Brian S. Yandell}
 
 \seealso{ \code{\link[qtl]{write.cross}}, \code{\link[qtl]{sim.cross}};
   the \code{sampledata} directory in the package distribution contains

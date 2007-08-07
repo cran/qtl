@@ -2,8 +2,7 @@
  *
  * scantwo_imp.h
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                     and Hao Wu, The Jackson Lab
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
  * This file was written by Hao Wu with modifications by 
  * Karl Broman.

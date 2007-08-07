@@ -2,8 +2,7 @@
  * 
  * util.h
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
- *                       and Hao Wu, The Jackson Laboratory
+ * copyright (c) 2001-6, Karl W Broman and Hao Wu
  *
  * This file written mostly by Karl Broman with some additions
  * from Hao Wu.

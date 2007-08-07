@@ -2,7 +2,7 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-6, Karl W Broman, Johns Hopkins University
+# copyright (c) 2000-6, Karl W Broman
 # last modified Oct, 2006
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)

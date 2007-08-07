@@ -2,8 +2,9 @@
 #
 # discan.R
 #
-# copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
-# last modified Nov, 2006
+# copyright (c) 2001-7, Karl W Broman
+#
+# last modified Jul, 2007
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -22,7 +23,7 @@
 discan <-
 function(cross, pheno, method=c("em","mr"),
          addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
-         verbose=FALSE)
+         verbose=FALSE, give.warnings=TRUE)
 {
   method <- match.arg(method)
 
@@ -39,7 +40,7 @@ function(cross, pheno, method=c("em","mr"),
   dfX <- parXa <- -1
 
   if(method=="mr" && n.addcovar+n.intcovar>0)  {
-    warning("Covariates ignored with method=\"mr\"; use \"em\" instead")
+    if(give.warnings) warning("Covariates ignored with method=\"mr\"; use \"em\" instead")
     n.addcovar <- n.intcovar <- addcovar <- intcovar <- 0
   }
 
@@ -60,7 +61,7 @@ function(cross, pheno, method=c("em","mr"),
       sexpgm <- getsex(cross)
 
       ac <- revisecovar(sexpgm,addcovar)
-      if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0)
+      if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0 && give.warnings)
         warning("Dropped ", nd, " additive covariates on X chromosome.")
       if(length(ac)==0) {
         n.ac <- 0
@@ -68,7 +69,7 @@ function(cross, pheno, method=c("em","mr"),
       }
       else n.ac <- ncol(ac)
       ic <- revisecovar(sexpgm,intcovar)
-      if(!is.null(intcovar) && (nd <- attr(ic, "n.dropped")) > 0)
+      if(!is.null(intcovar) && (nd <- attr(ic, "n.dropped")) > 0 && give.warnings)
         warning("Dropped ", nd, " interactive covariates on X chromosome.")
       if(length(ic)==0) {
         n.ic <- 0
@@ -130,7 +131,7 @@ function(cross, pheno, method=c("em","mr"),
     }
     else {
       if(!("prob" %in% names(cross$geno[[i]]))) { # need to run calc.genoprob
-        warning("First running calc.genoprob.")
+        if(give.warnings) warning("First running calc.genoprob.")
         cross <- calc.genoprob(cross)
       }
       genoprob <- cross$geno[[i]]$prob
@@ -199,7 +200,9 @@ function(cross, pheno, method=c("em","mr"),
     if(method == "em") z[,1] <- z[,1] - llik0[chrtype]
     z[is.na(z[,1]),1] <- 0
 
-    colnames(z) <- c("lod")
+    z <- z[,1,drop=FALSE]
+
+    colnames(z)[1] <- "lod"
 
     if(chrtype=="A" && dfA < 0)
       dfA <- (n.gen-1)*(n.ic+1)
@@ -242,10 +245,9 @@ function(cross, pheno, method=c("em","mr"),
     o <- grep("^loc-*[0-9]+",w)
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
-    rownames(z) <- w
     
-    z <- as.data.frame(z)
-    z <- cbind(chr=rep(names(cross$geno)[i],length(map)), pos=map, z)
+    z <- data.frame(chr=rep(names(cross$geno)[i],length(map)),
+                    pos=as.numeric(map), z)
     rownames(z) <- w
 
     results <- rbind(results, z)

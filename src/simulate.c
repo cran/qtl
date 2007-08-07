@@ -2,9 +2,9 @@
  * 
  * simulate.c
  *
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman
  *
- * last modified Jul, 2006
+ * last modified Dec, 2006
  * first written Jul, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -24,6 +24,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/RS.h> /* for Calloc, Realloc */
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "simulate.h"
 
@@ -62,6 +63,8 @@ void sim_bc_ni(int n_mar, int n_ind, double *rf, int **Geno)
   int i, j;
 
   for(i=0; i<n_ind; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     if(unif_rand() < 0.5) Geno[0][i] = 1;
     else Geno[0][i] = 2;
 
@@ -121,6 +124,8 @@ void sim_bc(int n_mar, int n_ind, double *pos, int m, double p, int **Geno)
   chi = (double *)Calloc(max_chi, double);
 
   for(i=0; i<n_ind; i++) {
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* genotype at first marker */
     if(unif_rand() < 0.5) Geno[0][i] = 1;
     else Geno[0][i] = 2;

@@ -8,7 +8,8 @@
 }
 
 \usage{switch.order(cross, chr, order, error.prob=0.0001,
-             map.function=c("haldane","kosambi","c-f","morgan"))}
+                    map.function=c("haldane","kosambi","c-f","morgan"),
+                    maxit=4000, tol=1e-4, sex.sp=TRUE)}
 
 \arguments{
  \item{cross}{An object of class \code{cross}.  See
@@ -23,6 +24,10 @@
    \code{\link[qtl]{est.map}}).} 
  \item{map.function}{Map function to be used (passed to
    \code{\link[qtl]{est.map}}).} 
+ \item{maxit}{Maximum number of EM iterations to perform.}
+ \item{tol}{Tolerance for determining convergence.}
+ \item{sex.sp}{Indicates whether to estimate sex-specific maps; this is 
+ used only for the 4-way cross.}
 }
 
 \value{
@@ -34,7 +39,7 @@
 }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

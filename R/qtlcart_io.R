@@ -2,9 +2,9 @@
 #
 # qtlcart_io.R
 #
-# copyright (c) 2002-6, Brian S. Yandell
+# copyright (c) 2002-7, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Nov, 2006
+# last modified Jan, 2007
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -250,8 +250,8 @@ function( cross, filestem="data")
   }
 
   # RIL data: convert genotypes to 1/3; later will be converted to 0/2
-  if(type=="riself" || type=="risib") {
-    for(i in 1:nchr) {
+  if(type=="RI1" || type=="RI2") {
+    for(i in 1:n.chr) {
       g <- cross$geno[[i]]$data
       g[!is.na(g) & g==2] <- 3
       cross$geno[[i]]$data <- g

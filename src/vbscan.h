@@ -2,7 +2,7 @@
  * 
  * vbscan.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, Karl W Broman
  *
  * last modified July, 2001
  * first written May, 2001

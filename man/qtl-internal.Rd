@@ -1,6 +1,7 @@
 \name{qtl-internal}
 \alias{addqtl}
 \alias{adjust.rf.ri}
+\alias{calc.genoprob.special}
 \alias{calc.pairprob}
 \alias{checkcovar}
 \alias{clean}
@@ -21,6 +22,8 @@
 \alias{fixX4write}
 \alias{fixXgeno.bc}
 \alias{fixXgeno.f2}
+\alias{forwsel}
+\alias{genotab.em}
 \alias{getid}
 \alias{getsex}
 \alias{getgenonames}
@@ -42,6 +45,7 @@
 \alias{parseformula}
 \alias{print.cross}
 \alias{print.map}
+\alias{print.scanoneboot}
 \alias{print.scantwo}
 \alias{print.summary.cross}
 \alias{print.summary.fitqtl}
@@ -98,6 +102,8 @@
 \usage{
 addqtl(cross, qtl, add.chr, add.pos, add.name, map)
 adjust.rf.ri(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
+calc.genoprob.special(cross, error.prob=0.0001,
+                      map.function=c("haldane","kosambi","c-f","morgan"))
 calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001, 
               map.function=c("haldane","kosambi","c-f","morgan"), map)
 checkcovar(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
@@ -107,7 +113,7 @@ convert(object)
 create.map(map, step, off.end, stepwidth=c("fixed", "variable"))
 discan(cross, pheno, method=c("em","mr"),
        addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
-       verbose=FALSE)
+       verbose=FALSE, give.warnings=TRUE)
 dropqtl(qtl, drop)
 dropXcol(type=c("f2","bc"), sexpgm, cross.attr)
 fitstahl.estp(cross, error.prob=0.0001, m=0, tol=1e-4, maxit=4000)
@@ -119,6 +125,8 @@ fitstahl.estpe.sub(x, cross, m=0, thetol=1e-4, maxit=4000)
 fixX4write(geno,sex,pgm,crosstype)
 fixXgeno.bc(cross)
 fixXgeno.f2(cross)
+forwsel(x, y, maxsize=7)
+genotab.em(dat, tol=1e-6, maxit=10000, verbose=FALSE)
 getid(cross)
 getsex(cross)
 getgenonames(type=c("f2","bc","riself","risib","4way"),
@@ -144,6 +152,7 @@ mf.stahl(d, m=0, p=0)
 parseformula(formula, qtl.dimname, covar.dimname)
 \method{print}{cross}(x, \dots)
 \method{print}{map}(x, \dots)
+\method{print}{scanoneboot}(x, \dots)
 \method{print}{scantwo}(x, \dots)
 \method{print}{summary.cross}(x, \dots)
 \method{print}{summary.fitqtl}(x, \dots)
@@ -202,14 +211,16 @@ scantwo.perm.engine(n.perm, cross, pheno.col, model,
                     perm.strata)
 sim.bcg(n.ind, map, m, p,
         map.function=c("haldane","kosambi","c-f","morgan"))
-sim.cc(parents, n.ril=1, error.prob=0, missing.prob=0, m=0, step=0)
+sim.cc(parents, n.ril=1, type=c("sibmating", "selfing"),
+       error.prob=0, missing.prob=0, m=0, p=0, step=0)
 sim.cross.4way(map, model, n.ind, error.prob, missing.prob,
                partial.missing.prob, keep.errorind, m, p, map.function)
 sim.cross.bc(map, model, n.ind, error.prob, missing.prob,
              keep.errorind, m, p, map.function)
 sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
              partial.missing.prob, keep.errorind, m, p, map.function)
-sim.ril(map, n.ril=1, n.str=c("2","4","8"), m=0, random.cross=TRUE)
+sim.ril(map, n.ril=1, type=c("sibmating", "selfing"), n.str=c("2","4","8"),
+        m=0, p=0, random.cross=TRUE)
 subrousummaryscantwo(object, for.perm=FALSE)
 \method{summary}{scantwocondensed}(object, thresholds, 
          what=c("best", "full", "add", "int"),
@@ -225,6 +236,6 @@ write.cross.qtlcart(cross, filestem="data")
 }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{internal}

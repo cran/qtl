@@ -2,7 +2,7 @@
  * 
  * hmm_cc.c
  * 
- * copyright (c) 2005, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2005, Karl W Broman
  *
  * last modified Mar, 2005
  * first written Mar, 2005

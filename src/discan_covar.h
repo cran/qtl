@@ -2,7 +2,7 @@
  * 
  * discan_covar.h
  *
- * copyright (c) 2004, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2004, Karl W Broman
  *
  * last modified Dec, 2004
  * first written Dec, 2004

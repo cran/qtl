@@ -10,8 +10,8 @@
 
 \usage{
 effectplot(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
-           geno2, main, ylim, add.legend=TRUE, draw=TRUE,
-           var.flag=c("pooled","group"))
+           geno2, main, ylim, xlab, ylab, col, add.legend=TRUE,
+           legend.lab, draw=TRUE, var.flag=c("pooled","group"))
 }
 
 \arguments{
@@ -28,7 +28,11 @@ effectplot(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
   \item{geno2}{Optional labels for the genotypes (or classes in a covariate).}
   \item{main}{Optional figure title.}
   \item{ylim}{Optional y-axis limits.}
+  \item{xlab}{Optional x-axis label.}
+  \item{ylab}{Optional y-axis label.}
+  \item{col}{Optional vector of colors for the different line segments.}
   \item{add.legend}{A logical value to indicate whether to add a legend.}
+  \item{legend.lab}{Optional title for the legend.}
   \item{draw}{A logical value to indicate generate the plot or not. If
     FALSE, no figure will be plotted and this function can be used to
     calculate the group means and standard errors.}
@@ -114,7 +118,7 @@ mnames <- find.marker(fake.f2, c(13, "X"), c(24, 14))
 effectplot(fake.f2, mname1=mnames[1], mname2=mnames[2])
 }
 
-\author{Hao Wu; Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Hao Wu; Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \seealso{ \code{\link[qtl]{plot.pxg}}, \code{\link[qtl]{find.marker}},
   \code{\link[qtl]{effectscan}}, \code{\link[qtl]{find.pseudomarker}} } 

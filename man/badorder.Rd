@@ -44,6 +44,6 @@ summary(rip3)
 \seealso{ \code{\link[qtl]{est.rf}}, \code{\link[qtl]{ripple}}, 
   \code{\link[qtl]{est.map}}, \code{\link[qtl]{sim.cross}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{datasets}

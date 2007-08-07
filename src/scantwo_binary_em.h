@@ -2,7 +2,7 @@
  * 
  * scantwo_binary_em.h
  *
- * copyright (c) 2004-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2004-6, Karl W Broman
  *
  * last modified Oct, 2006
  * first written Dec, 2004

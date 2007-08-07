@@ -24,10 +24,10 @@ est.map(cross, error.prob=0.0001,
    distances into recombination fractions. (Ignored if m > 0.)}
  \item{m}{Interference parameter for the chi-square model for
    interference; a non-negative integer, with m=0 corresponding to no
-   interference. This may be used only for a backcross.}
+   interference. This may be used only for a backcross or intercross.}
  \item{p}{Proportion of chiasmata from the NI mechanism, in the Stahl
    model; p=0 gives a pure chi-square model.  This may be used only for
-   a backcross.} 
+   a backcross or intercross.} 
  \item{maxit}{Maximum number of EM iterations to perform.}
  \item{tol}{Tolerance for determining convergence.}
  \item{sex.sp}{Indicates whether to estimate sex-specific maps; this is 
@@ -41,9 +41,9 @@ est.map(cross, error.prob=0.0001,
   but a map function is used to derive the genetic distances (though, by
   default, the Haldane map function is used).
 
-  For a backcross, inter-marker distances may be estimated using the
-  Stahl model for crossover interference, of which the chi-square model
-  is a special case.
+  For a backcross or intercross, inter-marker distances may be estimated
+  using the Stahl model for crossover interference, of which the
+  chi-square model is a special case.
 
   In the chi-square model, points are tossed down onto the four-strand
   bundle according to a Poisson process, and every \eqn{(m+1)}st point is a
@@ -70,7 +70,7 @@ est.map(cross, error.prob=0.0001,
   and p are also included as attributes.
 }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
 data(fake.f2)

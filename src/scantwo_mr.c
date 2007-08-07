@@ -2,9 +2,9 @@
  * 
  * scantwo_mr.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Oct, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -27,6 +27,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "scantwo_mr.h"
 #define TOL 1e-12
@@ -155,6 +156,8 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
   for(i=0; i<n_pos-1; i++) { 
     for(i2=i+1; i2<n_pos; i2++) { /* loop over pairs of positions */
 
+      R_CheckUserInterrupt(); /* check for ^C */
+
       /* genotyped individuals at this marker */
       for(j=0, this_n_ind=0; j<n_ind; j++) {
 	if(Geno[i][j] > 0 && Geno[i2][j] > 0) {
@@ -233,6 +236,8 @@ void scantwo_1chr_mr(int n_ind, int n_pos, int n_gen, int **Geno,
 	for(j=0; j<this_n_ind; j++) Result[i2][i] += (resid[j]*resid[j]);
 	Result[i2][i] = log10(Result[i2][i]); /* take log base 10*/
 	
+	R_CheckUserInterrupt(); /* check for ^C */
+
 	/* INTERACTIVE MODEL */
 	/* zero out matrix */
 	for(j=0; j<this_n_ind*n_col_f; j++) x[j] = 0.0;
@@ -427,6 +432,7 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 
   for(i=0; i<n_pos1; i++) { 
     for(i2=0; i2<n_pos2; i2++) { /* loop over pairs of positions */
+      R_CheckUserInterrupt(); /* check for ^C */
 
       /* genotyped individuals at this marker */
       for(j=0, this_n_ind=0; j<n_ind; j++) {
@@ -500,6 +506,8 @@ void scantwo_2chr_mr(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 	for(j=0; j<this_n_ind; j++) Result_add[i2][i] += (resid[j]*resid[j]);
 	Result_add[i2][i] = log10(Result_add[i2][i]); /* take log base 10*/
 	
+	R_CheckUserInterrupt(); /* check for ^C */
+
 	/* INTERACTIVE MODEL */
 	/* zero out matrix */
 	for(j=0; j<this_n_ind*n_col_f; j++) x[j] = 0.0;

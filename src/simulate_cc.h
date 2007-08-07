@@ -2,9 +2,9 @@
  * 
  * simulate_cc.h
  *
- * copyright (c) 2005, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2005-6, Karl W Broman
  *
- * last modified Mar, 2005
+ * last modified Dec, 2006
  * first written Mar, 2005
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -14,18 +14,28 @@
  * These functions are for simulating experimental cross data;
  * I start with the simulation of RILs
  *
- * Contains: R_sim_ril, sim_all_ril, sim_ril, meiosis, sim_cc, R_sim_cc
+ * Contains: R_sim_ril, sim_ril, 
+ *           allocate_individual, reallocate_individual, 
+ *           copy_individual, cross, meiosis, sim_cc, R_sim_cc
  *  
  **********************************************************************/
 
-/* wrapper for sim_all_ril, to be called from R */
+/* struct for individual */
+struct individual {
+  int max_segments;
+  int n_xo[2];
+  int **allele;
+  double **xoloc;
+};
+
+/* wrapper for sim_ril, to be called from R */
 void R_sim_ril(int *n_chr, int *n_mar, int *n_ril, double *map,
-	       int *n_str, int *m, int *include_x, int *random_cross,
-	       int *cross, int *ril);
-	  
+	       int *n_str, int *m, double *p, int *include_x, 
+	       int *random_cross, int *selfing, int *cross, int *ril);
+
 /**********************************************************************
  * 
- * sim_all_ril
+ * sim_ril
  * 
  * n_chr   Number of chromosomes
  * n_mar   Number of markers on each chromosome (vector of length n_chr)
@@ -37,71 +47,64 @@ void R_sim_ril(int *n_chr, int *n_mar, int *n_ril, double *map,
  * n_str   Number of parental strains (either 2, 4, or 8)
  *
  * m       Interference parameter (0 is no interference)
+ * p       For Stahl model, proportion of chiasmata from the NI model
  *
  * include_x   Whether the last chromosome is the X chromosome
  *
  * random_cross  Indicates whether the order of the strains in the cross
  *               should be randomized.
  *
+ * selfing If 1, use selfing; if 0, use sib mating
+ *
  * cross   On output, the cross used for each line 
- *         (vector of length n_ril x n_str 
+ *         (vector of length n_ril x n_str)
  *
  * ril     On output, the simulated data 
  *         (vector of length sum(n_mar) x n_ril)
  *
  **********************************************************************/
-void sim_all_ril(int n_chr, int *n_mar, int n_ril, double *map, 
-		 int n_str, int m, int include_x, int random_cross,
-		 int *cross, int *ril);
+void sim_ril(int n_chr, int *n_mar, int n_ril, double *map, 
+	     int n_str, int m, double p, int include_x, 
+	     int random_cross, int selfing, int *cross, int *ril);
 
 /**********************************************************************
- * 
- * sim_ril: simulate a single RIL to fixation
- *  
- * n_chr   Number of chromosomes
- * n_mar   Number of markers on each chr (vector of length n_chr)
- * tot_mar  sum(n_mar)
- *
- * map     Positions of markers (referred to as
- *         map[mar][chr]; map[0][i] should = 0)
- *
- * n_str   Number of strains (2, 4, or 8)
- * m       Interference parameter (0 is no interference)
- *
- * ril     On exit, vector of genotypes (length tot_mar)
- * 
- * include_x    Indicates whether the last chromosome is the X chromosome
- *
- * random_cross Indicates whether to randomize order of parents in the cross
- *
- * cross    On exit, vector indicating the cross done (length n_str)
- *
- * Par1a...Kid1b  Workspace to contain intermediate genotypes
- *                Dimension n_chr x n_mar, referred to as Par1a[chr][mar]
- *
+ * allocate_individual
  **********************************************************************/
-void sim_ril(int n_chr, int *n_mar, int tot_mar, double **map, int n_str, 
-	     int m, int *ril, int include_x, int random_cross, int *cross,
-	     int **Par1a, int **Par1b, int **Par2a, int **Par2b, 
-	     int **Kid1a, int **Kid1b, int **Kid2a, int **Kid2b);
+void allocate_individual(struct individual *ind, int max_seg);
+
+/**********************************************************************
+ * reallocate_individual
+ **********************************************************************/
+void reallocate_individual(struct individual *ind, int old_max_seg, 
+			   int new_max_seg);
+
+/**********************************************************************
+ * copy_individual
+ **********************************************************************/
+void copy_individual(struct individual *from, struct individual *to);
+
+void docross(struct individual par1, struct individual par2,
+	     struct individual *kid, double L, int m,
+	     double p, int isX, int *maxwork, double **work);
 
 /**********************************************************************
  * 
  * meiosis
  *
- * n_mar  Number of markers
- *
- * chr1   Vector of alleles along one chromosome
- * chr2   Vector of alleles along the other chromosome
- *
- * map    Marker locations in cM (need first position to be 0)
+ * chrlen Chromosome length (in cM) 
  *
  * m      interference parameter (0 corresponds to no interference)
  *
- * product  vector of length n_mar: the chromosome produced
+ * p      for stahl model, proportion of chiasmata from NI mechanism
+ *
+ * maxwork
+ * work
+ * 
+ * n_xo
  *
  **********************************************************************/
-void meiosis(int n_mar, int *chr1, int *chr2, double *map, int m, int *product);
+void meiosis(double L, int m, double p, int *maxwork, double **work,
+	     int *n_xo);
 
 /**********************************************************************
  * 

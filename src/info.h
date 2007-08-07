@@ -2,7 +2,7 @@
  * 
  * info.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, Karl W Broman
  *
  * last modified Oct, 2001
  * first written Oct, 2001

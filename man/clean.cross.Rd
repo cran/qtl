@@ -35,6 +35,6 @@ names(fake.f2$geno)
 \seealso{ \code{\link[qtl]{drop.nullmarkers}},
   \code{\link[qtl]{drop.markers}}, \code{\link[qtl]{clean.scantwo}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{manip}

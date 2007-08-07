@@ -2,9 +2,8 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002-6, Hao Wu, The Jackson Laboratory
-#                       and Karl W. Broman, Johns Hopkins University
-# last modified Oct, 2006
+# copyright (c) 2002-7, Hao Wu and Karl W. Broman
+# last modified Apr, 2007
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -177,7 +176,7 @@ scanqtl <-
     result <- fitqtl(cross$pheno[,pheno.col], qtl, covar=covar,
                      formula=formula, method=method, dropone=FALSE,
                      get.ests=FALSE)
-    result <- result[1]
+    result <- result[[1]][1,4]
     names(result) <- "LOD"
     class(result) <- "scanqtl"
     attr(result, "method") <- method
@@ -186,7 +185,10 @@ scanqtl <-
   }
 
   # loop thru all varied QTLs
-  if(verbose) cat(" ",n.loop, "models to fit\n")
+  if(verbose) {
+    cat(" ",n.loop, "models to fit\n")
+    n.prnt <- floor(n.loop/20)
+  }
   current.pos <- NULL ## added by Karl 8/23/05
   for(i in 1:n.loop) {
     # find the indices for positions
@@ -225,18 +227,20 @@ scanqtl <-
       current.pos <- pos.tmp
     }
     else {
+      thew <- rep(NA, length(pos.tmp)) ####
       for(kk in seq(along=pos.tmp)) {
         if(pos.tmp[kk] != current.pos[kk]) {
           u <- abs(pos.tmp[kk]-pos[[kk]])
           w <- indices[[kk]][u==min(u)]
           qtl.obj$geno[,kk,] <- cross$geno[[ichr[kk]]]$draws[,w,]
+          thew[kk] <- w ####
 
           if(chrtype[ichr[kk]]=="X")
             qtl.obj$geno[,kk,] <-
               reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE],
                           cross.attr=attributes(cross))
 
-          current.pos <- pos.tmp
+          current.pos[kk] <- pos.tmp[kk]
         }
       }
     }
@@ -247,13 +251,8 @@ scanqtl <-
                   formula=formula, method=method, dropone=FALSE,
                   get.ests=FALSE)
   
-    if(verbose) { # feedback to let you know what's happening
-      if(n.loop < 10 || 
-         (n.loop < 40 && i/4==round(i/4)) ||
-         (n.loop < 250 && i==round(i,-1)) ||
-         i/20==round(i/20))
+    if(verbose && ((i-1) %% n.prnt) == 0)
         cat("    ", i,"/", n.loop, "\n")
-    }
       
     # assign to result matrix
     #     Note: [[1]][1,4] picks out the LOD score 

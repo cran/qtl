@@ -40,6 +40,6 @@ plot(fake.bc, pheno.col=3)
   \code{\link[graphics]{hist}}, \code{\link[graphics]{barplot}} }
 
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{hplot}

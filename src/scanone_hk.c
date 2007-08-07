@@ -2,9 +2,9 @@
  * 
  * scanone_hk.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Feb, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -25,6 +25,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "lapackutil.h"
 #include "scanone_hk.h"
@@ -164,6 +165,8 @@ void scanone_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
   /* note: weights are really square-root of weights */
 
   for(i=0; i<n_pos; i++) { /* loop over positions */
+    R_CheckUserInterrupt(); /* check for ^C */
+
     /* fill up X matrix */
     for(j=0; j<n_ind; j++) {
       for(k=0; k<n_gen; k++)

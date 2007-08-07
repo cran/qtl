@@ -2,9 +2,9 @@
  * 
  * scantwo_hk.c
  *
- * copyright (c) 2001-6, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001-6, Karl W Broman
  *
- * last modified Oct, 2006
+ * last modified Dec, 2006
  * first written Nov, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -26,6 +26,7 @@
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Applic.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "lapackutil.h"
 #include "scantwo_hk.h"
@@ -184,6 +185,8 @@ void scantwo_1chr_hk(int n_ind, int n_pos, int n_gen, double ***Genoprob,
 
   for(i=0; i<n_pos-1; i++) { 
     for(i2=i+1; i2<n_pos; i2++) { /* loop over pairs of positions */
+
+      R_CheckUserInterrupt(); /* check for ^C */
 
       /* ADDITIVE MODEL */
       rank = n_col_a;
@@ -529,6 +532,8 @@ void scantwo_2chr_hk(int n_ind, int n_pos1, int n_pos2, int n_gen1,
 
   for(i=0; i<n_pos1; i++) { 
     for(i2=0; i2<n_pos2; i2++) { /* loop over pairs of positions */
+
+      R_CheckUserInterrupt(); /* check for ^C */
 
       /* ADDITIVE MODEL */
       rank = n_col_a;

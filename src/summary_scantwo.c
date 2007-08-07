@@ -2,9 +2,9 @@
  * 
  * summary_scantwo.c
  *
- * copyright (c) 2006, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2006, Karl W Broman
  *
- * last modified Oct, 2006
+ * last modified Dec, 2006
  * first written Oct, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -24,6 +24,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/PrtUtil.h>
+#include <R_ext/Utils.h>
 #include "util.h"
 #include "summary_scantwo.h"
 
@@ -173,6 +174,7 @@ void summary_scantwo(int n_pos, int n_phe, double ***Lod, int n_chr,
     /* maximum joint, add've, and int've LOD scores */
     for(j=0; j<n_pos; j++) {
       for(k=j; k<n_pos; k++) {
+	R_CheckUserInterrupt(); /* check for ^C */
 	c1 = chr[j]-1;
 	c2 = chr[k]-1;
 	thepair = Chrpair[c1][c2];
@@ -204,6 +206,8 @@ void summary_scantwo(int n_pos, int n_phe, double ***Lod, int n_chr,
     /* pull out biggest single-QTL LOD scores */
     for(j=0; j<n_chr; j++) {
       for(k=j; k<n_chr; k++) {
+	R_CheckUserInterrupt(); /* check for ^C */
+
 	thepair = Chrpair[j][k];
 
 	/* calculate the two 2 v 1 conditional LOD scores */

@@ -2,7 +2,7 @@
  * 
  * scanone_np.h
  *
- * copyright (c) 2001, Karl W Broman, Johns Hopkins University
+ * copyright (c) 2001, Karl W Broman
  *
  * last modified Nov, 2001
  * first written Nov, 2001

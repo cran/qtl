@@ -38,6 +38,6 @@ listeria <- drop.nullmarkers(listeria)
 \seealso{ \code{\link[qtl]{drop.markers}}, \code{\link[qtl]{clean.cross}},
   \code{\link[qtl]{geno.table}} }
 
-\author{Karl W Broman, \email{kbroman@jhsph.edu} }
+\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \keyword{manip}
