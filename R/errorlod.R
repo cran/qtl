@@ -2,8 +2,8 @@
 #
 # errorlod.R
 #
-# copyright (c) 2001-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2001-7, Karl W Broman
+# last modified Sep, 2007
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,7 +26,7 @@ function(cross, error.prob=0.01,
 {
   version <- match.arg(version)
 
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
   origcross <- cross
@@ -122,9 +122,10 @@ function(cross, error.prob=0.01,
 
 plot.errorlod <-
 function(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
-         col=c("white","gray85","hotpink","purple3"), ...)
+         col=c("white","gray85","hotpink","purple3"),
+         alternate.chrid=FALSE, ...)
 {
-  if(length(class(x)) < 2 || class(x)[2] != "cross")
+  if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(length(breaks) != length(col)+1)
@@ -190,8 +191,24 @@ function(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:n.chr) 
-    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,chr.names[i])
+  chrpos <- (wh[-1]+wh[-length(wh)])/2
+
+  if(!alternate.chrid || length(chrpos) < 2) {
+    for(i in seq(along=chrpos))
+      axis(side=3, at=chrpos[i], labels=chr.names[i])
+  }
+  else {
+    odd <- seq(1, length(chrpos), by=2)
+    even <- seq(2, length(chrpos), by=2)
+    for(i in odd) {
+      axis(side=3, at=chrpos[i], labels="")
+      axis(side=3, at=chrpos[i], labels=chr.names[i], line=-0.4, tick=FALSE)
+    }
+    for(i in even) {
+      axis(side=3, at=chrpos[i], labels="")
+      axis(side=3, at=chrpos[i], labels=chr.names[i], line=+0.4, tick=FALSE)
+    }
+  }
 
   title(main="Genotyping error LOD scores")
 
@@ -210,7 +227,7 @@ function(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
 top.errorlod <-
 function(cross, chr, cutoff=4, msg=TRUE)  
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!missing(chr)) cross <- subset(cross,chr=chr)
@@ -235,7 +252,7 @@ function(cross, chr, cutoff=4, msg=TRUE)
     if(any(el > cutoff)) {
       o <- (el > cutoff)
       mar <- c(mar,colnames(el)[col(el)[o]])
-      ind <- c(ind,id[row(el)][o])
+      ind <- c(ind,as.character(id[row(el)][o]))
       lod <- c(lod,el[o])
       chr <- c(chr,rep(names(cross$geno)[i],sum(o)))
       flag <- 1
@@ -245,6 +262,8 @@ function(cross, chr, cutoff=4, msg=TRUE)
     if(msg) cat("\tNo errorlods above cutoff.\n")
     return(invisible(NULL))
   }
+  if(all(ind==as.numeric(ind))) ind <- as.numeric(ind)
+
   o <- data.frame(chr=chr,id=ind,marker=mar,errorlod=lod)[order(-lod,ind),]
   rownames(o) <- 1:nrow(o)
   o

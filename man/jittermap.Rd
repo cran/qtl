@@ -29,7 +29,6 @@
 \examples{
 data(hyper)
 hyper <- jittermap(hyper)
-plot(hyper)
 }
 
 \seealso{ \code{\link[qtl]{pull.map}}, \code{\link[qtl]{replace.map}},

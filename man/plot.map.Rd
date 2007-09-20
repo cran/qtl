@@ -9,7 +9,7 @@
 
 \usage{
 \method{plot}{map}(x, map2, chr, horizontal=FALSE, shift=TRUE,
-     show.marker.names=FALSE, \dots)
+     show.marker.names=FALSE, alternate.chrid=FALSE, \dots)
 }
 
 \arguments{
@@ -27,6 +27,9 @@
   \item{shift}{If TRUE, shift the first marker on each chromosome to be
     at 0 cM.}
   \item{show.marker.names}{If TRUE, marker names are included.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Ignored at this point.}
 }
 

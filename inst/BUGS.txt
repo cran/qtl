@@ -11,6 +11,13 @@ many details as possible and possibly example data, to Karl Broman,
 <kbroman@biostat.wisc.edu>.
 ----------------------------------------------------------------------
 
+Version 1.06 bugs:
+
+    1. Bug in fitqtl.  Incorrect results can be obtained if covariates
+       are placed before QTL terms in the formula.  [Fixed in Version
+       1.07.] 
+
+
 Version 1.05 bugs:
 
     1. Bug in sim.cross regarding the QTL effects for a backcross.
@@ -24,7 +31,6 @@ Version 1.05 bugs:
        wrong. [Fixed in Version 1.06.]
 
 
-
 Version 1.04 bugs:
 
 >>  1. scanone with method="ehk" still shows convergences problems in
@@ -36,7 +42,7 @@ Version 1.04 bugs:
        re-write this so that all genotypes but that under test are
        assumed to be correct.  [Fixed in version 1.06; that the LOD
        scores decrease with increases in error probability appears to
-       be correct, but the previous version missing cases of the
+       be correct, but the previous version missed*R cases of the
        following form:  1-1-1-...-1-1-1-2-1-2-2-2-...-2-2-2.]
 
     3. Bug in scanone and scantwo permutations: covariates aren't

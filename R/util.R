@@ -6,7 +6,7 @@
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
 #
-# last modified Jul, 2007
+# last modified Sep, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -40,12 +40,16 @@
 pull.map <-
 function(cross, chr)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!missing(chr)) cross <- subset(cross, chr=chr)
-  a <- lapply(cross$geno,function(a) { b <- a$map; class(b) <- class(a); b })
+  a <- lapply(cross$geno,function(a) {
+    b <- a$map
+    class(b) <- as.character(class(a))
+    b })
   class(a) <- "map"
+
   a
 }
 
@@ -60,7 +64,7 @@ function(cross, chr)
 replace.map <-
 function(cross, map)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
   n.chr <- nchr(cross) 
@@ -93,8 +97,12 @@ function(cross, map)
     stop("Marker names don't match.")
 
   # proceed if no errors
-  for(i in 1:length(cross$geno))
+  for(i in 1:length(cross$geno)) {
     cross$geno[[i]]$map <- map[[i]]
+    if(is.matrix(map[[i]]))
+      class(cross$geno[[i]]$map) <- "matrix"
+    else class(cross$geno[[i]]$map) <- "numeric"
+  }
 
   cross
 }
@@ -337,7 +345,7 @@ function(object)
 clean.cross <-
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   cross2 <- list(geno=object$geno,pheno=object$pheno)
@@ -399,7 +407,7 @@ function(object)
 drop.nullmarkers <-
 function(cross)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   n.chr <- nchr(cross)
@@ -461,7 +469,7 @@ function(cross)
 drop.markers <-
 function(cross, markers)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   n.chr <- nchr(cross)
@@ -535,7 +543,7 @@ function(cross, markers)
 geno.table <- 
 function(cross, chr)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!missing(chr))
@@ -795,7 +803,7 @@ function(cross, chr, order, error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"),
          maxit=4000, tol=1e-4, sex.sp=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   map.function <- match.arg(map.function)
@@ -880,7 +888,7 @@ function(cross, chr, order, error.prob=0.0001,
 subset.cross <-
 function(x, chr, ind, ...)  
 {
-  if(length(class(x)) < 2 || class(x)[2] != "cross")
+  if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(missing(chr) && missing(ind))
@@ -1024,14 +1032,14 @@ function(...)
   n.args <- length(args)
   
   for(i in seq(along=args)) {
-    if(length(class(args[[i]])) < 2 || class(args[[i]])[2] != "cross")
+    if(!any(class(args[[i]]) == "cross"))
       stop("Input should have class \"cross\".")
   }
 
   # if only one cross, just return it
   if(n.args==1) return(args[[1]])
 
-  if(any(sapply(args, function(a) class(a)[2]) != "cross"))
+  if(any(sapply(args, function(a) !any(class(a) == "cross"))))
     stop("All arguments must be cross objects.")
 
   # crosses must be all the same, or must be combination of F2 and BC
@@ -1256,7 +1264,7 @@ fill.geno <-
 function(cross, method=c("imp","argmax"), error.prob=0.0001,
          map.function=c("haldane","kosambi","c-f","morgan"))
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   method <- match.arg(method)
@@ -1475,7 +1483,7 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
 find.marker <-
 function(cross, chr, pos)  
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   # if chr has length 1, expand if necessary
@@ -1525,7 +1533,7 @@ function(cross, chr, pos)
 find.pseudomarker <-
 function(cross, chr, pos, where=c("draws","prob"))  
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   # if chr has length 1, expand if necessary
@@ -1627,7 +1635,7 @@ function(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 pull.geno <-
 function(cross, chr)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!missing(chr))
@@ -1646,7 +1654,7 @@ function(cross, chr)
 lodint <-
 function(results, chr, drop=1.5, lodcolumn=1)
 {
-  if(class(results)[1] != "scanone")
+  if(!any(class(results) == "scanone"))
     stop("Input must have class \"scanone\".")
 
   if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
@@ -1680,7 +1688,7 @@ function(results, chr, drop=1.5, lodcolumn=1)
 bayesint <-
 function(results, chr, prob=0.95, lodcolumn=1)
 {
-  if(class(results)[1] != "scanone")
+  if(!any(class(results) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
@@ -1714,7 +1722,7 @@ function(results, chr, prob=0.95, lodcolumn=1)
 makeSSmap <-
 function(cross)
 {
-  if(class(cross)[1] == "map") {
+  if(!any(class(cross) == "map")) {
     # input object is a genetic map
     for(i in 1:length(cross)) {
       if(!is.matrix(cross[[i]]))
@@ -1744,16 +1752,10 @@ function(cross1, cross2, tol=1e-5)
   if(missing(cross1) || missing(cross2))
     stop("Two crosses must be input.")
   
-  if(length(class(cross1)) < 2 || class(cross1)[2] != "cross")
-    stop("Input should have class \"cross\".")
-  if(length(class(cross2)) < 2 || class(cross2)[2] != "cross")
-    stop("Input should have class \"cross\".")
-
   # both are of class "cross"
-  if(!("cross" %in% class(cross1)))
-    stop("cross1 is not a cross object.")
-  if(!("cross" %in% class(cross2)))
-    stop("cross2 is not a cross object.")
+  if(!any(class(cross1) == "cross") ||
+     !any(class(cross2) == "cross"))
+    stop("Input should have class \"cross\".")
 
   # classes are the same
   if(any(class(cross1) != class(cross2))) 
@@ -1841,7 +1843,7 @@ function(cross1, cross2, tol=1e-5)
 movemarker <-
 function(cross, marker, newchr, newpos)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   mnames <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
@@ -2035,9 +2037,9 @@ summary.map <-
 function(object, ...)
 {
   map <- object
-  if(length(class(map))>1 && class(map)[2] == "cross") # a cross object
+  if(any(class(map) == "cross")) # a cross object
     map <- pull.map(map)
-  if(class(map)[1] != "map")
+  if(!any(class(map) == "map"))
     stop("Input should have class \"cross\" or \"map\".")
   
   n.chr <- length(map)
@@ -2126,7 +2128,7 @@ function(object)
 convert.scanone <-
 function(object)
 {  
-  if(class(object)[1] != "scanone")
+  if(!any(class(object) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   rn <- rownames(object)
@@ -2154,7 +2156,7 @@ function(object)
 convert.scantwo <-
 function(object)
 {
-  if(class(object)[1] != "scantwo")
+  if(!any(class(object) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   lod <- object$lod
@@ -2180,11 +2182,12 @@ function(object)
 find.pheno <-
 function( cross,  pheno )
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   seq( ncol( cross$pheno ))[match(pheno,names(cross$pheno))]
 }
+
 ######################################################################
 # find.flanking
 #
@@ -2193,7 +2196,7 @@ function( cross,  pheno )
 find.flanking <-
 function( cross, chr, pos)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   map = pull.map(cross)
@@ -2238,7 +2241,7 @@ function( cross, chr, pos)
 strip.partials <-
 function(cross, verbose=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
   type <- class(cross)[1]
@@ -2268,7 +2271,7 @@ function(cross, verbose=TRUE)
 comparegeno <-
 function(cross, what=c("proportion","number"))
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   what <- match.arg(what)
@@ -2356,12 +2359,13 @@ function(cross)
 jittermap <-
 function(object, amount=1e-6) # x is either a cross object or a map
 {
-  if(length(class(object))==2 && class(object)[2] == "cross") {
+  if(any(class(object) == "cross")) {
     themap <- pull.map(object)
     return.cross <- TRUE
   }
   else {
-    if(class(object) != "map") stop("Input must be a cross or a map")
+    if(!any(class(object) == "map"))
+      stop("Input must be a cross or a map")
     return.cross <- FALSE
     themap <- object
   }
@@ -2383,7 +2387,7 @@ function(object, amount=1e-6) # x is either a cross object or a map
 
   if(return.cross) 
     return(clean(replace.map(object, themap)))
-
+ 
   themap
 }
 

@@ -2,9 +2,9 @@
 #
 # plot.scanone.R
 #
-# copyright (c) 2001-6, Karl W Broman
+# copyright (c) 2001-7, Karl W Broman
 # 
-# last modified Oct, 2006
+# last modified Sep, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -22,11 +22,12 @@
 plot.scanone <- 
 function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
          lty=1,col=c("black","blue","red"),lwd=2,add=FALSE,gap=25,
-         mtick=c("line", "triangle"), show.marker.names=FALSE, ...)
+         mtick=c("line", "triangle"), show.marker.names=FALSE,
+         alternate.chrid=FALSE, ...)
 {
-  if(class(x)[1] != "scanone" ||
-     (!missing(x2) && class(x2)[1] != "scanone") ||
-     (!missing(x3) && class(x3)[1] != "scanone"))
+  if(!any(class(x) == "scanone") ||
+     (!missing(x2) && !any(class(x2) == "scanone")) ||
+     (!missing(x3) && !any(class(x3) == "scanone")))
     stop("Input should have class \"scanone\".")
 
   dots <- list(...)
@@ -223,10 +224,22 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
 
   # draw the axis
   if(!add && !onechr) {
-    axis(1, at=xtick, labels=xticklabel)
-#    axis(1,at=xtick, labels=rep("",length(xtick)))
-#    u <- par("usr")
-#    text(xtick, u[3]-diff(u[3:4])*0.04, xticklabel, xpd=TRUE)
+    if(!alternate.chrid || length(xtick) < 2) {
+      for(i in seq(along=xtick))
+        axis(side=1, at=xtick[i], labels=xticklabel[i])
+    }
+    else {
+      odd <- seq(1, length(xtick), by=2)
+      even <- seq(2, length(xtick), by=2)
+      for(i in odd) {
+        axis(side=1, at=xtick[i], labels="")
+        axis(side=1, at=xtick[i], labels=xticklabel[i], line=-0.4, tick=FALSE)
+      }
+      for(i in even) {
+        axis(side=1, at=xtick[i], labels="")
+        axis(side=1, at=xtick[i], labels=xticklabel[i], line=+0.4, tick=FALSE)
+      }
+    }
   }
 
   invisible()

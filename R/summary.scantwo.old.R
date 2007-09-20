@@ -2,9 +2,9 @@
 #
 # summary.scantwo.old.R
 #
-# copyright (c) 2001-6, Karl W Broman, Hao Wu, and Brian Yandell
+# copyright (c) 2001-7, Karl W Broman, Hao Wu, and Brian Yandell
 #
-# last modified Oct, 2006
+# last modified Sep, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -23,7 +23,7 @@ function (object, thresholds = c(0, 0, 0), lodcolumn=1,
 {
   warning("This function is provided solely for continuity of the software;\n",
           "it is not recommended.\n")
-  if(class(object)[1] != "scantwo")
+  if(!any(class(object) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   type <- match.arg(type)

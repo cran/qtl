@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-6, Karl W Broman
-# last modified Jun, 2006
+# copyright (c) 2001-7, Karl W Broman
+# last modified Sep, 2007
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -22,7 +22,7 @@
 est.rf <-
 function(cross, maxit=4000, tol=1e-4) 
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   n.chr <- nchr(cross)
@@ -112,9 +112,10 @@ function(cross, maxit=4000, tol=1e-4)
   
 
 plot.rf <-
-function(x, chr, what=c("both","lod","rf"), ...)
+function(x, chr, what=c("both","lod","rf"),
+         alternate.chrid=FALSE,...)
 {
-  if(length(class(x)) < 2 || class(x)[2] != "cross")
+  if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
 
   what <- match.arg(what)
@@ -174,10 +175,28 @@ function(x, chr, what=c("both","lod","rf"), ...)
   # add chromosome numbers
   a <- par("usr")
   wh <- cumsum(c(0.5,n.mar))
-  for(i in 1:n.chr) 
-    text(mean(wh[i+c(0,1)]),a[4]+(a[4]-a[3])*0.025,names(x$geno)[i])
-  for(i in 1:n.chr) 
-    text(a[2]+(a[2]-a[1])*0.025,mean(wh[i+c(0,1)]),names(x$geno)[i])
+  chrnam <- names(x$geno)
+  chrpos <- (wh[-1] + wh[-length(wh)])/2
+  if(!alternate.chrid || length(chrnam) < 2) {
+    for(i in seq(along=chrpos)) {
+      axis(side=3, at=chrpos[i], labels=chrnam[i], tick=FALSE, line=-0.8)
+      axis(side=4, at=chrpos[i], labels=chrnam[i], tick=FALSE, line=-0.8)
+    }
+  }
+  else {
+    odd <- seq(1, length(chrpos), by=2)
+    even <- seq(2, length(chrpos), by=2)
+    for(i in odd) {
+      axis(side=3, at=chrpos[i], labels=chrnam[i], line=-0.8, tick=FALSE)
+      axis(side=4, at=chrpos[i], labels=chrnam[i], line=-0.8, tick=FALSE)
+    }
+    for(i in even) {
+      axis(side=3, at=chrpos[i], labels=chrnam[i], line=0, tick=FALSE)
+      axis(side=4, at=chrpos[i], labels=chrnam[i], line=0, tick=FALSE)
+    }
+
+  }
+
 
   if(what=="lod") title(main="Pairwise LOD scores")
   else if(what=="rf") title(main="Recombination fractions")
@@ -238,7 +257,7 @@ function(x, chr, what=c("both","lod","rf"), ...)
 checkAlleles <-
 function(cross, threshold=3, verbose=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("checkAlleles() only works for cross objects.")
 
   type <- class(cross)[1]

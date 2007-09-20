@@ -19,8 +19,8 @@ scanoneboot(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{chr}{Optional vector indicating the chromosomes for which LOD
-   scores should be calculated.}
+ \item{chr}{Indicates the chromosomes for which the bootstrap should be
+   performed.} 
  \item{pheno.col}{Column number in the phenotype matrix which should be
    used as the phenotype.  This can be a vector of integers; for methods
    \code{"hk"} and \code{"imp"} this can be considerably faster than doing

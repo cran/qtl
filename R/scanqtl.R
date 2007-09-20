@@ -3,7 +3,7 @@
 # scanqtl.R
 #
 # copyright (c) 2002-7, Hao Wu and Karl W. Broman
-# last modified Apr, 2007
+# last modified Sep, 2007
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -16,7 +16,7 @@ scanqtl <-
   function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method="imp",
            incl.markers=FALSE, verbose=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
   type <- class(cross)[1]
@@ -188,6 +188,7 @@ scanqtl <-
   if(verbose) {
     cat(" ",n.loop, "models to fit\n")
     n.prnt <- floor(n.loop/20)
+    if(n.prnt < 1) n.prnt <- 1
   }
   current.pos <- NULL ## added by Karl 8/23/05
   for(i in 1:n.loop) {

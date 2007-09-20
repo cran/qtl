@@ -66,7 +66,7 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
     \code{pgm} in the phenotype data if they available or by inference
     if they are not.  If FALSE, the X chromsome data is read as is.}  
   \item{\dots}{Additional arguments, passed to the function
-    \code{\link[base]{read.table}} in the case of 
+    \code{\link[utils]{read.table}} in the case of 
     \code{csv} and \code{csvr} formats.  In particular, one may use the
     argument
     \code{sep} to specify the field separator (the default is a comma)
@@ -167,7 +167,7 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
 \section{CSV format}{
   The input file is a comma-delimited text file.  A different field
   separator may be specified via the argument \code{sep}, which will be passed
-  to the function \code{\link[base]{read.table}}).  For example, in
+  to the function \code{\link[utils]{read.table}}).  For example, in
   Europe, it is common to use a comma in place of the decimal point in
   numbers and so a semi-colon in place of a comma as the field
   separator; such data may be read by using \code{sep=";"} and

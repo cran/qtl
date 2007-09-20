@@ -9,7 +9,8 @@
 }
 
 \usage{
-\method{plot}{cross}(x, auto.layout=TRUE, pheno.col, \dots)
+\method{plot}{cross}(x, auto.layout=TRUE, pheno.col,
+          alternate.chrid=TRUE, \dots)
 }
 
 \arguments{
@@ -20,6 +21,9 @@
  \item{pheno.col}{Vector of numbers or character strings corresponding to
    phenotypes that should be plotted. If unspecified, all phenotypes are
    plotted.} 
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
  \item{\dots}{Ignored at this point.}
 }
 

@@ -3,7 +3,7 @@
 # est.map.R
 #
 # copyright (c) 2001-7, Karl W Broman
-# last modified Mar, 2007
+# last modified Sep, 2007
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -22,7 +22,7 @@ est.map <-
 function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
          m=0, p=0, maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=FALSE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   type <- class(cross)[1]

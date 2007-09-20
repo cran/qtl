@@ -2,8 +2,8 @@
 #
 # arithscan.R
 #
-# copyright (c) 2005-6, Karl W Broman
-# last modified Dec, 2006
+# copyright (c) 2005-7, Karl W Broman
+# last modified Sep, 2007
 # first written Mar, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -17,7 +17,7 @@
 "-.scanone" <-
 function(e1,e2)
 {
-  if(class(e1)[1] != "scanone")
+  if(!any(class(e1) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if("df" %in% names(attributes(e1)))
@@ -33,7 +33,7 @@ function(e1,e2)
     
     return(e1)
   }
-  if(class(e2)[1] != "scanone")
+  if(!any(class(e2) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if("df" %in% names(attributes(e2)))
@@ -77,7 +77,7 @@ function(e1,e2)
 "+.scanone" <-
 function(e1,e2)
 {
-  if(class(e1)[1] != "scanone")
+  if(!any(class(e1) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if("df" %in% names(attributes(e1)))
@@ -85,7 +85,7 @@ function(e1,e2)
   else df1 <- NULL
 
   if(missing(e2)) return(e1)
-  if(class(e2)[1] != "scanone")
+  if(!any(class(e2) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if("df" %in% names(attributes(e2)))
@@ -123,7 +123,7 @@ function(e1,e2)
 "-.scanoneperm" <-
 function(e1, e2)
 {
-  if(class(e1)[1] != "scanoneperm")
+  if(!any(class(e1) == "scanoneperm"))
     stop("Input should have class \"scanoneperm\".")
 
   if("df" %in% names(attributes(e1)))
@@ -146,7 +146,7 @@ function(e1, e2)
 
     return(e1)
   }
-  if(class(e2)[1] != "scanoneperm")
+  if(!any(class(e2) == "scanoneperm"))
     stop("Input should have class \"scanoneperm\".")
   
   if("df" %in% names(attributes(e2)))
@@ -194,10 +194,10 @@ function(e1, e2)
 "+.scanoneperm" <-
 function(e1, e2)
 {
-  if(class(e1)[1] != "scanoneperm")
+  if(!any(class(e1) == "scanoneperm"))
     stop("Input should have class \"scanoneperm\".")
   if(missing(e2)) return(e1)
-  if(class(e2)[1] != "scanoneperm")
+  if(!any(class(e2) == "scanoneperm"))
     stop("Input should have class \"scanoneperm\".")
   
   if("df" %in% names(attributes(e1)))
@@ -244,7 +244,7 @@ function(e1, e2)
 "-.scantwo" <-
 function(e1, e2)  
 {
-  if(class(e1)[1] != "scantwo")
+  if(!any(class(e1) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   if("df" %in% names(attributes(e1)))
@@ -260,7 +260,7 @@ function(e1, e2)
     
     return(e1)
   }
-  if(class(e2)[1] != "scantwo")
+  if(!any(class(e2) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   if("df" %in% names(attributes(e2)))
@@ -295,10 +295,10 @@ function(e1, e2)
 "+.scantwo" <-
 function(e1, e2)
 {
-  if(class(e1)[1] != "scantwo")
+  if(!any(class(e1) == "scantwo"))
     stop("Input should have class \"scantwo\".")
   if(missing(e2)) return(e1)
-  if(class(e2)[1] != "scantwo")
+  if(!any(class(e2) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   if("df" %in% names(attributes(e1)))
@@ -337,7 +337,7 @@ function(e1, e2)
 "-.scantwoperm" <-
 function(e1, e2)  
 {
-  if(class(e1)[1] != "scantwoperm")
+  if(!any(class(e1) == "scantwoperm"))
     stop("Input should have class \"scantwoperm\".")
 
   if("df" %in% names(attributes(e1)))
@@ -353,7 +353,7 @@ function(e1, e2)
     return(e1)
   }
 
-  if(class(e2)[1] != "scantwoperm")
+  if(!any(class(e2) == "scantwoperm"))
     stop("Input should have class \"scantwoperm\".")
 
   if("df" %in% names(attributes(e2)))
@@ -385,10 +385,10 @@ function(e1, e2)
 "+.scantwoperm" <-
 function(e1, e2)
 {
-  if(class(e1)[1] != "scantwoperm")
+  if(!any(class(e1) == "scantwoperm"))
     stop("Input should have class \"scantwoperm\".")
   if(missing(e2)) return(e1)
-  if(class(e2)[1] != "scantwoperm")
+  if(!any(class(e2) == "scantwoperm"))
     stop("Input should have class \"scantwoperm\".")
 
   if("df" %in% names(attributes(e1)))

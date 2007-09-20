@@ -12,7 +12,7 @@
 \method{plot}{scanone}(x, x2, x3, chr, lodcolumn=1, incl.markers=TRUE,
      xlim, ylim, lty=1, col=c("black","blue","red"), lwd=2,
      add=FALSE, gap=25, mtick = c("line", "triangle"),
-     show.marker.names=FALSE, \dots)
+     show.marker.names=FALSE, alternate.chrid=FALSE, \dots)
 }			    
 
 \arguments{
@@ -36,6 +36,9 @@
   \item{mtick}{Tick mark type for markers (line segments or
     upward-pointing triangels).}
   \item{show.marker.names}{If TRUE, show the marker names along the x axis.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Passed to the function \code{\link[graphics]{plot}} when it
     is called.}
 }

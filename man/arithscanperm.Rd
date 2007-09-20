@@ -27,7 +27,7 @@
   sets of permutation results from \code{\link[qtl]{scanone}} or
   \code{\link[qtl]{scantwo}}.  One must be careful to ensure that the
   permutations are perfectly linked, which 
-  will require the use of \code{\link[base]{set.seed}}.
+  will require the use of \code{\link[base:Random]{set.seed}}.
 }
 
 \value{

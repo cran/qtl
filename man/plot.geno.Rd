@@ -9,7 +9,7 @@
 }
 
 \usage{
-plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
+plot.geno(x, chr, ind, include.xo=TRUE, horizontal=FALSE,
           cutoff=4, min.sep=2, cex=1.2, \dots) 
 }			    
 
@@ -20,7 +20,7 @@ plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   \item{ind}{Vector of individuals to plot.  If missing, all individuals
     are plotted.}
   \item{include.xo}{If TRUE, plot X's in intervals having a
-    crossover.} 
+    crossover. Not available for a 4-way cross.} 
   \item{horizontal}{If TRUE, chromosomes are plotted horizontally.}
   \item{cutoff}{Genotypes with error LOD scores above this value are
     flagged as possible errors.}
@@ -40,6 +40,13 @@ plot.geno(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   circles, respectively, and the partially missing genotypes "not BB"
   (D in mapmaker) and "not AA" (C in mapmaker) are indicated by green
   and orange circles, respectively.
+
+  For a 4-way cross, two lines are plotted for each individual.  The
+  left or upper line indicates the allele A (white) or B (black); the
+  right or lower line indicates the allele C (white) or D (black).  For
+  the case that genotype is known to be only AC/BD or AD/BC, we use
+  green and orange, respectively. 
+
 }
 
 \value{None.}

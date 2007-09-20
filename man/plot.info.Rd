@@ -12,7 +12,7 @@
 plot.info(x, chr, method=c("both","entropy","variance"), step=1,
           off.end=0, error.prob=0.001,
           map.function=c("haldane","kosambi","c-f","morgan"),
-          \dots)
+          alternate.chrid=FALSE, \dots)
 }
 
 \arguments{
@@ -32,6 +32,9 @@ plot.info(x, chr, method=c("both","entropy","variance"), step=1,
  \item{map.function}{Indicates whether to use the Haldane, Kosambi or
    Carter-Falconer map function when converting genetic distances into
    recombination fractions.} 
+ \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
  \item{\dots}{Passed to \code{\link[qtl]{plot.scanone}}.}
 }
 

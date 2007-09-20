@@ -15,7 +15,7 @@
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: effectplot
+# Contains: effectplot, effectplot.getmark, effectplot.calmeanse
 #
 ######################################################################
 

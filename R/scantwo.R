@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-7, Karl W Broman and Hao Wu
 #
-# last modified Apr, 2007
+# last modified Sep, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -35,7 +35,7 @@ function(cross, chr, pheno.col=1,
          maxit=4000, tol=1e-4, verbose=TRUE, n.perm,
          perm.strata=NULL)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   method <- match.arg(method)

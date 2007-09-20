@@ -33,7 +33,7 @@ function(out, chr, perms, alpha=0.05, lodcolumn=1, gap=25, ...)
 {
   if(missing(out)) 
     stop("You must provide scanone output, so we can get chromosome lengths.")
-  if(class(out)[1] != "scanone")
+  if(!any(class(out) == "scanone"))
     stop("out should have class \"scanone\".")
   if(!missing(chr))
     out <- subset(out, chr=chr)
