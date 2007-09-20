@@ -2,8 +2,8 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2001-7, Karl W Broman
+# last modified Sep, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -16,7 +16,7 @@
 summary.cross <-
 function(object,...)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
     
   n.ind <- nind(object)
@@ -286,7 +286,7 @@ function(x,...)
 nind <-
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   n.ind1 <- nrow(object$pheno)
@@ -299,7 +299,7 @@ function(object)
 nchr <-
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   length(object$geno)
@@ -308,7 +308,7 @@ function(object)
 nmar <- 
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!is.matrix(object$geno[[1]]$map))
@@ -325,7 +325,7 @@ function(object)
 totmar <-
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   if(!is.matrix(object$geno[[1]]$map))
@@ -341,7 +341,7 @@ function(object)
 nphe <-
 function(object)
 {
-  if(length(class(object)) < 2 || class(object)[2] != "cross")
+  if(!any(class(object) == "cross"))
     stop("Input should have class \"cross\".")
 
   ncol(object$pheno)
@@ -351,7 +351,7 @@ function(object)
 nmissing <-
 function(cross,what=c("ind","mar"))
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   what <- match.arg(what)
@@ -395,11 +395,10 @@ function(x, ...)
 chrlen <-
 function(object)
 {
-  if(!(class(object)[1] == "map" ||
-     (length(class(object)) >= 2 && class(object)[2] == "cross")))
+  if(!any(class(object) == "map") && !any(class(object) == "cross"))
     stop("Input should have class \"map\" or \"cross\".")
   
-  if(class(object)[1] != "map")
+  if(!any(class(object) == "map"))
     x <- pull.map(object)
   else x <- object
 

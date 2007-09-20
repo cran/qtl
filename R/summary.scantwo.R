@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-7, Karl W Broman, Hao Wu, and Brian Yandell
 #
-# last modified Jul, 2007
+# last modified Sep, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -28,8 +28,8 @@ function(object, thresholds,
          perms, alphas, lodcolumn=1, pvalues=FALSE,
          df=FALSE, allpairs=TRUE, ...)
 {
-  if(class(object)[1] != "scantwo" &&
-     class(object)[1] != "scantwocondensed") 
+  if(!any(class(object) == "scantwo") &&
+     !any(class(object) == "scantwocondensed")) 
     stop("Input should have class \"scantwo\".")
 
   what <- match.arg(what)
@@ -52,11 +52,11 @@ function(object, thresholds,
       stop("alphas should be a numeric vector")
   }
 
-  if(!missing(perms) && class(perms) != "scantwoperm") 
+  if(!missing(perms) && !any(class(perms) == "scantwoperm"))
     stop("perms must be in scantwoperm format.")
 
   # subset object and permutations, if necessary
-  if(class(object)[1] == "scantwo") {
+  if(any(class(object) == "scantwo")) {
     d <- dim(object$lod)
     if(length(d)==3) {
       if(!missing(perms)) {
@@ -107,7 +107,7 @@ function(object, thresholds,
     warning("p-values may be calculated only if perms are provided.")
   }
 
-  if(class(object)[1] == "scantwo")
+  if(any(class(object) == "scantwo"))
     out <- subrousummaryscantwo(object, for.perm=FALSE)
   else
     out <- as.data.frame(object)

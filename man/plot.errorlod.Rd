@@ -10,7 +10,8 @@
 
 \usage{
 plot.errorlod(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
-              col=c("white","gray85","hotpink","purple3"), \dots)
+              col=c("white","gray85","hotpink","purple3"),
+              alternate.chrid=FALSE, \dots)
 }
 
 \arguments{
@@ -24,6 +25,9 @@ plot.errorlod(x, chr, ind, breaks=c(-Inf,2,3,4.5,Inf),
     breakpoint than color.  Intervals are open on the left and closed on
     the right, except for the lowest interval.}
   \item{col}{A vector of colors to appear in the image.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Ignored at this point.}
 }
 

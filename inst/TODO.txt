@@ -10,6 +10,14 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
+o Allow plot.geno (or other cases in which subset.cross is used to
+  pull out individuals) to refer to individual IDs.
+
+o Incorporate the findpeaks() function, for finding all local maxima
+  in scanone results.
+
+o Have read.cross indicate the cross type at the end.
+
 o incorporate revised code from Steffen Moeller.
 
 o incorporate effectoutput.R from Qian Li and Sharon Tsaih
@@ -99,9 +107,6 @@ o Analysis of censored phenotypes.
 o Analysis of residuals.
 
 o plot.scanone for *many* phenotypes: an image-type plot
-
-o Effectscan for X chromosome. Plus make it use the imputations, as in
-  effectplot.  And have it give output (silently)
 
 o read.cross for "qtx" sometimes doesn't seem to take the
   genotype pattern appropriately; read in a backcross as if it

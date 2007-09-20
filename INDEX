@@ -1,7 +1,7 @@
 +.scanone               Arithmetic Operators for scanone and scantwo
                         results
 +.scanoneperm           Arithmetic Operators for permutation results
-A starting point        Introductory comments
+A starting point        Introductory comments on R/qtl
 add.cim.covar           Indicate marker covariates from composite
                         interval mapping
 add.threshold           Add significance threshold to plot
@@ -34,7 +34,8 @@ drop.markers            Drop a set of markers
 drop.nullmarkers        Drop markers without any genotype data
 effectplot              Plot phenotype means against genotypes at one
                         or two markers.
-effectscan              Plot allelic effect across the whole genome
+effectscan              Plot estimated QTL effects across the whole
+                        genome
 est.map                 Estimate genetic maps
 est.rf                  Estimate pairwise recombination fractions
 fake.4way               Simulated data for a 4-way cross
@@ -96,6 +97,7 @@ subset.scantwo          Subsetting the results of a 2-d genome scan
 summary.cross           Print summary of QTL experiment
 summary.fitqtl          Summary of fit of qtl model
 summary.map             Print summary of a genetic map
+summary.qtl             Print summary of a QTL object
 summary.ripple          Print summary of ripple results
 summary.scanone         Summarize the results of a genome scans
 summary.scanoneboot     Bootstrap confidence interval for QTL location

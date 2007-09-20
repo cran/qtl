@@ -2,13 +2,14 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-6, Hao Wu and Karl W. Broman
-# last modified Oct, 2006
+# copyright (c) 2002-7, Hao Wu and Karl W. Broman
+# last modified Sep, 2007
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: makeqtl, replaceqtl, addqtl, dropqtl, locatemarker
+#           print.qtl, summary.qtl, print.summary.qtl
 #
 ######################################################################
 
@@ -32,21 +33,18 @@
 ######################################################################
 
 makeqtl <-
-  function(cross, chr, pos, qtl.name)
+function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 {
   if( !sum(class(cross) == "cross") )
-    stop("The first input variable must be  an object of class cross")
+    stop("The first input variable must be an object of class cross")
 
   # cross type
   type <- class(cross)[1]
   chrtype <- sapply(cross$geno, class)
   sexpgm <- getsex(cross)
   
-  # check phenotypes
-#  if(length(pheno.col) > 1) pheno.col <- pheno.col[1]
-#  if(pheno.col < 1 || pheno.col > nphe(cross))
-#    stop("Specified phenotype column is invalid.")
-  
+  what <- match.arg(what)
+
   # chr, pos and qtl.name must have the same length
   if(length(chr) != length(pos))
     stop("Input chr and pos must have the same length.")
@@ -64,12 +62,17 @@ makeqtl <-
   
   # take out the imputed genotypes and/or genoprobs for the
   # selected markers (if there are there)
-  if("draws" %in% names(cross$geno[[1]])) { # draws is there
+  if(what == "draws") { # pull out draws
+    if(!("draws" %in% names(cross$geno[[1]]))) 
+      stop("You must first run sim.geno.")
+    
     # take out imputed genotype data
     n.draws <- dim(cross$geno[[1]]$draws)[3] # number of draws
+
     # initialize geno matrix for selected markers
     geno <- array(rep(0, n.ind*n.pos*n.draws),
                   dim=c(n.ind, n.pos, n.draws))
+
     for(i in 1:n.pos) {
       # get the index for this chromosome
       i.chr <- which(chr[i]==names(cross$geno))
@@ -98,6 +101,7 @@ makeqtl <-
       
       # if everything is all right, take the genotype
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
+      pos[i] <- map[marker.idx]
 
       # no. genotypes
       n.gen[i] <- length(getgenonames(type,chrtype[i.chr],"full",sexpgm, attributes(cross)))
@@ -113,8 +117,11 @@ makeqtl <-
     # output 
     qtl$geno <- geno
   }
-  
-  if("prob" %in% names(cross$geno[[1]])) { # prob is there
+  else { # pull out probs
+
+    if(!("prob" %in% names(cross$geno[[1]])))
+      stop("You must first run calc.genoprob.")
+    
     # initialize prob matrix
     prob <- vector("list",n.pos)
 
@@ -127,23 +134,64 @@ makeqtl <-
         stop("There's no chromosome number ", chr[i], " in input cross object")
       i.pos <- pos[i] # marker position
 
+
+      if("map" %in% names(attributes(cross$geno[[i.chr]]$prob)))
+        map <- attr(cross$geno[[i.chr]]$prob,"map")
+      else {
+        stp <- attr(cross$geno[[i.chr]]$prob, "step")
+        oe <- attr(cross$geno[[i.chr]]$prob, "off.end")
+      
+        if("stepwidth" %in% names(attributes(cross$geno[[i.chr]]$prob)))
+          stpw <- attr(cross$geno[[i.chr]]$prob, "stepwidth")
+        else stpw <- "fixed"
+        map <- create.map(cross$geno[[i.chr]]$map,stp,oe,stpw)
+      }
+
+      # pull out the female map if there are sex-specific maps
+      if(is.matrix(map)) map <- map[1,]
+
       # locate this marker (given chromosome and position)
-      marker.idx <- locatemarker(cross$geno[[i.chr]]$map, i.pos, i.chr, flag="prob")
+      marker.idx <- locatemarker(map, i.pos, i.chr, flag="prob")
 
       # take genoprob
-      prob[[i]] <- cross$geno[[i.chr]]$prob[,marker.idx,]
+      if(chrtype[i.chr] == "X") { # fix X chromosome probs
+        
+        prob[[i]] <- reviseXdata(type, "full", sexpgm,
+                                 prob=cross$geno[[i.chr]]$prob[,marker.idx,,drop=FALSE],
+                                 cross.attr=attributes(cross))[,1,]
+      }
+      else 
+        prob[[i]] <- cross$geno[[i.chr]]$prob[,marker.idx,]
 
-      ### Fix up X chromsome here ###
+      pos[i] <- map[marker.idx]
+
+      # no. genotypes
+      n.gen[i] <- ncol(prob[[i]])
     }
     qtl$prob <- prob
   }
 
-  if( sum(c("draws","prob") %in% names(cross$geno[[1]]))==0 ) 
-    stop("You need to run calc.genoprob() or sim.geno() first.")
+  if(missing(qtl.name))  { # no given qtl names
+    dig <- 1
 
-  if(missing(qtl.name))  # no given qtl names
+    if(what=="draws")
+      step <- attr(cross$geno[[i.chr]]$draws, "step")
+    else
+      step <- attr(cross$geno[[i.chr]]$prob, "step")
+      
+    if(!is.null(step)) dig <- max(dig, -floor(log10(step)))
+    else {
+      if(what=="draws")
+        stepw <- attr(cross$geno[[i.chr]]$draws, "stepwidth")
+      else 
+        stepw <- attr(cross$geno[[i.chr]]$prob, "stepwidth")
+
+      if(!is.null(stepw)) dig <- max(dig, -floor(log10(stepw)))
+    }
+
     # make qtl names
-    qtl.name <- paste( paste("Chr",chr,sep=""), pos, sep="@")
+    qtl.name <- paste( paste("Chr",chr,sep=""), round(pos,dig), sep="@")
+  }
 
   # output object
   qtl$name <- qtl.name
@@ -167,7 +215,7 @@ makeqtl <-
 #
 ######################################################################
 replaceqtl <-
-  function(cross, qtl, replace, by.chr, by.pos, by.name, map)
+function(cross, qtl, replace, by.chr, by.pos, by.name, map)
 {
   # update QTL name
   if(missing(by.name))
@@ -203,6 +251,7 @@ replaceqtl <-
 
     # replace the genotypes
     qtl$geno[,replace,] <- cross$geno[[by.chr]]$draws[,marker.idx,]
+    qtl$pos[replace] <- map[marker.idx]
 
      # update number of genotypes
     type <- class(cross)[[1]]
@@ -227,6 +276,7 @@ replaceqtl <-
                                 by.pos, by.chr, "prob")
     # replace genoprob
     qtl$prob[[replace]] <- cross$geno[[by.chr]]$prob[,marker.idx,]
+    qtl$pos[replace] <- map[marker.idx]
   }
 
   # done
@@ -243,7 +293,7 @@ replaceqtl <-
 ######################################################################
 
 addqtl <-
-  function(cross, qtl, add.chr, add.pos, add.name, map)
+function(cross, qtl, add.chr, add.pos, add.name, map)
 {
   # update number of QTLs
   qtl$n.qtl <- qtl$n.qtl + 1
@@ -296,6 +346,7 @@ addqtl <-
 
     # locate this marker (given chromosome and position)
     marker.idx <- locatemarker(map, add.pos, add.chr, "draws")
+    qtl$pos[length(qtl$pos)] <- map[marker.idx]
 
     # reallocate memory for geno array
     n.ind <- dim(qtl$geno)[1]
@@ -315,6 +366,8 @@ addqtl <-
   if("prob" %in% names(qtl)) {
     marker.idx <- locatemarker(cross$geno[[add.chr]]$map,
                                 add.pos, add.chr, "prob")
+    qtl$pos[length(qtl$pos)] <- map[marker.idx]
+
     # reallocate memory for prob array
     n.ind <- dim(qtl$prob)[1]
     ngen <- dim(qtl$prob)[3]
@@ -338,7 +391,7 @@ addqtl <-
 #
 ######################################################################
 dropqtl <-
-  function(qtl, drop)
+function(qtl, drop)
 {
   # input drop is an integer index
   # get the index for exclusing drop QTL
@@ -375,7 +428,7 @@ dropqtl <-
 ###################################################################
 
 locatemarker <-
-  function(map, pos, chr, flag)
+function(map, pos, chr, flag)
 {  
   marker.idx <- which(map == pos)
   if( length(marker.idx)==0 ) {
@@ -399,6 +452,47 @@ locatemarker <-
   if(length(marker.idx) > 1)
     marker.idx <- marker.idx[sample(length(marker.idx))]
   marker.idx
+}
+
+# print QTL object
+print.qtl <-
+function(x, ...)   
+{
+  cat("  This is an object of class \"qtl\".\n")
+  cat("  It is too complex to print, so we provide just this summary.\n")
+  print(summary(x))
+  return(summary(x))
+}
+
+# summary of QTL object
+summary.qtl <-
+function(object, ...)
+{
+  if("geno" %in% names(object)) 
+    type <- "draws"
+  else
+    type <- "prob"
+
+  output <- data.frame(chr=object$chr, pos=object$pos, n.gen=object$n.gen)
+  rownames(output) <- object$name
+  
+  attr(output, "type") <- type
+  class(output) <- c("summary.qtl", "data.frame")
+
+  output
+}
+
+# print summary of QTL object
+print.summary.qtl <-
+function(x, ...)
+{
+  type <- attr(x, "type")
+  if(type=="draws") thetext <- "imputed genotypes."
+  else thetext <- "genotype probabilties."
+  
+  cat("  QTL object containing", thetext, "\n\n")
+
+  print.data.frame(x, digits=5)
 }
 
 # end of makeqtl.R

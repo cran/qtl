@@ -2,9 +2,9 @@
 #
 # summary.scanone.R
 #
-# copyright (c) 2001-6, Karl W Broman
+# copyright (c) 2001-7, Karl W Broman
 # 
-# last modified Dec, 2006
+# last modified Sep, 2007
 # first written Sep, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -24,7 +24,7 @@ summary.scanone <-
 function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
          perms, alpha, lodcolumn=1, pvalues=FALSE, df=FALSE, ...)
 {
-  if(class(object)[1] != "scanone")
+  if(!any(class(object) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   format <- match.arg(format)
@@ -39,7 +39,7 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
   if(format != "onepheno" && !missing(lodcolumn))
     warning("lodcolumn ignored except when format=\"onepheno\".")
 
-  if(!missing(perms) && class(perms) != "scanoneperm")
+  if(!missing(perms) && !any(class(perms) == "scanoneperm"))
     warning("perms need to be in scanoneperm format.")
 
   # check input
@@ -349,7 +349,7 @@ function(x, ...)
 max.scanone <-
 function(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, ...)
 {
-  if(class(object)[1] != "scanone")
+  if(!any(class(object) == "scanone"))
     stop("Input must have class \"scanone\".")
 
   if("df" %in% names(attributes(object)))
@@ -393,7 +393,7 @@ function(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, ...)
 subset.scanone <-
 function(x, chr, lodcolumn, ...)
 {
-  if(class(x)[1] != "scanone")
+  if(!any(class(x) == "scanone"))
     stop("Input should have class \"scanone\".")
 
   if(missing(chr) && missing(lodcolumn))
@@ -445,7 +445,7 @@ function(..., labels)
   dots <- list(...)
   if(length(dots)==1) return(dots[[1]])
   for(i in seq(along=dots)) {
-    if(class(dots[[i]])[1] != "scanone")
+    if(!any(class(dots[[i]]) == "scanone"))
       stop("Input should have class \"scanone\".")
   }
 
@@ -520,7 +520,7 @@ function(...)
 summary.scanoneperm <-
 function(object, alpha=c(0.05, 0.10), df=FALSE, ...)
 {
-  if(class(object)[1] != "scanoneperm")
+  if(!any(class(object) == "scanoneperm"))
     stop("Input should have class \"scanoneperm\".")
 
   if(any(alpha < 0 | alpha > 1))
@@ -619,7 +619,7 @@ function(...)
   dots <- list(...)
   if(length(dots)==1) return(dots[[1]])
   for(i in seq(along=dots)) {
-    if(class(dots[[i]])[1] != "scanoneperm")
+    if(!any(class(dots[[i]]) == "scanoneperm"))
       stop("Input should have class \"scanoneperm\".")
   }
 
@@ -681,7 +681,7 @@ function(..., labels)
   if(length(dots)==1) return(dots[[1]])
 
   for(i in seq(along=dots)) {
-    if(class(dots[[i]])[1] != "scanoneperm")
+    if(!any(class(dots[[i]]) == "scanoneperm"))
       stop("Input should have class \"scanoneperm\".")
   }
 

@@ -8,7 +8,8 @@
 }
 
 \usage{
-plot.missing(x, chr, reorder=FALSE, main="Missing genotypes", \dots)
+plot.missing(x, chr, reorder=FALSE, main="Missing genotypes",
+             alternate.chrid=FALSE, \dots)
 }			    
 
 \arguments{
@@ -23,6 +24,9 @@ plot.missing(x, chr, reorder=FALSE, main="Missing genotypes", \dots)
     TRUE  \tab Reorder according to the sum of the phenotypes \cr
     n \tab Reorder according to phenotype n}}
   \item{main}{Title to place on plot.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Ignored at this point.}
 }
 

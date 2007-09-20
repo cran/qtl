@@ -3,7 +3,7 @@
 # plot.scantwo.R
 #
 # copyright (c) 2001-7, Karl W Broman, Hao Wu and Brian Yandell
-# last modified Jul, 2007
+# last modified Sep, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -21,9 +21,9 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
          nodiag = TRUE,
          contours = FALSE, main, zscale = TRUE, point.at.max=FALSE,
          col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
-         gamma = 0.6, allow.neg=FALSE, ...)
+         gamma = 0.6, allow.neg=FALSE, alternate.chrid=FALSE, ...)
 {
-  if(class(x)[1] != "scantwo")
+  if(!any(class(x) == "scantwo"))
     stop("Input should have class \"scantwo\".")
 
   col.scheme <- match.arg(col.scheme)
@@ -287,17 +287,29 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 
     # add chromesome numbers
     a <- par("usr")
-    for(i in 1:length(n.mar)) {
-#      text(mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.025, 
-#           chr[i], xpd = TRUE, adj = c(0.5, 1))
-#      segments(mean(wh[i + c(0, 1)]), a[3],
-#               mean(wh[i + c(0, 1)]), a[3] - diff(a[3:4]) * 0.01, xpd = TRUE)
-      axis(side=1, at=mean(wh[i+c(0,1)]), labels=chr[i])
-#      text(a[1] - diff(a[1:2]) * 0.025, mean(wh[i + c(0, 1)]), 
-#           chr[i], xpd = TRUE, adj = c(1, 0.5))
-#      segments(a[1], mean(wh[i + c(0, 1)]), a[1] - diff(a[1:2]) * 
-#               0.01, mean(wh[i + c(0, 1)]), xpd = TRUE)
-      axis(side=2, at=mean(wh[i+c(0,1)]), labels=chr[i])
+    placement <- (wh[-1] + wh[-length(wh)])/2
+    if(!alternate.chrid || length(chr)<2) {
+      for(i in 1:length(chr)) {
+        axis(side=1, at=placement[i], labels=chr[i])
+        axis(side=2, at=placement[i], labels=chr[i])
+      }
+    }
+    else {
+      odd <- seq(1, length(chr), by=2)
+      even <- seq(2, length(chr), by=2)
+      for(i in odd) {
+        axis(side=1, at=placement[i], labels="")
+        axis(side=2, at=placement[i], labels="")
+        axis(side=1, at=placement[i], labels=chr[i], line=-0.4, tick=FALSE)
+        axis(side=2, at=placement[i], labels=chr[i], line=-0.4, tick=FALSE)
+      }
+      
+      for(i in even) {
+        axis(side=1, at=placement[i], labels="")
+        axis(side=2, at=placement[i], labels="")
+        axis(side=1, at=placement[i], labels=chr[i], line=+0.4, tick=FALSE)
+        axis(side=2, at=placement[i], labels=chr[i], line=+0.4, tick=FALSE)
+      }
     }
   }
   else {

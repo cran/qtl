@@ -3,7 +3,7 @@
 # write.cross.R
 #
 # copyright (c) 2001-7, Karl W Broman and Hao Wu
-# last modified Jul, 2007
+# last modified Sep, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -25,7 +25,7 @@ write.cross <-
 function(cross, format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtlcart", "gary"),
          filestem="data", chr, digits=5)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   format <- match.arg(format)

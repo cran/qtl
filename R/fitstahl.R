@@ -3,7 +3,7 @@
 # fitstahl.R
 #
 # copyright (c) 2006-7, Karl W Broman
-# last modified Apr, 2007
+# last modified Sep, 2007
 # first written Aug, 2006
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -50,7 +50,7 @@ fitstahl <-
 function(cross, chr, m, p, error.prob=0.0001, maxit=4000, tol=1e-4,
          maxm=15, verbose=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
   type <- class(cross)[1]

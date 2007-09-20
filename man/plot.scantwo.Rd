@@ -13,7 +13,7 @@
      upper = c("int", "cond-add", "cond-int", "add", "full"),
      nodiag=TRUE, contours=FALSE, main, zscale=TRUE, point.at.max=FALSE,
      col.scheme = c("redblue","cm","gray","heat","terrain","topo"),
-     gamma=0.6, allow.neg=FALSE, \dots)
+     gamma=0.6, allow.neg=FALSE, alternate.chrid=FALSE, \dots)
 }			    
 
 \arguments{
@@ -48,6 +48,9 @@
     this case, the z-limits are symmetric about 0.  This option is
     chiefly to allow a plot of difference between LOD scores from
     different methods, calculated via \code{\link[qtl]{-.scantwo}}.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Ignored at this point.}
 }
 

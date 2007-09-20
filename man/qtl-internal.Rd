@@ -43,13 +43,16 @@
 \alias{mf.m}
 \alias{mf.stahl}
 \alias{parseformula}
+\alias{plot.effectscan}
 \alias{print.cross}
 \alias{print.map}
+\alias{print.qtl}
 \alias{print.scanoneboot}
 \alias{print.scantwo}
 \alias{print.summary.cross}
 \alias{print.summary.fitqtl}
 \alias{print.summary.map}
+\alias{print.summary.qtl}
 \alias{print.summary.ripple}
 \alias{print.summary.scanone}
 \alias{print.summary.scanoneperm}
@@ -150,13 +153,17 @@ mf.k(d)
 mf.m(d)
 mf.stahl(d, m=0, p=0)
 parseformula(formula, qtl.dimname, covar.dimname)
+\method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
+     add.legend=TRUE, alternate.chrid=FALSE, \dots)
 \method{print}{cross}(x, \dots)
 \method{print}{map}(x, \dots)
+\method{print}{qtl}(x, \dots)
 \method{print}{scanoneboot}(x, \dots)
 \method{print}{scantwo}(x, \dots)
 \method{print}{summary.cross}(x, \dots)
 \method{print}{summary.fitqtl}(x, \dots)
 \method{print}{summary.map}(x, \dots)
+\method{print}{summary.qtl}(x, \dots)
 \method{print}{summary.ripple}(x, \dots)
 \method{print}{summary.scanone}(x, \dots)
 \method{print}{summary.scanoneperm}(x, \dots)

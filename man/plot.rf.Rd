@@ -10,7 +10,8 @@
 }
 
 \usage{
-plot.rf(x, chr, what=c("both","lod","rf"), \dots)
+plot.rf(x, chr, what=c("both","lod","rf"), alternate.chrid=FALSE,
+        \dots)
 }
 
 \arguments{
@@ -20,6 +21,9 @@ plot.rf(x, chr, what=c("both","lod","rf"), \dots)
   (optional)}
   \item{what}{Indicate whether to plot LOD scores, recombination
                fractions or both.}
+  \item{alternate.chrid}{If TRUE and more than one chromosome is
+    plotted, alternate the placement of chromosome 
+     axis labels, so that they may be more easily distinguished.}
   \item{\dots}{Ignored at this point.}
 }
 

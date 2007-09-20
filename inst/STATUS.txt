@@ -6,6 +6,56 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.rqtl.org
 ----------------------------------------------------------------------
 
+Version 1.07, 9/17/2007:
+
+Major changes:
+
+  Completely rewrote the effectscan function, so that it now uses
+  multiple imputation results and deals with the X chromosome
+  appropriately.  
+
+  Fixed an important bug in fitqtl, in which incorrect results could
+  be obtained if covariates were placed before QTL terms in the
+  formula. 
+
+Minor changes:
+
+  Added an argument "alternate.chrid" to plot.scanone, plot.scantwo,
+  plot.info, plot.missing, geno.image, plot.map, plot.cross,
+  effectscan, plot.errorlod, and plot.rf.  If TRUE, the placement of
+  chromosome ID axis labels is alternated, so that they may be more
+  easily distinguished.  For plot.cross, alternate.chrid=TRUE has been
+  made the default; for the other functions, FALSE is the default.
+
+  In the output from makeqtl, "pos" is now the precise position of the
+  pseudomarkers (rather than just the input values), and the QTL names
+  reflect that (though they are rounded).  replaceqtl and addqtl were
+  similarly revised.
+
+  In makeqtl, added an argument what=c("draws","prob"); we now pull
+  out either the results of sim.geno or the results of calc.genoprob,
+  and not both.  (Only the former is needed at this point; the latter
+  will be used once we have implemented EM/HK/eHK in fitqtl.
+
+  plot.geno now works for a 4-way cross; we changed the default to be
+  a vertical plot (ie, horizontal=FALSE).
+
+  Added functions print.qtl, summary.qtl, print.summary.qtl, for
+  getting simple information about a QTL object.
+
+  Fixed slight bugs in pull.map and replace.map.
+
+  Fixed a slight bug in top.errorlod, for the case that there are IDs
+  (e.g., in cross$pheno$id) that are not numeric.
+
+  Fixed a slight bug in scanqtl.
+
+  Changed checks regarding the class of the input to various functions
+  to be a bit more permissive.
+
+  Fixed a potential problem (which shouldn't be realized) in reviseXdata.
+
+
 Version 1.06, 8/7/2007:
 
 Major changes:

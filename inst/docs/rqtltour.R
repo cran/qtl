@@ -2,11 +2,14 @@
 # R code for "A brief tour of R/qtl"
 #
 # Karl W Broman
+# Department of Biostatistics, Johns Hopkins University
 #
 # http://www.rqtl.org
 #
-# 27 October 2006
+# 24 August 2007
 ##############################################################
+
+save.image()
 
 library(qtl)
 
@@ -223,15 +226,15 @@ listeria$pheno$binary <- z
 plot(listeria)
 
 out.mu <- scanone(listeria, pheno.col=4)
-plot(out.mu, out.2p, lodcolumn=c(1,3), chr=c(1,5,13,15))
+plot(out.mu, out.2p, lodcolumn=c(1,3), chr=c(1,5,13,15), col=c("blue","red"))
 
 out.p <- scanone(listeria, pheno.col=5, model="binary")
-plot(out.p, out.2p, lodcolumn=c(1,2), chr=c(1,5,13,15))
+plot(out.p, out.2p, lodcolumn=c(1,2), chr=c(1,5,13,15), col=c("blue","red"))
 
 out.np1 <- scanone(listeria, model="np", ties.random=TRUE)
 out.np2 <- scanone(listeria, model="np", ties.random=FALSE)
 
-plot(out.np1, out.np2)
+plot(out.np1, out.np2, col=c("blue","red"))
 plot(out.2p, out.np1, out.np2, chr=c(1,5,13,15))
 
 ############################################################
@@ -280,7 +283,130 @@ summary(out.sexint, perms=operm.sexint, alpha=0.1,
         format="allpeaks", pvalues=TRUE)
 
 ############################################################
-# Internal data structure
+# Example 5: Multiple QTL mapping
+############################################################
+rm(list=ls())
+data(hyper)
+
+source("http://www.rqtl.org/multqtlfunc.R")
+
+hyper <- sim.geno(hyper, step=2.5, n.draws=16, err=0.01)
+
+out1 <- scanone(hyper, method="imp")
+plot(out1)
+
+max(out1)
+
+find.marker(hyper, 4, 29.5)
+
+g <- pull.geno(hyper)[,"D4Mit164"]
+mean(is.na(g))
+
+g <- pull.geno(fill.geno(hyper))[,"D4Mit164"]
+
+out1.c4 <- scanone(hyper, method="imp", addcovar=g)
+
+plot(out1, out1.c4, col=c("blue", "red"))
+
+plot(out1.c4 - out1, ylim=c(-3,3))
+abline(h=0, lty=2, col="gray")
+
+out1.c4i <- scanone(hyper, method="imp", addcovar=g, intcovar=g)
+
+plot(out1.c4i - out1.c4)
+
+out2 <- scantwo(hyper, method="imp")
+
+summary(out2, thr=c(6.0, 4.7, Inf, 4.7, 2.6))
+
+summary( subset(out2, chr=1) )
+
+summary( subset(out2, chr=c(7,15)) )
+
+plot(out2, chr=c(1,4,6,7,15))
+
+plot(out2, chr=1, lower="cond-add")
+plot(out2, chr=c(6,15), lower="cond-int")
+plot(out2, chr=c(7,15), lower="cond-int")
+
+out2.c4 <- scantwo(hyper, method="imp", addcovar=g, chr=c(1,6,7,15))
+
+summary(out2.c4, thr=c(6.0, 4.7, Inf, 4.7, 2.6))
+summary( subset(out2.c4, chr=1) )
+summary( subset(out2.c4, chr=c(7,15)) )
+
+plot(out2.c4, chr=c(1,4,6,7,15))
+plot(out2.c4, chr=1, lower="cond-int")
+plot(out2.c4, chr=c(6,15), lower="cond-int")
+plot(out2.c4, chr=c(7,15), lower="cond-int")
+
+out2sub <- subset(out2, chr=c(1,6,7,15))
+plot(out2.c4 - out2sub, allow.neg=TRUE, lower="cond-int")
+
+qc <- c(1, 1, 4, 6, 15)
+qp <- c(43.3, 78.3, 30.0, 62.5, 18.0)
+qtl <- makeqtl(hyper, chr=qc, pos=qp)
+phe <- hyper$pheno[,1]
+
+myformula <- y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5
+
+out.fq <- fitqtl(phe, qtl, formula = myformula)
+summary(out.fq)
+
+out.fq <- fitqtl(phe, qtl, formula = myformula, drop=FALSE, get.ests=TRUE)
+summary(out.fq)
+
+out.rq <- refineqtl(hyper, chr=qc, pos=qp, formula = myformula)
+
+qp - out.rq[,2]
+
+qp2 <- out.rq[,2]
+qtl2 <- makeqtl(hyper, chr=qc, pos=qp2)
+out.fq2 <- fitqtl(phe, qtl2, formula=myformula)
+summary(out.fq2)
+
+out1.sq <- scanqtl(hyper, chr=c(1,4), pos = list( c(-Inf,Inf), 29.5) )
+
+null <- scanqtl(hyper, chr=4, pos=list(29.5))
+out1.c4r <- convert.scanqtl(out1.sq, null)
+
+plot(out1.c4, out1.c4r, col=c("blue", "red"), chr=1)
+
+out2.sq.add <- scanqtl(hyper, chr=c(1,1,4),
+                       pos=list(c(-Inf,Inf), c(-Inf,Inf), 29.5))
+out2.sq.full <- scanqtl(hyper, chr=c(1,1,4),
+                        pos=list(c(-Inf,Inf), c(-Inf,Inf), 29.5),
+                        formula=y~Q1+Q2+Q3+Q1:Q2)
+
+out2.c4r <- convert.scanqtl(out2.sq.full, null, out2.sq.add)
+
+out2.c4sub <- subset(out2.c4, chr=1)
+plot(out2.c4sub - out2.c4r, lower="cond-add", allow.neg=TRUE)
+
+newpos <- c( as.list(qp2), list(c(-Inf, Inf)) )
+out.sq <- NULL
+for(i in 1:19) {
+  cat("Chr ", i, "\n")
+  temp <- scanqtl(hyper, chr=c(qc,i), pos=newpos,
+                  formula = y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5 + Q6)
+  out.sq <- rbind(out.sq, convert.scanqtl(temp, out.fq2))
+}
+
+plot(out.sq)
+
+out.sqi <- NULL
+for(i in 1:19) {
+  cat("Chr ", i, "\n")
+  temp <- scanqtl(hyper, chr=c(qc,i), pos=newpos,
+                  formula = y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5 + Q6 + Q5:Q6)
+  out.sqi <- rbind(out.sqi, convert.scanqtl(temp, out.fq2))
+}
+
+plot(out.sqi)
+plot(out.sqi - out.sq)
+
+############################################################
+# Example 6: Internal data structure
 ############################################################
 data(fake.bc)
 
@@ -288,7 +414,7 @@ class(fake.bc)
 
 names(fake.bc)
 
-fake.bc$pheno
+fake.bc$pheno[1:10,]
 
 names(fake.bc$geno)
 sapply(fake.bc$geno, class)

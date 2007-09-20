@@ -2,8 +2,8 @@
 #
 # xchr.R
 #
-# copyright (c) 2004-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2004-7, Karl W Broman
+# last modified Sep, 2007
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -298,7 +298,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
         dimprob[3] <- length(genonames)
         newprob <- array(0,dim=dimprob)
         dimnames(newprob) <- c(dimnames(prob)[1:2],list(genonames))
-        newprob[sex==0,,1:2] <- prob[sex==0,,]
+        newprob[sex==0,,1:2] <- prob[sex==0,,1:2]
 
         if(expandX=="simple") {
           newprob[sex==1,,1] <- prob[sex==1,,1]
@@ -381,7 +381,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
           dimprob[3] <- length(genonames)
           newprob <- array(0,dim=dimprob)
           dimnames(newprob) <- c(dimnames(prob)[1:2],list(genonames))
-          newprob[pgm==0,,1:2] <- prob[pgm==0,,]
+          newprob[pgm==0,,1:2] <- prob[pgm==0,,1:2]
 
           if(expandX!="full") { # simple/standard
             newprob[pgm==1,,3] <- prob[pgm==1,,1]
@@ -457,7 +457,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
           dimprob[3] <- length(genonames)
           newprob <- array(0,dim=dimprob)
           dimnames(newprob) <- c(dimnames(prob)[1:2],list(genonames))
-          newprob[sex==0,,1:2] <- prob[sex==0,,]
+          newprob[sex==0,,1:2] <- prob[sex==0,,1:2]
 
           if(expandX=="simple") {
             newprob[sex==1,,1] <- prob[sex==1,,1]
@@ -526,7 +526,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
           dimprob[3] <- length(genonames)
           newprob <- array(0,dim=dimprob)
           dimnames(newprob) <- c(dimnames(prob)[1:2],list(genonames))
-          newprob[sex==0,,1:2] <- prob[sex==0,,]
+          newprob[sex==0,,1:2] <- prob[sex==0,,1:2]
 
           if(expandX=="simple") {
             newprob[sex==1,,3] <- prob[sex==1,,1]
@@ -614,7 +614,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
           dimprob[3] <- length(genonames)
           newprob <- array(0,dim=dimprob)
           dimnames(newprob) <- c(dimnames(prob)[1:2],list(genonames))
-          newprob[sex==0 & pgm==0,,1:2] <- prob[sex==0 & pgm==0,,]
+          newprob[sex==0 & pgm==0,,1:2] <- prob[sex==0 & pgm==0,,1:2]
 
           if(expandX=="simple") {
             newprob[sex==1,,1] <- prob[sex==1,,1]

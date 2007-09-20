@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-6, Karl W Broman
-# last modified Jul, 2006
+# copyright (c) 2001-7, Karl W Broman
+# last modified Sep, 2007
 # first written Oct, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -25,7 +25,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
          error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
          maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=TRUE)
 {
-  if(length(class(cross)) < 2 || class(cross)[2] != "cross")
+  if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
   # pull out relevant chromosome
@@ -184,7 +184,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
 summary.ripple <-
 function(object, lod.cutoff = -1, ...)
 {
-  if(class(object)[1] != "ripple")
+  if(!any(class(object) == "ripple"))
     stop("Input should have class \"ripple\".")
 
   n <- ncol(object)

@@ -2,8 +2,8 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-6, Hao Wu and Karl W. Broman
-# last modified Oct, 2006
+# copyright (c) 2002-7, Hao Wu and Karl W. Broman
+# last modified Sep, 2007
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -465,13 +465,16 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 
   # loop thru all terms and find out how many QTLs and covarariates
   # are there in the formula. Construct idx.qtl and idx.covar at the same time
+  termisqtl <- rep(0, length(idx.term))
   for (i in 1:length(idx.term)) {
     # find out if there term is a QTL or a covarariate
     # ignore the case for QTLs, e.g., Q1 is equivalent to q1
     idx.tmp <- grep(paste(label.term[i],"$", sep=""),
                     qtl.dimname, ignore.case=TRUE)
-    if( length(idx.tmp) )  # it's a QTL
+    if( length(idx.tmp) ) { # it's a QTL
       idx.qtl <- c(idx.qtl, idx.tmp)
+      termisqtl[i] <- 1
+    }
     else if(label.term[i] %in% covar.dimname) # it's a covarariate
       idx.covar <- c(idx.covar, which(label.term[i]==covar.dimname))
     else 
@@ -487,7 +490,8 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
   ii <- 1
   jj <- 1
   for (i in 1:length(idx.term)) {
-    if(label.term[i] %in% qtl.dimname) {  # it's a QTL
+#    if(label.term[i] %in% qtl.dimname) {  # it's a QTL
+    if(termisqtl[i]) {
       formula.idx <- c(formula.idx, ii)
       ii <- ii+1
     }
@@ -511,7 +515,6 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
   else # no interaction terms
     formula.intmtx <- NULL
   
-
   # return object
   result <- NULL
   result$idx.qtl <- idx.qtl
@@ -534,7 +537,7 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 summary.fitqtl <-
 function(object, ...)
 {
-  if(class(object)[1] != "fitqtl")
+  if(!any(class(object) == "fitqtl")) 
     stop("Input should have class \"fitqtl\".")
 
   # this is just an interface.

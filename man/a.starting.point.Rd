@@ -1,6 +1,8 @@
 \name{A starting point}
 \alias{A starting point}
-\title{Introductory comments}
+\alias{qtl-package}
+
+\title{Introductory comments on R/qtl}
 \description{
   A brief introduction to the R/qtl package, with a walk-through of an
   analysis.  
@@ -205,7 +207,7 @@ and genome-scan-adjusted p-values.
 \code{summary(out.hk, perms=operm.hk, alpha=0.05, pvalues=TRUE)}
 
 We should say at this point that the function
-\code{\link[base]{save.image}} will save your workspace to disk.  You'll
+\code{\link[base:save]{save.image}} will save your workspace to disk.  You'll
 wish you had used this if R crashes.
 
 \code{save.image()}

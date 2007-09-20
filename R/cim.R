@@ -57,6 +57,7 @@ function(cross, pheno.col=1, n.marcovar=3, window=10,
   g <- pull.geno(fill.geno(cross, method=imp.method, error.prob=error.prob,
                            map.function=map.function))
 
+
   out.forw <- forwsel(g, y, n.marcovar)
   mar <- colnames(g)[out.forw]
   chrpos <- find.markerpos(cross, mar)

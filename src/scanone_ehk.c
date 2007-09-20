@@ -2,9 +2,9 @@
  * 
  * scanone_ehk.c
  *
- * copyright (c) 2006, Karl W Broman
+ * copyright (c) 2006-7, Karl W Broman
  *
- * last modified Dec, 2006
+ * last modified Aug, 2007
  * first written Jul, 2006
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -30,7 +30,6 @@
 #include "util.h"
 #include "scanone_ehk.h"
 #define TOL 1e-12
-//#define DEBUG 1
 
 /**********************************************************************
  * 
