@@ -1,6 +1,5 @@
 \name{hyper}
 \alias{hyper}
-\non_function{}
 
 \title{Data on hypertension}
 

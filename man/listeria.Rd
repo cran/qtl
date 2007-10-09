@@ -1,6 +1,5 @@
 \name{listeria}
 \alias{listeria}
-\non_function{}
 
 \title{Data on Listeria monocytogenes susceptibility}
 

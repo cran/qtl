@@ -1,6 +1,5 @@
 \name{fake.f2}
 \alias{fake.f2}
-\non_function{}
 
 \title{Simulated data for an F2 intercross}
 

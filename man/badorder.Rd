@@ -1,6 +1,5 @@
 \name{badorder}
 \alias{badorder}
-\non_function{}
 
 \title{An intercross with misplaced markers}
 
