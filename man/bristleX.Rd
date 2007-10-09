@@ -1,6 +1,5 @@
 \name{bristleX}
 \alias{bristleX}
-\non_function{}
 
 \title{Data on bristle number in Drosophila}
 
