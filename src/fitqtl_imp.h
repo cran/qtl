@@ -12,7 +12,8 @@
  *
  * C functions for the R/qtl package
  *
- * These functions are for performing a general genome scan 
+ * These functions are for fitting a fixed multiple-QTL model by 
+ * imputation.
  *
  * Contains: R_fitqtl_imp, fitqtl_imp, nullRss0, galtRss
  *
@@ -28,8 +29,7 @@ void R_fitqtl_imp(int *n_ind, int *n_qtl, int *n_gen, int *n_draws,
  * 
  * fitqtl_imp
  *
- * Performs general genome scan using the pseudomarker algorithm 
- * (imputation) method of Sen and Churchill (2001).
+ * Fits a fixed multiple-QTL model by multiple imputation.
  * 
  * n_ind        Number of individuals
  *

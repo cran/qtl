@@ -2,9 +2,9 @@
  * 
  * hmm_4way.h
  * 
- * copyright (c) 2001-6, Karl W Broman
+ * copyright (c) 2001-7, Karl W Broman
  * 
- * last modified Dec, 2006
+ * last modified Oct, 2007
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -15,7 +15,7 @@
  *           nrec_4way2, calc_genoprob_4way, calc_genoprob_special_4way, sim_geno_4way, 
  *           est_map_4way, argmax_geno_4way, errorlod_4way, 
  *           calc_errorlod_4way, nrec2_4way, logprec_4way, est_rf_4way
- *           calc_pairprob_4way
+ *           calc_pairprob_4way, marker_loglik_4way
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the "4-way" cross (autosomal data)
@@ -74,5 +74,8 @@ void est_rf_4way(int *n_ind, int *n_mar, int *geno, double *rf,
 void calc_pairprob_4way(int *n_ind, int *n_mar, int *geno, 
 			double *rf1, double *rf2, double *error_prob, 
 			double *genoprob, double *pairprob);
+
+void marker_loglik_4way(int *n_ind, int *geno,
+			double *error_prob, double *loglik);
 
 /* end of hmm_4way.h */

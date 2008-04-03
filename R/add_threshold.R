@@ -2,9 +2,9 @@
 #
 # add_threshold.R
 #
-# copyright (c) 2006, Karl W Broman, Johns Hopkins University
+# copyright (c) 2006-7, Karl W Broman, Johns Hopkins University
 #
-# last modified Dec, 2006
+# last modified Oct, 2007
 # first written Dec, 2006
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -51,7 +51,7 @@ function(out, chr, perms, alpha=0.05, lodcolumn=1, gap=25, ...)
     a <- thr$A[lodcolumn]
     x <- thr$X[lodcolumn]
     noX <- FALSE
-    xchr <- attr(operm, "xchr")
+    xchr <- attr(perms, "xchr")
 
     L <- tapply(out[,2], out[,1], function(a) diff(range(a)))
     L <- L[!is.na(L)]
@@ -79,3 +79,5 @@ function(out, chr, perms, alpha=0.05, lodcolumn=1, gap=25, ...)
   }
   invisible()
 }
+
+# end of add_threshold.R

@@ -35,6 +35,6 @@ abline(v=cumsum(c(0,nmar(listeria)))+0.5)
 abline(h=nrow(dat)+0.5)
 }
 
-\seealso{ \code{\link[qtl]{pull.map}} }
+\seealso{ \code{\link[qtl]{pull.pheno}}, \code{\link[qtl]{pull.map}} }
 
 \keyword{utilities}

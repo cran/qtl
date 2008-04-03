@@ -15,7 +15,8 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
         use=c("all.obs", "complete.obs"), 
         incl.markers=FALSE, clean.output=FALSE,
         maxit=4000, tol=1e-4,
-        verbose=TRUE, n.perm, perm.strata=NULL)
+        verbose=TRUE, n.perm, perm.strata=NULL,
+        assumeCondIndep=FALSE)
 }
 
 \arguments{
@@ -26,7 +27,8 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
  \item{pheno.col}{Column number in the phenotype matrix which should be
    used as the phenotype.  This can be a vector of integers; for methods
    \code{"hk"} and \code{"imp"} this can be considerably faster than doing
-   them one at a time.}
+   them one at a time.  One may also give character strings matching
+   the phenotype names.}
  \item{model}{The phenotypic model: the usual normal model or a model for
    binary traits.}
  \item{method}{Indicates whether to use the
@@ -70,6 +72,9 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
    number of individuals as in the cross data.  Unique values indicate
    the individual strata, and permutations will be performed within the
    strata.}
+ \item{assumeCondIndep}{If TRUE, assume conditional independence of QTL
+   genotypes given marker genotypes.  This is an approximation, but it
+   may speed things up.}
 }
 
 \details{

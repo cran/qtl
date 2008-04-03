@@ -2,9 +2,9 @@
 #
 # summary.scantwo.R
 #
-# copyright (c) 2001-7, Karl W Broman, Hao Wu, and Brian Yandell
+# copyright (c) 2001-8, Karl W Broman, Hao Wu, and Brian Yandell
 #
-# last modified Sep, 2007
+# last modified Apr, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -13,7 +13,7 @@
 #           max.scantwo, clean.scantwo, print.scantwo, subset.scantwo
 #           summary.scantwoperm, print.summary.scantwoperm
 #           condense.scantwo, summary.scantwocondensed
-#           max.scantwocondensed
+#           max.scantwocondensed, print.summary.addpair
 #
 ######################################################################
 
@@ -31,6 +31,77 @@ function(object, thresholds,
   if(!any(class(object) == "scantwo") &&
      !any(class(object) == "scantwocondensed")) 
     stop("Input should have class \"scantwo\".")
+
+  addpair <- attr(object, "addpair")
+  if(!is.null(addpair) && addpair) { # results from addpair() that need special treatment
+    if("lod.minus1" %in% names(attributes(object))) { # asymmetric formula
+      attr(object, "addpair") <- NULL
+      x <- summary.scantwo(object, allpairs=allpairs)
+      class(x) <- "data.frame"
+      x <- x[,c(1,2,8,9,10,3,4,5),drop=FALSE]
+
+      mlod.minus1 <- tapply(attr(object, "lod.minus1"), object$map$chr, max, na.rm=TRUE)
+      mlod.minus2 <- tapply(attr(object, "lod.minus2"), object$map$chr, max, na.rm=TRUE)
+      
+      w <- which(x[,1] == x[,2])
+      for(i in seq(along=w))
+        if(x[w[i],5] < x[w[i],8]) x[w[i],3:5] <- x[w[i],c(7,6,8)]
+      
+      if(any(x[,1] != x[,2])) {
+        w <- which(x[,1] != x[,2])
+        y <- x[w,,drop=FALSE]
+        for(i in 1:nrow(y))
+          y[,1:5] <- y[,c(2,1,7,6,8)]
+        
+        neworder <- cbind(1:nrow(x), rep(NA, nrow(x)))
+        neworder[w,2] <- nrow(x) + 1:nrow(y)
+        neworder <- as.numeric(t(neworder))
+
+        x <- rbind(x, y)[neworder[!is.na(neworder)],,drop=FALSE]
+      }
+        
+      x <- cbind(x[,1:5], lod.2v1b=rep(NA,nrow(x)), lod.2v1a=rep(NA,nrow(x)))
+      names(x)[5] <- "lod.2v0"
+
+      x[,6] <- x[,5] - mlod.minus1[as.character(x[,2])]
+      x[,7] <- x[,5] - mlod.minus2[as.character(x[,1])]
+
+      if(!missing(thresholds)) {
+        if(length(thresholds) > 2)
+          warning("Only the first two values in thresholds are used.")
+        
+        if(length(thresholds) == 1) thresholds <- c(thresholds, 0)
+        x <- x[!is.na(x[,5]) & x[,5] >= thresholds[1] &
+               ((!is.na(x[,6]) & x[,6] >= thresholds[2]) |
+                (!is.na(x[,7]) & x[,7] >= thresholds[2])),,drop=FALSE]
+      }
+
+      class(x) <- c("summary.addpair", "data.frame")
+      return(x)
+    }
+    else { # symmetric formula
+      attr(object, "addpair") <- NULL
+      if(missing(thresholds))
+        x <- summary.scantwo(object, allpairs=allpairs)
+      else
+        x <- summary.scantwo(object, thresholds=thresholds, allpairs=allpairs)
+
+      x <- x[,1:6]
+      colnames(x)[5:6] <- c("lod.2v0", "lod.2v1")
+
+      if(!missing(thresholds)) {
+        if(length(thresholds) > 2)
+          warning("Only the first two values in thresholds are used.")
+
+        if(length(thresholds) == 1) thresholds <- c(thresholds, 0)
+        x <- x[!is.na(x[,5]) & x[,5] >= thresholds[1] &
+               !is.na(x[,6]) & x[,6] >= thresholds[2],,drop=FALSE]
+      }
+
+      class(x) <- c("summary.addpair", "data.frame")
+      return(x)
+    }
+  }
 
   what <- match.arg(what)
 
@@ -214,6 +285,7 @@ function(object, thresholds,
   if(!df) attr(out, "df") <- NULL
   
   class(out) <- c("summary.scantwo", "data.frame")
+
   out
 }
 
@@ -374,17 +446,47 @@ function(x, ...)
   print.data.frame(x, digits=3)
 }
 
+
+print.summary.addpair <-
+function(x, ...)
+{
+  if(nrow(x)==0) {
+    cat("    There were no pairs of loci meeting the criteria.\n")
+    return(invisible(NULL))
+  }
+
+  z <- as.character(unlist(x[,1]))
+
+  if(max(nchar(z)) == 1)
+    rownames(x) <- apply(x[,1:2], 1, function(a)
+                         paste("c", a, collapse=":", sep=""))
+  else
+    rownames(x) <- apply(x[,1:2], 1, function(a)
+                         paste(sprintf("c%-2s", a), collapse=":"))
+
+  x <- x[,-(1:2), drop=FALSE]
+
+  print.data.frame(x, digits=3)
+}
+
+
+
 print.scantwo <-
 function(x, ...)
 {
   d <- dim(x$lod)
 
-  if(length(d)==2)
-    print(summary(x))
+  if(nrow(x$lod) == 0)
+    cat("Empty scantwo object.\n")
   else {
-    for(i in 1:d[3]) {
-      cat("Phenotype", i, "\n")
-      print(summary(x, lod=i))
+
+    if(length(d)==2)
+      print(summary(x))
+    else {
+      for(i in 1:d[3]) {
+        cat("Phenotype", i, "\n")
+        print(summary(x, lod=i))
+      }
     }
   }
 }
@@ -404,6 +506,13 @@ function(object, lodcolumn=1,
   if(class(object)[1] != "scantwo" &&
      class(object)[1] != "scantwocondensed")
     stop("Input must have class \"scantwo\".")
+
+  addpair <- attr(object, "addpair")
+  if(!is.null(addpair) && addpair) { # special treatment for output for addpair
+    temp <- summary(object)
+    mx <- max(temp[,5],na.rm=TRUE)
+    return(temp[!is.na(temp[,5]) & temp[,5]==mx,])
+  }
 
   what <- match.arg(what)
   if(class(object)[1] == "scantwo") {
@@ -493,6 +602,7 @@ function(object, lodcolumn=1,
   rownames(out) <- what
   if(df && "df" %in% names(attributes(object)))
     attr(out, "df") <- revisescantwodf(attr(object,"df"))
+
   out
 }
 
@@ -512,6 +622,9 @@ function(object)
 {
   if(class(object)[1] != "scantwo")
     stop("Input should have class \"scantwo\".")
+  
+  addpair <- attr(object, "addpair")
+  if(is.null(addpair)) addpair <- FALSE
   
   lod <- object$lod
   map <- object$map
@@ -542,18 +655,20 @@ function(object)
   }
 
   # if full LOD < add've LOD, set full = add've
-  if(length(dim(lod)) == 2) {
-    lo <- lower.tri(lod)
-    wh <- (lod[lo] < t(lod)[lo])
-    if(any(wh))
-      lod[lo][wh] <- t(lod)[lo][wh]
-  }
-  else {
-    lo <- lower.tri(lod[,,1])
-    for(i in 1:dim(lod)[3]) {
-      wh <- (lod[,,i][lo] < t(lod[,,i])[lo])
+  if(!addpair) {
+    if(length(dim(lod)) == 2) {
+      lo <- lower.tri(lod)
+      wh <- (lod[lo] < t(lod)[lo])
       if(any(wh))
-        lod[,,i][lo][wh] <- t(lod[,,i])[lo][wh]
+        lod[lo][wh] <- t(lod)[lo][wh]
+    }
+    else {
+      lo <- lower.tri(lod[,,1])
+      for(i in 1:dim(lod)[3]) {
+        wh <- (lod[,,i][lo] < t(lod[,,i])[lo])
+        if(any(wh))
+          lod[,,i][lo][wh] <- t(lod[,,i])[lo][wh]
+      }
     }
   }
 
@@ -569,8 +684,6 @@ function(object)
 # subset.scantwo
 #
 ######################################################################
-
-
 subset.scantwo <-
 function(x, chr, lodcolumn, ...)
 {
@@ -595,29 +708,34 @@ function(x, chr, lodcolumn, ...)
       x$scanoneX <- x$scanoneX[,lodcolumn]
   }
 
-  a <- unique(x$map[,1])
-  if(is.numeric(chr) && all(chr < 0)) 
-    chr <- a[chr]
-  else chr <- a[match(chr,a)]
+  if(!missing(chr)) {
+    a <- unique(x$map[,1])
+    if(is.numeric(chr) && all(chr < 0)) 
+      chr <- a[chr]
+    else chr <- a[match(chr,a)]
 
-  wh <- x$map[,1] %in% chr
+    wh <- x$map[,1] %in% chr
 
-  if(length(wh) == 0) return(x)
+    x$map <- x$map[wh,,drop=FALSE]
 
-  x$map <- x$map[wh,]
+    if(length(dim(x$lod))==2)
+      x$lod <- x$lod[wh,wh,drop=FALSE]
+    else 
+      x$lod <- x$lod[wh,wh,,drop=FALSE]
 
-  if(length(dim(x$lod))==2)
-    x$lod <- x$lod[wh,wh]
-  else 
-    x$lod <- x$lod[wh,wh,]
+    if(!is.null(x$scanoneX))
+      x$scanoneX <- x$scanoneX[wh]
 
-  if(!is.null(x$scanoneX))
-    x$scanoneX <- x$scanoneX[wh]
+    if("fullmap" %in% names(attributes(x))) {
+      fmap <- attr(x, "fullmap")
+      fmap <- fmap[chr]
+      attr(x, "fullmap") <- fmap
+    }
 
-  if("fullmap" %in% names(attributes(x))) {
-    fmap <- attr(x, "fullmap")
-    fmap <- fmap[chr]
-    attr(x, "fullmap") <- fmap
+    df <- attr(x, "df")
+    if(any(!is.na(match(c("AX","XX"), rownames(df)))) &&
+       all(!x$map$xchr))
+      attr(x, "df") <- df["AA",,drop=FALSE]
   }
 
   x
@@ -632,7 +750,7 @@ function(x, chr, lodcolumn, ...)
 summary.scantwoperm <-
 function(object, alpha=c(0.05, 0.10), df=FALSE, ...)
 {
-  if(class(object)[1] != "scantwoperm")
+  if(!any(class(object) == "scantwoperm"))
     stop("Input should have class \"scantwoperm\".")
 
   out <- lapply(object, apply, 2, quantile, 1-alpha)
@@ -710,7 +828,7 @@ function(...)
   dots <- list(...)
   if(length(dots)==1) return(dots[[1]])
   for(i in seq(along=dots)) {
-    if(class(dots[[i]])[1] != "scantwoperm")
+    if(!any(class(dots[[i]]) == "scantwoperm"))
       stop("Input should have class \"scantwoperm\".")
   }
 

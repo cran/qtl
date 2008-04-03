@@ -2,9 +2,9 @@
  * 
  * hmm_bc.c
  * 
- * copyright (c) 2001-6, Karl W Broman
+ * copyright (c) 2001-7, Karl W Broman
  *
- * last modified Dec, 2006
+ * last modified Oct, 2007
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -14,7 +14,8 @@
  * Contains: init_bc, emit_bc, step_bc, nrec_bc, calc_genoprob_bc,
  *           calc_genoprob_special_bc, 
  *           sim_geno_bc, est_map_bc, argmax_geno_bc, errorlod_bc,
- *           calc_errorlod_bc, est_rf_bc, calc_pairprob_bc
+ *           calc_errorlod_bc, est_rf_bc, calc_pairprob_bc, 
+ *           marker_loglik_bc
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the backcross.
@@ -180,5 +181,12 @@ void calc_pairprob_bc(int *n_ind, int *n_mar, int *geno,
 		pairprob, init_bc, emit_bc, step_bc);
 }
 
+
+void marker_loglik_bc(int *n_ind, int *geno,
+		      double *error_prob, double *loglik)
+{
+  marker_loglik(*n_ind, 2, geno, *error_prob, init_bc, emit_bc,
+		loglik);
+}
 
 /* end of hmm_bc.c */

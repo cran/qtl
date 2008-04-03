@@ -1,18 +1,21 @@
 \name{qtl-internal}
-\alias{addqtl}
 \alias{adjust.rf.ri}
 \alias{calc.genoprob.special}
 \alias{calc.pairprob}
 \alias{checkcovar}
+\alias{checkformula}
 \alias{clean}
 \alias{condense}
 \alias{convert}
 \alias{create.map}
+\alias{deparseQTLformula}
 \alias{discan}
-\alias{dropqtl}
+\alias{dropfromqtlformula}
 \alias{dropXcol}
 \alias{effectplot.getmark}
 \alias{effectplot.calmeanse}
+\alias{expandf2covar}
+\alias{fitqtlengine}
 \alias{fitstahl.estp}
 \alias{fitstahl.este}
 \alias{fitstahl.estpe}
@@ -22,7 +25,6 @@
 \alias{fixX4write}
 \alias{fixXgeno.bc}
 \alias{fixXgeno.f2}
-\alias{forwsel}
 \alias{genotab.em}
 \alias{getid}
 \alias{getsex}
@@ -36,19 +38,25 @@
 \alias{locatemarker}
 \alias{locate.xo}
 \alias{makeSSmap}
+\alias{markerforwsel}
+\alias{markerforwself2}
+\alias{markerloglik}
 \alias{max.scantwocondensed}
 \alias{mf.cf}
 \alias{mf.h}
 \alias{mf.k}
 \alias{mf.m}
 \alias{mf.stahl}
+\alias{mybinaryrep}
 \alias{parseformula}
 \alias{plot.effectscan}
+\alias{print.addint}
 \alias{print.cross}
 \alias{print.map}
 \alias{print.qtl}
 \alias{print.scanoneboot}
 \alias{print.scantwo}
+\alias{print.summary.addpair}
 \alias{print.summary.cross}
 \alias{print.summary.fitqtl}
 \alias{print.summary.map}
@@ -59,6 +67,7 @@
 \alias{print.summary.scantwo}
 \alias{print.summary.scantwo.old}
 \alias{print.summary.scantwoperm}
+\alias{qtlformulasymmetric}
 \alias{read.cro.qtlcart}
 \alias{read.cross.csv}
 \alias{read.cross.csvs}
@@ -69,8 +78,8 @@
 \alias{read.cross.qtx}
 \alias{read.map.qtlcart}
 \alias{read.maps.mm}
-\alias{replaceqtl}
 \alias{revisecovar}
+\alias{reviseqtlnuminformula}
 \alias{revisescantwodf}
 \alias{reviseXdata}
 \alias{ripple.perm1}
@@ -89,6 +98,7 @@
 \alias{sim.ril}
 \alias{subrousummaryscantwo}
 \alias{summary.scantwocondensed}
+\alias{summary.addint}
 \alias{vbscan}
 \alias{write.cross.csv}
 \alias{write.cross.gary}
@@ -103,22 +113,29 @@
 }
 
 \usage{
-addqtl(cross, qtl, add.chr, add.pos, add.name, map)
 adjust.rf.ri(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 calc.genoprob.special(cross, error.prob=0.0001,
                       map.function=c("haldane","kosambi","c-f","morgan"))
 calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001, 
-              map.function=c("haldane","kosambi","c-f","morgan"), map)
+              map.function=c("haldane","kosambi","c-f","morgan"), map,
+              assumeCondIndep=FALSE)
 checkcovar(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
+checkformula(formula, qtl.name, covar.name)
 clean(object)
 condense(object)
 convert(object)
 create.map(map, step, off.end, stepwidth=c("fixed", "variable"))
+deparseQTLformula(formula)
 discan(cross, pheno, method=c("em","mr"),
        addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
        verbose=FALSE, give.warnings=TRUE)
-dropqtl(qtl, drop)
+dropfromqtlformula(formula, qtlnum)
 dropXcol(type=c("f2","bc"), sexpgm, cross.attr)
+effectplot.getmark(cross, mname)
+effectplot.calmeanse(pheno, mark1, mark2, ndraws, var.flag=c("pooled", "group"))
+expandf2covar(thecovar)
+fitqtlengine(pheno, qtl, covar=NULL, formula, method=c("imp", "hk"),
+             dropone=TRUE, get.ests=FALSE, run.checks=TRUE, cross.attr)
 fitstahl.estp(cross, error.prob=0.0001, m=0, tol=1e-4, maxit=4000)
 fitstahl.estp.sub(p, cross, error.prob=0.0001, m=0, thetol=1e-4, maxit=4000)
 fitstahl.este(cross, m=0, p=0, tol=1e-4, maxit=4000)
@@ -128,11 +145,12 @@ fitstahl.estpe.sub(x, cross, m=0, thetol=1e-4, maxit=4000)
 fixX4write(geno,sex,pgm,crosstype)
 fixXgeno.bc(cross)
 fixXgeno.f2(cross)
-forwsel(x, y, maxsize=7)
+markerforwsel(x, y, maxsize=7)
+markerforwself2(x, y, maxsize=7)
 genotab.em(dat, tol=1e-6, maxit=10000, verbose=FALSE)
 getid(cross)
 getsex(cross)
-getgenonames(type=c("f2","bc","riself","risib","4way"),
+getgenonames(type=c("f2","bc","riself","risib","4way","special"),
              chrtype=c("A","X"), expandX=c("simple","standard","full"),
              sexpgm, cross.attr)
 grab.arg.names(\dots)
@@ -144,6 +162,7 @@ imf.stahl(r, m=0, p=0, tol=1e-12, maxit=1000)
 locatemarker(map, pos, chr, flag)
 locate.xo(cross)
 makeSSmap(cross)
+markerloglik(cross, marker, error.prob=0.0001)
 \method{max}{scantwocondensed}(object, lodcolumn=1,
     what=c("best", "full", "add", "int"),
     df=FALSE, na.rm=TRUE, \dots)
@@ -152,14 +171,17 @@ mf.h(d)
 mf.k(d)
 mf.m(d)
 mf.stahl(d, m=0, p=0)
+mybinaryrep(n)
 parseformula(formula, qtl.dimname, covar.dimname)
 \method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
      add.legend=TRUE, alternate.chrid=FALSE, \dots)
+\method{print}{addint}(x, \dots)
 \method{print}{cross}(x, \dots)
 \method{print}{map}(x, \dots)
 \method{print}{qtl}(x, \dots)
 \method{print}{scanoneboot}(x, \dots)
 \method{print}{scantwo}(x, \dots)
+\method{print}{summary.addpair}(x, \dots)
 \method{print}{summary.cross}(x, \dots)
 \method{print}{summary.fitqtl}(x, \dots)
 \method{print}{summary.map}(x, \dots)
@@ -170,6 +192,7 @@ parseformula(formula, qtl.dimname, covar.dimname)
 \method{print}{summary.scantwo}(x, \dots)
 \method{print}{summary.scantwo.old}(x, \dots)
 \method{print}{summary.scantwoperm}(x, \dots)
+qtlformulasymmetric(formula, qtlnum1, qtlnum2)
 read.cro.qtlcart(file)
 read.cross.csv(dir, file, na.strings=c("-","NA"),
                genotypes=c("A","H","B","D","C"),
@@ -185,8 +208,8 @@ read.cross.qtlcart(dir, crofile, mapfile)
 read.cross.qtx(dir, file, estimate.map=TRUE)
 read.map.qtlcart(file)
 read.maps.mm(mapsfile)
-replaceqtl(cross, qtl, replace, by.chr, by.pos, by.name, map)
 revisecovar(sexpgm, covar)
+reviseqtlnuminformula(formula, oldnum, newnum)
 revisescantwodf(df)
 reviseXdata(type=c("f2","bc"), expandX=c("simple","standard","full"),
             sexpgm, geno, prob, draws, pairprob, cross.attr)
@@ -211,11 +234,11 @@ scantwo.perm(cross, pheno.col=1, model=c("normal","binary"),
              use=c("all.obs", "complete.obs"),
              incl.markers=FALSE, clean.output=FALSE,
              maxit=4000, tol=1e-4, verbose=FALSE,
-             n.perm=1000, perm.strata)
+             n.perm=1000, perm.strata, assumeCondIndep=FALSE)
 scantwo.perm.engine(n.perm, cross, pheno.col, model,
                     method, addcovar, intcovar, weights, use,
                     incl.markers, clean.output, maxit, tol, verbose,
-                    perm.strata)
+                    perm.strata, assumeCondIndep=FALSE)
 sim.bcg(n.ind, map, m, p,
         map.function=c("haldane","kosambi","c-f","morgan"))
 sim.cc(parents, n.ril=1, type=c("sibmating", "selfing"),
@@ -233,6 +256,7 @@ subrousummaryscantwo(object, for.perm=FALSE)
          what=c("best", "full", "add", "int"),
          perms, alphas, lodcolumn=1, pvalues=FALSE,
          df=FALSE, allpairs=TRUE, \dots)
+\method{summary}{addint}(object, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
        tol=1e-4)
 write.cross.csv(cross, filestem="data", digits=5, rotate=FALSE,

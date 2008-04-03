@@ -20,7 +20,7 @@
     chromosomes and markers as the first.  As with the first argument, a
     \code{cross} object may be given instead.  If this argument is
     given, a comparison of the two genetic maps is plotted.}
-  \item{chr}{Vector specifying which chromosomes to plot. (The
+  \item{chr}{Optional vector specifying which chromosomes to plot. (The
     chromosomes must be specified by name.)}
   \item{horizontal}{Specifies whether the chromosomes should be
     plotted horizontally.}
@@ -30,7 +30,7 @@
   \item{alternate.chrid}{If TRUE and more than one chromosome is
     plotted, alternate the placement of chromosome 
      axis labels, so that they may be more easily distinguished.}
-  \item{\dots}{Ignored at this point.}
+  \item{\dots}{Passed to \code{\link[graphics]{plot}}.}
 }
 
 \value{None.}

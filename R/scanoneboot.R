@@ -2,9 +2,9 @@
 #
 # scanoneboot.R
 #
-# copyright (c) 2007, Karl W Broman
+# copyright (c) 2007-8, Karl W Broman
 # 
-# last modified Apr, 2007
+# last modified Feb, 2008
 # first written Apr, 2007
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -31,6 +31,17 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     cross <- subset(cross, 1)
   }
   
+  if(length(pheno.col) > 1)
+    stop("pheno.col should indicate a single phenotype")
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+  if(pheno.col < 1 || pheno.col > nphe(cross))
+    stop("pheno.col should be between 1 and ", nphe(cross))
+
   # do scan with actual data
   out <- scanone(cross, pheno.col=pheno.col, model=model, method=method,
                  addcovar=addcovar, intcovar=intcovar, weights=weights,
@@ -67,7 +78,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
 # summary function for scanoneboot output
 summary.scanoneboot <-
-function(object, prob=0.95, ...)
+function(object, prob=0.95, expandtomarkers=FALSE, ...)
 {
   lo <- (1-prob)/2
   results <- attr(object, "results")
@@ -78,6 +89,14 @@ function(object, prob=0.95, ...)
   wh1 <- wh1[length(wh1)]
   wh2 <- which(results[,2] >= qu[2])
   wh2 <- wh2[1]
+  
+  if(expandtomarkers) {
+    markerpos <- (1:nrow(results))[-grep("^c.+\\.loc-*[0-9]+(\\.[0-9]+)*$", rownames(results))]
+    if(any(markerpos <= wh1))
+      wh1 <- max(markerpos[markerpos <= wh1])
+    if(any(markerpos >= wh2))
+      wh2 <- min(markerpos[markerpos >= wh2])
+  }
   
   rbind(results[wh1,], o, results[wh2,])
 }

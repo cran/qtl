@@ -11,13 +11,14 @@
 
 \usage{
 scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
-        method="imp", incl.markers=FALSE, verbose=TRUE)
+        method=c("imp","hk"), incl.markers=FALSE, verbose=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
  \item{pheno.col}{Column number in the phenotype matrix to be
-   used as the phenotype.}
+   used as the phenotype.  One may also give a character string matching
+   a phenotype name.}
  \item{chr}{Vector indicating the chromosome for each QTL.}
  \item{pos}{List indicating the positions or intervals on the chromosome
    to be scanned.  Each element should be either a single number (for a
@@ -26,8 +27,8 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
  \item{formula}{An object of class \code{\link[stats]{formula}}
    indicating the model to be fitted.  QTLs are indicated as \code{Q1},
    \code{Q2}, etc.  Covariates are indicated by their names in \code{covar}.}
- \item{method}{Indicates whether to use the EM algorithm or  
-   imputation. (Only imputation is implemented at this point.)}
+ \item{method}{Indicates whether to use multiple imputation or
+   Haley-Knott regression.}
  \item{incl.markers}{If FALSE, do calculations only at points on an
    evenly spaced grid.}
  \item{verbose}{If TRUE, give feedback about progress.}
@@ -39,6 +40,10 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
   \code{q2}, etc., to represent the QTLs, and the column names in the
   covariate data frame to represent the covariates.
     
+  We enforce a hierarchical structure on the model formula: if a QTL or
+  covariate is in involved in an interaction, its main effect are also
+  be included.   
+
   Only the interaction terms need to be specifed in the formula. The
   main effects of all input QTLs (as specified by chr and pos) and
   covariates (as specifed by covar) will be included by default. For
@@ -67,6 +72,10 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
   of QTLs specifed.} 
 
 \references{
+  Haley, C. S. and Knott, S. A. (1992) A simple regression method for mapping
+  quantitative trait loci in line crosses using flanking markers.
+  \emph{Heredity} \bold{69}, 315--324.
+
   Sen, \'S. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
@@ -107,6 +116,7 @@ result2 <- scanqtl(fake.f2, pheno.col=1, chr=qc, pos=pos,
 image(chr1, chr8, t(result2), las=1, col=rev(rainbow(256,start=0,end=2/3)))
 }
 
-\seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}} }
+\seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}},
+  \code{\link[qtl]{refineqtl}} } 
 
 \keyword{models}

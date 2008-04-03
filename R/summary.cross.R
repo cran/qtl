@@ -3,7 +3,7 @@
 # summary.cross.R
 #
 # copyright (c) 2001-7, Karl W Broman
-# last modified Sep, 2007
+# last modified Dec, 2007
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -52,7 +52,7 @@ function(object,...)
     names(typings) <- getgenonames(type, "A", cross.attr=attributes(object))
   }
   else if(type=="4way") {
-    typings <- table(factor(Geno[!is.na(Geno)], levels=1:10))
+    typings <- table(factor(Geno[!is.na(Geno)], levels=1:14))
 
     temp <- getgenonames("4way", "A", cross.attr=attributes(object))
     names(typings) <- c(temp,
@@ -61,8 +61,11 @@ function(object,...)
                         paste(temp[c(1,2)], collapse="/"),
                         paste(temp[c(3,4)], collapse="/"),
                         paste(temp[c(1,4)], collapse="/"),
-                        paste(temp[c(2,3)], collapse="/"))
-    
+                        paste(temp[c(2,3)], collapse="/"),
+                        paste("not", temp[1]),
+                        paste("not", temp[2]),
+                        paste("not", temp[3]),
+                        paste("not", temp[4]))
   }
   else typings <- table(factor(Geno[!is.na(Geno)]))
 
@@ -149,11 +152,12 @@ function(object,...)
   if(type=="bc" || type=="riself" || type=="risib") {
     # Invalid genotypes?
     if(any(!is.na(Geno) & Geno != 1 & Geno != 2)) { 
+      u <- unique(as.numeric(Geno))
+      u <- sort(u[!is.na(u)])
       warn <- paste("Invalid genotypes.",
                     "\n    Observed genotypes:",
-                    paste(unique(as.numeric(Geno)),collapse=" "))
+                    paste(u, collapse=" "))
       warning(warn)
-      return(Geno)
     }
 
     # Missing genotype category on autosomes?
@@ -167,9 +171,11 @@ function(object,...)
     # invalid genotypes
     if(any(!is.na(Geno) & Geno!=1 & Geno!=2 & Geno!=3 &
            Geno!=4 & Geno!=5)) { 
+      u <- unique(as.numeric(Geno))
+      u <- sort(u[!is.na(u)])
       warn <- paste("Invalid genotypes on chr", chr, ".", 
                     "\n    Observed genotypes:",
-                    paste(unique(as.numeric(Geno)),collapse=" "))
+                    paste(u, collapse=" "))
       warning(warn)
     }
 
@@ -178,9 +184,11 @@ function(object,...)
       if(class(object$geno[[i]]) == "X") {
         dat <- object$geno[[i]]$data
         if(any(!is.na(dat) & dat!=1 & dat!=2)) { 
+          u <- unique(as.numeric(dat))
+          u <- sort(u[!is.na(u)])
           warn <- paste("Invalid genotypes on X chromosome:",
                         "\n    Observed genotypes:",
-                        paste(unique(as.numeric(dat)),collapse=" "))
+                        paste(u, collapse=" "))
           warning(warn)
         }
       }
@@ -199,12 +207,24 @@ function(object,...)
                sum(!is.na(dat) & dat==3) == 0))
       warning("Strange genotype pattern.")
   }
+  else if(type=="4way") {
+    # Invalid genotypes?
+    if(any(!is.na(Geno) & (Geno != round(Geno) | Geno < 1 | Geno > 14))) {
+      u <- unique(as.numeric(Geno))
+      u <- sort(u[!is.na(u)])
+      warn <- paste("Invalid genotypes.",
+                    "\n    Observed genotypes:",
+                    paste(u, collapse=" "))
+      warning(warn)
+    }
+  }
+
 
   # Look for duplicate marker names
   mnames <- NULL
   for(i in 1:nchr(object)) 
     mnames <- c(mnames,colnames(object$geno[[i]]$data))
-#  return(mnames)
+
   o <- table(mnames)
   if(any(o > 1))
     warning("Duplicate markers [", paste(names(o)[o>1], collapse=", "), "]")

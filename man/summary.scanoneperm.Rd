@@ -67,8 +67,8 @@ summary(operm2)
 }
 
 \seealso{ \code{\link[qtl]{scanone}},
-  \code{\link[qtl]{summary.scanone}}, 
-  \code{\link[stats]{quantile}} }
+  \code{\link[qtl]{summary.scanone}},
+  \code{\link[qtl]{plot.scanoneperm}} }
 
 \references{
   Broman, K. W., Sen, \'S, Owens, S. E., Manichaikul, A.,

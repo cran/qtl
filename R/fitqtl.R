@@ -2,14 +2,14 @@
 #
 # fitqtl.R
 #
-# copyright (c) 2002-7, Hao Wu and Karl W. Broman
-# last modified Sep, 2007
+# copyright (c) 2002-8, Hao Wu and Karl W. Broman
+# last modified Mar, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: fitqtl, parseformula, summary.fitqtl,
-#           print.summary.fitqtl
+# Contains: fitqtl, fitqtlengine, parseformula, summary.fitqtl,
+#           print.summary.fitqtl, mybinaryrep, deparseqtlformula
 #
 ######################################################################
 
@@ -17,46 +17,82 @@
 #
 # This is the function to fit a model and generate some tables
 #
-# Now only imputation method is implemented
+# Only Haley-Knott regression and multiple imputation are implemented.
 #
 ######################################################################
 
 fitqtl <-
-function(pheno, qtl, covar=NULL, formula, method=c("imp"),
-         dropone=TRUE, get.ests=FALSE)
+function(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
+         dropone=TRUE, get.ests=FALSE, run.checks=TRUE)
 {
   # some input checking stuff in here
+  if( !sum(class(cross) == "cross"))
+    stop("The cross argument must be an object of class \"cross\".")
+    
   if( !sum(class(qtl) == "qtl") )
-    stop("The second input variable must be an object of class qtl.")
+    stop("The qtl argument must be an object of class \"qtl\".")
+
+  if(!is.null(covar) && !is.data.frame(covar))
+    stop("covar should be a data.frame")
+
+  if(length(pheno.col) > 1) {
+    pheno.col <- pheno.col[1]
+    warning("fitqtl can take just one phenotype; only the first will be used")
+  }
+    
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+
+  if(pheno.col < 1 | pheno.col > nphe(cross))
+    stop("pheno.col values should be between 1 and the no. phenotypes")
+
+  pheno <- cross$pheno[,pheno.col]
+  if(!is.null(covar) && nrow(covar) != length(pheno))
+    stop("nrow(covar) != no. individuals in cross.")
 
   method <- match.arg(method)
 
-  if(method=="imp" && !("geno" %in% names(qtl)))
-    stop("You need to run sim.geno() before creating the qtl object.")
-  
-  # check the input phenotypes and covarariates; drop individuals
-  # with missing values.
-  keep.ind <- !is.na(pheno)
-  if(!is.null(covar)) { # loop thru covarariates
-    for(i in 1:ncol(covar))
-      keep.ind <- keep.ind & (!is.na(covar[,i]))
+  if(method=="imp") {
+    if(!("geno" %in% names(qtl))) {
+      if("prob" %in% names(qtl)) {
+        warning("The qtl object doesn't contain imputations; using method=\"hk\".")
+        method <- "hk"
+      }
+      else
+        stop("The qtl object needs to be created with makeqtl with what=\"draws\".")
+    }
   }
-  # if there IS missing data, do some subset
-  if(any(!keep.ind)) {
-    # subset pheno data
-    pheno <- pheno[keep.ind]
-    # subset covarariate
-    covar <- covar[keep.ind,,drop=FALSE]
-    # hack input qtl object to drop individuals with missing data
-    qtl$n.ind <- sum(keep.ind)
-    qtl$geno <- qtl$geno[keep.ind,,,drop=FALSE]
+  else {
+    if(!("prob" %in% names(qtl))) {
+      if("geno" %in% names(qtl)) {
+        warning("The qtl object doesn't contain QTL genotype probabilities; using method=\"imp\".")
+        method <- "imp"
+      }
+      else
+        stop("The qtl object needs to be created with makeqtl with what=\"prob\".")
+    }
   }
+
+  fitqtlengine(pheno=pheno, qtl=qtl, covar=covar, formula=formula,
+               method=method, dropone=dropone, get.ests=get.ests,
+               run.checks=run.checks, cross.attr=attributes(cross))
+}
   
+
+fitqtlengine <-
+function(pheno, qtl, covar=NULL, formula, method=c("imp", "hk"),
+         dropone=TRUE, get.ests=FALSE, run.checks=TRUE, cross.attr)
+{
   # local variables
   n.ind <- qtl$n.ind # number of individuals
   n.qtl <- qtl$n.qtl # number of selected markers
-  n.draws <- dim(qtl$geno)[3] # number of draws
   n.gen <- qtl$n.gen # number of genotypes
+  if(method=="imp")
+    n.draws <- dim(qtl$geno)[3] # number of draws
   
   if( is.null(covar) )  # number of covarariates
     n.covar <- 0
@@ -72,15 +108,52 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       for (i in 2:n.qtl) 
         formula <- paste(formula, tmp.Q[i], sep="+")
     if (n.covar) { # if covarariate is not empty
-      tmp.C <- dimnames(covar)[[2]] # covarariate term names
+      tmp.C <- colnames(covar) # covarariate term names
       for(i in 1:n.covar)
         formula <- paste(formula, tmp.C[i], sep="+")
     }
     formula <- as.formula(formula)
   }
 
+  # check input formula
+  if(run.checks) {
+    formula <- checkformula(formula, qtl$altname, colnames(covar))
+
+    if(qtl$n.ind != length(pheno))
+      stop("No. individuals in qtl object doesn't match length of input phenotype.")
+
+    # drop covariates that are not in the formula
+    if(!is.null(covar)) {
+      theterms <- rownames(attr(terms(formula), "factors"))
+      m <- match(colnames(covar), theterms)
+      if(all(is.na(m))) covar <- NULL
+      else covar <- covar[,!is.na(m),drop=FALSE]
+    }
+
+    # check phenotypes and covariates; drop ind'ls with missing values
+    if(!is.null(covar)) phcovar <- cbind(pheno, covar)
+    else phcovar <- as.data.frame(pheno)
+    if(any(is.na(phcovar))) {
+      if(ncol(phcovar)==1) hasmissing <- is.na(phcovar)
+      else hasmissing <- apply(phcovar, 1, function(a) any(is.na(a)))
+      if(all(hasmissing))
+        stop("All individuals are missing phenotypes or covariates.")
+      if(any(hasmissing)) {
+        warning("Dropping ", sum(hasmissing), " individuals with missing phenotypes.\n")
+        pheno <- pheno[!hasmissing]
+        n.ind <- qtl$n.ind <- sum(!hasmissing)
+        if(method=="imp")
+          qtl$geno <- qtl$geno[!hasmissing,,,drop=FALSE]
+        else
+          qtl$prob <- lapply(qtl$prob, function(a) a[!hasmissing,,drop=FALSE])
+      
+        if(!is.null(covar)) covar <- covar[!hasmissing,,drop=FALSE]
+      }
+    }
+  }
+
   # parse the input formula
-  p <- parseformula(formula, dimnames(qtl$geno)[[2]], dimnames(covar)[[2]])
+  p <- parseformula(formula, qtl$altname, colnames(covar))
   # make an array n.gen.QC to represent the genotype numbers
   # for all input QTLs and covarariates. For covarariates the
   # number of genotyps is 1. This makes programming easier
@@ -90,7 +163,7 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   # This is done in case of that user input covar but has no covar in formula
   covar.C <- NULL
   if(!is.null(p$idx.covar))
-    covar.C <- as.matrix(covar[,p$idx.covar])
+    covar.C <- as.matrix(covar[,p$idx.covar,drop=FALSE])
   
   sizefull <- 1+sum(n.gen.QC)
   if(p$n.int > 0) {
@@ -103,7 +176,18 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       sizefull <- sizefull + sum(form)
     }
   }
-      
+
+  if(method != "imp") {
+    # form genotype probabilities as a matrix
+    prob <- matrix(ncol=sum(qtl$n.gen[p$idx.qtl]), nrow=n.ind)
+          
+    curcol <- 0
+    for(i in p$idx.qtl) {
+      prob[,curcol+1:n.gen[i]] <- qtl$prob[[i]]
+      curcol <- curcol + n.gen[i]
+    }
+  }
+
   # call C function to do the genome scan
   if(method == "imp") {
     z <- .C("R_fitqtl_imp",
@@ -114,6 +198,26 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
             as.integer(qtl$geno[,p$idx.qtl,]), # genotypes for selected marker
             as.integer(p$n.covar), # number of covarariate
             as.double(covar.C), # covarariate
+            as.integer(p$formula.intmtx),  # formula matrix for interactive terms
+            as.integer(p$n.int), # number of interactions in the formula
+            as.double(pheno), # phenotype
+            as.integer(get.ests), # get estimates?
+            # return variables
+            lod=as.double(0), # LOD score
+            df=as.integer(0), # degree of freedom
+            ests=as.double(rep(0,sizefull)),
+            ests.cov=as.double(rep(0,sizefull*sizefull)),
+            design.mat=as.double(rep(0,sizefull*n.ind)),
+            PACKAGE="qtl")
+  }
+  else {
+    z <- .C("R_fitqtl_hk",
+            as.integer(n.ind), # number of individuals
+            as.integer(p$n.qtl), # number of qtls
+            as.integer(n.gen.QC), # number of genotypes QTLs and covariates
+            as.double(prob),      # QTL genotype probabilities
+            as.integer(p$n.covar), # number of covarariate
+            as.double(covar.C), # covariates
             as.integer(p$formula.intmtx),  # formula matrix for interactive terms
             as.integer(p$n.int), # number of interactions in the formula
             as.double(pheno), # phenotype
@@ -137,8 +241,67 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     ests <- z$ests
 
     ests.cov <- matrix(z$ests.cov,ncol=sizefull)
-    if(any(qtl$n.gen[p$idx.qtl]>=4)) 
-      warning("Estimated QTL effects not yet made meaningful for this case.\n   ")
+    if(any(qtl$n.gen[p$idx.qtl]>=4)) {
+      type <- cross.attr$class[1]
+      if(type == "4way")
+        genotypes <- c("AC","BC","AD","BD")
+      else {
+        genotypes <- cross.attr$genotypes
+        if(is.null(genotypes))
+          genotypes <- as.character(1:max(qtl$n.gen))
+      }
+
+      # just attach rownames for this case
+      thenames <- "Intercept"
+
+      if(length(p$idx.qtl) > 0) { # qtl names
+        qtlnames <- vector("list", length(p$idx.qtl))
+        names(qtlnames) <- paste("Q", 1:length(p$idx.qtl), sep="")
+        for(i in seq(along=p$idx.qtl)) {
+          qtlnames[[i]] <- paste(qtl$name[p$idx.qtl[i]], genotypes[2:qtl$n.gen[p$idx.qtl[i]]], sep=".")
+          thenames <- c(thenames, qtlnames[[i]])
+        }
+      }
+
+      if(p$n.covar > 0) {
+        covnames <- colnames(covar)[p$idx.covar]
+        thenames <- c(thenames, covnames)
+      }
+      
+      if(p$n.int > 0) { # interactions
+        if(!is.matrix(p$formula.intmtx)) {
+          nam <- names(p$formula.intmtx)
+          p$formula.intmtx <- matrix(p$formula.intmtx, nrow=p$n.int)
+          colnames(p$formula.intmtx) <- nam
+        }
+
+        for(i in 1:p$n.int) {
+          wh <- which(p$formula.intmtx[i,]==1)
+          nam <- colnames(p$formula.intmtx)[wh]
+
+          if(length(grep("^Q[0-9]+$", nam[1])) > 0)
+            curnam <- qtlnames[[nam[1]]]
+          else
+            curnam <- nam[1]
+          
+          for(j in 2:length(nam)) {
+            if(length(grep("Q[0-9]+", nam[j])) > 0)
+              curnam <- paste(curnam, qtlnames[[nam[j]]], sep=".")
+            else
+              curnam <- paste(curnam, nam[j], sep=".")
+          }
+          thenames <- c(thenames, curnam)
+        }
+      }
+
+      if(length(thenames) ==length(ests)) {
+        names(ests) <- thenames
+        dimnames(ests.cov) <- list(thenames, thenames)
+      }
+      else 
+        warning("Estimated QTL effects not yet made meaningful for this case.\n   ")
+
+    }
     else {
       X <- matrix(z$design.mat,ncol=sizefull)
       Z <- matrix(0,nrow=n.ind,ncol=sizefull)
@@ -154,24 +317,34 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
       # covariates
       if(p$n.covar > 0) {
         for(j in 1:p$n.covar) {
-          Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- as.matrix(covar[,p$idx.covar[j]])
+          Z[,curcol+j] <- ZZ[[p$n.qtl+j]] <- as.matrix(covar[,p$idx.covar[j],drop=FALSE])
           colnames(Z)[curcol+j] <- colnames(ZZ[[p$n.qtl+j]]) <- names(covar)[p$idx.covar[j]]
-#        colnames(Z)[curcol+1:p$n.covar] <- names(covar)[p$idx.covar]
         }
         curcol <- curcol + p$n.covar
       }
       # QTL main effects
       for(i in seq(along=p$idx.qtl)) {
         if(n.gen[i]==2) {
-          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -0.5
-          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+1] <- 0.5
+          if(method=="imp") {
+            Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -0.5
+            Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+1] <- 0.5
+          }
+          else 
+            Z[,curcol+1] <- (qtl$prob[[p$idx.qtl[i]]][,2] - qtl$prob[[p$idx.qtl[i]]][,1])/2
           colnames(Z)[curcol+1] <- thenames[i]
         }
         else { # 3 genotypes
-          Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
-          Z[qtl$geno[,p$idx.qtl[i],1]==3,curcol+1] <- 1
-          Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+2] <- 0.5
-          Z[qtl$geno[,p$idx.qtl[i],1]!=2,curcol+2] <- -0.5
+          if(method=="imp") {
+            Z[qtl$geno[,p$idx.qtl[i],1]==1,curcol+1] <- -1
+            Z[qtl$geno[,p$idx.qtl[i],1]==3,curcol+1] <- 1
+            Z[qtl$geno[,p$idx.qtl[i],1]==2,curcol+2] <- 0.5
+            Z[qtl$geno[,p$idx.qtl[i],1]!=2,curcol+2] <- -0.5
+          }
+          else {
+            Z[,curcol+1] <- qtl$prob[[p$idx.qtl[i]]][,3] - qtl$prob[[p$idx.qtl[i]]][,1]
+            Z[,curcol+2] <- (qtl$prob[[p$idx.qtl[i]]][,2] - qtl$prob[[p$idx.qtl[i]]][,1] -
+                             qtl$prob[[p$idx.qtl[i]]][,3])/2
+          }
           colnames(Z)[curcol+1:2] <- paste(thenames[i],c("a","d"),sep="")
         }
         ZZ[[i]] <- Z[,curcol+1:(n.gen[i]-1),drop=FALSE]
@@ -223,9 +396,9 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
   # compute the SS for total
   Rss0 <- 0
   mpheno <- mean(pheno)
-  for(i in 1:length(pheno)) {
+  for(i in 1:length(pheno)) 
     Rss0 <- Rss0 + (pheno[i]-mpheno)^2
-  }
+
   # third row, for Total
   result.full[3,1] <- length(pheno) - 1 # total degree of freedom
   result.full[3,2] <- Rss0 # total sum of squares
@@ -279,13 +452,6 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
                           "Pvalue(Chi2)", "Pvalue(F)")
     rownames(result) <- rep("",length(f.order))
 
-    # record the result for full model
-#    result[1,1] <- z$df
-#    result[1,3] <- z$lod
-#    result[1,4] <-  100 * (1 - exp(-2*z$lod*log(10)/n.ind))
-#    result[1,5] <- 1 - pchisq(2*log(10)*z$lod, z$df)
-#    rownames(result)[1] <- "Full"
-      
     drop.term.name <- NULL
     for( i in (1:length(f.order)) ) {
       # loop thru all terms in formula, from the highest order
@@ -354,15 +520,26 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
 
       ### Start fitting model again
       # parse the input formula
-      p.new <- parseformula(formula.new, dimnames(qtl$geno)[[2]], dimnames(covar)[[2]])
+      p.new <- parseformula(formula.new, qtl$altname, colnames(covar))
       n.gen.QC <- c(n.gen[p.new$idx.qtl]-1, rep(1, p.new$n.covar))
 
       # covarariate to be passed to C function
       covar.C <- NULL
       if(!is.null(p.new$idx.covar))
-        covar.C <- as.matrix(covar[,p.new$idx.covar])
+        covar.C <- as.matrix(covar[,p.new$idx.covar,drop=FALSE])
       
-      # call C function to do the genome scan
+      if(method != "imp") {
+        # form genotype probabilities as a matrix
+        prob <- matrix(ncol=sum(qtl$n.gen[p.new$idx.qtl]), nrow=n.ind)
+          
+        curcol <- 0
+        for(z in p.new$idx.qtl) {
+          prob[,curcol+1:n.gen[z]] <- qtl$prob[[z]]
+          curcol <- curcol + n.gen[z]
+        }
+      }
+
+      # call C function fit model 
       if(method == "imp") {
         z <- .C("R_fitqtl_imp",
                 as.integer(n.ind), # number of individuals
@@ -385,13 +562,34 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
                 PACKAGE="qtl")
       }
 
+      else {
+        z <- .C("R_fitqtl_hk",
+                as.integer(n.ind), # number of individuals
+                as.integer(p.new$n.qtl), # number of qtls
+                as.integer(n.gen.QC), # number of genotypes QTLs and covarariates
+                as.double(prob),
+                as.integer(p.new$n.covar), # number of covarariate
+                as.double(covar.C), # covarariate
+                as.integer(p.new$formula.intmtx),  # formula matrix for interactive terms
+                as.integer(p.new$n.int), # number of interactions in the formula
+                as.double(pheno), # phenotype
+                as.integer(0),
+                # return variables
+                lod=as.double(0), # LOD score
+                df=as.integer(0), # degree of freedom
+                as.double(rep(0,sizefull)),
+                as.double(rep(0,sizefull*sizefull)),
+                as.double(rep(0,n.ind*sizefull)),
+                PACKAGE="qtl")
+      }
+
       # record the result for dropping this term
       # df
       result[i,1] <- result.full[1,1] - z$df
       # LOD score
       result[i,3] <- result.full[1,4] - z$lod
       # % variance explained
-      result[i,4] <- result.full[1,5] - 100*(1 - 10^(-2*z$lod/n.ind))      
+      result[i,4] <- result.full[1,5] - 100*(1 - 10^(-2*z$lod/n.ind))
 
       # Type III SS for this term - computed from %var
       result[i,2] <- result.full[3,2] * result[i,4] / 100
@@ -414,31 +612,97 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp"),
     
   }  ## if(dropone)
       
-#  else {
-    # don't do drop one at at time
-    # output the lod, pvar and df for this model
-#    result <- matrix(rep(0,4),1,4)
-#    result[1] <- z$lod
-#    result[2] <- 100*(1 - exp(-2*z$lod*log(10)/n.ind))
-#    result[3] <- z$df
-#    result[4] <- 1 - pchisq(2*log(10)*z$lod, z$df)
-#    rownames(result) <- "Full"
-#    colnames(result) <- c("LOD", "%var", "df", "Pvalue")
-#  }
-
-  
   if(get.ests) 
     output$ests <- list(ests=ests, covar=ests.cov)
 
   class(output) <- "fitqtl"
   attr(output, "method") <- method
-  attr(output, "formula") <- formula
+  attr(output, "formula") <- deparseQTLformula(formula)
   attr(output, "type") <- qtl$type
   attr(output, "nind") <- length(pheno)
+#  attr(output, "design.mat") <- matrix(z$design.mat, nrow=n.ind)
   output
 
 }
 
+
+######################################################################
+# checkformula
+#
+# check that input formula satisfies our imposed hiearchy: that
+# main effects for terms in any interactions are also included
+######################################################################
+checkformula <-
+function(formula, qtl.name, covar.name)
+{
+  factors <- attr(terms(formula), "factors")
+  altform <- deparseQTLformula(formula)
+
+  if(sum(factors[1,])==0) factors <- factors[-1,,drop=FALSE]
+
+  rn <- rownames(factors)
+  # if mentions of "q1" or such, convert to "Q1" and such
+  g <- grep("^[Qq][0-9]+$", rn)
+  todrop <- NULL
+  if(length(g) > 1) {
+    rownames(factors)[g] <- rn[g] <- toupper(rn[g])
+    if(any(table(rn) > 1)) { # now there are some duplicates
+      urn <- unique(rn)
+      for(i in urn) {
+        wh <- which(rn == i)
+        if(length(wh) > 1) {
+          factors[wh[1],] <- apply(factors[wh,], 2, sum)
+          todrop <- c(todrop, wh[-1])
+          rownames(factors)[wh[1]] <- rn[wh[1]]
+        }
+      }
+    }
+  }
+  if(length(todrop) > 0) factors <- factors[-todrop,]
+  rn <- rownames(factors)
+
+  if(!missing(qtl.name) || !missing(covar.name)) {
+    m <- match(rn, c(qtl.name, covar.name))
+    if(any(is.na(m)))
+      warning("Terms ", paste(rn[is.na(m)], collapse=" "), " not understood.")
+  }
+
+  # paste rows together
+  zo <- factors
+  zo[zo>1] <- 1
+  pzo <- apply(zo, 2, paste, collapse="")
+  nt <- apply(zo, 2, sum)
+
+  # form binary representations
+  maxnt <- max(nt)
+  v <- vector("list", maxnt)
+  for(i in 2:maxnt) {
+    v[[i]] <- mybinaryrep(i)
+    v[[i]] <- v[[i]][,-ncol(v[[i]])+c(0,1)]
+  }
+  
+  # for each higher-order column, form all lower-order terms
+  for(i in which(nt > 1)) {
+    cur <- zo[,i]
+    wh <- which(cur==1)
+    z <- v[[nt[i]]]
+    zz <- matrix(0, ncol=ncol(z), nrow=length(cur))
+    for(j in seq(along=wh))
+      zz[wh[j],] <- z[j,]
+    pzo <- unique(c(pzo, apply(zz, 2, paste, collapse="")))
+  }
+
+  zo <- matrix(as.numeric(unlist(strsplit(pzo, ""))), ncol=length(pzo))
+  nt <- apply(zo, 2, sum)
+  zo <- zo[,order(nt, apply(1-zo, 2, paste, collapse="")), drop=FALSE]
+  rownames(zo) <- rn
+  
+  # form column names
+  theterms <- apply(zo, 2, function(a, b) paste(b[as.logical(a)], collapse=":"),
+                    rownames(zo))
+
+  as.formula(paste("y ~ ", paste(theterms, collapse=" + ")))
+}
 
 #####################################################################
 #
@@ -566,7 +830,7 @@ print.summary.fitqtl <- function(x, ...)
   # print ANOVA table for full model
   cat("Full model result\n")
   cat("----------------------------------  \n")
-  cat( paste("Model formula is: ", deparse(attr(x, "formula")), "\n\n") )
+  cat( paste("Model formula is: ", attr(x, "formula"), "\n\n") )
   print(x$result.full, quote=FALSE, na.print="")
   cat("\n")
   
@@ -590,3 +854,26 @@ print.summary.fitqtl <- function(x, ...)
   }
 
 }
+
+######################################################################
+# binary repreentation of the numbers 1...2^n;
+# used in checkformula
+######################################################################
+mybinaryrep <-
+function(n)
+{
+  lx <- 2^n
+  x <- 1:lx
+  ans <- 0:(n-1)
+  x <- matrix(rep(x,rep(n, lx)), ncol=lx)
+  (x %/% 2^ans) %% 2
+}
+
+######################################################################
+# deparseQTLformula: turn QTL formula into a string
+######################################################################
+deparseQTLformula <-
+function(formula)
+  paste(as.character(formula)[c(2,1,3)], collapse=" ")
+
+# end of fitqtl.R

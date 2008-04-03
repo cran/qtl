@@ -12,7 +12,8 @@
  *
  * C functions for the R/qtl package
  *
- * These functions are for performing a general genome scan 
+ * These functions are for fitting a fixed multiple-QTL model by 
+ * imputation.
  *
  * Contains: R_fitqtl_imp, fitqtl_imp, nullRss0, galtRss
  *
@@ -40,10 +41,10 @@ void R_fitqtl_imp(int *n_ind, int *n_qtl, int *n_gen, int *n_draws,
 		  double *lod, int *df, double *ests, double *ests_covar,
 		  double *design_mat)
 {
-  /* reorganize draws */
   int ***Draws;
   double **Cov;
 
+  /* reorganize draws */
   reorg_draws(*n_ind, *n_qtl, *n_draws, draws, &Draws);
 
   /* reorganize cov (if they are not empty) */
@@ -60,8 +61,7 @@ void R_fitqtl_imp(int *n_ind, int *n_qtl, int *n_gen, int *n_draws,
  * 
  * fitqtl_imp
  *
- * Performs general genome scan using the pseudomarker algorithm 
- * (imputation) method of Sen and Churchill (2001).
+ * Fits a fixed multiple-QTL model by multiple imputation.
  * 
  * n_ind        Number of individuals
  *
@@ -279,7 +279,7 @@ double nullRss0(double *pheno, int n_ind)
 }
 
 
-/* galtRss - calculate RSS for full model in general scan */
+/* galtRss - calculate RSS for full model by multiple imputation */
 double galtRss(double *pheno, int n_ind, int *n_gen, int n_qtl, 
 	       int **Draws, double **Cov, int n_cov, int *model, 
 	       int n_int, double *dwork, int *iwork, int sizefull,
@@ -390,7 +390,7 @@ double galtRss(double *pheno, int n_ind, int *n_gen, int n_qtl,
 	  itmp1 = idx_int_q[k]; /* index for QTL in the interaction */
 	  if(Draws[itmp1][j] == 1) {
 	    /* if any genotype in this interaction is 1, 
-	       all entrys for this individual will be 0.
+	       all entries for this individual will be 0.
 	       break the loop and go to next individual */
 	    itmp2 = 0; /* a flag to indicate some genotype is 1 */
 	    break;

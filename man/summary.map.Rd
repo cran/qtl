@@ -22,9 +22,10 @@
 
 \value{
   An object of class \code{summary.map}, which is just a data.frame 
-  containing the number of markers, length, and
-  average inter-marker spacing for each chromosome and overall.  An
-  attribute \code{sexsp} indicates whether the map was sex-specific.
+  containing the number of markers, length, the average inter-marker
+  spacing, and the maximum distance between markers, for each chromosome
+  and overall.  An attribute \code{sexsp} indicates whether the map was
+  sex-specific.
 }
 
 \author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }

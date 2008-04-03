@@ -2,14 +2,14 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-7, Hao Wu and Karl W. Broman
-# last modified Sep, 2007
+# copyright (c) 2002-8, Hao Wu and Karl W. Broman
+# last modified Feb, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: makeqtl, replaceqtl, addqtl, dropqtl, locatemarker
-#           print.qtl, summary.qtl, print.summary.qtl
+# Contains: makeqtl, replaceqtl, addtoqtl, dropfromqtl, locatemarker
+#           print.qtl, summary.qtl, print.summary.qtl, reorderqtl
 #
 ######################################################################
 
@@ -21,17 +21,6 @@
 # "cross" object
 #
 ######################################################################
-
-######################################################################
-#
-# Notes/Question:
-#  1. Do we want to pull out draws and prob at the same time?
-#     If user specifed pos is far from the real marker, there
-#     might be some problem for pulling out genoprob
-#  2. The utility functions can be put in util.R
-#
-######################################################################
-
 makeqtl <-
 function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 {
@@ -44,6 +33,14 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
   sexpgm <- getsex(cross)
   
   what <- match.arg(what)
+
+  themap <- pull.map(cross)
+
+  # try to interpret chr argument
+  if(!is.character(chr)) {
+    if(any(chr > nchr(cross))) chr <- as.character(chr)
+    else chr <- names(cross$geno)[chr]
+  }
 
   # chr, pos and qtl.name must have the same length
   if(length(chr) != length(pos))
@@ -179,14 +176,16 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
     else
       step <- attr(cross$geno[[i.chr]]$prob, "step")
       
-    if(!is.null(step)) dig <- max(dig, -floor(log10(step)))
+    if(!is.null(step)) {
+      if(step > 0) dig <- max(dig, -floor(log10(step)))
+    }
     else {
       if(what=="draws")
         stepw <- attr(cross$geno[[i.chr]]$draws, "stepwidth")
       else 
         stepw <- attr(cross$geno[[i.chr]]$prob, "stepwidth")
 
-      if(!is.null(stepw)) dig <- max(dig, -floor(log10(stepw)))
+      if(!is.null(stepw) && stepw > 0) dig <- max(dig, -floor(log10(stepw)))
     }
 
     # make qtl names
@@ -195,6 +194,7 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 
   # output object
   qtl$name <- qtl.name
+  qtl$altname <- paste("Q", 1:n.pos, sep="")
   qtl$chr <- chr
   qtl$pos <- pos
   qtl$n.qtl <- n.pos
@@ -202,6 +202,7 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
   qtl$n.gen <- n.gen
 
   class(qtl) <- "qtl"
+  attr(qtl, "map") <- themap
   
   qtl
 }
@@ -211,76 +212,48 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 ######################################################################
 #
 # This is the function to replace one QTL by another.
-# This is the internal function and not supposed to be used by user
 #
 ######################################################################
 replaceqtl <-
-function(cross, qtl, replace, by.chr, by.pos, by.name, map)
+function(cross, qtl, indextodrop, chr, pos, qtl.name, drop.lod.profile=TRUE)
 {
-  # update QTL name
-  if(missing(by.name))
-    by.name <- paste(paste("Chr",by.chr,sep=""), by.pos, sep="@")
-  qtl$name[replace] <- by.name
+  if(class(qtl) != "qtl")
+    stop("qtl should have class \"qtl\".")
 
-  # update chr and pos
-  qtl$chr[replace] <- by.chr
-  qtl$pos[replace] <- by.pos
+  if(any(indextodrop < 1 | indextodrop > qtl$n.qtl))
+    stop("indextodrop should be between 1 and ", qtl$n.qtl)
+
+  if(length(indextodrop) != length(chr) || length(indextodrop) != length(pos))
+    stop("indextodrop, chr, and pos should all have the same length.")
+  if(!missing(qtl.name) && length(indextodrop) != length(qtl.name))
+    stop("indextodrop and qtl.name should have the same length.")
+    
+  if("geno" %in% names(qtl)) what <- "draws"
+  else what <- "prob"
+
+  if(missing(qtl.name))
+    newqtl <- makeqtl(cross, chr, pos, what=what)
+  else
+    newqtl <- makeqtl(cross, chr, pos, qtl.name=qtl.name, what=what)
   
-  # update the imputed genotype and n.gen vector (if any)
-  if("geno" %in% names(qtl)) {
-    if(missing(map))  { # make genetic map on this chromosome
-
-      if("map" %in% names(attributes(cross$geno[[by.chr]]$draws)))
-        map <- attr(cross$geno[[by.chr]]$draws,"map")
-      else {
-        stp <- attr(cross$geno[[by.chr]]$draws, "step")
-        oe <- attr(cross$geno[[by.chr]]$draws, "off.end")
-      
-        if("stepwidth" %in% names(attributes(cross$geno[[by.chr]]$draws)))
-          stpw <- attr(cross$geno[[by.chr]]$draws, "stepwidth")
-        else stpw <- "fixed"
-        map <- create.map(cross$geno[[by.chr]]$map,stp,oe,stpw)
-      }
-
-      # pull out female map in case that there are sex-specific maps
-      if(is.matrix(map)) map <- map[1,]
-    }
-
-    # locate this marker (given chromosome and position)
-    marker.idx <- locatemarker(map, by.pos, by.chr, "draws")
-
-    # replace the genotypes
-    qtl$geno[,replace,] <- cross$geno[[by.chr]]$draws[,marker.idx,]
-    qtl$pos[replace] <- map[marker.idx]
-
-     # update number of genotypes
-    type <- class(cross)[[1]]
-    if(type == "f2") {
-      if(class(cross$geno[[by.chr]]) == "A") # autosomal
-        qtl$n.gen[replace] <- 3
-      else                             # X chromsome 
-        qtl$n.gen[replace] <- 2
-    }
-    else if(type == "bc" || type=="risib" || type=="riself") 
-      qtl$n.gen[replace] <- 2
-    else if(type == "4way") 
-      qtl$n.gen[replace] <- 4
-    else 
-      stop("replaceqtl not available for cross ", type)
+  if(what=="draws") {
+    qtl$geno[,indextodrop,] <- newqtl$geno
   }
-  
-  # update the genoprob (if any)
-  if("prob" %in% names(qtl)) {
-    #locate the marker
-    marker.idx <- locatemarker(cross$geno[[by.chr]]$map,
-                                by.pos, by.chr, "prob")
-    # replace genoprob
-    qtl$prob[[replace]] <- cross$geno[[by.chr]]$prob[,marker.idx,]
-    qtl$pos[replace] <- map[marker.idx]
+  else {
+    qtl$prob[indextodrop] <- newqtl$prob
   }
 
-  # done
-  
+  qtl$name[indextodrop] <- newqtl$name
+  qtl$chr[indextodrop] <- newqtl$chr
+  qtl$pos[indextodrop] <- newqtl$pos
+
+  if(qtl$n.ind != newqtl$n.ind) stop("Mismatch in no. individuals")
+
+  qtl$n.gen[indextodrop] <- newqtl$n.gen
+
+  if(drop.lod.profile)
+    attr(qtl, "lodprofile") <- NULL
+
   qtl
 }
 
@@ -288,132 +261,143 @@ function(cross, qtl, replace, by.chr, by.pos, by.name, map)
 ######################################################################
 #
 # This is the function to add a QTL to given qtl object
-# This is the internal function and not supposed to be used by user
 #
 ######################################################################
 
-addqtl <-
-function(cross, qtl, add.chr, add.pos, add.name, map)
+addtoqtl <-
+function(cross, qtl, chr, pos, qtl.name, drop.lod.profile=TRUE)
 {
-  # update number of QTLs
-  qtl$n.qtl <- qtl$n.qtl + 1
+  if(class(qtl) != "qtl")
+    stop("qtl should have class \"qtl\".")
 
-  # update chr and pos
-  qtl$chr <- c(qtl$chr, add.chr)
-  qtl$pos <- c(qtl$pos, add.pos)
+  if("geno" %in% names(qtl)) what <- "draws"
+  else what <- "prob"
+
+  if(missing(qtl.name))
+    newqtl <- makeqtl(cross, chr, pos, what=what)
+  else
+    newqtl <- makeqtl(cross, chr, pos, qtl.name=qtl.name, what=what)
   
-  # add QTL name
-  if(missing(add.name))
-    add.name <- paste(paste("Chr",add.chr,sep=""), add.pos, sep="@")
-  qtl$name[qtl$n.qtl] <- add.name
-  
-  # add new entry to the imputed genotype and n.gen vector (if any)
-  if("geno" %in% names(qtl)) {
-    # update number of genotypes
-    type <- class(cross)[[1]]
-    if(type == "f2") {
-      if(class(cross$geno[[add.chr]]) == "A") # autosomal
-        n.gen <- 3
-      else                             # X chromsome 
-        n.gen <- 2
-    }
-    else if(type == "bc" || type=="risib" || type=="riself") 
-      n.gen <- 2
-    else if(type == "4way") 
-      n.gen <- 4
-    else 
-      stop("addqtl not available for cross ", type)
-    qtl$n.gen <- c(qtl$n.gen, n.gen)
-  
-    # add the imputed genotype
-    if(missing(map)) { # make genetic map on this chromosome, if missing
-
-      if("map" %in% names(attributes(cross$geno[[add.chr]]$draws)))
-        map <- attr(cross$geno[[add.chr]]$draws,"map")
-      else {
-        stp <- attr(cross$geno[[add.chr]]$draws, "step")
-        oe <- attr(cross$geno[[add.chr]]$draws, "off.end")
-      
-        if("stepwidth" %in% names(attributes(cross$geno[[add.chr]]$draws)))
-          stpw <- attr(cross$geno[[add.chr]]$draws, "stepwidth")
-        else stpw <- "fixed"
-        map <- create.map(cross$geno[[add.chr]]$map,stp,oe,stpw)
-      }
-
-      # pull out female map in case that there are sex-specific maps
-      if(is.matrix(map)) map <- map[1,]
-    }
-
-    # locate this marker (given chromosome and position)
-    marker.idx <- locatemarker(map, add.pos, add.chr, "draws")
-    qtl$pos[length(qtl$pos)] <- map[marker.idx]
-
-    # reallocate memory for geno array
-    n.ind <- dim(qtl$geno)[1]
-    n.draw <- dim(qtl$geno)[3]
-    geno <- array( rep(0, n.ind*n.draw*qtl$n.qtl),
-                  c(n.ind, qtl$n.qtl, n.draw) )
-  
-    geno[,1:(qtl$n.qtl-1),] <- qtl$geno
-    geno[,qtl$n.qtl,] <- cross$geno[[add.chr]]$draws[,marker.idx,]
-    dimnames(geno) <- list(NULL, paste("Q", 1:qtl$n.qtl, sep=""), NULL)
-
-    # replace geno in qtl
-    qtl$geno <- geno
+  if(what=="draws") {
+    do <- dim(qtl$geno)
+    dn <- dim(newqtl$geno)
+    if(do[1] != dn[1] || do[3] != dn[3])
+      stop("Mismatch in number of individuals or number of imputations.")
+    
+    temp <- array(dim=c(do[1], do[2]+dn[2], do[3]))
+    temp[,1:ncol(qtl$geno),] <- qtl$geno
+    temp[,-(1:ncol(qtl$geno)),] <- newqtl$geno
+    colnames(temp) <- paste("Q", 1:ncol(temp), sep="")
+    qtl$geno <- temp
+  }
+  else {
+    qtl$prob <- c(qtl$prob, newqtl$prob)
   }
 
-  # add new entry to prob (if any)
-  if("prob" %in% names(qtl)) {
-    marker.idx <- locatemarker(cross$geno[[add.chr]]$map,
-                                add.pos, add.chr, "prob")
-    qtl$pos[length(qtl$pos)] <- map[marker.idx]
+  qtl$name <- c(qtl$name, newqtl$name)
+  qtl$chr <- c(qtl$chr, newqtl$chr)
+  qtl$pos <- c(qtl$pos, newqtl$pos)
+  qtl$n.qtl <- qtl$n.qtl + newqtl$n.qtl
+  qtl$altname <- paste("Q", 1:qtl$n.qtl, sep="")
+  if(qtl$n.ind != newqtl$n.ind)
+    stop("Mismatch in no. individuals")
+  qtl$n.gen <- c(qtl$n.gen, newqtl$n.gen)
 
-    # reallocate memory for prob array
-    n.ind <- dim(qtl$prob)[1]
-    ngen <- dim(qtl$prob)[3]
-    prob <- array( rep(0, n.ind*ngen*qtl$n.qtl),
-                  c(n.ind, qtl$n.qtl, ngen))
-    prob[,1:(qtl$n.qtl-1),] <- qtl$prob
-    prob[,qtl$n.qtl,] <- cross$geno[[add.chr]]$prob[,marker.idx,]
+  if(drop.lod.profile)
+    attr(qtl, "lodprofile") <- NULL
 
-    # replace prob in qtl
-    qtl$prob <- prob
-  }
-
-  # done
   qtl
 }
 
 ######################################################################
 #
-# This is the function to drop a QTL for a given qtl object
-# This is the internal function and not supposed to be used by user
+# This is the function to drop a QTL from a given qtl object
 #
 ######################################################################
-dropqtl <-
-function(qtl, drop)
+dropfromqtl <-
+function(qtl, index, chr, pos, qtl.name, drop.lod.profile=TRUE)
 {
+  if(class(qtl) != "qtl")
+    stop("qtl should have class \"qtl\".")
+
+  if(!missing(chr) || !missing(pos)) {
+    if(missing(chr) || missing(pos))
+      stop("Give both chr and pos, or give name, or give a numeric index")
+    if(!missing(qtl.name) || !missing(index))
+      stop("Give chr and pos or qtl.name or numeric index, but not multiple of these.")
+    if(length(chr) != length(pos))
+      stop("chr and pos must have the same lengths.")
+
+    todrop <- NULL
+    for(i in seq(along=chr)) {
+      m <- which(qtl$chr == chr[i])
+    
+      if(length(m) < 1)
+        stop("No QTL on chr ", chr[i], " in input qtl object.")
+
+      for(j in seq(along=m)) {
+        d <- abs(qtl$pos[m[j]] - pos[i])
+        if(min(d) > 10) stop("No qtl near position ", pos[i], " on chr ", chr[i])
+
+        wh <- m[d==min(d)]
+        if(length(wh) > 1)
+          stop("Multiple QTL matching chr ", chr[i], " at pos ", pos[i])
+
+        if(min(d) > 1)
+          warning("No QTL on chr ", chr[i], " exactly at ", pos[i],
+                  "; dropping that at ", qtl$pos[wh])
+
+        todrop <- c(todrop, wh)
+      }
+    }
+
+    todrop <- unique(todrop)
+  }
+  else if(!missing(qtl.name)) {
+    if(!missing(index))
+      stop("Give chr and pos or qtl.name or numeric index, but not multiple of these.")
+
+    m <- match(qtl.name, qtl$name)
+    if(all(is.na(m))) # if no matches, try "altname"
+      m <- match(qtl.name, qtl$altname)
+
+    if(any(is.na(m))) 
+      warning("Didn't match QTL ", qtl.name[is.na(m)])
+
+    todrop <- m[!is.na(m)]
+  }
+  else {
+    if(missing(index))
+      stop("Give chr and pos or qtl.name or numeric index, but not multiple of these.")
+    if(any(index < 1 | index > qtl$n.qtl))
+      stop("index should be between 1 and ", qtl$n.qtl)
+
+    todrop <- index
+  }
+
   # input drop is an integer index
   # get the index for exclusing drop QTL
-  idx <- setdiff(1:qtl$n.qtl, drop)
+  idx <- setdiff(1:qtl$n.qtl, todrop)
   
   # result object
-  result <- NULL
-  result$name <- qtl$name[idx]
-  result$chr <- qtl$chr[idx]
-  result$pos <- qtl$pos[idx]
-  result$n.qtl <- qtl$n.qtl - 1
-  result$n.ind <- qtl$n.ind
-  result$n.gen <- qtl$n.gen[idx]
-  result$geno <- qtl$geno[,idx,]
-  result$prob <- qtl$prob[,idx,]
-#  result$type <- type ## is this necessary? (and where should "type" come from?
-  dimnames(result$geno) <- list(NULL, paste("Q", 1:result$n.qtl, sep=""),
-                                NULL)
+  qtl$name <- qtl$name[idx]
+  qtl$chr <- qtl$chr[idx]
+  qtl$pos <- qtl$pos[idx]
+  qtl$n.qtl <- qtl$n.qtl - length(todrop)
+  qtl$altname <- paste("Q", 1:qtl$n.qtl, sep="")
+  qtl$n.ind <- qtl$n.ind
+  qtl$n.gen <- qtl$n.gen[idx]
+  if("geno" %in% names(qtl)) {
+    qtl$geno <- qtl$geno[,idx,,drop=FALSE]
+    colnames(qtl$geno) <- paste("Q", 1:ncol(qtl$geno), sep="")
+  }
+  if("prob" %in% names(qtl))
+    qtl$prob <- qtl$prob[idx]
 
-  class(result) <- "qtl"
+  if(drop.lod.profile)
+    attr(qtl, "lodprofile") <- NULL
 
-  result
+  qtl
 }
 
 
@@ -436,17 +420,6 @@ function(map, pos, chr, flag)
     # if there's a tie, take the first nearst one
     m.tmp <- abs(pos-map)
     marker.idx <- which(m.tmp==min(m.tmp))[[1]]
-#    if(flag == "draws") {
-#      msg <- "For draws: "
-#    }
-#    else if(flag == "prob") {
-#      msg <- "For prob: "
-#    }
-#    msg <- paste(msg, "there's no marker on Chr ", chr, ", at ",
-#                 pos,"cM.", sep="")
-#    msg <- paste(msg, " Take marker at ", map[[marker.idx]], "cM instead.",
-#                 sep="")
-#    warning(msg)
   }
 
   if(length(marker.idx) > 1)
@@ -458,25 +431,24 @@ function(map, pos, chr, flag)
 print.qtl <-
 function(x, ...)   
 {
-  cat("  This is an object of class \"qtl\".\n")
-  cat("  It is too complex to print, so we provide just this summary.\n")
   print(summary(x))
-  return(summary(x))
 }
 
 # summary of QTL object
 summary.qtl <-
 function(object, ...)
 {
-  if("geno" %in% names(object)) 
+  if("geno" %in% names(object)) {
     type <- "draws"
-  else
-    type <- "prob"
+    n.draws <- dim(object$geno)[3]
+  }
+  else type <- "prob"
 
-  output <- data.frame(chr=object$chr, pos=object$pos, n.gen=object$n.gen)
-  rownames(output) <- object$name
+  output <- data.frame(name=object$name, chr=object$chr, pos=object$pos, n.gen=object$n.gen)
+  rownames(output) <- object$altname
   
   attr(output, "type") <- type
+  if(type=="draws") attr(output, "n.draws") <- n.draws
   class(output) <- c("summary.qtl", "data.frame")
 
   output
@@ -487,12 +459,118 @@ print.summary.qtl <-
 function(x, ...)
 {
   type <- attr(x, "type")
-  if(type=="draws") thetext <- "imputed genotypes."
-  else thetext <- "genotype probabilties."
+  if(type=="draws")
+    thetext <- paste("imputed genotypes, with", attr(x, "n.draws"), "imputations.")
+  else thetext <- "genotype probabilities."
   
   cat("  QTL object containing", thetext, "\n\n")
 
   print.data.frame(x, digits=5)
+}
+
+######################################################################
+# plot locations of QTLs on the genetic map
+######################################################################
+plot.qtl <-
+function(x, chr, horizontal=FALSE, shift=TRUE,
+         show.marker.names=FALSE,  alternate.chrid=FALSE, ...)
+{
+  if(!("qtl" %in% class(x)))
+    stop("input should be a qtl object")
+
+  map <- attr(x, "map")
+  if(is.null(map))
+    stop("qtl object doesn't contain a genetic map.")
+
+  if(missing(chr)) 
+    chr <- names(map)
+  else {
+    whchr <- match(chr, names(map))
+    if(any(is.na(whchr))) {
+      if(sum(is.na(whchr)) > 1)
+        stop("Cannot find chromosomes ", paste(chr[is.na(whchr)], sep=" "), " in map")
+      else
+        stop("Cannot find chromosome ", chr[is.na(whchr)], " in map")
+    }
+    map <- map[whchr]
+  }
+    
+  whchr <- match(x$chr, chr)
+  if(any(is.na(whchr))) {
+    if(sum(is.na(whchr)) > 1)
+      stop("Cannot find chromosomes ", paste(x$chr[is.na(whchr)], sep=" "), " in map")
+    else
+      stop("Cannot find chromosome ", x$chr[is.na(whchr)], " in map")
+  }
+
+  if(horizontal) 
+    plot(map, chr=chr, horizontal=horizontal, shift=shift, 
+         show.marker.names=show.marker.names, alternate.chrid=alternate.chrid,
+         ylim=c(length(map)+0.5, 0), ...)
+  else
+    plot(map, chr=chr, horizontal=horizontal, shift=shift, 
+         show.marker.names=show.marker.names, alternate.chrid=alternate.chrid,
+         xlim=c(0.5,length(map)+1), ...)
+
+  thepos <- x$pos
+  if(shift) 
+    thepos <- thepos - sapply(map[whchr], min)
+
+  if(is.matrix(map[[1]])) whchr <- whchr - 0.3
+
+  if(length(grep("^Chr.+@[0-9\\.]+$", x$name)) == length(x$name))
+    x$name <- x$altname
+
+  if(horizontal) {
+    arrows(thepos, whchr - 0.25, thepos, whchr, lwd=2, col="red", len=0.1)
+    text(thepos, whchr-0.5, x$name, col="red")
+  }
+  else {
+    arrows(whchr + 0.25, thepos, whchr, thepos, lwd=2, col="red", len=0.1)
+    text(whchr+0.5, thepos, x$name, col="red")
+  }
+
+  invisible()
+}
+
+######################################################################
+#
+# This is the function to reorder the QTL within a QTL object
+#
+######################################################################
+reorderqtl <-
+function(qtl, neworder)
+{
+  if(class(qtl) != "qtl")
+    stop("qtl should have class \"qtl\".")
+
+  if(missing(neworder)) return(qtl)
+
+  curorder <- seq(qtl$n.qtl)
+  if(length(neworder) != qtl$n.qtl ||
+     !all(curorder == sort(neworder)))
+    stop("neworder should be an ordering of the integers from 1 to ", qtl$n.qtl)
+  
+  if(qtl$n.qtl == 1)
+    stop("Nothing to do; just one qtl.")
+
+
+  if("geno" %in% names(qtl))
+    qtl$geno <- qtl$geno[,neworder,]
+  else
+    qtl$prob <- qtl$prob[neworder]
+
+  qtl$name <- qtl$name[neworder]
+  qtl$chr <- qtl$chr[neworder]
+  qtl$pos <- qtl$pos[neworder]
+  
+  if("lodprofile" %in% names(attributes(qtl))) {
+    lodprof <- attr(qtl, "lodprofile")
+    if(length(lodprof) == length(neworder))
+      attr(qtl, "lodprofile") <- lodprof[neworder]
+  }
+
+  qtl
 }
 
 # end of makeqtl.R

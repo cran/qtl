@@ -5,30 +5,46 @@
 
 \description{
   Fits a user-specified multiple-QTL model.  If specified, 
-  a drop-one-term analysis will be performed.}
+  a drop-one-term analysis will be performed.
 }
 
 \usage{
-fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
-       dropone=TRUE, get.ests=FALSE)
+fitqtl(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
+       dropone=TRUE, get.ests=FALSE, run.checks=TRUE)
 }
 \arguments{
- \item{pheno}{Phenotype data (a numeric vector).}
+ \item{cross}{An object of class \code{cross}. See
+   \code{\link[qtl]{read.cross}} for details.}
+ \item{pheno.col}{Column number in the phenotype matrix which should be
+   used as the phenotype.  One may also give a character string matching
+   a phenotype name.}
  \item{qtl}{An object of class \code{qtl}, as output from
    \code{\link[qtl]{makeqtl}}.} 
- \item{covar}{A data.frame of covariates}
+ \item{covar}{A data.frame of covariates.  These must be strictly
+   numeric.} 
  \item{formula}{An object of class \code{\link[stats]{formula}}
    indicating the model to be fitted.  QTLs are referred to as
    \code{Q1}, \code{Q2}, etc.  Covariates are referred to by their names
    in the data frame \code{covar}.} 
- \item{method}{Indicates whether to use the EM algorithm or  
-   imputation. (Only imputation is implemented at this point.)}
+ \item{method}{Indicates whether to use multiple imputation or
+   Haley-Knott regression.}
  \item{dropone}{If TRUE, do drop-one-term analysis.}
  \item{get.ests}{If TRUE, return estimated QTL effects and their
    estimated variance-covariance matrix.}
+ \item{run.checks}{If TRUE, check the input formula and check for
+   individuals with missing phenotypes or covariates.}
 }
 
 \details{
+  The formula is used to specified the model to be fit. In the
+  formula, use \code{Q1}, \code{Q2}, etc., or \code{q1},
+  \code{q2}, etc., to represent the QTLs, and the column names in the
+  covariate data frame to represent the covariates.
+    
+  We enforce a hierarchical structure on the model formula: if a QTL or
+  covariate is in involved in an interaction, its main effect must also
+  be included.   
+
   In the drop-one-term analysis, for a given QTL/covariate model, all
   submodels will be analyzed.  For each term in the input formula, when
   it is dropped, all higher order terms that contain it will also be
@@ -77,11 +93,15 @@ fitqtl(pheno, qtl, covar=NULL, formula, method=c("imp"),
 }
 
 \references{
+  Haley, C. S. and Knott, S. A. (1992) A simple regression method for mapping
+  quantitative trait loci in line crosses using flanking markers.
+  \emph{Heredity} \bold{69}, 315--324.
+
   Sen, \'S. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 }
 
-\author{Hao Wu}
+\author{Hao Wu; Karl W Broman, \email{kbroman@biostat.wisc.edu}}
 
 \examples{
 data(fake.f2)
@@ -96,25 +116,29 @@ qtl <- makeqtl(fake.f2, qc, qp)
 
 # fit model with 3 interacting QTLs interacting
 # (performing a drop-one-term analysis)
-lod <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1*Q2*Q3)
+lod <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1*Q2*Q3)
 summary(lod)
 
 \dontrun{
 # fit an additive QTL model
-lod.add <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1+Q2+Q3)
+lod.add <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1+Q2+Q3)
 summary(lod.add)
 
 # fit the model including sex as an interacting covariate
 Sex <- data.frame(Sex=fake.f2$pheno$sex)
-lod.sex <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1*Q2*Q3*Sex, cov=Sex)
+lod.sex <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1*Q2*Q3*Sex, cov=Sex)
 summary(lod.sex)
 
 # fit the same with an additive model
-lod.sex.add <- fitqtl(fake.f2$pheno[,1], qtl, formula=y~Q1+Q2+Q3+Sex, cov=Sex)
+lod.sex.add <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1+Q2+Q3+Sex, cov=Sex)
 summary(lod.sex.add)
 }}
 
 \seealso{ \code{\link[qtl]{summary.fitqtl}}, \code{\link[qtl]{makeqtl}},
-\code{\link[qtl]{scanqtl}} }  
+\code{\link[qtl]{scanqtl}}, \code{\link[qtl]{refineqtl}},
+  \code{\link[qtl]{addtoqtl}} ,
+  \code{\link[qtl]{dropfromqtl}},
+  \code{\link[qtl]{replaceqtl}},
+  \code{\link[qtl]{reorderqtl}}}  
 
 \keyword{models}

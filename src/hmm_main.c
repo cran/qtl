@@ -2,9 +2,9 @@
  * 
  * hmm_main.c
  *
- * copyright (c) 2001-6, Karl W Broman
+ * copyright (c) 2001-8, Karl W Broman
  *
- * last modified Dec, 2006
+ * last modified Jan, 2008
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -14,7 +14,8 @@
  * These functions are for the main HMM engine
  *
  * Contains: calc_genoprob, calc_genoprob_special, sim_geno, est_map, argmax_geno
- *           calc_errorlod, est_rf, calc_pairprob
+ *           calc_errorlod, est_rf, calc_pairprob, calc_pairprob_condindep,
+ *           R_calc_pairprob_condindep, marker_loglik
  *  
  **********************************************************************/
 
@@ -814,14 +815,15 @@ void est_rf(int n_ind, int n_mar, int *geno, double *rf,
 	if(Geno[j1][i] != 0 && Geno[j2][i] != 0) {
 	  n_mei += 2;
 	  /* check if informatve */
-	  if(logprec(Geno[j1][i], Geno[j2][i], 0.5) < 0.0) flag = 1;
+	  if(fabs(logprec(Geno[j1][i], Geno[j2][i], 0.5) -
+		  logprec(Geno[j1][i], Geno[j2][i], TOL)) > TOL) flag = 1;
 	}
       }
 
       if(n_mei != 0 && flag == 1) {
-
+	flag = 0;
 	/* begin EM algorithm; start with cur_rf = 0.5 */
-	for(s=0, cur_rf=0.5; s < maxit; s++) {
+	for(s=0, cur_rf=0.01; s < maxit; s++) {
 	  next_rf = 0.0; 
 	  for(i=0; i<n_ind; i++) {
 	    if(Geno[j1][i] != 0 && Geno[j2][i] != 0) 
@@ -830,6 +832,9 @@ void est_rf(int n_ind, int n_mar, int *geno, double *rf,
 
 	  next_rf /= (double) n_mei;
 	  
+	  /* debugging code */
+	  /*	  Rprintf("%d %d  %d   %f %f\n", j1, j2, s, cur_rf, next_rf); */
+
 	  if(fabs(next_rf - cur_rf) < tol*(cur_rf+tol*100.0)) { 
 	    flag = 1;
 	    break;
@@ -1012,5 +1017,110 @@ void calc_pairprob(int n_ind, int n_pos, int n_gen, int *geno,
 	    
   } /* end loop over individuals */
 }
+
+
+/**********************************************************************
+ * 
+ * calc_pairprob_condindep
+ *
+ * This function calculates the joint genotype probabilities assuming
+ * conditional independence of QTL genotypes given the marker data
+ *
+ * n_ind        Number of individuals
+ *
+ * n_pos        Number of markers (or really positions at which to 
+ *              calculate the genotype probabilities)
+ *
+ * n_gen        Number of different genotypes
+ *  
+ * genoprob     QTL genotype probabilities given the marker data
+ *
+ * pairprob     Joint genotype probabilities for pairs of positions.
+ *              A single vector of length n_ind x n_pos x (n_pos-1)/2 x
+ *              n_gen^2.  We only calculate probabilities for 
+ *              pairs (i,j) with i < j.
+ *
+ **********************************************************************/
+
+void calc_pairprob_condindep(int n_ind, int n_pos, int n_gen, 
+			     double ***Genoprob, double *****Pairprob) 
+{
+  int i, j, j2, v, v2;
+  
+  for(i=0; i<n_ind; i++) { /* i = individual */
+
+    R_CheckUserInterrupt(); /* check for ^C */
+
+    /* calculate Pr(G[j], G[j+1] | marker data) for i = 1...n_pos-1 */
+    for(j=0; j<n_pos-1; j++) 
+      for(j2=j+1; j2<n_pos; j2++)
+	for(v=0; v<n_gen; v++) 
+	  for(v2=0; v2<n_gen; v2++) 
+	    Pairprob[v][v2][j][j2][i] = Genoprob[v][j][i] * Genoprob[v2][j2][i];
+  }
+
+}
+
+/* wrapper for calc_pairprob_condindep */
+void R_calc_pairprob_condindep(int *n_ind, int *n_pos, int *n_gen, 
+			       double *genoprob, double *pairprob)
+{
+  double ***Genoprob, *****Pairprob;
+
+  reorg_genoprob(*n_ind, *n_pos, *n_gen, genoprob, &Genoprob);
+
+  reorg_pairprob(*n_ind, *n_pos, *n_gen, pairprob, &Pairprob);
+
+  calc_pairprob_condindep(*n_ind, *n_pos, *n_gen,
+			  Genoprob, Pairprob);
+}
+
+
+
+/**********************************************************************
+ * 
+ * marker_loglik
+ *
+ * This function calculates the log likelihood for a fixed marker
+ *
+ * n_ind        Number of individuals
+ *
+ * n_gen        Number of different genotypes
+ *
+ * geno         Genotype data, as a single vector
+ *
+ * error_prob   Genotyping error probability
+ *
+ * initf        Function returning log Pr(g_i)
+ *
+ * emitf        Function returning log Pr(O_i | g_i)
+ * 
+ * loglik       Loglik at return
+ *
+ **********************************************************************/
+
+/* Note: true genotypes coded as 1, 2 */
+
+void marker_loglik(int n_ind, int n_gen, int *geno, 
+		   double error_prob, double initf(int), 
+		   double emitf(int, int, double),
+		   double *loglik)
+{
+  int i, v;
+  double temp;
+  
+  *loglik = 0.0;
+  for(i=0; i<n_ind; i++) { /* i = individual */
+
+    R_CheckUserInterrupt(); /* check for ^C */
+    
+    temp = initf(1) + emitf(geno[i], 1, error_prob);
+    for(v=1; v<n_gen; v++) 
+      temp = addlog(temp, initf(v+1) + emitf(geno[i], v+1, error_prob));
+
+    (*loglik) += temp;
+  }
+}
+
 
 /* end of hmm_main.c */

@@ -2,9 +2,9 @@
  * 
  * hmm_f2.h
  * 
- * copyright (c) 2001-6, Karl W Broman
+ * copyright (c) 2001-7, Karl W Broman
  *
- * last modified Dec, 2006
+ * last modified Oct, 2007
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -14,7 +14,7 @@
  * Contains: init_f2, emit_f2, step_f2, init_f2b, emit_f2b, step_f2b,
  *           calc_genoprob_f2, calc_genoprob_special_f2, sim_genoprob_f2, est_map_f2, 
  *           argmax_geno_f2, errorlod_f2, calc_errorlod_f2, nrec2_f2,
- *           logprec_f2, est_rf_f2, calc_pairprob_f2
+ *           logprec_f2, est_rf_f2, calc_pairprob_f2, marker_loglik_f2
  *
  * These are the init, emit, and step functions plus
  * all of the hmm wrappers for the F2 intercross.
@@ -70,5 +70,8 @@ void est_rf_f2(int *n_ind, int *n_mar, int *geno, double *rf,
 void calc_pairprob_f2(int *n_ind, int *n_mar, int *geno, 
 		      double *rf, double *error_prob, double *genoprob,
 		      double *pairprob);
+
+void marker_loglik_f2(int *n_ind, int *geno,
+		      double *error_prob, double *loglik);
 
 /* end of hmm_f2.h */

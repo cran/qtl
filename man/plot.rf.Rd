@@ -11,7 +11,7 @@
 
 \usage{
 plot.rf(x, chr, what=c("both","lod","rf"), alternate.chrid=FALSE,
-        \dots)
+        zmax=12, \dots)
 }
 
 \arguments{
@@ -24,6 +24,8 @@ plot.rf(x, chr, what=c("both","lod","rf"), alternate.chrid=FALSE,
   \item{alternate.chrid}{If TRUE and more than one chromosome is
     plotted, alternate the placement of chromosome 
      axis labels, so that they may be more easily distinguished.}
+  \item{zmax}{Maximum LOD score plotted; values above this are all
+    thresholded at this value.}
   \item{\dots}{Ignored at this point.}
 }
 

@@ -2,8 +2,8 @@
 #
 # read.cross.karl.R
 #
-# copyright (c) 2000-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2000-7, Karl W Broman
+# last modified Oct, 2007
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -141,7 +141,7 @@ function(dir,genfile,mapfile,phefile)
   cross.type <- class(cross)[1]
   if(cross.type=="f2") max.gen <- 5
   else if(cross.type=="bc") max.gen <- 2
-  else max.gen <- 10
+  else max.gen <- 14
 
   u <- unique(geno)
   if(any(!is.na(u) & (u > max.gen | u < 1))) 

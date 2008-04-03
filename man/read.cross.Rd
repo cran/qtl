@@ -101,7 +101,7 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
     progeny is assumed to be phase-known, with the following coding
     scheme: NA = missing, 1 = AC, 2 = BC, 3 = AD, 4 = BD, 5 = A = AC or AD,
     6 = B = BC or BD, 7 = C = AC or BC, 8 = D = AD or BD, 9 = AC or BD,
-    10 = AD or BC.
+    10 = AD or BC, 11 = not AC, 12 = not BC, 13 = not AD, 14 = not BD.
   }
 
   \item{pheno}{data.frame of size (\code{n.ind x n.phe}) containing the
@@ -210,12 +210,11 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
 
   The first column in the genotype data must specify individuals'
   identifiers, and there must be a column in the phenotype data with
-  precisely the same information, and the individuals must be in
-  precisely the same order in the two files.  These IDs will be included
-  in the data as a phenotype.  If the name \code{id} or \code{ID} is
-  used, these identifiers will be used in \code{\link[qtl]{top.errorlod}},
-  \code{\link[qtl]{plot.errorlod}}, and \code{\link[qtl]{plot.geno}} as
-  identifiers for the individual.  
+  precisely the same information (and with the same name).  These IDs
+  will be included in the data as a phenotype.  If the name \code{id} or
+  \code{ID} is used, these identifiers will be used in
+  \code{\link[qtl]{top.errorlod}}, \code{\link[qtl]{plot.errorlod}}, and
+  \code{\link[qtl]{plot.geno}} as identifiers for the individual.  
 
   In the genotype data file, the second row gives the chromosome IDs.
   The cell in the second row, first column, must be blank.  A third

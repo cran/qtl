@@ -2,9 +2,9 @@
 #
 # scanone.R
 #
-# copyright (c) 2001-7, Karl W Broman
+# copyright (c) 2001-8, Karl W Broman
 # 
-# last modified Aug, 2007
+# last modified Apr, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -42,6 +42,18 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   if(missing(verbose)) {
     if(!missing(n.perm) && n.perm > 0) verbose <- TRUE
     else verbose <- FALSE
+  }
+
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(any(is.na(num))) {
+      if(sum(is.na(num)) > 1) 
+        stop("Couldn't identify phenotypes ", paste(paste("\"", pheno.col[is.na(num)], "\"", sep=""),
+                                                    collapse=" "))
+      else 
+        stop("Couldn't identify phenotype \"", pheno.col[is.na(num)], "\"")
+    }
+    pheno.col <- num
   }
 
   if(any(pheno.col < 1 | pheno.col > nphe(cross)))
@@ -222,8 +234,10 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     if(chrtype=="X") {
       sexpgm <- getsex(cross)
       ac <- revisecovar(sexpgm,addcovar)
+
       if(!is.null(addcovar) && (nd <- attr(ac, "n.dropped")) > 0 && n.perm > -2)
         warning("Dropped ", nd, " additive covariates on X chromosome.")
+
       if(length(ac)==0) {
         n.ac <- 0
         ac <- NULL
@@ -615,7 +629,6 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     o <- grep("^loc-*[0-9]+",w)
     if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
       w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
-    rownames(z) <- w
     
     z <- as.data.frame(z)
     z <- cbind(chr=rep(names(cross$geno)[i],length(map)),
@@ -718,7 +731,11 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
   attr(res,"model") <- model
   attr(res,"type") <- class(cross)[1]
 
-  class(res) <- "scanoneperm"
+  if(any(chr.type=="X") && any(chr.type=="A") && perm.Xsp)
+    class(res) <- c("scanoneperm", "list")
+  else
+    class(res) <- c("scanoneperm", "matrix")
+    
   res
 }
 

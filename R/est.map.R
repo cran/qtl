@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001-7, Karl W Broman
-# last modified Sep, 2007
+# copyright (c) 2001-8, Karl W Broman
+# last modified Jan, 2008
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,7 +20,8 @@
 
 est.map <- 
 function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
-         m=0, p=0, maxit=4000, tol=1e-4, sex.sp=TRUE, verbose=FALSE)
+         m=0, p=0, maxit=10000, tol=1e-6, sex.sp=TRUE, verbose=FALSE,
+         omit.noninformative=TRUE)
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -100,9 +101,11 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
     gen <- cross$geno[[i]]$data
     gen[is.na(gen)] <- 0
 
-    # remove individuals that have less than one typed marker
-    o <- apply(gen,1,function(a) sum(a!=0)>1)
-    gen <- gen[o,,drop=FALSE]
+    # remove individuals that have less than two typed markers
+    if(omit.noninformative) {
+      o <- apply(gen,1,function(a) sum(a!=0)>1)
+      gen <- gen[o,,drop=FALSE]
+    }
     
     # recombination fractions
     if(one.map) {

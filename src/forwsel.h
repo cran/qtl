@@ -14,16 +14,20 @@
  * This is a simple routine to do forward selection in regression
  * to a fixed number of covariates
  *
- * Contains: R_forwsel, forwsel
+ * Contains: R_markerforwsel, markerforwsel, 
+ *           R_markerforwself2, markerforwself2 
  *  
  **********************************************************************/
 
-/* R wrapper */
-void R_forwsel(int *n, int *m, double *x, double *y,
-	       int *maxsize, int *chosen, double *rss);
+/* R wrappers */
+void R_markerforwsel(int *n, int *m, double *x, double *y,
+		     int *maxsize, int *chosen, double *rss);
+
+void R_markerforwself2(int *n, int *m, int *x, double *y,
+		       int *maxsize, int *chosen, double *rss);
 
 /**********************************************************************
- * forwsel 
+ * markerforwsel 
  * 
  * n = number of individuals
  * m = number of covariates (not including intercept)
@@ -37,7 +41,18 @@ void R_forwsel(int *n, int *m, double *x, double *y,
  * rss = on output, rss for those models
  *
  **********************************************************************/
-void forwsel(int n, int m, double **X, double *y,
-	     int maxsize, int *chosen, double *rss);
+void markerforwsel(int n, int m, double **X, double *y,
+		   int maxsize, int *chosen, double *rss);
+
+/**********************************************************************
+ * markerforwself2
+ * 
+ * the same as markerforwsel, but for an intercross, in which each
+ * column must be expanded to two, and we must select on the pairs of
+ * columns.
+ *
+ **********************************************************************/
+void markerforwself2(int n, int m, double **X, double *y,
+		     int maxsize, int *chosen, double *rss);
 
 /* end of forwsel.h */
