@@ -2,9 +2,9 @@
  * 
  * effectscan.c
  *
- * copyright (c) 2007, Karl W Broman 
+ * copyright (c) 2007-8, Karl W Broman 
  *
- * last modified Sep, 2007
+ * last modified Jan, 2008
  * first written Sep, 2007
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -35,7 +35,7 @@ void R_effectscan(int *nind, int *ngen, int *ndraws, int *npos,
 		  int *draws, double *pheno, double *effectmapping,
 		  double *beta, double *se, int *getse)
 {
-  int i, j, ***Draws;
+  int ***Draws;
   double **Beta, **SE;
 
   reorg_errlod(*ngen, *npos, beta, &Beta);
@@ -69,9 +69,9 @@ void effectscan(int nind, int ngen, int ndraws, int npos,
 		double **Beta, double **SE, int getse)
 {
   int nphe=1, lwork, info, i, j, s, k, ntrim, *index, *ng, *flag;
-  double *resid, *dwork, *var, sigmasq, *x;
-  double *wbeta, *wvar, *wrss, *wts, totwt;
-  double denom, lrss0, mpheno;
+  double *resid, *dwork, *var, sigmasq=0.0, *x;
+  double *wbeta, *wvar, *wrss, *wts, totwt=0.0;
+  double lrss0, mpheno;
   
   lwork = 4*nind;
   ntrim = (int) floor( 0.5*log(ndraws)/log(2.0) );

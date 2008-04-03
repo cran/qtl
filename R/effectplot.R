@@ -2,9 +2,9 @@
 #
 # effectplot.R
 #
-# copyright (c) 2002-7, Hao Wu and Karl W. Broman
+# copyright (c) 2002-8, Hao Wu and Karl W. Broman
 # 
-# Last modified Apr, 2007
+# Last modified Feb, 2008
 # first written Jul, 2002
 #
 # Modified by Hao Wu Feb 2005 for the following:
@@ -26,8 +26,23 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
 {
   if(!sum(class(cross) == "cross")) 
     stop("The first input variable must be an object of class cross")
-  if(pheno.col > nphe(cross)) 
-    stop("Input pheno.col is wrong")
+
+  if(length(pheno.col) > 1) {
+    pheno.col <- pheno.col[1]
+    warning("effectplot can take just one phenotype; only the first will be used")
+  }
+    
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+
+  if(pheno.col < 1 | pheno.col > nphe(cross))
+    stop("pheno.col values should be between 1 and the no. phenotypes")
+
+  var.flag <- match.arg(var.flag)
 
   # local variables
   n.ind <- nind(cross)
@@ -122,8 +137,12 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
     ndraws <- 1
     
   # drop data for individuals with missing phenotypes or genotypes
-  tmp <- cbind(pheno, mark1, mark2)
-  keepind <- apply(tmp, 1, function(x) all(!is.na(x)))
+  keepind <- !is.na(pheno)
+  if(!is.null(mark1))
+    keepind <- keepind & apply(mark1, 1, function(a) all(!is.na(a))) 
+  if(!is.null(mark2))
+    keepind <- keepind & apply(mark2, 1, function(a) all(!is.na(a))) 
+
   mark1 <- mark1[keepind,]
   mark2 <- mark2[keepind,]
   pheno <- pheno[keepind]
@@ -400,7 +419,9 @@ function (cross, pheno.col = 1, mname1, mark1, geno1, mname2,
 # given marker name
 ##############################################
 
-effectplot.getmark <- function (cross, mname) {
+effectplot.getmark <-
+function (cross, mname)
+{
   # cross type
   type <- class(cross)[1]
   # return variables
@@ -478,20 +499,20 @@ effectplot.getmark <- function (cross, mname) {
   
   else if(mar.type=="pm") { # this is a pseudomarker
     # get the imputed genotype data for this marker
-    mark <- cross$geno[[chr]]$draws[,idx.pos,]
+    mark <- cross$geno[[chr]]$draws[,idx.pos,,drop=FALSE]
 
     # if X chr and backcross or intercross, get sex/dir data + revise data
     if(chrtype == "X" && (type == "bc" || type == "f2")) {
       sexpgm <- getsex(cross)
-      mark <- reviseXdata(type, "standard", sexpgm, geno=mark,
-                          cross.attr=attributes(cross))
+      mark <- reviseXdata(type, "standard", sexpgm, draws=mark,
+                          cross.attr=attributes(cross))[,1,]
       gennames <- getgenonames(type, chrtype, "standard", sexpgm, attributes(cross))
     }
+    else mark <- mark[,1,]
   }
 
   else  # none of the above
     stop("Couldn't find marker ", mname)
-  
   
   # make mark a matrix if it's not one
   if(class(mark) != "matrix")

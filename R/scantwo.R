@@ -2,9 +2,9 @@
 #
 # scantwo.R
 #
-# copyright (c) 2001-7, Karl W Broman and Hao Wu
+# copyright (c) 2001-8, Karl W Broman and Hao Wu
 #
-# last modified Sep, 2007
+# last modified Apr, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -33,7 +33,7 @@ function(cross, chr, pheno.col=1,
          use=c("all.obs", "complete.obs"),
          incl.markers=FALSE, clean.output=FALSE,
          maxit=4000, tol=1e-4, verbose=TRUE, n.perm,
-         perm.strata=NULL)
+         perm.strata=NULL, assumeCondIndep=FALSE)
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -53,6 +53,18 @@ function(cross, chr, pheno.col=1,
   if(missing(n.perm)) n.perm <- 0
 
   fullmap <- pull.map(cross)
+
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(any(is.na(num))) {
+      if(sum(is.na(num)) > 1) 
+        stop("Couldn't identify phenotypes ", paste(paste("\"", pheno.col[is.na(num)], "\"", sep=""),
+                                                    collapse=" "))
+      else 
+        stop("Couldn't identify phenotype \"", pheno.col[is.na(num)], "\"")
+    }
+    pheno.col <- num
+  }
 
   if(any(pheno.col < 1 | pheno.col > nphe(cross)))
     stop("pheno.col values should be between 1 and the no. phenotypes")
@@ -111,7 +123,8 @@ function(cross, chr, pheno.col=1,
                       incl.markers=incl.markers,
                       clean.output=clean.output,
                       maxit=maxit, tol=tol, verbose=verbose, n.perm=n.perm,
-                      perm.strata=perm.strata)
+                      perm.strata=perm.strata,
+                      assumeCondIndep=assumeCondIndep)
     temp <- array(dim=c(nrow(output$lod), ncol(output$lod), n.phe))
     temp[,,1] <- output$lod
     output$lod <- temp
@@ -122,7 +135,8 @@ function(cross, chr, pheno.col=1,
                       use=use, incl.markers=incl.markers,
                       clean.output=clean.output,
                       maxit=maxit, tol=tol, verbose=verbose, n.perm=n.perm,
-                      perm.strata=perm.strata)
+                      perm.strata=perm.strata,
+                      assumeCondIndep=assumeCondIndep)
       output$lod[,,i] <- temp$lod
       if(!is.null(output$scanoneX))
         output$scanoneX <- cbind(output$scanoneX, temp$scanoneX)
@@ -538,7 +552,8 @@ function(cross, chr, pheno.col=1,
             else
               tmap <- create.map(oldXchr$geno[[1]]$map, stp, oe, stpw)
 
-            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap)
+            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap,
+                                  assumeCondIndep=assumeCondIndep)
           }
           else {
             # calculate joint genotype probabilities for all pairs of positions
@@ -555,7 +570,8 @@ function(cross, chr, pheno.col=1,
             else
               tmap <- create.map(cross$geno[[i]]$map, stp, oe, stpw)
 
-            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap)
+            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap,
+                                  assumeCondIndep=assumeCondIndep)
           }
 
           # pull out positions from genotype probs
@@ -604,6 +620,7 @@ function(cross, chr, pheno.col=1,
             else # multiple phenotypes
               results[wh.col[[i]],wh.col[[i]],] <-
                 array(z$result,c(n.pos[i],n.pos[i], n.phe))
+            z <- 0
           }
           else {
             z <- .C("R_scantwo_1chr_em", 
@@ -628,7 +645,9 @@ function(cross, chr, pheno.col=1,
             results[wh.col[[i]],wh.col[[i]]] <-
               matrix(z$result,ncol=n.pos[i])
           }
-          rm(temp) # remove the joint genotype probabilities
+
+          z <- 0
+          temp <- 0 # remove the joint genotype probabilities
         } # end same chromosome
         
         else {
@@ -664,6 +683,7 @@ function(cross, chr, pheno.col=1,
               results[wh.col[[i]],wh.col[[j]],] <-
                 array(z$int,c(n.pos[j], n.pos[i], n.phe))
             }
+            z <- 0
           }
           else  {
             z <- .C("R_scantwo_2chr_em",
@@ -691,6 +711,7 @@ function(cross, chr, pheno.col=1,
               t(matrix(z$full,ncol=n.pos[j]))
             results[wh.col[[i]],wh.col[[j]]] <-
               matrix(z$int,ncol=n.pos[j])
+            z <- 0
           }
         } # end different chromosome
       }
@@ -732,7 +753,8 @@ function(cross, chr, pheno.col=1,
             else
               tmap <- create.map(oldXchr$geno[[1]]$map, stp, oe, stpw)
 
-            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap)
+            temp <- calc.pairprob(oldXchr,stp,oe,err,mf,tmap,
+                                  assumeCondIndep=assumeCondIndep)
           }
           else {
             # calculate joint genotype probabilities for all pairs of positions
@@ -749,7 +771,8 @@ function(cross, chr, pheno.col=1,
             else
               tmap <- create.map(cross$geno[[i]]$map, stp, oe, stpw)
 
-            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap)
+            temp <- calc.pairprob(subset(cross,chr=i),stp,oe,err,mf,tmap,
+                                  assumeCondIndep=assumeCondIndep)
           }
 
           # pull out positions from genotype probs
@@ -792,11 +815,12 @@ function(cross, chr, pheno.col=1,
                   as.integer(col2drop),
                   PACKAGE="qtl")
 
-          rm(temp) # remove the joint genotype probabilities
-
           # re-organize results
           results[wh.col[[i]],wh.col[[i]]] <-
             matrix(z$result,ncol=n.pos[i])
+
+          z <- 0
+          temp <- 0 # remove the joint genotype probabilities
         } # end same chromosome
         else {
           start <- c(rep(nullcoef[1],n.gen[i]),rep(0,n.gen[j]-1),
@@ -828,6 +852,7 @@ function(cross, chr, pheno.col=1,
             t(matrix(z$full,ncol=n.pos[j]))
           results[wh.col[[i]],wh.col[[j]]] <-
             matrix(z$int,ncol=n.pos[j])
+          z <- 0
         } # end same chromosome
       }
       else { # marker regression
@@ -863,6 +888,7 @@ function(cross, chr, pheno.col=1,
           # re-organize results
           results[wh.col[[i]],wh.col[[i]]] <-
             matrix(z$result,ncol=n.pos[i])
+          z <- 0
         } # end same chromosome
         else {
           
@@ -898,7 +924,9 @@ function(cross, chr, pheno.col=1,
             t(matrix(z$full,ncol=n.pos[j]))
           results[wh.col[[i]],wh.col[[j]]] <-
             matrix(z$int,ncol=n.pos[j])
-        } # end same chromosome
+          
+          z <- 0
+        } 
       }
     
     } # end loop over second chr
@@ -1105,7 +1133,8 @@ function(cross, pheno.col=1, model=c("normal","binary"),
          use=c("all.obs", "complete.obs"),
          incl.markers=FALSE, clean.output=FALSE,
          maxit=4000, tol=1e-4, verbose=FALSE,
-         n.perm=1000, perm.strata)
+         n.perm=1000, perm.strata,
+         assumeCondIndep=FALSE)
 {
   method <- match.arg(method)
   model <- match.arg(model)
@@ -1116,7 +1145,8 @@ function(cross, pheno.col=1, model=c("normal","binary"),
                       intcovar=intcovar, weights=weights, use=use,
                       incl.markers=incl.markers, clean.output=clean.output,
                       maxit=maxit, tol=tol, verbose=verbose,
-                      perm.strata=perm.strata)
+                      perm.strata=perm.strata,
+                      assumeCondIndep=assumeCondIndep)
 
 }
 
@@ -1130,7 +1160,8 @@ scantwo.perm.engine <-
 function(n.perm, cross, pheno.col, model,
          method, addcovar, intcovar, weights, use,
          incl.markers, clean.output,
-         maxit, tol, verbose, perm.strata)
+         maxit, tol, verbose, perm.strata,
+         assumeCondIndep=FALSE)
 {
   ## local variables
   n.phe <- length(pheno.col)
@@ -1197,7 +1228,8 @@ function(n.perm, cross, pheno.col, model,
                    use=use, incl.markers=incl.markers,
                    clean.output=clean.output,
                    maxit=maxit, tol=tol,verbose=FALSE, n.perm=-1,
-                   perm.strata=perm.strata)
+                   perm.strata=perm.strata,
+                   assumeCondIndep=assumeCondIndep)
     if(clean.output) tem <- clean(tem)
 
     ## find the maximum LOD on each permutation
@@ -1258,9 +1290,10 @@ function(n.perm, cross, pheno.col, model,
                      weights=weights, use=use, 
                      incl.markers=incl.markers, clean.output=clean.output,
                      maxit=maxit, tol=tol,
-                     verbose=FALSE, n.perm= -i, perm.strata=perm.strata)
+                     verbose=FALSE, n.perm= -i, perm.strata=perm.strata,
+                     assumeCondIndep=assumeCondIndep)
 
-      if(clean.output) tem <- clean.output(tem)
+      if(clean.output) tem <- clean(tem)
 
       # maxima
       temp <- subrousummaryscantwo(tem, for.perm=TRUE)
@@ -1273,7 +1306,7 @@ function(n.perm, cross, pheno.col, model,
 
   ## make result
   attr(perm.result,"method") <- method
-  class(perm.result) <- "scantwoperm"
+  class(perm.result) <- c("scantwoperm", "list")
 
   ## add column names
   for(i in 1:length(perm.result))

@@ -2,9 +2,9 @@
  * 
  * hmm_main.h
  *
- * copyright (c) 2001-6, Karl W Broman
+ * copyright (c) 2001-7, Karl W Broman
  *
- * last modified Dec, 2006
+ * last modified Nov, 2007
  * first written Feb, 2001
  *
  * Licensed under the GNU General Public License version 2 (June, 1991)
@@ -14,7 +14,8 @@
  * These functions are for the main HMM engine
  *
  * Contains: calc_genoprob, calc_genoprob_special, sim_geno, est_map, argmax_geno,
- *           calc_errorlod, est_rf, calc_pairprob
+ *           calc_errorlod, est_rf, calc_pairprob, calc_pairprob_condindep,
+ *           R_calc_pairprob_condindep, marker_loglik
  *  
  **********************************************************************/
 
@@ -360,5 +361,66 @@ void calc_pairprob(int n_ind, int n_pos, int n_gen, int *geno,
 		   double initf(int), 
 		   double emitf(int, int, double),
 		   double stepf(int, int, double, double));
+
+/**********************************************************************
+ * 
+ * calc_pairprob_condindep
+ *
+ * This function calculates the joint genotype probabilities assuming
+ * conditional independence of QTL genotypes given the marker data
+ *
+ * n_ind        Number of individuals
+ *
+ * n_pos        Number of markers (or really positions at which to 
+ *              calculate the genotype probabilities)
+ *
+ * n_gen        Number of different genotypes
+ *  
+ * genoprob     QTL genotype probabilities given the marker data
+ *
+ * pairprob     Joint genotype probabilities for pairs of positions.
+ *              A single vector of length n_ind x n_pos x (n_pos-1)/2 x
+ *              n_gen^2.  We only calculate probabilities for 
+ *              pairs (i,j) with i < j.
+ *
+ **********************************************************************/
+void calc_pairprob_condindep(int n_ind, int n_pos, int n_gen, 
+			     double ***Genoprob, double *****Pairprob);
+
+
+/* wrapper for calc_pairprob_condindep */
+void R_calc_pairprob_condindep(int *n_ind, int *n_pos, int *n_gen, 
+			       double *genoprob, double *pairprob);
+
+
+
+/**********************************************************************
+ * 
+ * marker_loglik
+ *
+ * This function calculates the log likelihood for a fixed marker
+ *
+ * n_ind        Number of individuals
+ *
+ * n_gen        Number of different genotypes
+ *
+ * geno         Genotype data, as a single vector
+ *
+ * error_prob   Genotyping error probability
+ *
+ * initf        Function returning log Pr(g_i)
+ *
+ * emitf        Function returning log Pr(O_i | g_i)
+ * 
+ * loglik       Loglik at return
+ *
+ **********************************************************************/
+
+/* Note: true genotypes coded as 1, 2 */
+
+void marker_loglik(int n_ind, int n_gen, int *geno, 
+		   double error_prob, double initf(int), 
+		   double emitf(int, int, double),
+		   double *loglik);
 
 /* end of hmm_main.h */

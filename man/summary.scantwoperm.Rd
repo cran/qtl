@@ -45,8 +45,8 @@ summary(operm)
 }
 
 \seealso{ \code{\link[qtl]{scantwo}},
-  \code{\link[qtl]{summary.scantwo}}, 
-  \code{\link[stats]{quantile}} }
+  \code{\link[qtl]{summary.scantwo}},
+  \code{\link[qtl]{plot.scantwoperm}} } 
 
 \references{
   Churchill, G. A. and Doerge, R. W. (1994) Empirical threshold values for

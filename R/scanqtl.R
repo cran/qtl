@@ -2,8 +2,8 @@
 #
 # scanqtl.R
 #
-# copyright (c) 2002-7, Hao Wu and Karl W. Broman
-# last modified Sep, 2007
+# copyright (c) 2002-8, Hao Wu and Karl W. Broman
+# last modified Feb, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -13,36 +13,90 @@
 ######################################################################
 
 scanqtl <-
-  function(cross, pheno.col=1, chr, pos, covar=NULL, formula, method="imp",
-           incl.markers=FALSE, verbose=TRUE)
+function(cross, pheno.col=1, chr, pos, covar=NULL, formula,
+         method=c("imp", "hk"),
+         incl.markers=FALSE, verbose=TRUE)
 {
   if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
+  if(!is.null(covar) && !is.data.frame(covar))
+    stop("covar should be a data.frame")
+
+  if(length(pheno.col) > 1) {
+    pheno.col <- pheno.col[1]
+    warning("scanqtl can take just one phenotype; only the first will be used")
+  }
+    
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+
+  if(pheno.col < 1 | pheno.col > nphe(cross))
+    stop("pheno.col values should be between 1 and the no. phenotypes")
+
+  pheno <- cross$pheno[,pheno.col]
+  if(!is.null(covar) && nrow(covar) != length(pheno))
+    stop("nrow(covar) != no. individuals in cross.")
+
+  method <- match.arg(method)
+
+  if(method=="imp") {
+    if(!("draws" %in% names(cross$geno[[1]]))) {
+      if("prob" %in% names(cross$geno[[1]])) {
+        warning("The cross doesn't contain imputations; using method=\"hk\".")
+        method <- "hk"
+      }
+      else
+        stop("You need to first run sim.geno.")
+    }
+  }
+  else {
+    if(!("prob" %in% names(cross$geno[[1]]))) {
+      if("draws" %in% names(cross$geno[[1]])) {
+        warning("The cross doesn't contain QTL genotype probabilities; using method=\"imp\".")
+        method <- "imp"
+      }
+      else
+        stop("You need to first run calc.genoprob.")
+    }
+  }
+
+  if(method=="imp") {
+    if("stepwidth" %in% names(attributes(cross$geno[[1]]$draws)) &&
+       attr(cross$geno[[1]]$draws, "stepwidth") == "variable") {
+      stepwidth.var <- TRUE
+      incl.markers <- TRUE
+    }
+    else stepwidth.var <- FALSE
+  }
+  else {
+    if("stepwidth" %in% names(attributes(cross$geno[[1]]$prob)) &&
+       attr(cross$geno[[1]]$prob, "stepwidth") == "variable") {
+      stepwidth.var <- TRUE
+      incl.markers <- TRUE
+    }
+    else stepwidth.var <- FALSE
+  }
+
   type <- class(cross)[1]
   chrtype <- sapply(cross$geno,class)
-  sexpgm <- getsex(cross)
   
   # input data checking
   if( length(chr) != length(pos))
     stop("Input chr and pos must have the same length")
   # note that input chr is a vector and pos is a list
 
-  # check the input covariate, if any
-  if(!is.null(covar)) {
-    if(nrow(covar) != nind(cross))
-      stop("Input covariate has wrong size")
-  }
-  # check the input pheno.col
-  if(pheno.col>ncol(cross$pheno))
-    stop("Wrong phenotype column number")
-  
   method <- match.arg(method)
 
   ichr <- match(chr, names(cross$geno))
   if(any(is.na(ichr))) 
     stop("There's no chromosome number ", chr[is.na(ichr)],
                  " in input cross object")
+
 
   # if formula is missing, make one.
   # All QTLs and covariates will be additive by default
@@ -63,7 +117,7 @@ scanqtl <-
   }
   else {
     # include all input QTLs and covariates in the formula additively
-    formula.str <- deparse(formula) # deparse formula as a string
+    formula.str <- deparseQTLformula(formula) # deparse formula as a string
     for(i in 1:n.qtl) { # loop thru the QTLs
       qtl.term <- paste("Q", i, sep="")
       if( length(grep(qtl.term, formula.str, ignore.case=TRUE))==0 )
@@ -82,7 +136,36 @@ scanqtl <-
     }
     formula <- as.formula(formula.str)
   }
+
+  # check the formula
+  formula <- checkformula(formula, paste("Q", 1:length(chr), sep=""),
+                          colnames(covar))
   
+  # drop covariates that are not in the formula
+  if(!is.null(covar)) {
+    theterms <- rownames(attr(terms(formula), "factors"))
+    m <- match(colnames(covar), theterms)
+    if(all(is.na(m))) covar <- NULL
+    else covar <- covar[,!is.na(m),drop=FALSE]
+  }
+
+  # check phenotypes and covariates; drop ind'ls with missing values
+  if(!is.null(covar)) phcovar <- cbind(pheno, covar)
+  else phcovar <- pheno
+  if(any(is.na(phcovar))) {
+    if(ncol(phcovar)==1) hasmissing <- is.na(phcovar)
+    else hasmissing <- apply(phcovar, 1, function(a) any(is.na(a)))
+    if(all(hasmissing))
+      stop("All individuals are missing phenotypes or covariates.")
+    if(any(hasmissing)) {
+      warning("Dropping ", sum(hasmissing), " individuals with missing phenotypes.\n")
+      cross <- subset(cross, ind=!hasmissing)
+      pheno <- pheno[!hasmissing]
+      if(!is.null(covar)) covar <- covar[!hasmissing,,drop=FALSE]
+    }
+    sexpgm <- getsex(cross)
+  }
+
   # find the chromosome with multiple QTLs
   # indices for chromosomes with multiple QTLs
   idx.varied <- NULL
@@ -102,26 +185,45 @@ scanqtl <-
       # find all markers in this range
       idx.varied <- c(idx.varied, i) 
       # make the genetic map on this chromosome
-      if(!("draws" %in% names(cross$geno[[1]]))) # there's no draw in input cross object
-        stop("You need to first run sim.geno().")
+
       # make genetic map
-      if("map" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
-        map <- attr(cross$geno[[ichr[i]]]$draws,"map")
-      else {
-        stp <- attr(cross$geno[[ichr[i]]]$draws, "step")
-        oe <- attr(cross$geno[[ichr[i]]]$draws, "off.end")
+      if(method=="imp") {
+        if("map" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
+          map <- attr(cross$geno[[ichr[i]]]$draws,"map")
+        else {
+          stp <- attr(cross$geno[[ichr[i]]]$draws, "step")
+          oe <- attr(cross$geno[[ichr[i]]]$draws, "off.end")
       
-        if("stepwidth" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
-          stpw <- attr(cross$geno[[ichr[i]]]$draws, "stepwidth")
-        else stpw <- "fixed"
-        map <- create.map(cross$geno[[ichr[i]]]$map,stp,oe,stpw)
+          if("stepwidth" %in% names(attributes(cross$geno[[ichr[i]]]$draws)))
+            stpw <- attr(cross$geno[[ichr[i]]]$draws, "stepwidth")
+          else stpw <- "fixed"
+          map <- create.map(cross$geno[[ichr[i]]]$map,stp,oe,stpw)
+        }
+      }
+      else {
+        if("map" %in% names(attributes(cross$geno[[ichr[i]]]$prob)))
+          map <- attr(cross$geno[[ichr[i]]]$prob,"map")
+        else {
+          stp <- attr(cross$geno[[ichr[i]]]$prob, "step")
+          oe <- attr(cross$geno[[ichr[i]]]$prob, "off.end")
+      
+          if("stepwidth" %in% names(attributes(cross$geno[[ichr[i]]]$prob)))
+            stpw <- attr(cross$geno[[ichr[i]]]$prob, "stepwidth")
+          else stpw <- "fixed"
+          map <- create.map(cross$geno[[ichr[i]]]$map,stp,oe,stpw)
+        }
+
       }
       # pull out the female map if there are sex-specific maps
       if(is.matrix(map)) map <- map[1,]
 
       indices[[i]] <- seq(along=map)
-      if(!incl.markers) { # equally spaced positions
+      if(method=="imp")
         step <- attr(cross$geno[[ichr[i]]]$draws,"step")
+      else
+        step <- attr(cross$geno[[ichr[i]]]$prob,"step")
+
+      if(!incl.markers && step>0) { # equally spaced positions
         eq.sp.pos <- seq(min(map), max(map), by=step)
         wh.eq.pos <- match(eq.sp.pos, map)
         map <- map[wh.eq.pos]
@@ -142,11 +244,6 @@ scanqtl <-
         end <- map[min(tmp)]
       pos[[i]] <- as.vector( map[(map>=start)&(map<=end)] )
       indices[[i]] <- indices[[i]][(map>=start)&(map<=end)]
-    }
-    else { # fixed position rather than range
-# Hao asked me to comment these two lines out      
-#      pos[[i]] <- locatemarker(cross$geno[[as.character(chr[i])]]$map,
-#                               pos[[i]], chr[i], "draws")
     }
   }
   # Now, pos contains all the marker positions for all chromosomes
@@ -172,15 +269,19 @@ scanqtl <-
     result <- array(rep(0, n.loop), rev(l.varied))
   }
   else { # fixed QTL model (no scanning)
-    qtl <- makeqtl(cross, chr=chr, pos=unlist(pos))
-    result <- fitqtl(cross$pheno[,pheno.col], qtl, covar=covar,
-                     formula=formula, method=method, dropone=FALSE,
-                     get.ests=FALSE)
+    if(method=="imp")
+      qtl <- makeqtl(cross, chr=chr, pos=unlist(pos), what="draws")
+    else
+      qtl <- makeqtl(cross, chr=chr, pos=unlist(pos), what="prob")
+      
+    result <- fitqtlengine(pheno, qtl, covar=covar,
+                           formula=formula, method=method, dropone=FALSE,
+                           get.ests=FALSE, run.checks=FALSE)
     result <- result[[1]][1,4]
     names(result) <- "LOD"
     class(result) <- "scanqtl"
     attr(result, "method") <- method
-    attr(result, "formula") <- formula
+    attr(result, "formula") <- deparseQTLformula(formula)
     return(result)
   }
 
@@ -224,7 +325,10 @@ scanqtl <-
     # this bit revised by Karl 8/23/05; now we make the qtl object
     #     once, and copy stuff over otherwise
     if(is.null(current.pos)) {
-      qtl.obj <- makeqtl(cross, chr, pos.tmp)
+      if(method=="imp")
+        qtl.obj <- makeqtl(cross, chr, pos.tmp, what="draws")
+      else 
+        qtl.obj <- makeqtl(cross, chr, pos.tmp, what="prob")
       current.pos <- pos.tmp
     }
     else {
@@ -233,13 +337,25 @@ scanqtl <-
         if(pos.tmp[kk] != current.pos[kk]) {
           u <- abs(pos.tmp[kk]-pos[[kk]])
           w <- indices[[kk]][u==min(u)]
-          qtl.obj$geno[,kk,] <- cross$geno[[ichr[kk]]]$draws[,w,]
+          if(method=="imp")
+            qtl.obj$geno[,kk,] <- cross$geno[[ichr[kk]]]$draws[,w,]
+          else
+            qtl.obj$prob[[kk]] <- cross$geno[[ichr[kk]]]$prob[,w,]
           thew[kk] <- w ####
 
-          if(chrtype[ichr[kk]]=="X")
-            qtl.obj$geno[,kk,] <-
-              reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE],
-                          cross.attr=attributes(cross))
+          if(chrtype[ichr[kk]]=="X") {
+            if(method=="imp")
+              qtl.obj$geno[,kk,] <-
+                reviseXdata(type,"full",sexpgm,draws=qtl.obj$geno[,kk,,drop=FALSE],
+                            cross.attr=attributes(cross))
+            else {
+              temp <- qtl.obj$prob[[kk]]
+              temp <- array(temp, dim=c(nrow(temp),1,ncol(temp)))
+              dimnames(temp) <- list(NULL,"loc", 1:ncol(qtl.obj$prob[[kk]]))
+              qtl.obj$prob[[kk]] <- reviseXdata(type,"full",sexpgm,prob=temp,
+                                                cross.attr=attributes(cross))[,1,]
+            }
+          }
 
           current.pos[kk] <- pos.tmp[kk]
         }
@@ -248,9 +364,9 @@ scanqtl <-
     # end of Karl's 8/23/05 addition
 
     # fit QTL, don't do drop one at a time
-    fit <- fitqtl(cross$pheno[,pheno.col], qtl=qtl.obj, covar=covar,
-                  formula=formula, method=method, dropone=FALSE,
-                  get.ests=FALSE)
+    fit <- fitqtlengine(pheno, qtl=qtl.obj, covar=covar,
+                        formula=formula, method=method, dropone=FALSE,
+                        get.ests=FALSE, run.checks=FALSE)
   
     if(verbose && ((i-1) %% n.prnt) == 0)
         cat("    ", i,"/", n.loop, "\n")
@@ -272,7 +388,7 @@ scanqtl <-
   
   class(result) <- "scanqtl"
   attr(result, "method") <- method
-  attr(result, "formula") <- formula
+  attr(result, "formula") <- deparseQTLformula(formula)
   result
 }
 

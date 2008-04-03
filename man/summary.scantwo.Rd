@@ -102,7 +102,35 @@
   spacing, and analysis by Haley-Knott regression.
 }
 
-\section{Note}{
+\section{Output of addpair}{
+
+  \bold{Note} that, for output from \code{\link[qtl]{addpair}} in which the
+  new loci are indicated explicitly in the formula, the summary provided
+  by \code{summary.scantwo} is somewhat special.
+
+  All arguments except \code{allpairs} and \code{thresholds} (and, of
+  course, the input \code{object}) are ignored.
+
+  If the formula is symmetric in the two new QTL, the output has just two LOD
+  score columns: \code{lod.2v0} comparing the full model to the model
+  with neither of the new QTL, and \code{lod.2v1} comparing the full
+  model to the model with just one new QTL.
+
+  If the formula is \emph{not} symmetric in the two new QTL, the output
+  has three LOD score columns: \code{lod.2v0} comparing the full model
+  to the model with neither of the new QTL, \code{lod.2v1b} comparing
+  the full model to the model in which the first of the new QTL is
+  omitted, and \code{lod.2v1a} comparing the full model to the model
+  with the second of the new QTL omitted.  
+
+  The \code{thresholds} argument should have length 1 or 2, rather than
+  the usual 5.  Rows will be retained if \code{lod.2v0} is greater than
+  \code{thresholds[1]} and \code{lod.2v1} (or either of \code{lod.2v1a}
+  or \code{lod.2v1b}) is greater than \code{thresholds[2]}.  (If a
+  single thresholds is given, we assume that \code{thresholds[2]==0}.)
+}
+
+\section{The older version}{
   The previous version of this function is still available, though it is
   now named \code{\link[qtl]{summary.scantwo.old}}.
 

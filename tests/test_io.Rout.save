@@ -1,6 +1,6 @@
 
-R : Copyright 2006, The R Foundation for Statistical Computing
-Version 2.3.1 (2006-06-01)
+R version 2.6.1 (2007-11-26)
+Copyright (C) 2007 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -47,17 +47,19 @@ Type 'q()' to quit R.
 	 120  individuals
 	 133  markers
 	 1  phenotypes
+ --Cross type: f2 
 Warning message:
- --Assuming that all individuals are female.
- in: fixXgeno.f2(cross) 
+In fixXgeno.f2(cross) :  --Assuming that all individuals are female.
+
 > csv2 <- read.cross("csv", "", "listeria2.csv", estimate=FALSE)
  --Read the following data:
 	 120  individuals
 	 133  markers
 	 1  phenotypes
+ --Cross type: f2 
 Warning message:
- --Assuming that all individuals are female.
- in: fixXgeno.f2(cross) 
+In fixXgeno.f2(cross) :  --Assuming that all individuals are female.
+
 > 
 > # Read mapmaker format
 > mm <- read.cross("mm", "", "listeria.raw", "listeria.map")
@@ -66,18 +68,20 @@ Warning message:
 	Number of individuals:  120 
 	Number of markers:      133 
 	Number of phenotypes:   1 
+ --Cross type: f2 
 Warning message:
- --Assuming that all individuals are female.
- in: fixXgeno.f2(cross) 
+In fixXgeno.f2(cross) :  --Assuming that all individuals are female.
+
 > mm2 <- read.cross("mm", "", "listeria.raw", "listeria2.map", estimate=FALSE)
  --Read the following data:
 	Type of cross:          f2 
 	Number of individuals:  120 
 	Number of markers:      133 
 	Number of phenotypes:   1 
+ --Cross type: f2 
 Warning message:
- --Assuming that all individuals are female.
- in: fixXgeno.f2(cross) 
+In fixXgeno.f2(cross) :  --Assuming that all individuals are female.
+
 > 
 > ##############################
 > # Writing
@@ -89,6 +93,7 @@ Warning message:
 	 120  individuals
 	 133  markers
 	 3  phenotypes
+ --Cross type: f2 
 > comparecrosses(csv, csv3)
 	Crosses are identical.
 > 

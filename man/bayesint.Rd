@@ -8,7 +8,7 @@
   chromosome, using output from \code{\link[qtl]{scanone}}.
 }
 
-\usage{bayesint(results, chr, prob=0.95, lodcolumn=1)}
+\usage{bayesint(results, chr, prob=0.95, lodcolumn=1, expandtomarkers=FALSE)}
 
 \arguments{
  \item{results}{Output from \code{\link[qtl]{scanone}}.}
@@ -16,6 +16,8 @@
  \item{prob}{Probability coverage of the interval.}
  \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
    of the LOD score columns should be plotted (generally this is 1).}
+ \item{expandtomarkers}{If TRUE, the interval is expanded to the nearest
+   flanking markers.}
 }
 
 \value{
@@ -40,6 +42,7 @@ out <- scanone(hyper, method="hk")
 bayesint(out, chr=1)
 bayesint(out, chr=4)
 bayesint(out, chr=4, prob=0.99)
+bayesint(out, chr=4, expandtomarkers=TRUE)
 }
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{lodint}} }

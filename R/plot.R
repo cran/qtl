@@ -2,9 +2,9 @@
 #
 # plot.R
 #
-# copyright (c) 2000-7, Karl W Broman
+# copyright (c) 2000-8, Karl W Broman
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Sep, 2007
+# last modified Mar, 2008
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -237,6 +237,18 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
   }
   else usemaindefault <- TRUE
 
+  if("xlim" %in% names(dots)) {
+    xlim <- dots[["xlim"]]
+    usexlimdefault <- FALSE
+  }
+  else usexlimdefault <- TRUE
+  
+  if("ylim" %in% names(dots)) {
+    ylim <- dots[["ylim"]]
+    useylimdefault <- FALSE
+  }
+  else useylimdefault <- TRUE
+
   map <- x
   # figure out if the input is a cross (containing a map)
   #    or is the map itself
@@ -314,7 +326,9 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       par(xpd=TRUE, las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
       
-      plot(0,0,type="n",xlim=c(0,maxlen), ylim=rev(thelim),yaxs="i",
+      if(usexlimdefault) xlim <- c(0,maxlen)
+      if(useylimdefault) ylim <- rev(thelim)
+      plot(0,0,type="n",xlim=xlim, ylim=ylim,yaxs="i",
 	   xlab="Location (cM)", ylab="Chromosome", yaxt="n")
       a <- par("usr")
       
@@ -350,7 +364,9 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
       
-      plot(0,0,type="n",ylim=c(maxlen,0),xlim=thelim,xaxs="i",
+      if(usexlimdefault) xlim <- thelim
+      if(useylimdefault) ylim <- c(maxlen, 0)
+      plot(0,0,type="n",ylim=ylim,xlim=xlim,xaxs="i",
 	   ylab="Location (cM)", xlab="Chromosome", xaxt="n")
       
       a <- par("usr")
@@ -420,7 +436,9 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
 
-      plot(0,0,type="n",ylim=c(maxloc,0),xlim=thelim, xaxs="i",
+      if(usexlimdefault) xlim <- thelim
+      if(useylimdefault) ylim <- c(maxloc, 0)
+      plot(0,0,type="n",ylim=ylim,xlim=xlim, xaxs="i",
            ylab="Location (cM)", xlab="Chromosome", xaxt="n")
 
       a <- par("usr")
@@ -465,7 +483,9 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       par(xpd=TRUE,las=1)
       on.exit(par(xpd=old.xpd,las=old.las))
 
-      plot(0,0,type="n",xlim=c(0,maxloc),ylim=rev(thelim),
+      if(usexlimdefault) xlim <- c(0,maxloc)
+      if(useylimdefault) ylim <- rev(thelim)
+      plot(0,0,type="n",xlim=xlim,ylim=ylim,
            xlab="Location (cM)", ylab="Chromosome", yaxt="n", yaxs="i")
 
       a <- par("usr")
@@ -564,7 +584,7 @@ function (x, auto.layout = TRUE, pheno.col,
 ######################################################################
 
 plot.geno <-
-function(x, chr, ind, include.xo=TRUE, horizontal=FALSE,
+function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
          cutoff=4, min.sep=2, cex=1.2, ...)
 {
   cross <- x  
@@ -572,15 +592,14 @@ function(x, chr, ind, include.xo=TRUE, horizontal=FALSE,
     stop("Input should have class \"cross\".")
 
   cross <- subset(cross,chr=chr)
-  use.id <- FALSE
   if(!missing(ind)) {
     if(is.null(getid(cross))) cross$pheno$id <- 1:nind(cross)
     if(!is.logical(ind)) ind <- unique(ind)  
     cross <- subset(cross, ind=ind)
-    use.id <- TRUE
   }
   id <- getid(cross)
   if(is.null(id)) id <- 1:nind(cross)
+  use.id <- TRUE
      
   type <- class(cross)[1]
   
@@ -688,14 +707,14 @@ function(x, chr, ind, include.xo=TRUE, horizontal=FALSE,
       tind <- rep(1:n.ind,length(map));tind[is.na(mdata)] <- NA
       ind <- tind; ind[!is.na(mdata) & mdata!=9] <- NA
       x <- rep(map,rep(n.ind,length(map)))
-      points(x,ind+jit,pch=16,col=color[4],cex=cex)
-      points(x,ind+jit,pch=1,cex=cex)
+      points(x,ind-jit,pch=16,col=color[4],cex=cex)
+      points(x,ind-jit,pch=1,cex=cex)
   
       tind <- rep(1:n.ind,length(map));tind[is.na(mdata)] <- NA
       ind <- tind; ind[!is.na(mdata) & mdata!=10] <- NA
       x <- rep(map,rep(n.ind,length(map)))
-      points(x,ind+jit,pch=16,col=color[5],cex=cex)
-      points(x,ind+jit,pch=1,cex=cex)
+      points(x,ind-jit,pch=16,col=color[5],cex=cex)
+      points(x,ind-jit,pch=1,cex=cex)
   
       # C alleles
       tind <- rep(1:n.ind,length(map));tind[is.na(ddata)] <- NA
@@ -1069,6 +1088,21 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
     stop("Input should have class \"cross\".")
   type <- class(cross)[1]
 
+  if(length(pheno.col) > 1) {
+    pheno.col <- pheno.col[1]
+    warning("plot.pxg can take just one phenotype; only the first will be used")
+  }
+    
+  if(is.character(pheno.col)) {
+    num <- find.pheno(cross, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+
+  if(pheno.col < 1 | pheno.col > nphe(cross))
+    stop("pheno.col values should be between 1 and the no. phenotypes")
+
   if(missing(pch)) pch <- par("pch")
   if(missing(ylab)) ylab <-  colnames(cross$pheno)[pheno.col] 
 
@@ -1288,8 +1322,17 @@ function(x, pheno.col=1, ...)
   if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
 
-  if(length(pheno.col) > 1)
+  if(length(pheno.col) > 1) {
+    pheno.col <- pheno.col[1]
     warning("Ignoring all but the first element in pheno.col.")
+  }
+  if(is.character(pheno.col)) {
+    num <- find.pheno(x, pheno.col)
+    if(is.na(num)) 
+      stop("Couldn't identify phenotype \"", pheno.col, "\"")
+    pheno.col <- num
+  }
+
   if(pheno.col < 1 | pheno.col > nphe(x))
     warning("pheno.col should be between 1 and ", nphe(x))
 

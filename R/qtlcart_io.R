@@ -4,7 +4,7 @@
 #
 # copyright (c) 2002-7, Brian S. Yandell
 #          [with some modifications by Karl W. Broman and Hao Wu]
-# last modified Jan, 2007
+# last modified Nov, 2007
 # first written Jun, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -261,8 +261,8 @@ function( cross, filestem="data")
   # write genotype and phenotype data
   file <- paste(filestem, ".cro", sep="")
   if( file.exists( file )) {
-    warning( paste( "previous file", file, "moved to *.mov" ))
-    file.rename( file, paste( file, "mov", sep = "." ))
+    warning( paste( "previous file", file, "moved to *.bak" ))
+    file.rename( file, paste( file, "bak", sep = "." ))
   }
   write("#  123456789 -filetype Rcross.out", file, append=FALSE)
 
@@ -312,8 +312,8 @@ function( cross, filestem="data")
   # make "prep" file with map information
   file <- paste(filestem, ".map", sep="")
   if( file.exists( file )) {
-    warning( paste( "previous file", file, "moved to *.mov" ))
-    file.rename( file, paste( file, "mov", sep = "." ))
+    warning( paste( "previous file", file, "moved to *.bak" ))
+    file.rename( file, paste( file, "bak", sep = "." ))
   }
   write("#  123456789 -filetype Rmap.out", file, append=FALSE)
 
@@ -352,15 +352,19 @@ function( cross, filestem="data")
   ncmap <- nchar( mapmat[1] )
   mapmat[ grep( "NA", mapmat ) ] <- paste( rep( " ", ncmap ), collapse = "" )
   tmp <- format( seq( n.chr ))
-  write( paste( "Marker    | ",
-               paste( tmp, collapse =
+  write( paste( "Marker    |  ",
+               paste( paste(" ", tmp, sep=""), collapse =
                      paste( rep( " ", max( 1, ncmap - nchar( tmp ))), collapse = "" ))),
         file, append=TRUE)
   write( "--------------------------------------", file, append=TRUE)
-  for( i in seq( nrow( mapmat )))
-    write( paste( "-l     ", i - 1, "|",
+  for( i in seq( nrow( mapmat ))) {
+    j <- 5-nchar(i-1)
+    if(j < 1) j <- 1
+    write( paste( "-l", paste(rep(" ", j), collapse=""),
+                 i - 1, "|",
                  paste( mapmat[i,], collapse = " " )),
           file, append=TRUE)
+  }
 
   write( "---------------------------------------", file, append=TRUE)
   write( paste( "-Number   |", paste( maplen, collapse = "  " )),

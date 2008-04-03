@@ -2,8 +2,8 @@
 #
 # calc.pairprob.R
 #
-# copyright (c) 2001-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2001-7, Karl W Broman
+# last modified NOV, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -27,8 +27,30 @@
 calc.pairprob <-
 function(cross, step=0, off.end=0, error.prob=0.0001, 
          map.function=c("haldane","kosambi","c-f","morgan"),
-         map)
+         map, assumeCondIndep=FALSE)
 {
+  if(assumeCondIndep) { # assume conditional independence of QTL given markers
+    if(!("prob" %in% names(cross$geno[[1]]))) {
+      cross <- calc.genoprob(subset(cross, chr=1), step=step, off.end=off.end,
+                             error.prob=error.prob, map.function=map.function)
+    }
+    prob <- cross$geno[[1]]$prob
+    n.ind <- dim(prob)[1]
+    n.pos <- dim(prob)[2]
+    n.gen <- dim(prob)[3]
+
+    if(n.pos < 2) stop("Must have > 1 position.")
+
+    z <- .C("R_calc_pairprob_condindep",
+            as.integer(n.ind),
+            as.integer(n.pos),
+            as.integer(n.gen),
+            as.double(prob),
+            pairprob=as.double(rep(0,n.ind*choose(n.pos, 2)*n.gen*n.gen)),
+            PACKAGE="qtl")
+    return(array(z$pairprob, dim=c(n.ind,n.pos*(n.pos-1)/2,n.gen,n.gen)))
+  }
+
   if(step==0 && off.end > 0) step <- off.end*2
 
   # map function

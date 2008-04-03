@@ -2,8 +2,8 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-6, Karl W Broman
-# last modified Oct, 2006
+# copyright (c) 2000-7, Karl W Broman
+# last modified Dec, 2007
 # first written Aug, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -163,6 +163,8 @@ function(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
 
   # run checks
   summary(cross)
+
+  cat(" --Cross type:", class(cross)[1], "\n")
 
   cross
 }

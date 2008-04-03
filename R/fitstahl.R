@@ -3,7 +3,7 @@
 # fitstahl.R
 #
 # copyright (c) 2006-7, Karl W Broman
-# last modified Sep, 2007
+# last modified Oct, 2007
 # first written Aug, 2006
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -388,7 +388,7 @@ function(cross, m=0, tol=1e-4, maxit=4000)
   else {
     est <- out$par
     loglik <- out$value
-    themap <- est.map(x, error.prob=out$par[2], m=m, p=out$par[1],
+    themap <- est.map(cross, error.prob=out$par[2], m=m, p=out$par[1],
                       maxit=maxit, tol=tol)
   }
   names(est) <- c("p", "error.prob")

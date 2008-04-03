@@ -9,7 +9,7 @@
 }
 
 \usage{
-est.rf(cross, maxit=4000, tol=1e-4)
+est.rf(cross, maxit=10000, tol=1e-6)
 }
 
 \arguments{

@@ -189,4 +189,4 @@ function(parents, n.ril=1, type=c("sibmating", "selfing"),
   cc
 }
 
-# end of sim.ril.R
+# end of sim_ril.R

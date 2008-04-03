@@ -66,5 +66,4 @@ void R_sim_bc(int *n_mar, int *n_ind, double *pos,
 
 void sim_bc(int n_mar, int n_ind, double *pos, int m, double p, int **Geno);
 
-/* end of simulate.c */
-
+/* end of simulate.h */

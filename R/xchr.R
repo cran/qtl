@@ -2,8 +2,8 @@
 #
 # xchr.R
 #
-# copyright (c) 2004-7, Karl W Broman
-# last modified Sep, 2007
+# copyright (c) 2004-8, Karl W Broman
+# last modified Jan, 2008
 # first written Apr, 2004
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -84,6 +84,36 @@ function(cross)
     else pgm <- temp
   }
 
+  if(!is.null(sex) && any(is.na(sex))) {
+    if(all(sex[!is.na(sex)]==1)) {
+      warning(sum(is.na(sex)), " individuals with missing sex; assuming they're male like the others")
+      sex[is.na(sex)] <- 1
+    }
+    else if(all(sex[!is.na(sex)]==0)) {
+      warning(sum(is.na(sex)), " individuals with missing sex; assuming they're female like the others")
+      sex[is.na(sex)] <- 0
+    }
+    else {
+      warning(sum(is.na(sex)), " individuals with missing sex; assuming they're female")
+      sex[is.na(sex)] <- 0
+    }
+  }
+
+  if(!is.null(pgm) && any(is.na(pgm))) {
+    if(all(pgm[!is.na(pgm)]==1)) {
+      warning(sum(is.na(pgm)), " individuals with missing pgm; assuming pgm==1 like the others")
+      pgm[is.na(pgm)] <- 1
+    }
+    else if(all(pgm[!is.na(pgm)]==0)) {
+      warning(sum(is.na(pgm)), " individuals with missing pgm; assuming pgm==0 like the others")
+      pgm[is.na(pgm)] <- 0
+    }
+    else {
+      warning(sum(is.na(pgm)), " individuals with missing pgm; assuming pgm==0")
+      pgm[is.na(pgm)] <- 0
+    }
+  }
+
   list(sex=sex,pgm=pgm)
 }
           
@@ -93,7 +123,7 @@ function(cross)
 # used in discan, effectplot, plot.pxg, scanone, scantwo, vbscan, reviseXdata
 # cross.attr gives the cross attributes
 getgenonames <-
-function(type=c("f2","bc","riself","risib","4way"),
+function(type=c("f2","bc","riself","risib","4way","special"),
          chrtype=c("A","X"), expandX=c("simple","standard","full"),
          sexpgm, cross.attr)
 {  
@@ -105,6 +135,8 @@ function(type=c("f2","bc","riself","risib","4way"),
     sex <- sexpgm$sex
     pgm <- sexpgm$pgm
   }
+
+  if(type=="special") return(cross.attr$genotypes)
 
   if(missing(cross.attr) || !("alleles" %in% names(cross.attr))) {
     if(type == "4way") alleles <- LETTERS[1:4]
@@ -430,7 +462,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
       if(length(pgm)==0 || all(pgm==0)) { # both sexes, forw dir
         if(!missing(geno)) {
           gmale <- geno[sex==1,]
-          if(expandX!="full") 
+          if(expandX=="simple") 
             gmale[!is.na(gmale) & gmale==2] <- 3
           else {
             gmale[!is.na(gmale) & gmale==1] <- 3
@@ -442,7 +474,7 @@ function(type=c("f2","bc"), expandX=c("simple","standard","full"),
 
         else if(!missing(draws)) {
           gmale <- draws[sex==1,,]
-          if(expandX!="full") 
+          if(expandX=="simple") 
             gmale[gmale==2] <- 3
           else {
             gmale[gmale==1] <- 3
@@ -777,8 +809,10 @@ function(type, sexpgm)
 revisecovar <-
 function(sexpgm, covar)
 {
-  if(is.null(covar) || (is.null(sexpgm$sex) && is.null(sexpgm$pgm))) 
+  if(is.null(covar) || (is.null(sexpgm$sex) && is.null(sexpgm$pgm))) {
+    if(!is.null(covar)) attr(covar, "n.dropped") <- 0
     return(covar)
+  }
 
   covar <- as.matrix(covar)
 

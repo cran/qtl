@@ -2,8 +2,8 @@
 #
 # est.rf.R
 #
-# copyright (c) 2001-7, Karl W Broman
-# last modified Sep, 2007
+# copyright (c) 2001-8, Karl W Broman
+# last modified Jan, 2008
 # first written Apr, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,7 +20,7 @@
 ######################################################################
 
 est.rf <-
-function(cross, maxit=4000, tol=1e-4) 
+function(cross, maxit=10000, tol=1e-6) 
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -113,7 +113,7 @@ function(cross, maxit=4000, tol=1e-4)
 
 plot.rf <-
 function(x, chr, what=c("both","lod","rf"),
-         alternate.chrid=FALSE,...)
+         alternate.chrid=FALSE, zmax=12, ...)
 {
   if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
@@ -136,13 +136,13 @@ function(x, chr, what=c("both","lod","rf"),
   # if any of the rf's are NA (ie no data), put NAs in corresponding LODs
   if(any(is.na(g))) g[is.na(t(g))] <- NA
 
-  # convert rf to -2*(log2(rf)+1); place 12's on the diagonal;
-  #    anything above 12 replaced by 12;
+  # convert rf to -2*(log2(rf)+1); place zmax's on the diagonal;
+  #    anything above zmax replaced by zmax;
   #    NA's replaced by -1
   g[row(g) > col(g) & g > 0.5] <- 0.5
-  g[row(g) > col(g)] <- -4*(log2(g[row(g) > col(g)])+1)
-  diag(g) <- 12
-  g[!is.na(g) & g>12] <- 12
+  g[row(g) > col(g)] <- -4*(log2(g[row(g) > col(g)])+1)/12*zmax
+  diag(g) <- zmax
+  g[!is.na(g) & g>zmax] <- zmax
   
   g[is.na(g)] <- -1
 
@@ -154,11 +154,10 @@ function(x, chr, what=c("both","lod","rf"),
     # copy lower triangle (rec fracs) to upper triangle (LODs)
     g[row(g) < col(g)] <- t(g)[row(g) < col(g)]
   }
-  br <- c(-1, seq(-1e-6, 12, length=65))
-
+  br <- c(-1, seq(-1e-6, zmax, length=257))
 
   image(1:ncol(g),1:nrow(g),t(g),ylab="Markers",xlab="Markers",breaks=br,
-        col=c("lightgray",rev(rainbow(64,start=0,end=2/3, gamma=0.6))))
+        col=c("lightgray",rev(rainbow(256,start=0,end=2/3, gamma=0.6))))
   
   # plot lines at the chromosome boundaries
   n.mar <- nmar(x)

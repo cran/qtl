@@ -47,6 +47,28 @@
   \code{what} argument.
 }
 
+\section{Output of addpair}{
+
+  \bold{Note} that, for output from \code{\link[qtl]{addpair}} in which the
+  new loci are indicated explicitly in the formula, the summary provided
+  by \code{max.scantwo} is somewhat special.
+
+  All arguments (except, of course, the input
+  \code{object}) are ignored.
+
+  If the formula is symmetric in the two new QTL, the output has just two LOD
+  score columns: \code{lod.2v0} comparing the full model to the model
+  with neither of the new QTL, and \code{lod.2v1} comparing the full
+  model to the model with just one new QTL.
+
+  If the formula is \emph{not} symmetric in the two new QTL, the output
+  has three LOD score columns: \code{lod.2v0} comparing the full model
+  to the model with neither of the new QTL, \code{lod.2v1b} comparing
+  the full model to the model in which the first of the new QTL is
+  omitted, and \code{lod.2v1a} comparing the full model to the model
+  with the second of the new QTL omitted.  
+}
+
 \author{Karl W Broman, \email{kbroman@biostat.wisc.edu} } 
 
 \examples{

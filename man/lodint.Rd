@@ -8,7 +8,7 @@
   using output from scanone.
 }
 
-\usage{lodint(results, chr, drop=1.5, lodcolumn=1)}
+\usage{lodint(results, chr, drop=1.5, lodcolumn=1, expandtomarkers=FALSE)}
 
 \arguments{
  \item{results}{Output from \code{\link[qtl]{scanone}}.}
@@ -16,6 +16,8 @@
  \item{drop}{LOD units to drop to form the interval.}
  \item{lodcolumn}{An integer, or vector of 3 integers, indicating which
    of the LOD score columns should be plotted (generally this is 1).}
+ \item{expandtomarkers}{If TRUE, the interval is expanded to the nearest
+   flanking markers.}
 }
 
 \value{
@@ -34,6 +36,7 @@ out <- scanone(hyper, method="hk")
 lodint(out, chr=1)
 lodint(out, chr=4)
 lodint(out, chr=4, drop=2)
+lodint(out, chr=4, expandtomarkers=TRUE)
 }
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{bayesint}} }

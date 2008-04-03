@@ -23,8 +23,9 @@
   \item{incl.markers}{If FALSE, plot LOD scores on an evenly
     spaced grid (not including the results at the markers).}
   \item{zlim}{A vector of length 2 (optional), indicating the z limits
-    for the full LOD and the epistasis LOD scores, respectively.  If
-    missing, the maximum limits are used for each.}
+    for the lower-right and upper-left triangles, respectively.  If one
+    number is given, the same limits are used for both triangles.  If
+    \code{zlim} is missing, the maximum limits are used for each.}
   \item{lodcolumn}{If the scantwo results contain LOD scores for
     multiple phenotypes, this argument indicates which to use in the
     plot.} 
@@ -104,6 +105,19 @@
   lower-right triangle.  Note that the axis labels can get screwed up
   if you change the size of the figure window; you'll need to redo the
   plot. 
+}
+
+\section{Output of addpair}{
+
+  \bold{Note} that, for output from \code{\link[qtl]{addpair}} in which the
+  new loci are indicated explicitly in the formula, the summary provided
+  by \code{plot.scantwo} is somewhat special.  In particular, the
+  \code{lower} and \code{upper} arguments are ignored.  
+
+  In the case that the formula used in \code{\link[qtl]{addpair}} was
+  not symmetric in the two new QTL, the x-axis in the plot corresponds
+  to the first of the new QTL and the y-axis corresponds to the second
+  of the new QTL.
 }
 
 

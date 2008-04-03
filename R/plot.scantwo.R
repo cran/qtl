@@ -3,7 +3,7 @@
 # plot.scantwo.R
 #
 # copyright (c) 2001-7, Karl W Broman, Hao Wu and Brian Yandell
-# last modified Sep, 2007
+# last modified Dec, 2007
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -40,7 +40,25 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
   }
 
   if(!missing(chr)) x <- subset(x, chr=chr)
+  if(nrow(x$lod)==0) {
+    warning("Empty scantwo object.")
+    
+    return(invisible(NULL))
+  }
+    
   chr <- as.character(unique(x$map[,1]))
+
+  addpair <- attr(x, "addpair")
+  if(!is.null(addpair) && addpair) {
+    lower <- "full"
+    upper <- "add"
+    if(missing(zlim)) {
+      if(allow.neg)
+        zlim <- rep(max(abs(x$lod), na.rm=TRUE), 2)
+      else
+        zlim <- rep(max(x$lod, na.rm=TRUE), 2)
+    }
+  }
 
   if(length(lower)==1 && lower == "fv1") lower <- "cond-int"
   if(length(lower)==1 && lower == "av1") lower <- "cond-add"
@@ -174,8 +192,14 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 
   if(missing(zlim)) { # no given zlim
     # calculate the zlim for interactive and full LODs
-    zlim.int <- max(lod[row(lod) < col(lod)])
-    zlim.jnt <- max(lod[row(lod) >= col(lod)])
+    if(allow.neg) {
+      zlim.int <- max(abs(lod[row(lod) < col(lod)]))
+      zlim.jnt <- max(abs(lod[row(lod) >= col(lod)]))
+    }
+    else {
+      zlim.int <- max(lod[row(lod) < col(lod)])
+      zlim.jnt <- max(lod[row(lod) >= col(lod)])
+    }
   }
   else {
     zlim.jnt <- zlim[1]

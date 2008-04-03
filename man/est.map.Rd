@@ -11,8 +11,8 @@
 \usage{
 est.map(cross, error.prob=0.0001,
         map.function=c("haldane","kosambi","c-f","morgan"),
-        m=0, p=0, maxit=4000, tol=1e-4, sex.sp=TRUE,
-        verbose=FALSE)
+        m=0, p=0, maxit=10000, tol=1e-6, sex.sp=TRUE,
+        verbose=FALSE, omit.noninformative=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
@@ -34,6 +34,9 @@ est.map(cross, error.prob=0.0001,
  used only for the 4-way cross.}
  \item{verbose}{Logical; indicates whether to print initial and final
    estimates of the recombination fractions for each chromosome.}
+ \item{omit.noninformative}{If TRUE, on each chromosome, omit individuals
+   with fewer than two typed markers, since they are not informative for
+   linkage.}
 }
 
 \details{

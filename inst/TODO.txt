@@ -10,38 +10,24 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
-o Allow plot.geno (or other cases in which subset.cross is used to
-  pull out individuals) to refer to individual IDs.
+o allow pheno.col to be a vector of phenotype values (if its length
+  matches the number of individuals in the cross and is > n.phe)
 
-o Incorporate the findpeaks() function, for finding all local maxima
-  in scanone results.
+o revise rqtltour to indicate that "pheno.col" can be the name of a
+  phenotype rather than just a numeric index.
 
-o Have read.cross indicate the cross type at the end.
+o revise read.cross with format="mm" to deal with ril by selfing
+  and/or sib mating
 
-o incorporate revised code from Steffen Moeller.
+o make various functions work appropriately with class "special"
+  (eg, plot and summary)
 
-o incorporate effectoutput.R from Qian Li and Sharon Tsaih
+o In plot.geno, allow use of xlim and ylim; also do this in
+  plot.scanoneperm and plot.scantwoperm.
 
-o Fix the help file for fitqtl() to emphasize that interactions among
-  covariates are not allowed, but must be set up in advance.
- 
 o Add an explanation regarding the coding in the coefficient 
   estimates in fitqtl().  Add text to the help file for
   summary.fitqtl(). 
-
-o refineqtl -- like fitqtl, but refines the locations of the QTLs as
-  in Zhao-Bang's MIM; the output could include both the final qtl
-  object plus the set of LOD curves, and have class "refineqtl", with
-  functions summary.refineqtl() to give the final positions and
-  plot.refineqtl() to give a plot like Z-B's.
-
-o write tools for converting the output from scanqtl() to the format
-  for scanone() or scantwo(), according to whether it's a 1-d or
-  2-d search, or print a warning otherwise.
-
-o conditional LOD scores from scantwo output.
-
-o Documentation for makeqtl/fitqtl/scanqtl
 
 o FAQ: - constructing covariate matrices
 
@@ -49,10 +35,46 @@ o FAQ: - constructing covariate matrices
 
 MEDIUM-SHORT TERM:
 
-o Tabbing in "allpheno" from summary.scanone output looks odd...maybe
-  use spaces?
+o Fix convergence problems in scanone with method="ehk", especially
+  in the case of covariates and interactions. 
 
-o Test scanone with method="ehk", especially regarding interactions.
+o cM coordinates in scantwo plot for multiple chromosomes
+
+o Plotting scanone results for *many* phenotypes as an image plot.
+  (Perhaps threshold the really high LODs and eliminate curves that
+  fail to meet a given threshold.)
+
+o plots of segregation ratios at markers
+
+o lodint/bayesint as option to summary.scanone.
+
+o conditional LOD scores from scantwo output.
+
+o scanqtl: if formula symmetric w/ respect to two QTL that are on the 
+  same chromosome, only scan the triangle (rather than the square)
+
+o write tools for converting the output from scanqtl() to the format
+  for scanone() or scantwo(), according to whether it's a 1-d or
+  2-d search, or print a warning otherwise.
+
+o pairprob at markers + putative QTL?  For linked loci in scanqtl by
+  HK/EM. 
+
+o Allow plot.geno (or other cases in which subset.cross is used to
+  pull out individuals) to refer to individual IDs.
+
+o findpeaks() function, for finding multiple maxima on a chromosome
+  in scanone results.
+
+o Have read.cross indicate the cross type at the end.
+
+o incorporate revised code from Steffen Moeller.
+
+o Tabbing in "allpheno" from summary.scanone output looks odd...maybe
+  use spaces? [Gary reported this, but I've not been able to reproduce
+  this problem.] 
+
+o X chromosome in cim().
 
 o Include Bjarke's code on eHK for scantwo.
 
@@ -80,9 +102,6 @@ o Add cross type "dh" for doubled haploids.  Treat this just like
   Actually, should revised read.cross so that if all genotypes are 
   AA and BB, the thing is called DH by default.  Maybe add an 
   argument to read.cross so that one may specify the cross type.
-
-o max.scanqtl, summary.scanqtl, print.summary.scanqtl, plot.scanqtl
-  + help file
 
 o Finish off the work to get coefficient estimates by imputation in
   fitqtl for the X chromosome in BC and F2. 
@@ -134,8 +153,6 @@ o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
   and dev.mim to pull out the est'd coefficients, the residuals, and
   the "deviance" (2 * ln likelihood).
 
-o In MIM, refinement of QTL location and plots of that.
-
 o Incorporate the DIRECT algorithm stuff from Hao
 
 o scanone with additive alleles at QTL
@@ -153,28 +170,20 @@ o Ability to get at the individual contributions to the LOD score?
 o Incorporate the code from Brian Yandell, Fei Zou and Amy Jin on
   semi-parametric QTL mapping methods.
 
-o effectscan: SEs and so forth using imputations
-
-o effectscan: if one chromosome, plot map positions on the x-axis 
-  rather than the chromosome ID.
-
 o Add appropriate functions to analyze advanced intercrosses (AILs). 
 
 o Analysis of binary traits by imputation
 
 o Include widgets for getting more easy access to the data.
 
-o Calculate pairwise QTL probabilities by the more simple method,
-  assuming independence, in scantwo.
+o Allow phenotypes on multiple individuals (esp for recombinant inbred
+  lines). 
 
 ----------------------------------------------------------------------
 
 LONG TERM:
 
 o HMM stuff for BCn data.
-
-o Allow phenotypes on multiple individuals (esp for recombinant inbred
-  lines). 
 
 o "embarassing parallel" processing for permutation tests (Rmpi, snow)
 

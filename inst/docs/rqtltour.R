@@ -6,7 +6,7 @@
 #
 # http://www.rqtl.org
 #
-# 24 August 2007
+# 7 February 2008
 ##############################################################
 
 save.image()
@@ -125,7 +125,7 @@ pos <- c(50, 76, 30, 70, 20)
 qtl <- makeqtl(hyper, chr, pos)
 
 my.formula <- y ~ Q1 + Q2 + Q3 + Q4 + Q5 + Q4:Q5
-out.fitqtl <- fitqtl(hyper$pheno[,1], qtl, formula=my.formula)
+out.fitqtl <- fitqtl(hyper, qtl=qtl, formula=my.formula)
 summary(out.fitqtl)
 
 ls()
@@ -288,8 +288,6 @@ summary(out.sexint, perms=operm.sexint, alpha=0.1,
 rm(list=ls())
 data(hyper)
 
-source("http://www.rqtl.org/multqtlfunc.R")
-
 hyper <- sim.geno(hyper, step=2.5, n.draws=16, err=0.01)
 
 out1 <- scanone(hyper, method="imp")
@@ -346,64 +344,60 @@ plot(out2.c4 - out2sub, allow.neg=TRUE, lower="cond-int")
 qc <- c(1, 1, 4, 6, 15)
 qp <- c(43.3, 78.3, 30.0, 62.5, 18.0)
 qtl <- makeqtl(hyper, chr=qc, pos=qp)
-phe <- hyper$pheno[,1]
 
 myformula <- y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5
 
-out.fq <- fitqtl(phe, qtl, formula = myformula)
+out.fq <- fitqtl(hyper, qtl=qtl, formula = myformula)
 summary(out.fq)
 
-out.fq <- fitqtl(phe, qtl, formula = myformula, drop=FALSE, get.ests=TRUE)
+out.fq <- fitqtl(hyper, qtl=qtl, formula = myformula, drop=FALSE, get.ests=TRUE)
 summary(out.fq)
 
-out.rq <- refineqtl(hyper, chr=qc, pos=qp, formula = myformula)
+revqtl <- refineqtl(hyper, qtl=qtl, formula = myformula)
 
-qp - out.rq[,2]
+revqtl
 
-qp2 <- out.rq[,2]
-qtl2 <- makeqtl(hyper, chr=qc, pos=qp2)
-out.fq2 <- fitqtl(phe, qtl2, formula=myformula)
+plot(revqtl)
+
+out.fq2 <- fitqtl(hyper, qtl=revqtl, formula=myformula)
 summary(out.fq2)
 
-out1.sq <- scanqtl(hyper, chr=c(1,4), pos = list( c(-Inf,Inf), 29.5) )
+out1.c4r <- addqtl(hyper, qtl=revqtl, formula=y~Q3)
 
-null <- scanqtl(hyper, chr=4, pos=list(29.5))
-out1.c4r <- convert.scanqtl(out1.sq, null)
+plot(out1.c4, out1.c4r, col=c("blue", "red"))
 
-plot(out1.c4, out1.c4r, col=c("blue", "red"), chr=1)
+plot(out1.c4r - out1.c4, ylim=c(-1.7, 1.7))
+abline(h=0, lty=2, col="gray")
 
-out2.sq.add <- scanqtl(hyper, chr=c(1,1,4),
-                       pos=list(c(-Inf,Inf), c(-Inf,Inf), 29.5))
-out2.sq.full <- scanqtl(hyper, chr=c(1,1,4),
-                        pos=list(c(-Inf,Inf), c(-Inf,Inf), 29.5),
-                        formula=y~Q1+Q2+Q3+Q1:Q2)
+out2.c4r <- addpair(hyper, qtl=revqtl, formula=y~Q3, chr=c(1,6,7,15))
 
-out2.c4r <- convert.scanqtl(out2.sq.full, null, out2.sq.add)
+plot(out2.c4r - out2.c4, lower="cond-int", allow.neg=TRUE)
 
-out2.c4sub <- subset(out2.c4, chr=1)
-plot(out2.c4sub - out2.c4r, lower="cond-add", allow.neg=TRUE)
+out.1more <- addqtl(hyper, qtl=revqtl, formula=myformula)
+plot(out.1more)
 
-newpos <- c( as.list(qp2), list(c(-Inf, Inf)) )
-out.sq <- NULL
-for(i in 1:19) {
-  cat("Chr ", i, "\n")
-  temp <- scanqtl(hyper, chr=c(qc,i), pos=newpos,
-                  formula = y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5 + Q6)
-  out.sq <- rbind(out.sq, convert.scanqtl(temp, out.fq2))
-}
+out.iw4 <- addqtl(hyper, qtl=revqtl, formula=y~Q1+Q2+Q3+Q4+Q5+Q4:Q5+Q6+Q5:Q6)
+plot(out.iw4)
 
-plot(out.sq)
+out.2more <- addpair(hyper, qtl=revqtl, formula=myformula, chr=c(2,5,7,15))
 
-out.sqi <- NULL
-for(i in 1:19) {
-  cat("Chr ", i, "\n")
-  temp <- scanqtl(hyper, chr=c(qc,i), pos=newpos,
-                  formula = y ~ Q1+Q2+Q3+Q4+Q5 + Q4:Q5 + Q6 + Q5:Q6)
-  out.sqi <- rbind(out.sqi, convert.scanqtl(temp, out.fq2))
-}
+plot(out.2more, lower="cond-int")
 
-plot(out.sqi)
-plot(out.sqi - out.sq)
+out.ai <- addint(hyper, qtl=revqtl, formula=myformula)
+out.ai
+
+qtl2 <- addtoqtl(hyper, revqtl, 7, 53.6)
+qtl2
+
+qtl3 <- dropfromqtl(qtl2, index=2)
+qtl3
+
+qtl4 <- replaceqtl(hyper, qtl3, indextodrop=1, chr=1, pos=50)
+
+qtl4
+
+qtl5 <- reorderqtl(qtl4, c(1:4,6,5))
+qtl5
 
 ############################################################
 # Example 6: Internal data structure

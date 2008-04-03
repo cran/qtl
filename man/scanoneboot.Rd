@@ -22,9 +22,8 @@ scanoneboot(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
  \item{chr}{Indicates the chromosomes for which the bootstrap should be
    performed.} 
  \item{pheno.col}{Column number in the phenotype matrix which should be
-   used as the phenotype.  This can be a vector of integers; for methods
-   \code{"hk"} and \code{"imp"} this can be considerably faster than doing
-   them one at a time.}
+   used as the phenotype.  One may also give a character string matching
+   a phenotype name.}  
  \item{model}{The phenotypic model: the usual normal model, a model for
    binary traits, a two-part model or non-parametric analysis}
  \item{method}{Indicates whether to use the EM algorithm, 
@@ -106,16 +105,17 @@ scanoneboot(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 \author{Karl W Broman, \email{kbroman@biostat.wisc.edu}}
 
 \examples{
-data(hyper)
-hyper <- calc.genoprob(hyper, step=1, err=0.001)
-\dontrun{bootoutput <- scanoneboot(hyper, chr=4)}
-\dontshow{bootoutput <- scanoneboot(hyper, chr=4, n.boot=50)}
+data(fake.f2)
+fake.f2 <- calc.genoprob(fake.f2, step=1, err=0.001)
+\dontrun{bootoutput <- scanoneboot(fake.f2, chr=13, method="hk")}
+\dontshow{bootoutput <- scanoneboot(fake.f2, chr=13, method="hk", n.boot=50)}
 
-hist(bootoutput, breaks=100)
+plot(bootoutput)
 summary(bootoutput)
 }
 
 \seealso{ \code{\link[qtl]{scanone}}, \code{\link[qtl]{summary.scanoneboot}},
+  \code{\link[qtl]{plot.scanoneboot}},
   \code{\link[qtl]{lodint}}, \code{\link[qtl]{bayesint}} }
 
 \keyword{utilities}

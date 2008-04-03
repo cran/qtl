@@ -9,12 +9,14 @@
 }
 
 \usage{
-\method{summary}{scanoneboot}(object, prob=0.95, \dots)}
+\method{summary}{scanoneboot}(object, prob=0.95, expandtomarkers=FALSE, \dots)
 }
 
 \arguments{
  \item{object}{Output from \code{\link[qtl]{scanoneboot}}.}
  \item{prob}{Desired coverage.}
+ \item{expandtomarkers}{If TRUE, the interval is expanded to the nearest
+   flanking markers.}
  \item{\dots}{Ignored at this point.}
 }
 
@@ -27,15 +29,14 @@
 \author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
 
 \examples{
-\dontrun{data(hyper)
-hyper <- calc.genoprob(hyper, step=1, err=0.001)
-bootoutput <- scanoneboot(hyper, chr=4)
+\dontrun{data(fake.f2)
+fake.f2 <- calc.genoprob(fake.f2, step=1, err=0.001)
+bootoutput <- scanoneboot(fake.f2, chr=13, method="hk")
 
-hist(bootoutput, breaks=100)
 summary(bootoutput)}
 }
 
-\seealso{ \code{\link[qtl]{scanoneboot}},
+\seealso{ \code{\link[qtl]{scanoneboot}}, \code{\link[qtl]{plot.scanoneboot}},
   \code{\link[qtl]{lodint}}, \code{\link[qtl]{bayesint}} }
 
 \keyword{utilities}

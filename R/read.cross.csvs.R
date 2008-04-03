@@ -2,8 +2,8 @@
 #
 # read.cross.csvs.R
 #
-# copyright (c) 2006-7, Karl W Broman
-# last modified Jul, 2007
+# copyright (c) 2006-8, Karl W Broman
+# last modified Feb, 2008
 # first written Oct, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -100,14 +100,55 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
 
   wh <- which(pheno[1,] == indname)
   if(length(wh) < 1) 
-#    stop("Can't find the individual ID column in the phenotype file.")
     stop("Can't find the individual ID column (expected '", indname,
          "') in the phenotype file.")
   
   pheind <- pheno[-1,wh[1]]
 
-  if(!all(genind == pheind)) 
-    stop("Mismatch in individual IDs between genotype and phenotype files.")
+  if(length(genind) == length(pheind) && all(genind == pheind)) {
+    if(length(genind) != length(unique(genind)))
+      warning("Duplicate individual IDs")
+  }
+  else {
+
+    if(any(is.na(genind)) && any(is.na(pheind)))
+      stop("There are missing genotype and phenotype IDs")
+    else if(any(is.na(genind)))
+      stop("There are missing genotype IDs")
+    else if(any(is.na(pheind)))
+      stop("There are missing phenotype IDs")
+    
+    if(length(genind) != length(unique(genind)) && length(pheind) != length(unique(pheind))) 
+      stop("There are duplicate genotype and phenotype IDs, and they don't all line up.")
+    else if(length(genind) != length(unique(genind)))
+      stop("There are duplicate genotype IDs, and the genotype and phenotype IDs don't all line up.")
+    else if(length(pheind) != length(unique(pheind))) 
+      stop("There are duplicate phenotype IDs, and the genotype and phenotype IDs don't all line up.")
+
+    mgp <- match(genind, pheind)
+
+    if(any(is.na(mgp))) { # individuals with genotypes but no phenotypes
+      n.add <- sum(is.na(mgp))
+      pheind <- c(pheind, genind[is.na(mgp)])
+      pheno <- rbind(pheno, matrix(rep(NA, n.add*ncol(pheno)), ncol=ncol(pheno)))
+      pheno[-1, wh[1]] <- pheind
+
+      warning(n.add, " individuals with genotypes but no phenotypes\n    ", paste(genind[is.na(mgp)], collapse="|"), "\n")
+    }
+
+    mpg <- match(pheind, genind)
+    if(any(is.na(mpg))) {
+      n.add <- sum(is.na(mpg))
+      genind <- c(genind, pheind[is.na(mpg)])
+      gen <- rbind(gen, matrix(rep(NA, n.add*ncol(gen)), ncol=ncol(gen)))
+
+      warning(n.add, " individuals with phenotypes but no genotypes\n    ", paste(pheind[is.na(mpg)], collapse="|"), "\n")
+    }
+
+    mgp <- match(genind, pheind)
+    pheind <- pheind[mgp]
+    pheno <- pheno[1+c(0,mgp),,drop=FALSE]
+  }
   n.phe <- ncol(pheno)
 
   if(map.included) {
@@ -128,7 +169,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   mnames <- unlist(gen[1,])
   if(any(is.na(mnames)))  stop("There are missing marker names.")
   chr <- unlist(gen[2,])
-#  if(any(is.na(chr))) stop("There are missing chromosome IDs.")
+
   if(any(is.na(chr))) {
     na.positions <- which(is.na(chr))
     na.positions.str <- ""
@@ -163,10 +204,28 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   # Fix up phenotypes
   sw2numeric <-
     function(x) {
-      pattern <- "^[ \t]*-*[0-9]*[.]*[0-9]*[ \t]*$"
+      wh1 <- is.na(x)
       n <- sum(!is.na(x))
-      if(length(grep(pattern,as.character(x[!is.na(x)])))==n)
-        return(as.numeric(as.character(x)))
+      y <- suppressWarnings(as.numeric(as.character(x)))
+      wh2 <- is.na(y)
+      m <- sum(!is.na(y))
+      if(n==m || (n-m) < 2 || (n-m) < n*0.05) {
+        if(sum(!wh1 & wh2) > 0) {
+          u <- unique(as.character(x[!wh1 & wh2]))
+          if(length(u) > 1) {
+            themessage <- paste("The phenotype values", paste("\"", u, "\"", sep="", collapse=" "))
+                themessage <- paste(themessage, " were", sep="")
+              }
+              else {
+                themessage <- paste("The phenotype value \"", u, "\" ", sep="")
+                themessage <- paste(themessage, " was", sep="")
+              }
+              themessage <- paste(themessage, "interpreted as missing.")
+              warning(themessage)
+
+        }
+        return(y)
+      }
       else return(x)
     }
   pheno <- data.frame(lapply(pheno, sw2numeric))
@@ -258,7 +317,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   cross.type <- class(cross)[1]
   if(cross.type=="f2") max.gen <- 5
   else if(cross.type=="bc") max.gen <- 2
-  else max.gen <- 10
+  else max.gen <- 14
 
   # check that markers are in proper order
   #     if not, fix up the order
