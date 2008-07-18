@@ -4,7 +4,7 @@
 #
 # copyright (c) 2000-8, Karl W Broman
 #       [modifications of plot.cross from Brian Yandell]
-# last modified Mar, 2008
+# last modified Jul, 2008
 # first written Mar, 2000
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -50,7 +50,7 @@ function(x, chr, reorder=FALSE, main="Missing genotypes",
   type <- class(cross)[1]
   g <- t(Geno[o,])
   g[is.na(g)] <- 0
-  if(type == "bc" || type=="risib" || type=="riself") 
+  if(type == "bc" || type=="risib" || type=="riself" || type=="bc") 
     g[g > 0] <- 1
   else if(type=="f2") {
     g[g > 0 & g < 4] <- 1
@@ -232,22 +232,40 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
 {
   dots <- list(...)
   if("main" %in% names(dots)) {
-    themain <- dots[["main"]]
+    themain <- dots$main
     usemaindefault <- FALSE
   }
   else usemaindefault <- TRUE
 
   if("xlim" %in% names(dots)) {
-    xlim <- dots[["xlim"]]
+    xlim <- dots$xlim
     usexlimdefault <- FALSE
   }
   else usexlimdefault <- TRUE
   
   if("ylim" %in% names(dots)) {
-    ylim <- dots[["ylim"]]
+    ylim <- dots$ylim
     useylimdefault <- FALSE
   }
   else useylimdefault <- TRUE
+
+  if("xlab" %in% names(dots)) 
+    xlab <- dots$xlab
+  else {
+    if(horizontal)
+      xlab <- "Location (cM)"
+    else
+      xlab <- "Chromosome"
+  }
+
+  if("ylab" %in% names(dots)) 
+    ylab <- dots$ylab
+  else {
+    if(horizontal)
+      ylab <- "Chromosome"
+    else
+      ylab <- "Location (cM)"
+  }
 
   map <- x
   # figure out if the input is a cross (containing a map)
@@ -329,7 +347,7 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       if(usexlimdefault) xlim <- c(0,maxlen)
       if(useylimdefault) ylim <- rev(thelim)
       plot(0,0,type="n",xlim=xlim, ylim=ylim,yaxs="i",
-	   xlab="Location (cM)", ylab="Chromosome", yaxt="n")
+	   xlab=xlab, ylab=ylab, yaxt="n")
       a <- par("usr")
       
       for(i in 1:n.chr) {
@@ -367,7 +385,7 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       if(usexlimdefault) xlim <- thelim
       if(useylimdefault) ylim <- c(maxlen, 0)
       plot(0,0,type="n",ylim=ylim,xlim=xlim,xaxs="i",
-	   ylab="Location (cM)", xlab="Chromosome", xaxt="n")
+           xlab=xlab, ylab=ylab, xaxt="n")
       
       a <- par("usr")
       
@@ -439,7 +457,7 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       if(usexlimdefault) xlim <- thelim
       if(useylimdefault) ylim <- c(maxloc, 0)
       plot(0,0,type="n",ylim=ylim,xlim=xlim, xaxs="i",
-           ylab="Location (cM)", xlab="Chromosome", xaxt="n")
+           xlab=xlab, ylab=ylab, xaxt="n")
 
       a <- par("usr")
     
@@ -486,7 +504,7 @@ function(x, map2, chr, horizontal=FALSE, shift=TRUE,
       if(usexlimdefault) xlim <- c(0,maxloc)
       if(useylimdefault) ylim <- rev(thelim)
       plot(0,0,type="n",xlim=xlim,ylim=ylim,
-           xlab="Location (cM)", ylab="Chromosome", yaxt="n", yaxs="i")
+           xlab=xlab, ylab=ylab, yaxt="n", yaxs="i")
 
       a <- par("usr")
     
@@ -591,6 +609,8 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
+  if(missing(chr)) chr <- names(cross$geno)[1]
+
   cross <- subset(cross,chr=chr)
   if(!missing(ind)) {
     if(is.null(getid(cross))) cross$pheno$id <- 1:nind(cross)
@@ -680,7 +700,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
     ddata[!is.na(data) & (data==5 | data==6)] <- NA
 
     if(horizontal) {
-      plot(0,0,type="n",xlab="Position (cM)",ylab="Individual",
+      plot(0,0,type="n",xlab="Location (cM)",ylab="Individual",
            main=paste("Chromosome",names(cross$geno)[1]),
            ylim=c(n.ind+1,0),xlim=c(0,max(map)), yaxt="n", yaxs="i")
       segments(0, 1:n.ind-jit, max(map), 1:n.ind-jit)
@@ -748,7 +768,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       segments(map,u[3],map,u[3]-1/2)
       segments(map,u[4],map,u[4]+1/2)
   
-      if(any(errors)) {
+      if(any(errors != 0)) {
         ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
         points(x,ind-jit,pch=0,col=color[6],cex=cex+0.4,lwd=2)
         points(x,ind+jit,pch=0,col=color[6],cex=cex+0.4,lwd=2)
@@ -760,7 +780,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       }
     }
     else {
-      plot(0,0,type="n",ylab="Position (cM)",xlab="Individual",
+      plot(0,0,type="n",ylab="Location (cM)",xlab="Individual",
            main=paste("Chromosome",names(cross$geno)[1]),
            xlim=c(0,n.ind+1),ylim=c(max(map),0), xaxt="n", xaxs="i")
 
@@ -830,7 +850,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       segments(u[1],map,(u[1]+1)/2,map)
       segments(u[2],map,(n.ind+u[2])/2,map)
   
-      if(any(errors)) {
+      if(any(errors != 0)) {
         ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
         points(ind-jit,y,pch=0,col=color[6],cex=cex+0.4,lwd=2)
         points(ind+jit,y,pch=0,col=color[6],cex=cex+0.4,lwd=2)
@@ -848,7 +868,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   else {
 
     if(horizontal) {
-      plot(0,0,type="n",xlab="Position (cM)",ylab="Individual",
+      plot(0,0,type="n",xlab="Location (cM)",ylab="Individual",
            main=paste("Chromosome",names(cross$geno)[1]),
            ylim=c(n.ind+0.5,0.5),xlim=c(0,max(map)), yaxt="n")
       segments(0, 1:n.ind, max(map), 1:n.ind)
@@ -891,7 +911,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       segments(map,u[3],map,u[3]-1/2)
       segments(map,u[4],map,u[4]+1/2)
   
-      if(any(errors)) {
+      if(any(errors != 0)) {
         ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
         points(x,ind,pch=0,col=color[6],cex=cex+0.4,lwd=2)
       }
@@ -899,7 +919,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       if(include.xo) points(xoloc$loc,xoloc$ind,pch=4,col="blue",lwd=2)
     }
     else {
-      plot(0,0,type="n",ylab="Position (cM)",xlab="Individual",
+      plot(0,0,type="n",ylab="Location (cM)",xlab="Individual",
            main=paste("Chromosome",names(cross$geno)[1]),
            xlim=c(0.5,n.ind+0.5),ylim=c(max(map),0), xaxt="n")
       segments(1:n.ind,0,1:n.ind,max(map))
@@ -942,7 +962,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
       segments(u[1],map,(u[1]+1)/2,map)
       segments(u[2],map,(n.ind+u[2])/2,map)
   
-      if(any(errors)) {
+      if(any(errors != 0)) {
         ind <- rep(1:n.ind,length(map));ind[errors!=1]<-NA
         points(ind,y,pch=0,col=color[6],cex=cex+0.4,lwd=2)
       }
@@ -953,6 +973,7 @@ function(x, chr, ind, include.xo=TRUE, horizontal=TRUE,
   }
   invisible()
 }
+
 ######################################################################
 #
 # plot.info: Plot the proportion of missing information in the
@@ -1087,6 +1108,11 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
   type <- class(cross)[1]
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(length(pheno.col) > 1) {
     pheno.col <- pheno.col[1]
@@ -1278,8 +1304,11 @@ function(x, marker, pheno.col = 1, jitter = 1, infer = TRUE,
 #  text(1:length(observed), u[3] - diff(u[3:4]) * 0.05, tmp, xpd = TRUE, 
 #       cex = ifelse(n.mark==1, 1, 0.8))
   cxaxis <- par("cex.axis") 
+  
+#  theline <- length(marker)-1
   axis(side=1, at=1:length(observed), labels=tmp,
-       cex=ifelse(n.mark==1, cxaxis, cxaxis*0.8))
+       cex=ifelse(n.mark==1, cxaxis, cxaxis*0.8),
+       tick=FALSE, line = (length(marker)-1)/2)
 
   invisible(data)
 
@@ -1321,6 +1350,11 @@ function(x, pheno.col=1, ...)
 {
   if(!any(class(x) == "cross"))
     stop("Input should have class \"cross\".")
+
+  if(LikePheVector(pheno.col, nind(x), nphe(x))) {
+    x$pheno <- cbind(pheno.col, x$pheno)
+    pheno.col <- 1
+  }
 
   if(length(pheno.col) > 1) {
     pheno.col <- pheno.col[1]

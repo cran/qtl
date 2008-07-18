@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-8, Karl W Broman, Hao Wu, and Brian Yandell
 #
-# last modified Apr, 2008
+# last modified Jul, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -187,8 +187,8 @@ function(object, thresholds,
     out <- out[out$chr1==out$chr2,]
   
   if(!missing(alphas)) { # get thresholds
-    thresholds <- rep(0,length(perms))
-    for(i in 1:length(perms))
+    thresholds <- rep(0,5)
+    for(i in 1:5)
       thresholds[i] <- quantile(perms[[i]], 1-alphas[i])
     thresholds[alphas==1] <- 0
     thresholds[alphas==0] <- Inf
@@ -392,14 +392,16 @@ function(object, for.perm=FALSE)
                "fv1"=max(out$jnt.lod.full - out$lod.1qtl, na.rm=TRUE),
                "int"=max(out$jnt.lod.full - out$add.lod.add, na.rm=TRUE),
                "add"=max(out$add.lod.add, na.rm=TRUE),
-               "av1"=max(out$add.lod.add - out$lod.1qtl, na.rm=TRUE))
+               "av1"=max(out$add.lod.add - out$lod.1qtl, na.rm=TRUE),
+               "one"=max(out$lod.1qtl, na.rm=TRUE))
     }
     else {
       out <- list("full"=apply(out$jnt.lod.full, 2, max, na.rm=TRUE),
                   "fv1"=apply(out$jnt.lod.full - out$lod.1qtl, 2, max, na.rm=TRUE),
                   "int"=apply(out$jnt.lod.full - out$add.lod.add, 2, max, na.rm=TRUE),
                   "add"=apply(out$add.lod.add, 2, max, na.rm=TRUE),
-                  "av1"=apply(out$add.lod.add - out$lod.1qtl, 2, max, na.rm=TRUE))
+                  "av1"=apply(out$add.lod.add - out$lod.1qtl, 2, max, na.rm=TRUE),
+                  "one"=apply(out$lod.1qtl, 2, max, na.rm=TRUE))
     }
   }
       
@@ -797,9 +799,9 @@ function(x, ...)
     dimnames(x) <- list(rn, nam)
 
     if(is.null(phe))
-      cat(paste("(", n.perm, " permutations)", sep=""), "\n")
+      cat("(", n.perm, " permutations)\n", sep="")
     else 
-      cat(phe, paste("(", n.perm, " permutations)", sep=""), "\n")
+      cat(phe, " (", n.perm, " permutations)\n", sep="")
     print(x, digits=3)
   }
   else {
@@ -812,7 +814,7 @@ function(x, ...)
         y[,j] <- x[[j]][,i]
       dimnames(y) <- list(rn, nam)
 
-      cat(phe[i], paste("(", n.perm, " permutations)", sep=""), "\n")
+      cat(phe[i], " (", n.perm, " permutations)\n", sep="")
       print(y, digits=3)
       if(i != nc) cat("\n")
     }
@@ -844,6 +846,18 @@ function(...)
     }
   }
   if(flag) warning("Mismatch in column names; input may not be consistent.\n")
+
+  df <- lapply(dots, attr, "df")
+  flag <- 0
+  for(i in 2:length(df)) {
+    if(length(df[[i]]) != length(df[[1]]) ||
+       any(df[[i]] != df[[1]])) 
+      flag <- 1
+  }
+  if(flag) {
+    warning("Mismatch in degrees of freedom; may cause problems.")
+    attr(dots[[1]], "df") <- NULL
+  }
 
   dots[[1]]
 }

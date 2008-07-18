@@ -18,7 +18,11 @@ effectplot(cross, pheno.col=1, mname1, mark1, geno1, mname2, mark2,
   \item{cross}{An object of class \code{cross}.}
   \item{pheno.col}{Column number in the phenotype matrix to be
     drawn in the plot.  One may also give a character string matching
-   a phenotype name.}
+   a phenotype name. Finally, one may give a numeric vector of
+   phenotypes, in which case it must have the length equal to the number
+   of individuals in the cross, and there must be either non-integers or
+   values < 1 or > no. phenotypes; this last case may be useful for studying
+   transformations.}
   \item{mname1}{Name for the first marker or pseudomarker.}
   \item{mark1}{Genotype data for the first marker.  If unspecified,
     genotypes will be taken from the data in the input cross object,
@@ -82,7 +86,7 @@ effectplot(fake.f2, pheno.col=1, mname1=mname)
 # note that "sex" must be a phenotype name here
 effectplot(fake.f2, mname1="sex", geno1=c("F","M"))
 # alternatively:
-sex <- fake.f2$pheno[,2]
+sex <- pull.pheno(fake.f2, "sex")
 effectplot(fake.f2, mname1="Sex", mark1=sex, geno1=c("F","M"))
 
 ########################################
@@ -103,11 +107,11 @@ effectplot(fake.f2, mname1=pmnames[1], mname2=pmnames[2])
 mname <- find.marker(fake.f2, 13, 24) # marker D13M254
 # sex and a marker
 effectplot(fake.f2, mname1=mname, mname2="Sex",
-           mark2=fake.f2$pheno$sex, geno2=c("F","M"))
+           mark2=sex, geno2=c("F","M"))
 
 # Same as above, switch role of sex and the marker
 # sex and marker
-effectplot(fake.f2, mname1="Sex", mark1=fake.f2$pheno$sex,
+effectplot(fake.f2, mname1="Sex", mark1=sex,
            geno1=c("F","M"), mname2=mname)
 
 # X chromosome marker

@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-8, Karl W Broman
 # 
-# last modified Apr, 2008
+# last modified Jun, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -39,9 +39,17 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   dfA <- -1
   dfX <- parXa <- -1
 
+  if(!missing(chr)) cross <- subset(cross, chr)
+  if(missing(n.perm)) n.perm <- 0
+
   if(missing(verbose)) {
     if(!missing(n.perm) && n.perm > 0) verbose <- TRUE
     else verbose <- FALSE
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
   }
 
   if(is.character(pheno.col)) {
@@ -58,9 +66,6 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
 
   if(any(pheno.col < 1 | pheno.col > nphe(cross)))
     stop("pheno.col values should be between 1 and the no. phenotypes")
-
-  if(!missing(chr)) cross <- subset(cross, chr)
-  if(missing(n.perm)) n.perm <- 0
 
   if(length(pheno.col)==1 && n.perm>=0) use <- "complete.obs"
 
@@ -170,7 +175,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     else 
       if(length(weights) != nind(cross))
         stop("weights should either be NULL or a vector of length n.ind")
-    if(any(weights) <= 0)
+    if(any(weights <= 0))
       stop("weights should be entirely positive")
     weights <- sqrt(weights)
   }
@@ -835,6 +840,9 @@ function(n.perm, cross, pheno.col, model,
 
     addcovarp <- addcovar
     intcovarp <- intcovar
+    if(!is.null(addcovar)) addcovarp <- as.matrix(addcovarp)
+    if(!is.null(intcovar)) intcovarp <- as.matrix(intcovarp)
+    
     if(model=="2part") res <- matrix(ncol=3*n.phe,nrow=n.perm)
     else res <- matrix(0, n.perm, n.phe)
 

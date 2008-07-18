@@ -17,15 +17,20 @@ fitqtl(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
    \code{\link[qtl]{read.cross}} for details.}
  \item{pheno.col}{Column number in the phenotype matrix which should be
    used as the phenotype.  One may also give a character string matching
-   a phenotype name.}
+   a phenotype name. Finally, one may give a numeric vector of
+   phenotypes, in which case it must have the length equal to the number
+   of individuals in the cross, and there must be either non-integers or
+   values < 1 or > no. phenotypes; this last case may be useful for studying
+   transformations.}
  \item{qtl}{An object of class \code{qtl}, as output from
    \code{\link[qtl]{makeqtl}}.} 
- \item{covar}{A data.frame of covariates.  These must be strictly
-   numeric.} 
+ \item{covar}{A matrix or data.frame of covariates.  These must be
+   strictly numeric.} 
  \item{formula}{An object of class \code{\link[stats]{formula}}
-   indicating the model to be fitted.  QTLs are referred to as
+   indicating the model to be fitted.  (It can also be the character
+   string representation of a formula.)  QTLs are referred to as
    \code{Q1}, \code{Q2}, etc.  Covariates are referred to by their names
-   in the data frame \code{covar}.} 
+   in the data frame \code{covar}.  } 
  \item{method}{Indicates whether to use multiple imputation or
    Haley-Knott regression.}
  \item{dropone}{If TRUE, do drop-one-term analysis.}
@@ -60,15 +65,16 @@ fitqtl(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
 }
 
 \section{Value}{
-  An object of class \code{fitqtl}. It may contains as many as three fields:
+  An object of class \code{fitqtl}. It may contains as many as four fields:
   \enumerate{
-    \item result.full is the ANOVA table as a matrix for the full model
+    \item \code{result.full} is the ANOVA table as a matrix for the full model
     result. It contains the degree of freedom (df), Sum of squares (SS),
     mean square (MS), LOD score (LOD), percentage of variance explained
     (\%var) and P value (Pvalue).
 
+    \item \code{lod} is the LOD score from the fit of the full model.
 
-    \item result.drop is a drop-one-term ANOVA table as a matrix. It
+    \item \code{result.drop} is a drop-one-term ANOVA table as a matrix. It
     contains degrees of freedom (df), Type III sum of squares (Type III
     SS), LOD score(LOD), percentage of variance explained (\%var), F
     statistics (F value),  and P values for chi square (Pvalue(chi2))
@@ -81,14 +87,13 @@ fitqtl(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
     the F values and the P values are approximations calculated from the
     LOD score.
 
-    \item ests contains the estimated QTL effects and standard errors.  
+    \item \code{ests} contains the estimated QTL effects and standard errors.  
 
   \bold{The part to get estimated QTL effects is fully working only for
     the case of autosomes in a backcross or intercross.
     In other cases the values returned are based on a
     design matrix that is convenient for calculations but not easily
     interpreted.}
-    
   }
 }
 
@@ -125,7 +130,7 @@ lod.add <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1+Q2+Q3)
 summary(lod.add)
 
 # fit the model including sex as an interacting covariate
-Sex <- data.frame(Sex=fake.f2$pheno$sex)
+Sex <- data.frame(Sex=pull.pheno(fake.f2, "sex"))
 lod.sex <- fitqtl(fake.f2, pheno.col=1, qtl, formula=y~Q1*Q2*Q3*Sex, cov=Sex)
 summary(lod.sex)
 

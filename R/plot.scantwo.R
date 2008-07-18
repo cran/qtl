@@ -2,8 +2,8 @@
 #
 # plot.scantwo.R
 #
-# copyright (c) 2001-7, Karl W Broman, Hao Wu and Brian Yandell
-# last modified Dec, 2007
+# copyright (c) 2001-8, Karl W Broman, Hao Wu and Brian Yandell
+# last modified Jun, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -46,6 +46,7 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
     return(invisible(NULL))
   }
     
+
   chr <- as.character(unique(x$map[,1]))
 
   addpair <- attr(x, "addpair")
@@ -221,14 +222,19 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
 #  }
 
   # save old par parameters, to restore them on exit
-  old.mar <- par("mar")
-  old.las <- par("las")
-  old.mfrow <- par("mfrow")
-  on.exit(par(las = old.las, mar = old.mar, mfrow = old.mfrow))
-  par(las = 1)
   if(zscale) {
-    dots <- list(...)
-
+    old.mar <- par("mar")
+    old.mfrow <- par("mfrow")
+    old.las <- par("las")
+    on.exit(par(las = old.las, mar = old.mar, mfrow = old.mfrow))
+  }
+  else {
+    old.las <- par("las")
+    on.exit(par(las = old.las))
+  }
+  par(las = 1)
+  dots <- list(...)
+  if(zscale) {
     if("layout" %in% names(dots))
       layout(dots[["layout"]][[1]],dots[["layout"]][[2]])
     else
@@ -256,14 +262,30 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
   }
   else lo.int <- lo <- 0
     
+  if("xlab" %in% names(dots)) {
+    xlab <- dots$xlab
+    if("ylab" %in% names(dots))
+      ylab <- dots$ylab
+    else ylab <- xlab
+  }
+  else { 
+    if("ylab" %in% names(dots))
+      xlab <- ylab <- dots$ylab
+    else {
+      if(length(chr) > 1)
+        xlab <- ylab <- "Chromosome"
+      else
+        xlab <- ylab <- "Location (cM)"
+    }
+  }
 
   if(length(chr) > 1)
-    image(1:ncol(lod), 1:nrow(lod), lod, ylab = "Chromosome", 
-          xlab = "Chromosome", zlim = c(lo, zlim.jnt), col = cols,
+    image(1:ncol(lod), 1:nrow(lod), lod, ylab = ylab,
+          xlab = xlab, zlim = c(lo, zlim.jnt), col = cols,
           xaxt = "n", yaxt = "n")
   else
-    image(map[,2], map[,2], lod, ylab = "Position (cM)", 
-          xlab = "Position (cM)", zlim = c(lo, zlim.jnt), col = cols)
+    image(map[,2], map[,2], lod, ylab = ylab,
+          xlab = xlab, zlim = c(lo, zlim.jnt), col = cols)
           
   # plot point at maximum, if requested
   if(point.at.max) {
@@ -280,7 +302,7 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
   }
 
   # add contours if requested
-  if(any(contours) > 0) {
+  if(any(contours > 0)) {
     if(is.logical(contours))
       contours = 1.5
     tmp = lod
@@ -354,7 +376,7 @@ function(x, chr, incl.markers = FALSE, zlim, lodcolumn=1,
       par(mar = c(5, 2, 4, 2) + 0.1)
 
     colorstep <- (zlim.jnt-lo)/255
-    image(x = 1:1, y = seq(lo, zlim.jnt, colorstep), z = matrix(c(1:256), 1, 256),
+    image(x = 1:1, y = seq(lo, zlim.jnt, colorstep), z = matrix(1:256, 1, 256),
           zlim = c(1, 256), ylab = "", xlab = "", 
           xaxt = "n", yaxt = "n", col = cols)
 

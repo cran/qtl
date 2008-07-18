@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-8, Karl W Broman and Hao Wu
 #
-# last modified Apr, 2008
+# last modified Jul, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -42,6 +42,11 @@ function(cross, chr, pheno.col=1,
   model <- match.arg(model)
   use <- match.arg(use)
   
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
+
   dfAAf <- dfAAa <- dfAA1 <- -1
   dfAXf <- dfAXa <- dfAX1 <- -1
   dfXXf <- dfXXa <- dfXX1 <- -1
@@ -235,7 +240,7 @@ function(cross, chr, pheno.col=1,
       weights <- rep(1, nind(cross))
     if(length(weights) != nind(cross))
       stop("weights should either be NULL or a vector of length n.ind")
-    if(any(weights) <= 0)
+    if(any(weights <= 0))
       stop("weights should be entirely positive")
     weights <- sqrt(weights)
   }
@@ -453,8 +458,8 @@ function(cross, chr, pheno.col=1,
       }
 
       # print the current working pair
-      if(verbose) cat(paste(" (", names(cross$geno)[i], ",",
-                          names(cross$geno)[j],")\n",sep=""))
+      if(verbose) cat(" (", names(cross$geno)[i], ",",
+                          names(cross$geno)[j],")\n",sep="")
 
       if(method=="imp") {
         z <- .C("R_scantwo_imp",
@@ -1255,7 +1260,8 @@ function(n.perm, cross, pheno.col, model,
                         "fv1"=temp,
                         "int"=temp,
                         "add"=temp,
-                        "av1"=temp)
+                        "av1"=temp,
+                        "one"=temp)
       
     ## permutation loop
     for(i in 1:n.perm) {
@@ -1297,7 +1303,7 @@ function(n.perm, cross, pheno.col, model,
 
       # maxima
       temp <- subrousummaryscantwo(tem, for.perm=TRUE)
-      for(j in 1:5) perm.result[[j]][i,] <- temp[[j]]
+      for(j in 1:6) perm.result[[j]][i,] <- temp[[j]]
 
       if("df" %in% names(attributes(tem))) 
         attr(perm.result, "df") <- revisescantwodf(attr(tem, "df"))
@@ -1319,6 +1325,7 @@ function(n.perm, cross, pheno.col, model,
 revisescantwodf <-
 function(df)
 {
+  if(is.null(df)) return(NULL)
   full <- df[,"full"]
   add <- df[,"add"]
   one <- df[,"one"]

@@ -19,13 +19,18 @@ addqtl(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
    If missing, all chromosomes are scanned.}
  \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.  One may also give a character string matching
-   a phenotype name.}
+   a phenotype name. Finally, one may give a numeric vector of
+   phenotypes, in which case it must have the length equal to the number
+   of individuals in the cross, and there must be either non-integers or
+   values < 1 or > no. phenotypes; this last case may be useful for studying
+   transformations.}
  \item{qtl}{An object of class \code{qtl}, as output from
    \code{\link[qtl]{makeqtl}}.} 
- \item{covar}{A data.frame of covariates.  These must be strictly
-   numeric.} 
+ \item{covar}{A matrix or data.frame of covariates.  These must be
+   strictly numeric.} 
  \item{formula}{An object of class \code{\link[stats]{formula}}
-   indicating the model to be fitted.  QTLs are referred to as
+   indicating the model to be fitted.  (It can also be the character
+   string representation of a formula.)  QTLs are referred to as
    \code{Q1}, \code{Q2}, etc.  Covariates are referred to by their names
    in the data frame \code{covar}.  If the new QTL is not included in
    the formula, its main effect is added.}

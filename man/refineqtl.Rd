@@ -12,14 +12,18 @@
 \usage{
 refineqtl(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
           method=c("imp","hk"), verbose=TRUE, maxit=10,
-          incl.markers=TRUE, keeplodprofile=FALSE)
+          incl.markers=TRUE, keeplodprofile=TRUE)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
  \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.  One may also give a character string matching
-   the phenotype name.}
+   the phenotype name.  Finally, one may give a numeric vector of
+   phenotypes, in which case it must have the length equal to the number
+   of individuals in the cross, and there must be either non-integers or
+   values < 1 or > no. phenotypes; this last case may be useful for studying
+   transformations.}
  \item{qtl}{A QTL object, as produced by \code{\link[qtl]{makeqtl}},
    containing the positions of the QTL.  Provide either \code{qtl} or
    the pair \code{chr} and \code{pos}.}
@@ -29,9 +33,11 @@ refineqtl(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
    is provided, this should not be.}
  \item{qtl.name}{Optional user-specified name for each QTL.  If
    \code{qtl} is provided, this should not be.}
- \item{covar}{A data frame of covariates.}
+ \item{covar}{A matrix or data.frame of covariates.  These must be
+   strictly numeric.} 
  \item{formula}{An object of class \code{\link[stats]{formula}}
-   indicating the model to be fitted.  QTLs are indicated as \code{Q1},
+   indicating the model to be fitted.  (It can also be the character
+   string representation of a formula.)  QTLs are indicated as \code{Q1},
    \code{Q2}, etc.  Covariates are indicated by their names in \code{covar}.}
  \item{method}{Indicates whether to use multiple imputation or
    Haley-Knott regression.}
@@ -70,6 +76,11 @@ refineqtl(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
  
 \value{
   An object of class \code{qtl}, with QTL placed in their new positions.
+
+  If \code{keeplodprofile=TRUE}, LOD profiles from the last pass through
+  the refinement algorithm are retained as an attribute,
+  \code{"lodprofile"}, to the object.  These may be plotted with
+  \code{\link[qtl]{plotLodProfile}}.  
 }
 
 \references{
@@ -97,6 +108,7 @@ rqtl <- refineqtl(fake.bc, qtl=qtl, method="hk")
 
 \seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}},
   \code{\link[qtl]{scanqtl}}, \code{\link[qtl]{addtoqtl}},
-  \code{\link[qtl]{dropfromqtl}}, \code{\link[qtl]{replaceqtl}} }
+  \code{\link[qtl]{dropfromqtl}}, \code{\link[qtl]{replaceqtl}},
+  \code{link[qtl]{plotLodProfile}} }
 
 \keyword{utilities}

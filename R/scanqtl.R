@@ -3,7 +3,7 @@
 # scanqtl.R
 #
 # copyright (c) 2002-8, Hao Wu and Karl W. Broman
-# last modified Apr, 2008
+# last modified Jul, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -20,8 +20,16 @@ function(cross, pheno.col=1, chr, pos, covar=NULL, formula,
   if(!any(class(cross) == "cross")) 
     stop("Input should have class \"cross\".")
 
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(length(pheno.col) > 1) {
     pheno.col <- pheno.col[1]
@@ -43,6 +51,10 @@ function(cross, pheno.col=1, chr, pos, covar=NULL, formula,
     stop("nrow(covar) != no. individuals in cross.")
 
   method <- match.arg(method)
+
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
 
   if(method=="imp") {
     if(!("draws" %in% names(cross$geno[[1]]))) {
@@ -236,10 +248,10 @@ function(cross, pheno.col=1, chr, pos, covar=NULL, formula,
       end <- pos[[i]][2]
       # replace pos[[i]] (a range) by the marker positions within the range
       # extend the position to the nearest markers outside the ranges
-      tmp <- which( (map - start)<0 )
+      tmp <- which( (map - start)<=0 )
       if(length(tmp) != 0) # starting position is after the first marker
         start <- map[max(tmp)]
-      tmp <- which( (end-map) < 0 )
+      tmp <- which( (end-map) <= 0 )
       if(length(tmp) != 0) # ending position is before the last marker
         end <- map[min(tmp)]
       pos[[i]] <- as.vector( map[(map>=start)&(map<=end)] )
@@ -337,6 +349,10 @@ function(cross, pheno.col=1, chr, pos, covar=NULL, formula,
         if(pos.tmp[kk] != current.pos[kk]) {
           u <- abs(pos.tmp[kk]-pos[[kk]])
           w <- indices[[kk]][u==min(u)]
+          if(length(w) > 1) {
+            warning("Confused about QTL positions.  You should probably run jittermap to ensure that no two markers conincide.")
+            w <- sample(w, 1)
+          }
           if(method=="imp")
             qtl.obj$geno[,kk,] <- cross$geno[[ichr[kk]]]$draws[,w,]
           else

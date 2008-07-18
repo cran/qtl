@@ -2,14 +2,14 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-7, Karl W Broman
-# last modified Dec, 2007
+# copyright (c) 2001-8, Karl W Broman
+# last modified Jul, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: summary.cross, print.summary.cross, nind, nchr, nmar,
-#           totmar, nphe, nmissing, print.cross, chrlen
+#           totmar, nphe, nmissing, ntyped, print.cross, chrlen
 #
 ######################################################################
 
@@ -27,8 +27,8 @@ function(object,...)
   type <- class(object)[1]
 
   if(type != "f2" && type != "bc" && type != "4way" &&
-     type != "riself" && type != "risib" && type != "cc") 
-    stop("Cross type ", type, " is not suppoted.")
+     type != "riself" && type != "risib" && type != "cc" && type != "dh") 
+    stop("Cross type ", type, " is not supported.")
 
   if(type=="cc") {
     cat("A Collaborative cross\n")
@@ -47,7 +47,7 @@ function(object,...)
     temp <- getgenonames("f2", "A", cross.attr=attributes(object))
     names(typings) <- c(temp, paste("not", temp[c(3,1)]))
   }
-  else if(type=="bc" || type=="riself" || type=="risib") {
+  else if(type=="bc" || type=="riself" || type=="risib" || type=="dh") {
     typings <- table(factor(Geno[!is.na(Geno)], levels=1:2))
     names(typings) <- getgenonames(type, "A", cross.attr=attributes(object))
   }
@@ -149,7 +149,7 @@ function(object,...)
             paste(names(x)[x>1], collapse="  "))
 
   # check genotype data
-  if(type=="bc" || type=="riself" || type=="risib") {
+  if(type=="bc" || type=="riself" || type=="risib" || type=="dh") {
     # Invalid genotypes?
     if(any(!is.na(Geno) & Geno != 1 & Geno != 2)) { 
       u <- unique(as.numeric(Geno))
@@ -281,24 +281,63 @@ function(x,...)
   else if(x$type=="4way") cat("    4-way cross\n\n")
   else if(x$type=="riself") cat("    RI strains via selfing\n\n")
   else if(x$type=="risib") cat("    RI strains via sib matings\n\n")
-  else cat(paste("    cross", x$type, "\n\n",sep=" "))
+  else if(x$type=="dh") cat("    Doubled haploids\n\n")
+  else cat("    cross", x$type, "\n\n",sep=" ")
 
   cat("    No. individuals:   ", x$n.ind,"\n\n")
   cat("    No. phenotypes:    ", x$n.phe,"\n")
-  cat("    Percent phenotyped:", round((1-x$missing.phe)*100,1), "\n\n")
+  
+  header <- "                       "
+  width <- options("width")$width
+
+  cat("    Percent phenotyped:")
+
+  ######################################################################
+  # function to print things nicely
+  printnicely <-
+    function(thetext, header, width, sep=" ")
+      {
+        nleft <- width - nchar(header)
+        nsep <- nchar(sep)
+        if(length(thetext) < 2) cat("", thetext, "\n", sep=sep)
+        else {
+          z <- paste("", thetext[1], sep=sep, collapse=sep)
+          for(j in 2:length(thetext)) {
+            if(nchar(z) + nsep + nchar(thetext[j]) > nleft) {
+              cat(z, "\n")
+              nleft <- width
+              z <- paste(header, thetext[j], sep=sep)
+            }
+            else {
+              z <- paste(z, thetext[j], sep=sep)
+            }
+          }
+          cat(z, "\n")
+        }
+      }
+  ######################################################################
+  
+  printnicely(round((1-x$missing.phe)*100,1), header, width)
+  cat("\n")
+
   cat("    No. chromosomes:   ", x$n.chr,"\n")
-  if(!is.null(x$autosomes))
-    cat("        Autosomes:     ", paste(x$autosomes, collapse=" "), "\n")
-  if(!is.null(x$Xchr))
-    cat("        X chr:         ", paste(x$Xchr, collapse=" "), "\n")
+  if(!is.null(x$autosomes)) {
+    cat("        Autosomes:     ")
+    printnicely(x$autosomes, header, width)
+  }
+  if(!is.null(x$Xchr)) {
+    cat("        X chr:         ")
+    printnicely(x$Xchr, header, width)
+  }
   cat("\n")
   cat("    Total markers:     ", sum(x$n.mar), "\n")
-  cat("    No. markers:       ", x$n.mar, "\n")
+  cat("    No. markers:       ")
+  printnicely(x$n.mar, header, width)
   cat("    Percent genotyped: ", round((1-x$missing.gen)*100,1), "\n")
-  cat("    Genotypes (%):     ", 
-      paste(names(x$typing.freq),round(x$typing.freq*100,1),sep=":", collapse="  "),
-      "\n")
-#  cat("\n")
+  cat("    Genotypes (%):    ")
+  geno <- paste(names(x$typing.freq),round(x$typing.freq*100,1),sep=":")
+  header <- "                      "
+  printnicely(geno, header, width, "  ")
 }
 
 
@@ -396,6 +435,21 @@ function(cross,what=c("ind","mar"))
   n.missing
 }
 
+
+# like nmissing, but for the opposite value
+ntyped <-
+function(cross, what=c("ind","mar"))
+{
+  if(!any(class(cross) == "cross"))
+    stop("Input should have class \"cross\".")
+
+  what <- match.arg(what)
+
+  if(what=="ind") n <- totmar(cross)
+  else n <- nind(cross)
+
+  n - nmissing(cross, what)
+}
 
 # "print" method for cross object
 #

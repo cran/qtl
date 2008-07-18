@@ -4,7 +4,7 @@
 #
 # copyright (c) 2001-8, Karl W Broman
 # 
-# last modified Feb, 2008
+# last modified Jul, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -77,6 +77,8 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
   # pull out desired chromosomes
   if(missing(chr) || length(chr)==0) 
     chr <- unique(as.character(out[,1]))
+  else if(is.logical(chr))
+    chr <- unique(as.character(out[,1]))[chr]
   else if(all(chr < 0)) { 
     a <- sort(unique(out[,1]))
     chr <- a[-match(-chr,a)]
@@ -134,22 +136,51 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
   if(!add) {
     if(onechr) {
       
-      if("ylab" %in% names(dots))
-        plot(0,0,ylim=ylim,xlim=xlim,type="n",
-             xlab="Map position (cM)",...)
-      else 
-        plot(0,0,ylim=ylim,xlim=xlim,type="n",
-             xlab="Map position (cM)",ylab=dimnames(out)[[2]][3],
-             ...)
+      if("ylab" %in% names(dots)) {
+        if("xlab" %in% names(dots)) {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",...)
+        }
+        else {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",
+               xlab="Map position (cM)",...)
+        }
+      }
+      else {
+        if("xlab" %in% names(dots)) {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",
+               ylab=dimnames(out)[[2]][3],
+               ...)
+        }
+        else {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",
+               xlab="Map position (cM)",ylab=dimnames(out)[[2]][3],
+               ...)
+        }
+      }
     }
     else {
-      if("ylab" %in% names(dots))
-        plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
-             xlab="Chromosome", xaxs="i", ...)
-      else
-        plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
-             xlab="Chromosome",ylab=dimnames(out)[[2]][3], xaxs="i",
-             ...)
+      if("ylab" %in% names(dots)) {
+        if("xlab" %in% names(dots)) {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
+               xaxs="i", ...)
+        }
+        else {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
+               xlab="Chromosome", xaxs="i", ...)
+        }
+      }
+      else {
+        if("xlab" %in% names(dots)) {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
+               ylab=dimnames(out)[[2]][3], xaxs="i",
+               ...)
+        }
+        else {
+          plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",
+               xlab="Chromosome",ylab=dimnames(out)[[2]][3], xaxs="i",
+               ...)
+        }
+      }
     }
   }
 
@@ -201,7 +232,7 @@ function(x,x2,x3,chr,lodcolumn=1,incl.markers=TRUE,xlim, ylim,
     # plot lines or triangles at marker positions
     if(!add) {
       nam <- dimnames(out)[[1]][out[,1]==chr[i]]
-      wh.genoprob <- grep("^c[0-9A-Za-z]+\\.loc-*[0-9]+", nam)
+      wh.genoprob <- grep("^c.+\\.loc-*[0-9]+", nam)
       if(length(wh.genoprob)==0) wh.genoprob <- seq(along=nam)
       else wh.genoprob <- (seq(along=nam))[-wh.genoprob]
       pos <- out[out[,1]==chr[i],2][wh.genoprob]+start[i]

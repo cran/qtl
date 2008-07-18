@@ -1,12 +1,16 @@
 \name{qtl-internal}
 \alias{adjust.rf.ri}
+\alias{asnumericwithdec}
 \alias{calc.genoprob.special}
 \alias{calc.pairprob}
+\alias{calc.plod}
 \alias{checkcovar}
 \alias{checkformula}
+\alias{checkStepwiseqtlStart}
 \alias{clean}
 \alias{condense}
 \alias{convert}
+\alias{countqtlterms}
 \alias{create.map}
 \alias{deparseQTLformula}
 \alias{discan}
@@ -35,6 +39,7 @@
 \alias{imf.k}
 \alias{imf.m}
 \alias{imf.stahl}
+\alias{LikePheVector}
 \alias{locatemarker}
 \alias{locate.xo}
 \alias{makeSSmap}
@@ -51,12 +56,14 @@
 \alias{parseformula}
 \alias{plot.effectscan}
 \alias{print.addint}
+\alias{print.compactqtl}
 \alias{print.cross}
 \alias{print.map}
 \alias{print.qtl}
 \alias{print.scanoneboot}
 \alias{print.scantwo}
 \alias{print.summary.addpair}
+\alias{print.summary.compactqtl}
 \alias{print.summary.cross}
 \alias{print.summary.fitqtl}
 \alias{print.summary.map}
@@ -67,6 +74,7 @@
 \alias{print.summary.scantwo}
 \alias{print.summary.scantwo.old}
 \alias{print.summary.scantwoperm}
+\alias{printQTLformulanicely}
 \alias{qtlformulasymmetric}
 \alias{read.cro.qtlcart}
 \alias{read.cross.csv}
@@ -85,6 +93,7 @@
 \alias{ripple.perm1}
 \alias{ripple.perm2}
 \alias{ripple.perm.sub}
+\alias{roundqtlpos}
 \alias{scanone.perm}
 \alias{scanone.perm.engine}
 \alias{scanoneXnull}
@@ -99,6 +108,7 @@
 \alias{subrousummaryscantwo}
 \alias{summary.scantwocondensed}
 \alias{summary.addint}
+\alias{summary.compactqtl}
 \alias{vbscan}
 \alias{write.cross.csv}
 \alias{write.cross.gary}
@@ -114,25 +124,29 @@
 
 \usage{
 adjust.rf.ri(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
+asnumericwithdec(x, dec=".")
 calc.genoprob.special(cross, error.prob=0.0001,
                       map.function=c("haldane","kosambi","c-f","morgan"))
 calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001, 
               map.function=c("haldane","kosambi","c-f","morgan"), map,
               assumeCondIndep=FALSE)
+calc.plod(lod, nterms, type=c("f2","bc"), penalties)
 checkcovar(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
 checkformula(formula, qtl.name, covar.name)
+checkStepwiseqtlStart(qtl, formula, covar=NULL)
 clean(object)
 condense(object)
 convert(object)
+countqtlterms(formula, ignore.covar=TRUE)
 create.map(map, step, off.end, stepwidth=c("fixed", "variable"))
-deparseQTLformula(formula)
+deparseQTLformula(formula, reorderterms=FALSE)
 discan(cross, pheno, method=c("em","mr"),
        addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
        verbose=FALSE, give.warnings=TRUE)
 dropfromqtlformula(formula, qtlnum)
 dropXcol(type=c("f2","bc"), sexpgm, cross.attr)
 effectplot.getmark(cross, mname)
-effectplot.calmeanse(pheno, mark1, mark2, ndraws, var.flag=c("pooled", "group"))
+effectplot.calmeanse(pheno, mark1, mark2, geno1, geno2, ndraws, var.flag=c("pooled", "group"))
 expandf2covar(thecovar)
 fitqtlengine(pheno, qtl, covar=NULL, formula, method=c("imp", "hk"),
              dropone=TRUE, get.ests=FALSE, run.checks=TRUE, cross.attr)
@@ -150,7 +164,7 @@ markerforwself2(x, y, maxsize=7)
 genotab.em(dat, tol=1e-6, maxit=10000, verbose=FALSE)
 getid(cross)
 getsex(cross)
-getgenonames(type=c("f2","bc","riself","risib","4way","special"),
+getgenonames(type=c("f2","bc","riself","risib","4way","dh","special"),
              chrtype=c("A","X"), expandX=c("simple","standard","full"),
              sexpgm, cross.attr)
 grab.arg.names(\dots)
@@ -159,6 +173,7 @@ imf.h(r)
 imf.k(r)
 imf.m(r)
 imf.stahl(r, m=0, p=0, tol=1e-12, maxit=1000)
+LikePheVector(pheno, n.ind, n.phe)
 locatemarker(map, pos, chr, flag)
 locate.xo(cross)
 makeSSmap(cross)
@@ -176,12 +191,14 @@ parseformula(formula, qtl.dimname, covar.dimname)
 \method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
      add.legend=TRUE, alternate.chrid=FALSE, \dots)
 \method{print}{addint}(x, \dots)
+\method{print}{compactqtl}(x, \dots)
 \method{print}{cross}(x, \dots)
 \method{print}{map}(x, \dots)
 \method{print}{qtl}(x, \dots)
 \method{print}{scanoneboot}(x, \dots)
 \method{print}{scantwo}(x, \dots)
 \method{print}{summary.addpair}(x, \dots)
+\method{print}{summary.compactqtl}(x, \dots)
 \method{print}{summary.cross}(x, \dots)
 \method{print}{summary.fitqtl}(x, \dots)
 \method{print}{summary.map}(x, \dots)
@@ -192,6 +209,7 @@ parseformula(formula, qtl.dimname, covar.dimname)
 \method{print}{summary.scantwo}(x, \dots)
 \method{print}{summary.scantwo.old}(x, \dots)
 \method{print}{summary.scantwoperm}(x, \dots)
+printQTLformulanicely(formula, header, width, width2, sep=" ")
 qtlformulasymmetric(formula, qtlnum1, qtlnum2)
 read.cro.qtlcart(file)
 read.cross.csv(dir, file, na.strings=c("-","NA"),
@@ -216,6 +234,7 @@ reviseXdata(type=c("f2","bc"), expandX=c("simple","standard","full"),
 ripple.perm1(n)
 ripple.perm2(n)
 ripple.perm.sub(x, mat)
+roundqtlpos(x, digits = 1)
 scanone.perm(cross, pheno.col=1, model=c("normal","binary","2part","np"),
              method=c("em","imp","hk","ehk","mr","mr-imp","mr-argmax"),
              addcovar=NULL, intcovar=NULL, weights=NULL,
@@ -257,6 +276,7 @@ subrousummaryscantwo(object, for.perm=FALSE)
          perms, alphas, lodcolumn=1, pvalues=FALSE,
          df=FALSE, allpairs=TRUE, \dots)
 \method{summary}{addint}(object, \dots)
+\method{summary}{compactqtl}(object, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
        tol=1e-4)
 write.cross.csv(cross, filestem="data", digits=5, rotate=FALSE,
