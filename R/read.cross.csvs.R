@@ -3,7 +3,7 @@
 # read.cross.csvs.R
 #
 # copyright (c) 2006-8, Karl W Broman
-# last modified Feb, 2008
+# last modified May, 2008
 # first written Oct, 2005
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
@@ -37,6 +37,13 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   }
 
   args <- list(...)
+
+  # if user wants to use comma for decimal point, we need
+  if(length(args) > 0 && "dec" %in% names(args)) {
+    dec <- args[["dec"]]
+  }
+  else dec <- "."
+
   # read the data file
   if(length(args) < 1 || !("sep" %in% names(args))) {
     # "sep" not in the "..." argument and so take sep=","
@@ -140,7 +147,10 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
     if(any(is.na(mpg))) {
       n.add <- sum(is.na(mpg))
       genind <- c(genind, pheind[is.na(mpg)])
-      gen <- rbind(gen, matrix(rep(NA, n.add*ncol(gen)), ncol=ncol(gen)))
+
+      genadd <- matrix(rep(NA, n.add*ncol(gen)), ncol=ncol(gen))
+      colnames(genadd) <- colnames(gen)
+      gen <- rbind(gen, genadd)
 
       warning(n.add, " individuals with phenotypes but no genotypes\n    ", paste(pheind[is.na(mpg)], collapse="|"), "\n")
     }
@@ -152,7 +162,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   n.phe <- ncol(pheno)
 
   if(map.included) {
-    map <- as.numeric(unlist(gen[3,]))
+    map <- asnumericwithdec(unlist(gen[3,]), dec=dec)
     if(any(is.na(map))) 
       stop("There are missing marker positions.")
   }
@@ -203,10 +213,10 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
 
   # Fix up phenotypes
   sw2numeric <-
-    function(x) {
+    function(x, dec) {
       wh1 <- is.na(x)
       n <- sum(!is.na(x))
-      y <- suppressWarnings(as.numeric(as.character(x)))
+      y <- suppressWarnings(asnumericwithdec(as.character(x), dec=dec))
       wh2 <- is.na(y)
       m <- sum(!is.na(y))
       if(n==m || (n-m) < 2 || (n-m) < n*0.05) {
@@ -228,7 +238,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
       }
       else return(x)
     }
-  pheno <- data.frame(lapply(pheno, sw2numeric))
+  pheno <- data.frame(lapply(pheno, sw2numeric, dec=dec))
 
   # re-order the markers by chr and position
   # try to figure out the chr labels

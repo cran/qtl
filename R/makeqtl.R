@@ -3,13 +3,15 @@
 # makeqtl.R
 #
 # copyright (c) 2002-8, Hao Wu and Karl W. Broman
-# last modified Feb, 2008
+# last modified Jul, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: makeqtl, replaceqtl, addtoqtl, dropfromqtl, locatemarker
 #           print.qtl, summary.qtl, print.summary.qtl, reorderqtl
+#           plot.qtl
+#           print.compactqtl, summary.compactqtl, print.summary.compactqtl
 #
 ######################################################################
 
@@ -95,6 +97,8 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 
       # locate this marker (given chromosome and position)
       marker.idx <- locatemarker(map, i.pos, i.chr, flag="draws")
+      if(length(marker.idx) > 1) 
+        stop("Multiple markers at the same position; run jittermap.")
       
       # if everything is all right, take the genotype
       geno[,i,] <- cross$geno[[i.chr]]$draws[,marker.idx,]
@@ -149,6 +153,8 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 
       # locate this marker (given chromosome and position)
       marker.idx <- locatemarker(map, i.pos, i.chr, flag="prob")
+      if(length(marker.idx) > 1) 
+        stop("Multiple markers at the same position; run jittermap.")
 
       # take genoprob
       if(chrtype[i.chr] == "X") { # fix X chromosome probs
@@ -189,7 +195,7 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
     }
 
     # make qtl names
-    qtl.name <- paste( paste("Chr",chr,sep=""), round(pos,dig), sep="@")
+    qtl.name <- paste( paste(chr,sep=""), round(pos,dig), sep="@")
   }
 
   # output object
@@ -438,6 +444,11 @@ function(x, ...)
 summary.qtl <-
 function(object, ...)
 {
+  if(is.null(object) || length(object) == 0) {
+    class(object) <- "summary.qtl"
+    return(object)
+  }
+
   if("geno" %in% names(object)) {
     type <- "draws"
     n.draws <- dim(object$geno)[3]
@@ -451,6 +462,11 @@ function(object, ...)
   if(type=="draws") attr(output, "n.draws") <- n.draws
   class(output) <- c("summary.qtl", "data.frame")
 
+  if("formula" %in% names(attributes(object))) 
+    attr(output, "formula") <- attr(object, "formula")
+  if("pLOD" %in% names(attributes(object)))
+    attr(output, "pLOD") <- attr(object, "pLOD")
+
   output
 }
 
@@ -458,14 +474,30 @@ function(object, ...)
 print.summary.qtl <-
 function(x, ...)
 {
-  type <- attr(x, "type")
-  if(type=="draws")
-    thetext <- paste("imputed genotypes, with", attr(x, "n.draws"), "imputations.")
-  else thetext <- "genotype probabilities."
+  if(is.null(x) || length(x) == 0) {
+    cat("  Null QTL model\n")
+  }
+  else {
+    type <- attr(x, "type")
+    if(type=="draws")
+      thetext <- paste("imputed genotypes, with", attr(x, "n.draws"), "imputations.")
+    else thetext <- "genotype probabilities."
   
-  cat("  QTL object containing", thetext, "\n\n")
+    cat("  QTL object containing", thetext, "\n\n")
 
-  print.data.frame(x, digits=5)
+    print.data.frame(x, digits=5)
+  }
+
+  if("formula" %in% names(attributes(x))) {
+    form <- attr(x, "formula")
+    if(!is.character(form)) form <- deparseQTLformula(form)
+    cat("\n  Formula:")
+    w <- options("width")[[1]]
+    printQTLformulanicely(form, "               ", w+5, w)
+  }
+
+  if("pLOD" %in% names(attributes(x)))
+    cat("\n  pLOD: ", round(attr(x, "pLOD"),3), "\n")
 }
 
 ######################################################################
@@ -477,6 +509,9 @@ function(x, chr, horizontal=FALSE, shift=TRUE,
 {
   if(!("qtl" %in% class(x)))
     stop("input should be a qtl object")
+
+  if(length(x) == 0) 
+    stop("  There are no QTL to plot.")
 
   map <- attr(x, "map")
   if(is.null(map))
@@ -518,7 +553,7 @@ function(x, chr, horizontal=FALSE, shift=TRUE,
 
   if(is.matrix(map[[1]])) whchr <- whchr - 0.3
 
-  if(length(grep("^Chr.+@[0-9\\.]+$", x$name)) == length(x$name))
+  if(length(grep("^.+@[0-9\\.]+$", x$name)) == length(x$name))
     x$name <- x$altname
 
   if(horizontal) {
@@ -544,7 +579,15 @@ function(qtl, neworder)
   if(class(qtl) != "qtl")
     stop("qtl should have class \"qtl\".")
 
-  if(missing(neworder)) return(qtl)
+  if(missing(neworder)) {
+    if(!("map" %in% names(attributes(qtl))))
+      stop("No map in the qtl object; you must provide argument 'neworder'.")
+    chr <- names(attr(qtl, "map"))
+    thechr <- match(qtl$chr, chr)
+    if(any(is.na(thechr)))
+      stop("Chr ", paste(qtl$chr[is.na(thechr)], " "), " not found.")
+    neworder <- order(thechr, qtl$pos)
+  }
 
   curorder <- seq(qtl$n.qtl)
   if(length(neworder) != qtl$n.qtl ||
@@ -571,6 +614,42 @@ function(qtl, neworder)
   }
 
   qtl
+}
+
+# print compact version of QTL object
+print.compactqtl <-
+function(x, ...)   
+{
+  print(summary(x))
+}
+
+summary.compactqtl <-
+function(object, ...)
+{
+  class(object) <- c("summary.compactqtl", "list")
+  object
+}
+
+print.summary.compactqtl <-
+function(x, ...)
+{
+  if(is.null(x) || length(x) == 0) 
+    cat("Null QTL model\n")
+  else {
+    temp <- as.data.frame(x)
+    rownames(temp) <- paste("Q", 1:nrow(temp), sep="")
+    print.data.frame(temp)
+  }
+  if("formula" %in% names(attributes(x))) {
+    form <- attr(x, "formula")
+    if(!is.character(form)) form <- deparseQTLformula(form)
+    cat("  Formula:")
+    w <- options("width")[[1]]
+    printQTLformulanicely(form, "               ", w+5, w)
+  }
+
+  if("pLOD" %in% names(attributes(x)))
+    cat("  pLOD: ", round(attr(x, "pLOD"),3), "\n")
 }
 
 # end of makeqtl.R

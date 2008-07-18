@@ -6,7 +6,7 @@
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
 #
-# last modified Mar, 2008
+# last modified Jul, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -25,7 +25,7 @@
 #           convert, convert.scanone, convert.scantwo
 #           find.flanking, strip.partials, comparegeno
 #           qtlversion, locate.xo, jittermap, getid,
-#           find.markerpos, geno.crosstab
+#           find.markerpos, geno.crosstab, LikePheVector
 #
 ######################################################################
 
@@ -79,7 +79,7 @@ function(cross, map)
     mnames2 <- unlist(lapply(map, function(a) colnames(a)))
     n.mar2 <- n.mar2/2
   }
-  else if(type == "bc" || type == "f2" || type == "riself" || type=="risib") {
+  else if(type == "bc" || type == "f2" || type == "riself" || type=="risib" || type=="dh") {
     mnames <- unlist(lapply(cross$geno, function(a) names(a$map)))
     mnames2 <- unlist(lapply(map, function(a) names(a)))
   }
@@ -562,7 +562,7 @@ function(cross, chr)
     temp <- getgenonames("f2", "A", cross.attr=attributes(cross))
     gen.names <- c(temp, paste("not", temp[c(3,1)]))
   }
-  else if(type == "bc" || type == "risib" || type=="riself") {
+  else if(type == "bc" || type == "risib" || type=="riself" || type=="dh") {
     n.gen <- 2
     gen.names <- getgenonames(type, "A", cross.attr=attributes(cross))
   }
@@ -598,7 +598,7 @@ function(cross, chr)
   rownames(results) <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
 
   pval <- rep(NA,nrow(results))
-  if(type=="bc" || type=="risib" || type=="riself") {
+  if(type=="bc" || type=="risib" || type=="riself" || type=="dh") {
     sexpgm <- getsex(cross)
     if(type == "bc" && any(chrtype == "X") && !is.null(sexpgm$sex) && any(sexpgm$sex==1)) {
       for(i in which(allchrtype=="A")) {
@@ -810,8 +810,8 @@ function(cross, mname1, mname2)
   g1[is.na(g1)] <- 0
   g2[is.na(g2)] <- 0
 
-  g1names <- c("NA", getgenonames(crosstype, chrtype[1], "full", getsex(cross), attributes(cross)))
-  g2names <- c("NA", getgenonames(crosstype, chrtype[2], "full", getsex(cross), attributes(cross)))
+  g1names <- c("-", getgenonames(crosstype, chrtype[1], "full", getsex(cross), attributes(cross)))
+  g2names <- c("-", getgenonames(crosstype, chrtype[2], "full", getsex(cross), attributes(cross)))
   
   g1 <- as.character(g1)
   g2 <- as.character(g2)
@@ -1789,15 +1789,50 @@ function(cross, pheno.col)
 # lodint: function to get lod support interval
 ######################################################################
 lodint <-
-function(results, chr, drop=1.5, lodcolumn=1, expandtomarkers=FALSE)
+function(results, chr, qtl.index, drop=1.5, lodcolumn=1,
+         expandtomarkers=FALSE)
 {
-  if(!any(class(results) == "scanone"))
-    stop("Input must have class \"scanone\".")
+  if(!("scanone" %in% class(results))) {
+    if(!("qtl" %in% class(results))) 
+      stop("Input must have class \"scanone\" or \"qtl\".")
+    else {
+      if(!("lodprofile" %in% names(attributes(results)))) 
+        stop("qtl object needs to be produced by refineqtl with keeplodprofile=TRUE.")
+      else { # qtl object
+        if(lodcolumn != 1) {
+          warning("lod column ignored if input is a qtl object.")
+          lodcolumn <- 1
+        }
+        results <- attr(results, "lodprofile")
+        if(missing(qtl.index)) {
+          if(length(results)==1) 
+            results <- results[[1]]
+          else 
+            stop("You must specify qtl.index.")
+        }
+        else {
+          if(qtl.index < 1 || qtl.index > length(results))
+            stop("qtl.index misspecified.")
+          results <- results[[qtl.index]]
+        }
+        chr <- results[1,1]
+      }
+    }
+  }
+  else {
+    if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
+      stop("Argument lodcolumn misspecified.")
 
-  if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
-    stop("Argument lodcolumn misspecified.")
-
-  results <- results[results[,1]==chr,]
+    if(missing(chr)) {
+      if(length(unique(results[,1]))>1)
+        stop("Give a chromosome ID.")
+    }
+    else {
+      if(is.na(match(chr, results[,1])))
+        stop("Chromosome misspecified.")
+      results <- results[results[,1]==chr,]
+    }
+  }
 
   if(all(is.na(results[,lodcolumn+2]))) return(NULL)
 
@@ -1839,18 +1874,52 @@ function(results, chr, drop=1.5, lodcolumn=1, expandtomarkers=FALSE)
 # bayesint: function to get Bayesian probability interval
 ######################################################################
 bayesint <-
-function(results, chr, prob=0.95, lodcolumn=1, expandtomarkers=FALSE)
+function(results, chr, qtl.index, prob=0.95, lodcolumn=1, expandtomarkers=FALSE)
 {
-  if(!any(class(results) == "scanone"))
-    stop("Input should have class \"scanone\".")
+  if(!("scanone" %in% class(results))) {
+    if(!("qtl" %in% class(results))) 
+      stop("Input must have class \"scanone\" or \"qtl\".")
+    else {
+      if(!("lodprofile" %in% names(attributes(results)))) 
+        stop("qtl object needs to be produced by refineqtl with keeplodprofile=TRUE.")
+      else { # qtl object
+        if(lodcolumn != 1) {
+          warning("lod column ignored if input is a qtl object.")
+          lodcolumn <- 1
+        }
+        results <- attr(results, "lodprofile")
+        if(missing(qtl.index)) {
+          if(length(results)==1) 
+            results <- results[[1]]
+          else 
+            stop("You must specify qtl.index.")
+        }
+        else {
+          if(qtl.index < 1 || qtl.index > length(results))
+            stop("qtl.index misspecified.")
+          results <- results[[qtl.index]]
+        }
+        chr <- results[1,1]
+      }
+    }
+  }
+  else {
+    if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
+      stop("Argument lodcolumn misspecified.")
 
-  if(lodcolumn < 1 || lodcolumn +2 > ncol(results))
-    stop("Argument lodcolumn misspecified.")
+    if(missing(chr)) {
+      if(length(unique(results[,1]))>1)
+        stop("Give a chromosome ID.")
+    }
+    else {
+      if(is.na(match(chr, results[,1])))
+        stop("Chromosome misspecified.")
+      results <- results[results[,1]==chr,]
+    }
+  }
 
-  results <- results[results[,1]==chr,]
-  
   if(all(is.na(results[,lodcolumn+2]))) return(NULL)
-  
+
   loc <- results[,2]
   width <- diff(( c(loc[1],loc) + c(loc, loc[length(loc)]) )/ 2)
   
@@ -2508,7 +2577,7 @@ function(cross)
   geno[is.na(geno)] <- 0
   type <- class(cross)[1]
 
-  if(type != "bc" && type != "f2" && type != "riself" && type != "risib")
+  if(type != "bc" && type != "f2" && type != "riself" && type != "risib" && type!="dh")
     stop("locate.xo only working for backcross, intercross or RI strains.")
 
   map <- cross$geno[[1]]$map
@@ -2581,6 +2650,9 @@ function(object, amount=1e-6) # x is either a cross object or a map
 print.map <-
 function(x, ...)
 {  
+  for(i in seq(along=x))
+    attr(x[[i]], "loglik") <- NULL
+
   if(length(x) == 1)
     print(unclass(x[[1]]))
   else
@@ -2714,6 +2786,21 @@ function(cross, marker)
   }
 
   output
+}
+
+
+######################################################################
+# utility function for determining whether pheno.col (as argument
+# to scanone etc) can be interpreted as a vector of phenotypes,
+# versus a vector of phenotype columns
+######################################################################
+LikePheVector <-
+function(pheno, n.ind, n.phe)
+{
+  if(is.numeric(pheno) && length(pheno)==n.ind &&
+     any(pheno < 1 | pheno > n.phe | pheno!=round(pheno)))
+    return(TRUE)
+  FALSE
 }
 
 

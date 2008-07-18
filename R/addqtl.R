@@ -3,7 +3,7 @@
 # addqtl.R
 #
 # copyright (c) 2007-8, Hao Wu and Karl W. Broman
-# last modified Mar, 2008
+# last modified Jul, 2008
 # first written Nov, 2007
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -23,8 +23,8 @@
 ######################################################################
 addint <-
 function(cross, pheno.col=1, qtl, covar=NULL, formula,
-         method=c("imp","hk"),
-         qtl.only=FALSE, verbose=TRUE)
+         method=c("imp","hk"), qtl.only=FALSE, verbose=TRUE,
+         pvalues=TRUE)
 {
   if( !sum(class(cross) == "cross"))
     stop("The cross argument must be an object of class \"cross\".")
@@ -32,8 +32,16 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula,
   if( !sum(class(qtl) == "qtl") )
     stop("The qtl argument must be an object of class \"qtl\".")
 
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(length(pheno.col) > 1) {
     pheno.col <- pheno.col[1]
@@ -56,6 +64,10 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula,
 
   method <- match.arg(method)
 
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
+
   if(method=="imp") {
     if(!("geno" %in% names(qtl))) {
       if("prob" %in% names(qtl)) {
@@ -77,6 +89,18 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula,
     }
   }
   
+  if(qtl$n.ind != nind(cross)) {
+    warning("No. individuals in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    if(method=="imp")
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+    else
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="prob")
+  }
+  if(method=="imp" && dim(qtl$geno)[3] != dim(cross$geno[[1]]$draws)[3])  {
+    warning("No. imputations in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+  }    
+
   # check phenotypes and covariates; drop ind'ls with missing values
   if(!is.null(covar)) phcovar <- cbind(pheno, covar)
   else phcovar <- as.data.frame(pheno)
@@ -98,7 +122,7 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula,
     }
   }
 
-  # number of covarariates
+  # number of covariates
   if( is.null(covar) ) n.covar <- 0
   else n.covar <- ncol(covar)
 
@@ -187,17 +211,30 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula,
   results <- as.data.frame(results)
   class(results) <- c("addint", "data.frame")
   attr(results, "formula") <- deparseQTLformula(formula)
+  attr(results, "pvalues") <- pvalues
   results
 }
 
 print.addint <-
 function(x, ...)
 {
- cat("Model formula is: ", attr(x, "formula"), "\n\n")
- cat("Add one pairwise interaction at a time table:\n")
- cat("--------------------------------------------\n")
- printCoefmat(x, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
- cat("\n")
+  cat("Model formula:")
+  w <- options("width")[[1]]
+  printQTLformulanicely(attr(x, "formula"), "                   ", w+5, w)
+  cat("\n\n")
+
+  cat("Add one pairwise interaction at a time table:\n")
+  cat("--------------------------------------------\n")
+  pval <- attr(x, "pvalues")
+  if(is.null(pval) || pval) 
+    printCoefmat(x, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
+  else {
+    z <- x
+    z <- z[,-ncol(z)+(0:1)]
+    printCoefmat(z, digits=4, cs.ind=1, P.values=FALSE, has.Pvalue=FALSE)
+  }
+    
+  cat("\n")
 }
 
 summary.addint <- function(object, ...) object
@@ -220,8 +257,20 @@ function(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
 {
   method <- match.arg(method)
 
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
+
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(method=="imp") {
     if(!("geno" %in% names(qtl))) {
@@ -520,8 +569,20 @@ function(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
 {
   method <- match.arg(method)
 
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
+
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(method=="imp") {
     if(!("geno" %in% names(qtl))) {
@@ -623,6 +684,7 @@ function(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
     newformula2 <- as.formula(paste(formula, " + Q", n.qtl+1,
                                     " + Q", n.qtl+2, sep=""))
     formula <- as.formula(formula)
+    scanbothways <- FALSE
   }
   else { # formula given
     newqtl <- paste("Q", n.qtl+1:2, sep="")
@@ -940,6 +1002,9 @@ function(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
 reviseqtlnuminformula <-
 function(formula, oldnum, newnum)
 {
+  if(is.character(formula))
+    formula <- as.formula(formula)
+
   if(length(oldnum) != length(newnum))
     stop("oldnum and newnum must be the same length.")
 

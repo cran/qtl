@@ -10,22 +10,27 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
-o warnings regarding degrees of freedom
+o pull all of the genoprob and imputation information out of 
+  the qtl objects and replace it with indices to the information
+  in the cross object.  (This stuff takes up too much space!)
 
-o allow pheno.col to be a vector of phenotype values (if its length
-  matches the number of individuals in the cross and is > n.phe)
-
-o revise rqtltour to indicate that "pheno.col" can be the name of a
-  phenotype rather than just a numeric index.
-
-o revise read.cross with format="mm" to deal with ril by selfing
-  and/or sib mating
-
-o make various functions work appropriately with class "special"
-  (eg, plot and summary)
+o For the stepwiseqtl function:
+   - should be able to save all models with plod within some value
+     of the best model 
+   - QTL x covariate interactions in countterms
+   - it'd be nice to be able to have all models that are one term
+     away from the optimal model (maybe this could be a separate
+     function) 
+   - it'd be nice to be able to easily make a plot of the final model
+     plus information about all models that are one term away
 
 o In plot.geno, allow use of xlim and ylim; also do this in
   plot.scanoneperm and plot.scantwoperm.
+
+o read.cross is slow loading when there are *lots* of phenotypes
+
+o make various functions work appropriately with class "special"
+  (eg, plot and summary)
 
 o Add an explanation regarding the coding in the coefficient 
   estimates in fitqtl().  Add text to the help file for
@@ -37,10 +42,23 @@ o FAQ: - constructing covariate matrices
 
 MEDIUM-SHORT TERM:
 
+o revise read.cross with format="mm" to deal with ril by selfing
+  and/or sib mating
+
+o Batch permutations: study relationship between time and size of
+  batches.  Perhaps do batches not all at once but in pieces.
+
+o get scanone and scantwo to work with a single marker on a
+  chromosome. 
+
 o Fix convergence problems in scanone with method="ehk", especially
   in the case of covariates and interactions. 
 
-o cM coordinates in scantwo plot for multiple chromosomes
+o cM coordinates in scantwo plot for multiple chromosomes: Fix
+  plot.scantwo for the case that incl.markers=TRUE, so that positions
+  are not equally spaced, but are according to the genetic map.  (This
+  is working if just one chromosome is plotted, but should be made to
+  work generally.)
 
 o Plotting scanone results for *many* phenotypes as an image plot.
   (Perhaps threshold the really high LODs and eliminate curves that
@@ -68,8 +86,6 @@ o Allow plot.geno (or other cases in which subset.cross is used to
 o findpeaks() function, for finding multiple maxima on a chromosome
   in scanone results.
 
-o Have read.cross indicate the cross type at the end.
-
 o incorporate revised code from Steffen Moeller.
 
 o Tabbing in "allpheno" from summary.scanone output looks odd...maybe
@@ -80,11 +96,6 @@ o X chromosome in cim().
 
 o Include Bjarke's code on eHK for scantwo.
 
-o Fix plot.scantwo for the case that incl.markers=TRUE, so that
-  positions are not equally spaced, but are according to the genetic
-  map.  (This is working if just one chromosome is plotted, but should
-  be made to work generally.)  
-
 o Go through all of the various plot functions and make sure that
   the x- and y-axis labels are created with axis() rather than
   text() and segments().  This way, the size of the labels can be
@@ -94,16 +105,13 @@ o Turn the tutorial into a Sweave vingette, to conform to the
   Bioconductor requirements?
 
 o Revise plot.rf so that it can have different color schemes, as in
-  plot.scantwo. 
+  plot.scantwo.  Allow a zscale.
 
 o Simpler methods to get at interesting bits in the est.rf results.
 
-o Add cross type "dh" for doubled haploids.  Treat this just like
-  a backcross, but with different genotype labels.
-
-  Actually, should revised read.cross so that if all genotypes are 
+o Revise read.cross so that if all genotypes are 
   AA and BB, the thing is called DH by default.  Maybe add an 
-  argument to read.cross so that one may specify the cross type.
+  argument to read.cross so that one may specify the cross type?
 
 o Finish off the work to get coefficient estimates by imputation in
   fitqtl for the X chromosome in BC and F2. 
@@ -127,8 +135,6 @@ o Analysis of censored phenotypes.
 
 o Analysis of residuals.
 
-o plot.scanone for *many* phenotypes: an image-type plot
-
 o read.cross for "qtx" sometimes doesn't seem to take the
   genotype pattern appropriately; read in a backcross as if it
   were an F2. 
@@ -148,9 +154,6 @@ o scanone() with model="2part" gives NAs as LOD scores if there
   then you have great segregation distortion if you look at only
   the dead individuals, and so you can't estimate both means.
 
-o MIM for a set of QTLs at specified locations with specified
-  interactions (as a new method in fitqtl and scanqtl).
-
 o In MIM: allow return of SEs of effects.  Write coef.mim, resid.mim,
   and dev.mim to pull out the est'd coefficients, the residuals, and
   the "deviance" (2 * ln likelihood).
@@ -159,7 +162,7 @@ o Incorporate the DIRECT algorithm stuff from Hao
 
 o scanone with additive alleles at QTL
 
-o Pull out results for an interval.
+o Pull out results for an interval from scanone.
 
 o Modify the map expansion for RI lines for the X chromosome.
   [really need to add additional functions for mapping, as
@@ -169,7 +172,7 @@ o Modify the map expansion for RI lines for the X chromosome.
 
 o Ability to get at the individual contributions to the LOD score? 
 
-o Incorporate the code from Brian Yandell, Fei Zou and Amy Jin on
+o Incorporate code from Brian Yandell, Fei Zou and Amy Jin on
   semi-parametric QTL mapping methods.
 
 o Add appropriate functions to analyze advanced intercrosses (AILs). 

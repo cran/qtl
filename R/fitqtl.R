@@ -3,13 +3,14 @@
 # fitqtl.R
 #
 # copyright (c) 2002-8, Hao Wu and Karl W. Broman
-# last modified Mar, 2008
+# last modified Jul, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
 # Contains: fitqtl, fitqtlengine, parseformula, summary.fitqtl,
-#           print.summary.fitqtl, mybinaryrep, deparseqtlformula
+#           print.summary.fitqtl, mybinaryrep, deparseQTLformula
+#           printQTLformulanicely
 #
 ######################################################################
 
@@ -32,8 +33,16 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
   if( !sum(class(qtl) == "qtl") )
     stop("The qtl argument must be an object of class \"qtl\".")
 
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(length(pheno.col) > 1) {
     pheno.col <- pheno.col[1]
@@ -55,6 +64,10 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
     stop("nrow(covar) != no. individuals in cross.")
 
   method <- match.arg(method)
+
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
 
   if(method=="imp") {
     if(!("geno" %in% names(qtl))) {
@@ -615,6 +628,8 @@ function(pheno, qtl, covar=NULL, formula, method=c("imp", "hk"),
   if(get.ests) 
     output$ests <- list(ests=ests, covar=ests.cov)
 
+  output$lod <- output$result.full[1,4]
+
   class(output) <- "fitqtl"
   attr(output, "method") <- method
   attr(output, "formula") <- deparseQTLformula(formula)
@@ -799,7 +814,7 @@ parseformula <- function(formula, qtl.dimname, covar.dimname)
 #
 #####################################################################
 summary.fitqtl <-
-function(object, ...)
+function(object, pvalues=TRUE, ...)
 {
   if(!any(class(object) == "fitqtl")) 
     stop("Input should have class \"fitqtl\".")
@@ -811,6 +826,7 @@ function(object, ...)
     object$ests <- cbind(est=ests, SE=se, t=ests/se)
   }
   class(object) <- "summary.fitqtl"
+  attr(object, "pvalues") <- pvalues
   object
 }
 
@@ -823,15 +839,29 @@ function(object, ...)
 print.summary.fitqtl <- function(x, ...)
 {
   cat("\n")
-  cat("\t\tSummary for fit QTL\n\n")
-  cat( paste("Method is: ", attr(x, "method"), "\n") )
-  cat( paste("Number of observations: ", attr(x, "nind"), "\n\n") )
+  cat("\t\tfitqtl summary\n\n")
+  meth <- attr(x, "method")
+  if(meth=="imp") meth <- "multiple imputation"
+  else if(meth=="hk") meth <- "Haley-Knott regression"
+  cat("Method:", meth, "\n")
+  cat("Number of observations :", attr(x, "nind"), "\n\n")
 
   # print ANOVA table for full model
   cat("Full model result\n")
   cat("----------------------------------  \n")
-  cat( paste("Model formula is: ", attr(x, "formula"), "\n\n") )
-  print(x$result.full, quote=FALSE, na.print="")
+  cat("Model formula:")
+  w <- options("width")[[1]]
+  printQTLformulanicely(attr(x, "formula"), "                   ", w+5, w)
+  cat("\n\n")
+  
+  pval <- attr(x, "pvalues")
+  if(is.null(pval) || pval)
+    print(x$result.full, quote=FALSE, na.print="")
+  else {
+    z <- x$result.full
+    z <- z[,-ncol(z)+(0:1)]
+    print(z, quote=FALSE, na.print="")
+  }
   cat("\n")
   
   # print ANOVA table for dropping one at a time analysis (if any)
@@ -841,7 +871,14 @@ print.summary.fitqtl <- function(x, ...)
     cat("----------------------------------  \n")
     # use printCoefmat instead of print.data.frame
     # make sure the last column is P value
-    printCoefmat(x$result.drop, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
+    pval <- attr(x, "pvalues")
+    if(is.null(pval) || pval)
+      printCoefmat(x$result.drop, digits=4, cs.ind=1, P.values=TRUE, has.Pvalue=TRUE)
+    else {
+      z <- x$result.drop
+      z <- z[,-ncol(z)+(0:1)]
+      printCoefmat(z, digits=4, cs.ind=1, P.values=FALSE, has.Pvalue=FALSE)
+    }
     cat("\n")
   }
 
@@ -873,7 +910,56 @@ function(n)
 # deparseQTLformula: turn QTL formula into a string
 ######################################################################
 deparseQTLformula <-
-function(formula)
+function(formula, reorderterms=FALSE)
+{
+  if(reorderterms) {
+    if(is.character(formula)) formula <- as.formula(formula)
+    factors <- colnames(attr(terms(formula), "factors"))
+    wh <- grep("^[Qq][0-9]+$", factors)
+    if(length(wh)>0)
+      factors[wh] <- paste("Q", sort(as.numeric(substr(factors[wh], 2, nchar(factors[wh])))), sep="")
+    wh <- grep(":", factors)
+    if(length(wh)>0) {
+      temp <- strsplit(factors[wh], ":")
+      temp <- sapply(temp, function(a) {
+        wh <- grep("^[Qq][0-9]+$", a)
+        if(any(wh)) a[wh] <- paste("Q", sort(as.numeric(substr(a[wh], 2, nchar(a[wh])))), sep="")
+        paste(a[order(is.na(match(seq(along=a),wh)))], collapse=":")
+      })
+      factors[wh] <- temp
+    }
+    return(paste("y ~ ", paste(factors, collapse=" + "), sep=""))
+  }
+
+
+  if(is.character(formula)) return(formula)
   paste(as.character(formula)[c(2,1,3)], collapse=" ")
+}
+
+printQTLformulanicely <-
+function(formula, header, width, width2, sep=" ")
+{
+  if(!is.character(formula)) formula <- deparseQTLformula(formula)
+  thetext <- unlist(strsplit(formula, " "))
+
+  if(missing(width2)) width2 <- width
+  nleft <- width - nchar(header)
+  nsep <- nchar(sep)
+  if(length(thetext) < 2) cat("", thetext, "\n", sep=sep)
+  else {
+    z <- paste("", thetext[1], sep=sep, collapse=sep)
+    for(j in 2:length(thetext)) {
+      if(nchar(z) + nsep + nchar(thetext[j]) > nleft) {
+        cat(z, "\n")
+        nleft <- width2
+        z <- paste(header, thetext[j], sep=sep)
+      }
+      else {
+        z <- paste(z, thetext[j], sep=sep)
+      }
+    }
+    cat(z, "\n")
+  }
+}
 
 # end of fitqtl.R

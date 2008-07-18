@@ -41,8 +41,8 @@ fake.bc <- calc.genoprob(fake.bc, step=2.5)
 out.nocovar <- scanone(fake.bc, pheno.col=1:2)
 
 # genome scans with covariates
-ac <- fake.bc$pheno[,c("sex","age")]
-ic <- fake.bc$pheno[,"sex"]
+ac <- pull.pheno(fake.bc, c("sex","age"))
+ic <- pull.pheno(fake.bc, "sex")
 out.covar <- scanone(fake.bc, pheno.col=1:2,
                       addcovar=ac, intcovar=ic)
 
@@ -51,7 +51,7 @@ summary(out.nocovar, thr=3, format="allpeaks")
 summary(out.covar, thr=3, format="allpeaks")
 
 # plots
-ym <- max(cbind(out.nocovar[,-(1:2)], out.covar[,-(1:2)]))
+ym <- max(unlist(cbind(out.nocovar, out.covar)[,-(1:2)]))
 plot(out.nocovar, out.covar, chr=c(2,5,10), lod=1, col="blue",
      lty=1:2, ylim=c(0,ym))
 plot(out.nocovar, out.covar, chr=c(2,5,10), lod=2, col="red",

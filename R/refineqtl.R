@@ -3,7 +3,7 @@
 # refineqtl.R
 #
 # copyright (c) 2006-8, Karl W. Broman
-# last modified Mar, 2008
+# last modified Jul, 2008
 # first written Jun, 2006
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -26,13 +26,25 @@
 ######################################################################
 refineqtl <-
 function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
-         method=c("imp", "hk"), verbose=TRUE, maxit=10,
-         incl.markers=TRUE, keeplodprofile=FALSE)
+         method=c("imp", "hk"), verbose=TRUE, maxit=10, 
+         incl.markers=TRUE, keeplodprofile=TRUE)
 {
   method <- match.arg(method)
   
-  if(!is.null(covar) && !is.data.frame(covar))
-    stop("covar should be a data.frame")
+  # allow formula to be a character string
+  if(!missing(formula) && is.character(formula))
+    formula <- as.formula(formula)
+
+  if(!is.null(covar) && !is.data.frame(covar)) {
+    if(is.matrix(covar) && is.numeric(covar)) 
+      covar <- as.data.frame(covar)
+    else stop("covar should be a data.frame")
+  }
+
+  if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
+    cross$pheno <- cbind(pheno.col, cross$pheno)
+    pheno.col <- 1
+  }
 
   if(!missing(qtl) && (!missing(chr) || !missing(pos) || !missing(qtl.name)))
     warning("qtl argument is provided, and so chr, pos and qtl.name are ignored.")
@@ -91,6 +103,7 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
     }
   }
 
+
   if(!all(chr %in% names(cross$geno)))
     stop("Chr ", paste(unique(chr[!(chr %in% cross$geno)]), sep=" "),
          " not found in cross.")
@@ -99,6 +112,24 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
   else scanqtl.verbose <- FALSE
 
   cross <- subset(cross, chr=as.character(unique(chr))) # pull out just those chromosomes
+
+  if(qtl$n.ind != nind(cross)) {
+    warning("No. individuals in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    if(method=="imp")
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+    else
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="prob")
+  }
+  if(method=="imp" && dim(qtl$geno)[3] != dim(cross$geno[[1]]$draws)[3])  {
+    warning("No. imputations in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+  }    
+
+  # minimum distance between pseudomarkers
+  map <- attr(qtl, "map")
+  if(is.null(map))
+    stop("Input qtl object should contain the genetic map.")
+  mind <- min(sapply(map, function(a) { if(is.matrix(a)) a <- a[1,]; min(diff(a)) }))/2
 
   # check phenotypes and covariates; drop ind'ls with missing values
   if(length(pheno.col) > 1) {
@@ -200,12 +231,12 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
       basefit <- fitqtlengine(pheno=pheno, qtl=reducedqtl, covar=covar, formula=formula,
                               method=method, dropone=TRUE, get.ests=FALSE,
                               run.checks=FALSE)
-    else if(verbose)
+    else 
       basefit <- fitqtlengine(pheno=pheno, qtl=reducedqtl, covar=covar, formula=formula,
                               method=method, dropone=FALSE, get.ests=FALSE,
                               run.checks=FALSE)
 
-    if(verbose && i==1) {
+    if(i==1) {
       origlod <- curlod <- thisitlod <- basefit$result.full[1,4]
       origpos <- curpos
     }
@@ -232,7 +263,7 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
           low <- max(linkedpos[linkedpos < newpos[j]])
         else low <- -Inf
         if(any(linkedpos > newpos[j]))
-          high <- max(linkedpos[linkedpos > newpos[j]])
+          high <- min(linkedpos[linkedpos > newpos[j]])
         else high <- Inf
         
         thispos[[j]] <- c(low, high)
@@ -252,17 +283,17 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
       if(verbose) {
         cat(" Q", j, " pos: ", curpos[j], " -> ", newpos[j], "\n", sep="")
         cat("    LOD increase: ", round(max(out) - curlod, 3), "\n")
-        curlod <- max(out)
       }
+      curlod <- max(out)
     }
 
     if(verbose) {
       cat("all pos:", curpos, "->", newpos, "\n")
       cat("LOD increase at this iteration: ", round(curlod - thisitlod, 3), "\n")
-      thisitlod <- curlod
     }
+    thisitlod <- curlod
 
-    if(all(curpos == newpos)) {
+    if(max(abs(curpos - newpos)) < mind) {
       converged <- TRUE
       break
     }
@@ -275,13 +306,12 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
   if(verbose) {
     cat("overall pos:", origpos, "->", newpos, "\n")
     cat("LOD increase overall: ", round(curlod - origlod, 3), "\n")
-    thisitlod <- curlod
   }
 
   if(!converged) warning("Didn't converge.")
   
   # do the qtl have custom names?
-  g <- grep("^Chr.+@[0-9\\.]+$", qtl$name)
+  g <- grep("^.+@[0-9\\.]+$", qtl$name)
   if(length(g) == length(qtl$name)) thenames <- NULL
   else thenames <- qtl$name
 
@@ -318,9 +348,31 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
     names(lastout) <- qtl$name[tovary]
   }
 
-  if(keeplodprofile) 
+  if(keeplodprofile) {
+    # make the profiles scanone objects
+    for(i in seq(along=lastout)) {
+      class(lastout[[i]]) <- c("scanone", "data.frame")
+      thechr <- qtl$chr[i]
+      if(method=="imp") 
+        detailedmap <- attr(cross$geno[[thechr]]$draws,"map")
+      else
+        detailedmap <- attr(cross$geno[[thechr]]$prob,"map")
+    
+      r <- range(lastout[[i]][,2])
+      rn <- names(detailedmap)[detailedmap>=r[1] & detailedmap<=r[2]]
+      o <- grep("^loc-*[0-9]+",rn)
+      if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
+        rn[o] <- paste("c",thechr,".",rn[o],sep="")
+      if(length(rn) == nrow(lastout[[i]])) rownames(lastout[[i]]) <- rn
+    }
+
     attr(qtl, "lodprofile") <- lastout
+  }
   
+  # if there's a pLOD attribute, revise it
+  if("pLOD" %in% names(attributes(qtl)) && curlod > origlod)
+    attr(qtl,"pLOD") <- attr(qtl,"pLOD") + curlod - origlod
+
   qtl
 }
 
@@ -441,7 +493,9 @@ function(qtl, chr, incl.markers=TRUE, gap=25, lwd=2, lty=1, col="black",
   }
 
   for(i in dontskip) {
-    temp <- rbind(tempscan[tempscan[,1] != qtl$chr[i],],
+    temp <- rbind(tempscan[tempscan[,1] != qtl$chr[i] |
+                           (tempscan[,1] == qtl$chr[i] & (tempscan[,2] < min(lodprof[[i]][,2]) |
+                                      tempscan[,2] > max(lodprof[[i]][,2]))),],
                   lodprof[[i]])
     
     temp <- temp[order(match(temp[,1], orderedchr), temp[,2]),]
