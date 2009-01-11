@@ -1,9 +1,8 @@
 ######################################################################
 # stepwiseqtl.R
 #
-# copyright (c) 2007-8, Karl W Broman
-# 
-# last modified Jul, 2008
+# copyright (c) 2007-9, Karl W Broman
+# last modified Jan, 2009
 # first written Nov, 2007
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -51,7 +50,7 @@ function(cross, chr, pheno.col=1, qtl, formula, max.qtl=10, covar=NULL,
          additive.only=FALSE, scan.pairs=FALSE, penalties,
          keeplodprofile=FALSE, keeptrace=FALSE, verbose=TRUE)
 {
-  if(!any(class(cross) == "cross")) 
+  if(!("cross" %in% class(cross)))
     stop("Input should have class \"cross\".")
 
   if(!missing(chr)) cross <- subset(cross, chr)
@@ -62,6 +61,9 @@ function(cross, chr, pheno.col=1, qtl, formula, max.qtl=10, covar=NULL,
   }
 
   if(!missing(qtl)) { # start f.s. at somewhere other than the null
+    if( !("qtl" %in% class(qtl)) )
+      stop("The qtl argument must be an object of class \"qtl\".")
+
     # check that chromosomes were retained, otherwise give error
     m <- is.na(match(qtl$chr, names(cross$geno)))
     if(any(m)) {
@@ -119,6 +121,19 @@ function(cross, chr, pheno.col=1, qtl, formula, max.qtl=10, covar=NULL,
   }
   if(method=="imp") qtlmethod <- "draws"
   else qtlmethod <- "prob"
+
+  if(!missing(qtl) && qtl$n.ind != nind(cross)) {
+    warning("No. individuals in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    if(method=="imp")
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+    else
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="prob")
+  }
+
+  if(!missing(qtl) && method=="imp" && dim(qtl$geno)[3] != dim(cross$geno[[1]]$draws)[3])  {
+    warning("No. imputations in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+  }    
 
   # check that qtl object matches the method
   if(!startatnull) {
@@ -764,10 +779,13 @@ function(formula, ignore.covar=TRUE)
   nmain <- sum(nterm==1)
 
   if(all(nterm==1))
-    return(c(main=nmain, intH=0, intL=0))
+    return(c(main=nmain, intH=0, intL=0, inttot=0))
 
   n.int <- sum(nterm==2)
   
+  if(n.int <=1) # 0 or 1 interactions, so no need to figure them out
+    return(c(main=nmain, intH=0, intL=n.int, inttot=n.int))
+
   factors <- factors[,nterm==2, drop=FALSE]
 
   wh <- apply(factors, 2, function(a) which(a==1))
@@ -808,10 +826,33 @@ function(formula, ignore.covar=TRUE)
 # calculate penalties for pLOD using scantwo permutation results.
 ######################################################################
 calc.penalties <-
-function(perms, alpha=0.05)
+function(perms, alpha=0.05, lodcolumn)
 {
   if(missing(perms) || !("scantwoperm" %in% class(perms)))
     stop("You must include permutation results from scantwo.")
+
+  if(missing(lodcolumn)) {
+    if(is.matrix(perms[[1]]) && ncol(perms[[1]]) > 1)
+      lodcolumn <- 1:ncol(perms[[1]])
+    else lodcolumn <- 1
+  }
+
+  if(length(lodcolumn)>1) {
+    result <- NULL
+    for(i in seq(along=lodcolumn)) {
+      temp <- calc.penalties(perms, alpha, lodcolumn[i])
+      result <- rbind(result, temp)
+    }
+    dimnames(result) <- list(colnames(perms[[1]])[lodcolumn], names(temp))
+    return(result)
+  }
+
+  if(is.matrix(perms[[1]]) && ncol(perms[[1]]) >1) {
+    if(lodcolumn < 1 || lodcolumn > ncol(perms[[1]]))
+      stop("lodcolumn misspecified")
+    for(i in seq(along=perms))
+      perms[[i]] <- perms[[i]][,lodcolumn,drop=FALSE]
+  }
 
   qu <- summary(perms, alpha=alpha)
   if(!("one" %in% names(qu)))

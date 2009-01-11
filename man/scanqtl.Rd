@@ -23,7 +23,8 @@ scanqtl(cross, pheno.col=1, chr, pos, covar=NULL, formula,
    of individuals in the cross, and there must be either non-integers or
    values < 1 or > no. phenotypes; this last case may be useful for studying
    transformations.}
- \item{chr}{Vector indicating the chromosome for each QTL.}
+ \item{chr}{Vector indicating the chromosome for each QTL. (These should
+   be character strings referring to the chromosomes by name.)}
  \item{pos}{List indicating the positions or intervals on the chromosome
    to be scanned.  Each element should be either a single number (for a
    specific position) or a pair of numbers (for an interval).}
@@ -97,14 +98,12 @@ fake.f2 <- subset(fake.f2, chr=qc)
 
 # imputate genotypes
 \dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
-\dontrun{fake.f2 <- sim.geno(fake.f2, n.draws=64, step=2, err=0.001)
-}\dontshow{fake.f2 <- sim.geno(fake.f2, n.draws=8, step=5, err=0.001)
-}
+fake.f2 <- calc.genoprob(fake.f2, step=5, err=0.001)
 
 # 2-dimensional genome scan with additive 3-QTL model
 pos <- list(c(15,35), c(45,65), 28)
 result <- scanqtl(fake.f2, pheno.col=1, chr=qc, pos=pos,
-                  formula=y~Q1+Q2+Q3)
+                  formula=y~Q1+Q2+Q3, method="hk")
 
 # image of the results
 # chr locations
@@ -117,7 +116,7 @@ image(chr1, chr8, t(result), las=1, col=rev(rainbow(256,start=0,end=2/3)))
 
 # do the same, allowing the QTLs on chr 1 and 13 to interact
 result2 <- scanqtl(fake.f2, pheno.col=1, chr=qc, pos=pos,
-                   formula=y~Q1+Q2+Q3+Q1:Q3)
+                   formula=y~Q1+Q2+Q3+Q1:Q3, method="hk")
 # image plot
 image(chr1, chr8, t(result2), las=1, col=rev(rainbow(256,start=0,end=2/3)))
 }

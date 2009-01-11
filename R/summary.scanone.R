@@ -3,8 +3,7 @@
 # summary.scanone.R
 #
 # copyright (c) 2001-8, Karl W Broman
-# 
-# last modified Jul, 2008
+# last modified Sep, 2008
 # first written Sep, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -13,7 +12,7 @@
 #           max.scanone, c.scanone, subset.scanone,
 #           summary.scanoneperm, print.summary.scanoneperm
 #           c.scanoneperm, rbind.scanoneperm, cbind.scanoneperm
-#           grab.arg.names
+#           grab.arg.names, subset.scantwoperm
 #
 ######################################################################
 
@@ -236,16 +235,20 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
     }
     else keep <- seq(along=thechr)
 
-    pos <- pos[keep,,drop=FALSE]
-    lod <- lod[keep,,drop=FALSE]
-    thechr <- thechr[keep]
-    result <- as.data.frame(matrix(ncol=ncol.object*2+1,nrow=length(keep)))
-    names(result)[1] <- "chr"
-    names(result)[(1:ncol.object)*2] <- "pos"
-    names(result)[(1:ncol.object)*2+1] <- names(object)[-(1:2)]
-    result[,1] <- thechr
-    result[,(1:ncol.object)*2] <- pos
-    result[,(1:ncol.object)*2+1] <- lod
+    if(is.null(keep)) 
+      result <- object[NULL,,drop=FALSE]
+    else {
+      pos <- pos[keep,,drop=FALSE]
+      lod <- lod[keep,,drop=FALSE]
+      thechr <- thechr[keep]
+      result <- as.data.frame(matrix(ncol=ncol.object*2+1,nrow=length(keep)))
+      names(result)[1] <- "chr"
+      names(result)[(1:ncol.object)*2] <- "pos"
+      names(result)[(1:ncol.object)*2+1] <- names(object)[-(1:2)]
+      result[,1] <- thechr
+      result[,(1:ncol.object)*2] <- pos
+      result[,(1:ncol.object)*2+1] <- lod
+    }
   }    
 
   if(pvalues && nrow(result) > 0) { # get p-values and add to the results
@@ -359,32 +362,17 @@ function(object, chr, lodcolumn=1, df=FALSE, na.rm=TRUE, ...)
   if(lodcolumn < 1 || lodcolumn+2 > ncol(object))
     stop("Argument lodcolumn misspecified.")
 
-  if(missing(chr)) {
-    maxlod <- max(object[,lodcolumn+2],na.rm=TRUE)
-    wh <- which(!is.na(object[,lodcolumn+2]) & object[,lodcolumn+2]==maxlod)
-    if(length(wh) > 1) wh <- sample(wh, 1)
-    object <- object[wh,]
+  if(!missing(chr)) object <- subset(object, chr=chr)
 
-    object[,1] <- factor(as.character(unique(object[,1])))
-
-    attr(object, "df") <- thedf
-    return(summary.scanone(object, threshold=0, lodcolumn=lodcolumn, df=df))
-  }
-  else {
-    res <- NULL
-    for(i in seq(along=chr)) {
-      temp <- object[object[,1]==chr[i],]
-      maxlod <- max(temp[,lodcolumn+2],na.rm=TRUE)
-      wh <- which(!is.na(temp[,lodcolumn+2]) & temp[,lodcolumn+2]==maxlod)
-      if(length(wh) > 1) wh <- sample(wh, 1)
-      temp <- temp[wh,]
-      res <- rbind(res,temp)
-    }
-
-    res[,1] <- factor(as.character(unique(res[,1])))
-    attr(res, "df") <- thedf
-    return(summary.scanone(res,threshold=0,lodcolumn=lodcolumn, df=df))
-  }
+  maxlod <- max(object[,lodcolumn+2],na.rm=TRUE)
+  wh <- which(!is.na(object[,lodcolumn+2]) & object[,lodcolumn+2]==maxlod)
+  if(length(wh) > 1) wh <- sample(wh, 1)
+  object <- object[wh,]
+  
+  object[,1] <- factor(as.character(unique(object[,1])))
+  attr(object, "df") <- thedf
+  
+  summary.scanone(object,threshold=0,lodcolumn=lodcolumn, df=df)
 }
 
 ######################################################################
@@ -405,8 +393,12 @@ function(x, chr, lodcolumn, ...)
 
   y <- x
 
-  if(!missing(chr)) 
-    x <- x[x[,1] %in% chr,]
+  if(!missing(chr)) {
+    chr <- matchchr(chr, unique(x[,1]))
+    x <- x[!is.na(match(x[,1],chr)), ,drop=FALSE]
+    thechr <- as.character(x[,1])
+    x[,1] <- factor(thechr, levels=unique(thechr))
+  }
 
   if(!missing(lodcolumn)) {
     if(any(lodcolumn>0) && any(lodcolumn<0))
@@ -467,9 +459,11 @@ function(..., labels)
       labels <- rep(labels, length(dots))
     if(length(labels) != length(dots))
       stop("labels needs to be the same length as the number of objects input.")
+    gavelabels <- TRUE
   }
   else {
     labels <- grab.arg.names(...)
+    gavelabels <- FALSE
   }
 
   nr <- sapply(dots, nrow)
@@ -486,15 +480,22 @@ function(..., labels)
   }
   cl <- class(dots[[1]])
 
-  for(i in 1:length(dots)) {
-    colnames(dots[[i]])[-(1:2)] <- paste(colnames(dots[[i]])[-(1:2)], labels[i], sep=".")
-    dots[[i]] <- as.data.frame(dots[[i]])
+  thenam <- unlist(lapply(dots, function(a) colnames(a)[-(1:2)]))
+  if(length(unique(thenam)) == length(thenam))
+    repeats <- FALSE
+  else repeats <- TRUE
+
+  if(repeats || gavelabels) {
+    for(i in 1:length(dots)) {
+      colnames(dots[[i]])[-(1:2)] <- paste(colnames(dots[[i]])[-(1:2)], labels[i], sep=".")
+      dots[[i]] <- as.data.frame(dots[[i]])
+    }
   }
 
   result <- dots[[1]]
 
   for(i in 2:length(dots)) 
-    result <- cbind(result, dots[[i]][,-(1:2),drop=FALSE])
+    result <- cbind(as.data.frame(result), as.data.frame(dots[[i]][,-(1:2),drop=FALSE]))
 
   class(result) <- cl
   attr(result, "df") <- df
@@ -715,9 +716,11 @@ function(..., labels)
       labels <- rep(labels, length(dots))
     if(length(labels) != length(dots))
       stop("labels needs to be the same length as the number of objects input.")
+    gavelabels <- TRUE
   }
   else {
     labels <- grab.arg.names(...)
+    gavelabels <- FALSE
   }
 
 
@@ -750,12 +753,24 @@ function(..., labels)
                                              nrow=mnr-nr[i]))
     }
 
-    colnames(dots[[1]]$A) <- paste(colnames(dots[[1]]$A),labels[1],sep=".")
-    colnames(dots[[1]]$X) <- paste(colnames(dots[[1]]$X),labels[1],sep=".")
+    thenamA <- unlist(lapply(dots, function(a) colnames(a$A)))
+    thenamX <- unlist(lapply(dots, function(a) colnames(a$X)))
+    if(length(unique(thenamA)) == length(thenamA) &&
+       length(unique(thenamX)) == length(thenamX))
+      repeats <- FALSE
+    else repeats <- TRUE
+
+    if(repeats || gavelabels) {
+      colnames(dots[[1]]$A) <- paste(colnames(dots[[1]]$A),labels[1],sep=".")
+      colnames(dots[[1]]$X) <- paste(colnames(dots[[1]]$X),labels[1],sep=".")
+      for(i in 2:length(dots)) {
+        colnames(dots[[i]]$A) <- paste(colnames(dots[[i]]$A),labels[i],sep=".")
+        colnames(dots[[i]]$X) <- paste(colnames(dots[[i]]$X),labels[i],sep=".")
+      }
+    }
+
     result <- dots[[1]]
     for(i in 2:length(dots)) {
-      colnames(dots[[i]]$A) <- paste(colnames(dots[[i]]$A),labels[i],sep=".")
-      colnames(dots[[i]]$X) <- paste(colnames(dots[[i]]$X),labels[i],sep=".")
       result$A <- cbind(result$A, dots[[i]]$A)
       result$X <- cbind(result$X, dots[[i]]$X)
     }
@@ -774,12 +789,20 @@ function(..., labels)
                                              nrow=mnr-nr[i]))
     }
 
-    colnames(dots[[1]]) <- paste(colnames(dots[[1]]),labels[1],sep=".")
-    result <- dots[[1]]
-    for(i in 2:length(dots)) {
-      colnames(dots[[i]]) <- paste(colnames(dots[[i]]), labels[i], sep=".")
-      result <- cbind(result, dots[[i]])
+    thenam <- unlist(lapply(dots, colnames))
+    if(length(unique(thenam)) == length(thenam))
+      repeats <- FALSE
+    else repeats <- TRUE
+
+    if(repeats || gavelabels) {
+      colnames(dots[[1]]) <- paste(colnames(dots[[1]]),labels[1],sep=".")
+      for(i in 2:length(dots)) 
+        colnames(dots[[i]]) <- paste(colnames(dots[[i]]), labels[i], sep=".")
     }
+    result <- dots[[1]]
+    for(i in 2:length(dots)) 
+      result <- cbind(result, dots[[i]])
+
     class(result) <- "scanoneperm"
   }
   attr(result, "df") <- df
@@ -787,7 +810,39 @@ function(..., labels)
 }
 
 
-  
+##############################
+# subset.scanoneperm: pull out a set of lodcolumns
+##############################
+subset.scanoneperm <-
+function(x, lodcolumn=1, ...)
+{
+  if(is.list(x)) {
+    if(is.matrix(x[[1]]) & ncol(x[[1]]) > 1) {
+      if((is.logical(lodcolumn) && length(lodcolumn) != ncol(x[[1]])) ||
+         (!is.logical(lodcolumn) && ((any(lodcolumn > 0) && any(lodcolumn > ncol(x[[1]]) | lodcolumn < 1)) ||
+         (any(lodcolumn < 0) && any(lodcolumn < -ncol(x[[1]])) | lodcolumn > -1))))
+        stop("lodcolumn misspecified.")
+      cl <- class(x)
+      x <- lapply(x, function(a,b) a[,b,drop=FALSE], lodcolumn)
+      class(x) <- cl
+    }
+    else stop("No need to subset; just one column.")
+  }
+  else {
+    if(is.matrix(x) & ncol(x > 1)) {
+      if((is.logical(lodcolumn) && length(lodcolumn) != ncol(x)) ||
+         (!is.logical(lodcolumn) && ((any(lodcolumn > 0) && any(lodcolumn > ncol(x) | lodcolumn < 1)) ||
+         (any(lodcolumn < 0) && any(lodcolumn < -ncol(x) | lodcolumn > -1)))))
+        stop("lodcolumn misspecified.")
+      cl <- class(x)
+      x <- x[,lodcolumn,drop=FALSE]
+      class(x) <- cl
+    }
+    else stop("No need to subset; just one column.")
+  }
+  x
+}
+
 
 
 # end of summary.scanone.R

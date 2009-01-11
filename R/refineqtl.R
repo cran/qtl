@@ -3,7 +3,7 @@
 # refineqtl.R
 #
 # copyright (c) 2006-8, Karl W. Broman
-# last modified Jul, 2008
+# last modified Dec, 2008
 # first written Jun, 2006
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -31,6 +31,9 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
 {
   method <- match.arg(method)
   
+  if( !("cross" %in% class(cross)) )
+    stop("The cross argument must be an object of class \"cross\".")
+    
   # allow formula to be a character string
   if(!missing(formula) && is.character(formula))
     formula <- as.formula(formula)
@@ -57,17 +60,6 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
     pos <- qtl$pos
   }
   else { # chr and pos provided
-    if(is.numeric(chr)) {
-      if(!any(is.na(match(chr, names(cross$geno)))))
-        chr <- as.character(chr)
-      else {
-        if(any(chr) < 1 || chr > nchr(cross))
-          stop("chr argument misspecified.")
-        else
-          chr <- names(cross$geno)[chr]
-      }
-    }
-
     if(missing(qtl.name)) {
       if(method=="imp")
         qtl <- makeqtl(cross, chr=chr, pos=pos, what="draws")
@@ -130,6 +122,7 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
   if(is.null(map))
     stop("Input qtl object should contain the genetic map.")
   mind <- min(sapply(map, function(a) { if(is.matrix(a)) a <- a[1,]; min(diff(a)) }))/2
+  if(mind <= 0) mind <- 1e-6
 
   # check phenotypes and covariates; drop ind'ls with missing values
   if(length(pheno.col) > 1) {
@@ -161,7 +154,7 @@ function(cross, pheno.col=1, qtl, chr, pos, qtl.name, covar=NULL, formula,
 
     cross <- subset(cross, ind=!hasmissing)
     pheno <- pheno[!hasmissing]
-    if(!is.null(covar)) covar <- covar[!hasmissing,]
+    if(!is.null(covar)) covar <- covar[!hasmissing,,drop=FALSE]
 
     if(method=="imp")
       qtl$geno <- qtl$geno[!hasmissing,,,drop=FALSE]

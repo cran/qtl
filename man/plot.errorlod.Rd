@@ -17,10 +17,13 @@
 \arguments{
   \item{x}{An object of class \code{cross}.  See
     \code{\link[qtl]{read.cross}} for details.}
-  \item{chr}{The chromosomes for which the error LOD scores should
-    be plotted.}
+  \item{chr}{Optional vector indicating the chromosomes to be drawn in
+  the plot. This should be a vector of character strings referring to
+  chromosomes by name; numeric values are converted to strings.  Refer
+  to chromosomes with a preceding \code{-} to have all chromosomes but
+  those considered.  A logical (TRUE/FALSE) vector may also be used.}
   \item{ind}{Indicates the individuals for which the error LOD scores
-    should be plotted.}
+    should be plotted (passed to \code{\link[qtl]{subset.cross}}).}
   \item{breaks}{A set of breakpoints for the colors; must give one more
     breakpoint than color.  Intervals are open on the left and closed on
     the right, except for the lowest interval.}
@@ -56,7 +59,8 @@ plot.errorlod(hyper,chr=1)
 }
 
 \seealso{ \code{\link[qtl]{calc.errorlod}},
-  \code{\link[qtl]{top.errorlod}}, \code{\link[graphics]{image}} }
+  \code{\link[qtl]{top.errorlod}}, \code{\link[graphics]{image}},
+  \code{\link[qtl]{subset.cross}}, \code{\link[qtl]{plot.geno}} }
 
 \references{
   Lincoln, S. E. and Lander, E. S. (1992) Systematic detection of

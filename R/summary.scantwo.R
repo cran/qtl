@@ -3,8 +3,7 @@
 # summary.scantwo.R
 #
 # copyright (c) 2001-8, Karl W Broman, Hao Wu, and Brian Yandell
-#
-# last modified Jul, 2008
+# last modified Aug, 2008
 # first written Nov, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -14,9 +13,7 @@
 #           summary.scantwoperm, print.summary.scantwoperm
 #           condense.scantwo, summary.scantwocondensed
 #           max.scantwocondensed, print.summary.addpair
-#
-######################################################################
-
+#           rbind.scantwoperm, c.scantwoperm, subset.scantwoperm
 ######################################################################
 #
 # summarize the result from scantwo
@@ -711,10 +708,7 @@ function(x, chr, lodcolumn, ...)
   }
 
   if(!missing(chr)) {
-    a <- unique(x$map[,1])
-    if(is.numeric(chr) && all(chr < 0)) 
-      chr <- a[chr]
-    else chr <- a[match(chr,a)]
+    chr <- matchchr(chr, unique(x$map[,1]))
 
     wh <- x$map[,1] %in% chr
 
@@ -880,6 +874,26 @@ function(object)
 
 summary.scantwocondensed <- summary.scantwo
 max.scantwocondensed <- max.scantwo
+
+
+##############################
+# subset.scantwoperm: pull out a set of lodcolumns
+##############################
+subset.scantwoperm <-
+function(x, lodcolumn=1, ...)
+{
+  if(is.matrix(x[[1]]) & ncol(x[[1]]) > 1) {
+    if((is.logical(lodcolumn) && length(lodcolumn) != ncol(x[[1]])) ||
+       (!is.logical(lodcolumn) && ((any(lodcolumn > 0) && any(lodcolumn > ncol(x[[1]]) | lodcolumn < 1)) ||
+       (any(lodcolumn < 0) && any(lodcolumn < -ncol(x[[1]]) | lodcolumn > -1)))))
+      stop("lodcolumn misspecified.")
+    cl <- class(x)
+    x <- lapply(x, function(a,b) a[,b,drop=FALSE], lodcolumn)
+    class(x) <- cl
+  }
+  else stop("No need to subset; just one column.")
+  x
+}
 
 
 # end of summary.scantwo.R

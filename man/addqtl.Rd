@@ -15,8 +15,11 @@ addqtl(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{chr}{Optional vector indicating the chromosomes to be scanned.
-   If missing, all chromosomes are scanned.}
+ \item{chr}{Optional vector indicating the chromosomes to be scanned. If
+   missing, all chromosomes are scanned. Refer to chromosomes by
+   name. Refer to chromosomes with a preceding \code{-} to have all
+   chromosomes but those considered.  A logical (TRUE/FALSE) vector may
+   also be used.} 
  \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.  One may also give a character string matching
    a phenotype name. Finally, one may give a numeric vector of
@@ -87,15 +90,15 @@ qp <- c(26, 56, 28)
 fake.f2 <- subset(fake.f2, chr=c(1,2,3,8,13))
 \dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
 
-fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)
-qtl <- makeqtl(fake.f2, qc, qp)
+fake.f2 <- calc.genoprob(fake.f2, step=2, err=0.001)
+qtl <- makeqtl(fake.f2, qc, qp, what="prob")
 
 # scan for an additional QTL
-out1 <- addqtl(fake.f2, qtl=qtl, formula=y~Q1+Q2+Q3)
+out1 <- addqtl(fake.f2, qtl=qtl, formula=y~Q1+Q2+Q3, method="hk")
 max(out1)
 
 # scan for an additional QTL that interacts with the locus on chr 1
-out2 <- addqtl(fake.f2, qtl=qtl, formula=y~Q1*Q4+Q2+Q3)
+out2 <- addqtl(fake.f2, qtl=qtl, formula=y~Q1*Q4+Q2+Q3, method="hk")
 max(out2)
 
 # plot interaction LOD scores

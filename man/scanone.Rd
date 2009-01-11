@@ -15,13 +15,18 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
         addcovar=NULL, intcovar=NULL, weights=NULL,
         use=c("all.obs", "complete.obs"), upper=FALSE,
         ties.random=FALSE, start=NULL, maxit=4000,
-        tol=1e-4, n.perm, perm.Xsp=FALSE, perm.strata=NULL, verbose)
+        tol=1e-4, n.perm, perm.Xsp=FALSE, perm.strata=NULL, verbose,
+        batchsize=250)
 }
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
  \item{chr}{Optional vector indicating the chromosomes for which LOD
-   scores should be calculated.}
+   scores should be calculated.  This should be a vector of character
+   strings referring to chromosomes by name; numeric values are
+   converted to strings.  Refer to chromosomes with a preceding \code{-}
+   to have all chromosomes but those considered.  A logical (TRUE/FALSE)
+   vector may also be used.}
  \item{pheno.col}{Column number in the phenotype matrix which should be
    used as the phenotype.  This can be a vector of integers; for methods
    \code{"hk"} and \code{"imp"} this can be considerably faster than doing
@@ -81,6 +86,8 @@ scanone(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
    strata.}
  \item{verbose}{In the case \code{n.perm} is specified, display
    information about the progress of the permutation tests.}
+ \item{batchsize}{The number of phenotypes (or permutations) to be run
+   as a batch; used only for methods \code{"hk"} and \code{"imp"}.}
 }
 
 \section{Models}{
@@ -386,7 +393,7 @@ summary(operm.strat)
 # X-specific permutations
 ####################
 data(fake.f2)
-\dontshow{fake.f2 <- subset(fake.f2, chr=18:20)}
+\dontshow{fake.f2 <- subset(fake.f2, chr=c(18:19,"X"))}
 fake.f2 <- calc.genoprob(fake.f2, step=2.5)
 
 # genome scan

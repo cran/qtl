@@ -39,6 +39,8 @@
 \alias{imf.k}
 \alias{imf.m}
 \alias{imf.stahl}
+\alias{interpmap}
+\alias{interpmap4scantwo}
 \alias{LikePheVector}
 \alias{locatemarker}
 \alias{locate.xo}
@@ -46,6 +48,7 @@
 \alias{markerforwsel}
 \alias{markerforwself2}
 \alias{markerloglik}
+\alias{matchchr}
 \alias{max.scantwocondensed}
 \alias{mf.cf}
 \alias{mf.h}
@@ -53,8 +56,10 @@
 \alias{mf.m}
 \alias{mf.stahl}
 \alias{mybinaryrep}
+\alias{orderMarkers.sub}
 \alias{parseformula}
 \alias{plot.effectscan}
+\alias{print.addcovarint}
 \alias{print.addint}
 \alias{print.compactqtl}
 \alias{print.cross}
@@ -86,6 +91,7 @@
 \alias{read.cross.qtx}
 \alias{read.map.qtlcart}
 \alias{read.maps.mm}
+\alias{replacemap}
 \alias{revisecovar}
 \alias{reviseqtlnuminformula}
 \alias{revisescantwodf}
@@ -107,6 +113,7 @@
 \alias{sim.ril}
 \alias{subrousummaryscantwo}
 \alias{summary.scantwocondensed}
+\alias{summary.addcovarint}
 \alias{summary.addint}
 \alias{summary.compactqtl}
 \alias{vbscan}
@@ -173,11 +180,14 @@ imf.h(r)
 imf.k(r)
 imf.m(r)
 imf.stahl(r, m=0, p=0, tol=1e-12, maxit=1000)
+interpmap(oldmap, newmap)
+interpmap4scantwo(output, newmap)
 LikePheVector(pheno, n.ind, n.phe)
 locatemarker(map, pos, chr, flag)
 locate.xo(cross)
 makeSSmap(cross)
 markerloglik(cross, marker, error.prob=0.0001)
+matchchr(selection, thechr)
 \method{max}{scantwocondensed}(object, lodcolumn=1,
     what=c("best", "full", "add", "int"),
     df=FALSE, na.rm=TRUE, \dots)
@@ -187,9 +197,11 @@ mf.k(d)
 mf.m(d)
 mf.stahl(d, m=0, p=0)
 mybinaryrep(n)
+orderMarkers.sub(cross, chr, window=7, use.ripple=TRUE)
 parseformula(formula, qtl.dimname, covar.dimname)
 \method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
      add.legend=TRUE, alternate.chrid=FALSE, \dots)
+\method{print}{addcovarint}(x, \dots)
 \method{print}{addint}(x, \dots)
 \method{print}{compactqtl}(x, \dots)
 \method{print}{cross}(x, \dots)
@@ -226,6 +238,7 @@ read.cross.qtlcart(dir, crofile, mapfile)
 read.cross.qtx(dir, file, estimate.map=TRUE)
 read.map.qtlcart(file)
 read.maps.mm(mapsfile)
+replacemap(object, map)
 revisecovar(sexpgm, covar)
 reviseqtlnuminformula(formula, oldnum, newnum)
 revisescantwodf(df)
@@ -241,11 +254,11 @@ scanone.perm(cross, pheno.col=1, model=c("normal","binary","2part","np"),
              use=c("all.obs", "complete.obs"), upper=FALSE,
              ties.random=FALSE, start=NULL, maxit=4000,
              tol=1e-4, n.perm=1000, perm.Xsp=FALSE, perm.strata=NULL,
-             verbose=TRUE)
+             verbose=TRUE, batchsize=250)
 scanone.perm.engine(n.perm, cross, pheno.col, model,
                     method, addcovar, intcovar, weights, use,
                     upper, ties.random, start, maxit, tol,
-                    verbose, perm.strata)
+                    verbose, perm.strata, batchsize=250)
 scanoneXnull(type, sexpgm)
 scantwo.perm(cross, pheno.col=1, model=c("normal","binary"),
              method=c("em","imp","hk","mr","mr-imp","mr-argmax"),
@@ -253,11 +266,13 @@ scantwo.perm(cross, pheno.col=1, model=c("normal","binary"),
              use=c("all.obs", "complete.obs"),
              incl.markers=FALSE, clean.output=FALSE,
              maxit=4000, tol=1e-4, verbose=FALSE,
-             n.perm=1000, perm.strata, assumeCondIndep=FALSE)
+             n.perm=1000, perm.strata, assumeCondIndep=FALSE,
+             batchsize=250)
 scantwo.perm.engine(n.perm, cross, pheno.col, model,
                     method, addcovar, intcovar, weights, use,
                     incl.markers, clean.output, maxit, tol, verbose,
-                    perm.strata, assumeCondIndep=FALSE)
+                    perm.strata, assumeCondIndep=FALSE,
+                    batchsize=250)
 sim.bcg(n.ind, map, m, p,
         map.function=c("haldane","kosambi","c-f","morgan"))
 sim.cc(parents, n.ril=1, type=c("sibmating", "selfing"),
@@ -275,6 +290,7 @@ subrousummaryscantwo(object, for.perm=FALSE)
          what=c("best", "full", "add", "int"),
          perms, alphas, lodcolumn=1, pvalues=FALSE,
          df=FALSE, allpairs=TRUE, \dots)
+\method{summary}{addcovarint}(object, \dots)
 \method{summary}{addint}(object, \dots)
 \method{summary}{compactqtl}(object, \dots)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,

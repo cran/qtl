@@ -4,6 +4,8 @@
 add.cim.covar           Indicate marker covariates from composite
                         interval mapping
 add.threshold           Add significance threshold to plot
+addcovarint             Add QTL x covariate interaction to a
+                        multiple-QTL model
 addint                  Add pairwise interaction to a multiple-QTL
                         model
 addpair                 Scan for an additional pair of QTL in a
@@ -39,6 +41,8 @@ convert.scanone         Convert output from scanone for R/qtl version
                         0.98
 convert.scantwo         Convert output from scantwo for R/qtl version
                         1.03 and earlier
+convert2sa              Convert a sex-specific map to a sex-averaged
+                        one.
 countXO                 Count number of obligate crossovers for each
                         individual
 drop.markers            Drop a set of markers
@@ -62,6 +66,7 @@ find.pseudomarker       Find the pseudomarker closest to a specified
                         position
 fitqtl                  Fit a multiple-QTL model
 fitstahl                Fit Stahl interference model
+formLinkageGroups       Partition markers into linkage groups
 geno.crosstab           Create table of two-locus genotypes
 geno.image              Plot grid of genotype data
 geno.table              Create table of genotype distributions
@@ -71,11 +76,21 @@ listeria                Data on Listeria monocytogenes susceptibility
 lodint                  LOD support interval
 makeqtl                 Make a qtl object
 map10                   An example genetic map
+markernames             Pull out the marker names from a cross
 max.scanone             Maximum peak in genome scan
 max.scantwo             Maximum peak in two-dimensional genome scan
 movemarker              Move a marker to a new chromosome
+nchr                    Determine the number of chromosomes
+nind                    Determine the number of individuals QTL
+                        experiment
+nmar                    Determine the numbers of markers on each
+                        chromosome
 nmissing                Number of missing genotypes
+nphe                    Determine the number of phenotypes QTL
+                        experiment
 ntyped                  Number of genotypes
+orderMarkers            Find an initial order for markers within
+                        chromosomes
 plot.cross              Plot various features of a cross object
 plot.errorlod           Plot grid of error LOD values
 plot.geno               Plot observed genotypes, flagging likely errors
@@ -106,6 +121,10 @@ read.cross              Read data for a QTL experiment
 refineqtl               Refine the positions of QTL
 reorderqtl              Reorder the QTL in a qtl object.
 replace.map             Replace the genetic map of a cross
+replacemap.scanone      Replace the genetic map in QTL mapping results
+                        with an alternate map
+replacemap.scantwo      Replace the genetic map in QTL mapping results
+                        with an alternate map
 replaceqtl              Replace a QTL in a qtl object with a different
                         position.
 ripple                  Compare marker orders
@@ -122,7 +141,10 @@ stepwiseqtl             Stepwise selection for multiple QTL
 strip.partials          Strip partially informative genotypes
 subset.cross            Subsetting data for QTL experiment
 subset.scanone          Subsetting the results of a genome scan
+subset.scanoneperm      Subsetting permutation test results
 subset.scantwo          Subsetting the results of a 2-d genome scan
+subset.scantwoperm      Subsetting two-dimensional permutation test
+                        results
 summary.cross           Print summary of QTL experiment
 summary.fitqtl          Summary of fit of qtl model
 summary.map             Print summary of a genetic map
@@ -138,5 +160,6 @@ summary.scantwo.old     Summarize the results of a two-dimensional
 summary.scantwoperm     LOD thresholds from scantwo permutation results
 switch.order            Switch the order of markers on a chromosome
 top.errorlod            List genotypes with large error LOD scores
+totmar                  Determine the total number of markers
 tryallpositions         Test all possible positions for a marker
 write.cross             Write data for a QTL experiment to a file

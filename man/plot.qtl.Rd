@@ -15,9 +15,11 @@
 \arguments{
   \item{x}{An object of class \code{"qtl"}, as produced by
     \code{\link[qtl]{makeqtl}}.} 
-  \item{chr}{Vector specifying which chromosomes to plot. (The
-    chromosomes must be specified by name.)  If missing, all chromosomes
-    are plotted.}
+  \item{chr}{Optional vector indicating the chromosomes to plot.
+  This should be a vector of character strings referring to chromosomes
+  by name; numeric values are converted to strings.  Refer to
+  chromosomes with a preceding \code{-} to have all chromosomes but
+  those considered.  A logical (TRUE/FALSE) vector may also be used.}
   \item{horizontal}{Specifies whether the chromosomes should be
     plotted horizontally.}
   \item{shift}{If TRUE, shift the first marker on each chromosome to be
@@ -44,8 +46,8 @@ qc <- c("1", "6", "13")
 qp <- c(25.8, 33.6, 18.63)
 fake.f2 <- subset(fake.f2, chr=qc)
 \dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
-fake.f2 <- sim.geno(fake.f2, n.draws=2, step=2, err=0.001)
-qtl <- makeqtl(fake.f2, qc, qp, what="draws")
+fake.f2 <- calc.genoprob(fake.f2, step=2, err=0.001)
+qtl <- makeqtl(fake.f2, qc, qp, what="prob")
 plot(qtl)
 }
 

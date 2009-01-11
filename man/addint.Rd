@@ -15,7 +15,7 @@ addint(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp","hk"),
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{pheno.col}{Column number in the phenotype matrix which should be
+ \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.  One may also give a character string matching
    a phenotype name. Finally, one may give a numeric vector of
    phenotypes, in which case it must have the length equal to the number
@@ -25,19 +25,20 @@ addint(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp","hk"),
  \item{qtl}{An object of class \code{qtl}, as output from
    \code{\link[qtl]{makeqtl}}.} 
  \item{covar}{A matrix or data.frame of covariates.  These must be
-   strictly numeric.} 
+   strictly numeric.}
  \item{formula}{An object of class \code{\link[stats]{formula}}
    indicating the model to be fitted.  (It can also be the character
    string representation of a formula.)  QTLs are referred to as
    \code{Q1}, \code{Q2}, etc.  Covariates are referred to by their names
-   in the data frame \code{covar}.} 
+   in the data frame \code{covar}.  If the new QTL is not included in
+   the formula, its main effect is added.}
  \item{method}{Indicates whether to use multiple imputation or
    Haley-Knott regression.}
  \item{qtl.only}{If TRUE, only test QTL:QTL interactions (and not
    interactions with covariates).}
  \item{verbose}{If TRUE, will print a message if there are no
    interactions to test.}
- \item{pvalues}{If FALSE, don't include p-values in the summary.}
+ \item{pvalues}{If FALSE, p-values will not be included in the results.}
 }
 
 \details{
@@ -91,14 +92,14 @@ qc <- c(1, 8, 13)
 qp <- c(26, 56, 28)
 fake.f2 <- subset(fake.f2, chr=qc)
 \dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
-fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)
-qtl <- makeqtl(fake.f2, qc, qp)
+fake.f2 <- calc.genoprob(fake.f2, step=2, err=0.001)
+qtl <- makeqtl(fake.f2, qc, qp, what="prob")
 
 # try all possible pairwise interactions, one at a time
-addint(fake.f2, pheno.col=1, qtl, formula=y~Q1+Q2+Q3)
+addint(fake.f2, pheno.col=1, qtl, formula=y~Q1+Q2+Q3, method="hk")
 }
 
-\seealso{ \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}},
+\seealso{ \code{\link[qtl]{addcovarint}}, \code{\link[qtl]{fitqtl}}, \code{\link[qtl]{makeqtl}},
   \code{\link[qtl]{scanqtl}}, \code{\link[qtl]{refineqtl}},
   \code{\link[qtl]{addqtl}}, \code{\link[qtl]{addpair}} }  
 
