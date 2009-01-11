@@ -3,7 +3,7 @@
 # fitqtl.R
 #
 # copyright (c) 2002-8, Hao Wu and Karl W. Broman
-# last modified Jul, 2008
+# last modified Dec, 2008
 # first written Apr, 2002
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -27,10 +27,10 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
          dropone=TRUE, get.ests=FALSE, run.checks=TRUE)
 {
   # some input checking stuff in here
-  if( !sum(class(cross) == "cross"))
+  if( !("cross" %in% class(cross)) )
     stop("The cross argument must be an object of class \"cross\".")
     
-  if( !sum(class(qtl) == "qtl") )
+  if( !("qtl" %in% class(qtl)) )
     stop("The qtl argument must be an object of class \"qtl\".")
 
   if(!is.null(covar) && !is.data.frame(covar)) {
@@ -89,6 +89,18 @@ function(cross, pheno.col=1, qtl, covar=NULL, formula, method=c("imp", "hk"),
         stop("The qtl object needs to be created with makeqtl with what=\"prob\".")
     }
   }
+
+  if(qtl$n.ind != nind(cross)) {
+    warning("No. individuals in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    if(method=="imp")
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+    else
+      qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="prob")
+  }
+  if(method=="imp" && dim(qtl$geno)[3] != dim(cross$geno[[1]]$draws)[3])  {
+    warning("No. imputations in qtl object doesn't match that in the input cross; re-creating qtl object.")
+    qtl <- makeqtl(cross, qtl$chr, qtl$pos, qtl$name, what="draws")
+  }    
 
   fitqtlengine(pheno=pheno, qtl=qtl, covar=covar, formula=formula,
                method=method, dropone=dropone, get.ests=get.ests,

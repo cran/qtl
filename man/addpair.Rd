@@ -15,8 +15,11 @@ addpair(cross, chr, pheno.col=1, qtl, covar=NULL, formula,
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{chr}{Optional vector indicating the chromosomes to be scanned.
-   If missing, all chromosomes are scanned.}
+ \item{chr}{Optional vector indicating the chromosomes to be scanned. If
+   missing, all chromosomes are scanned. Refer to chromosomes by
+   name. Refer to chromosomes with a preceding \code{-} to have all
+   chromosomes but those considered.  A logical (TRUE/FALSE) vector may
+   also be used.} 
  \item{pheno.col}{Column number in the phenotype matrix to be
    used as the phenotype.  One may also give a character string matching
    a phenotype name. Finally, one may give a numeric vector of
@@ -139,16 +142,14 @@ w <- qtlgeno[,2]==2 & qtlgeno[,4]==2
 phe[w] <- phe[w] - 1
 fakebc$pheno[,1] <- phe
 
-# imputations
-\dontrun{fakebc <- sim.geno(fakebc, step=2.5, n.draws=32)}
-\dontshow{fakebc <- sim.geno(fakebc, step=10, n.draws=8)}
+fakebc <- calc.genoprob(fakebc, step=2, err=0.001)
 
 # base model has QTLs on chr 17 and 18
-qtl <- makeqtl(fakebc, chr=c("17", "18"), pos=c(40,30))
+qtl <- makeqtl(fakebc, chr=c("17", "18"), pos=c(40,30), what="prob")
 
 # scan for an additional pair of QTL, one interacting with the locus 
 #     on 17 and one interacting with the locus on 18
-out.ap <- addpair(fakebc, qtl=qtl, formula = y~Q1*Q3 + Q2*Q4)
+out.ap <- addpair(fakebc, qtl=qtl, formula = y~Q1*Q3 + Q2*Q4, method="hk")
 
 max(out.ap)
 summary(out.ap)

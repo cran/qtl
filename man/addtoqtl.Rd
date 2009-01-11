@@ -15,7 +15,8 @@ addtoqtl(cross, qtl, chr, pos, qtl.name, drop.lod.profile=TRUE)
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
  \item{qtl}{The qtl object to which additional QTL are to be added.}
- \item{chr}{Vector indicating the chromosome for each new QTL.}
+ \item{chr}{Vector indicating the chromosome for each new QTL. (These
+ should be character strings referring to the chromosomes by name.)}
  \item{pos}{Vector (of same length as \code{chr}) indicating the
    positions on the chromosome for each new QTL. If there is no marker or
    pseudomarker at a position, the nearest position is used.}
@@ -42,8 +43,8 @@ qc <- c(1, 6, 13)
 qp <- c(25.8, 33.6, 18.63)
 \dontshow{fake.f2 <- subset(fake.f2, chr=c(qc, 14))}
 \dontshow{fake.f2 <- subset(fake.f2, ind=1:50)}
-fake.f2 <- sim.geno(fake.f2, n.draws=8, step=2, err=0.001)
-qtl <- makeqtl(fake.f2, qc, qp, what="draws")
+fake.f2 <- calc.genoprob(fake.f2, step=2, err=0.001)
+qtl <- makeqtl(fake.f2, qc, qp, what="prob")
 qtl <- addtoqtl(fake.f2, qtl, 14, 35)
 }
 

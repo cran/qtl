@@ -3,7 +3,7 @@
 # summary.cross.R
 #
 # copyright (c) 2001-8, Karl W Broman
-# last modified Jul, 2008
+# last modified Dec, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -143,7 +143,11 @@ function(object,...)
   if(!is.data.frame(object$pheno)) 
     warning("Phenotypes should be a data.frame.")
 
+  if(is.null(colnames(object$pheno)))
+    stop("Phenotype data needs column names")
+
   x <- table(colnames(object$pheno))
+
   if(any(x > 1)) 
     warning("Some phenotypes have the same name:\n",
             paste(names(x)[x>1], collapse="  "))
@@ -238,11 +242,25 @@ function(object,...)
   if(!all(chr.class == "A" | chr.class == "X"))
     warning("Each chromosome should have class \"A\" or \"X\".")
   chr.nam <- names(object$geno)
+  if(is.null(chr.nam)) {
+    warning("The chromosome names are missing.")
+    chr.nam <- as.character(1:length(chr.class))
+  }
+    
   if(any(chr.class=="A" & (chr.nam=="X" | chr.nam=="x"))) {
     wh <- which(chr.nam=="X" | chr.nam=="x")
     warning("Chromosome \"", chr.nam[wh], "\" has class \"A\" but probably ",
             "should have class \"X\".")
   }
+
+  if(length(chr.nam) > length(unique(chr.nam))) {
+    tab <- table(chr.nam)
+    dups <- names(tab[tab > 1])
+    warning("Duplicate chromosome names: ", paste(dups,sep=", "))
+  }
+  g <- grep("^-", chr.nam)
+  if(length(g) > 0) 
+    warning("Chromosome names shouldn't start with '-': ", paste(chr.nam[g], sep=", "))
 
   # if more than one X chromosome, print a warning
   if(sum(chr.class=="X") > 1)
@@ -358,8 +376,12 @@ function(object)
 nchr <-
 function(object)
 {
-  if(!any(class(object) == "cross"))
-    stop("Input should have class \"cross\".")
+  cl <- class(object)
+  if(!("cross" %in% cl || "map" %in% cl))
+    stop("Input should have class \"cross\" or \"map\".")
+
+  if("map" %in% cl)
+    return(length(object))
 
   length(object$geno)
 }
@@ -367,8 +389,15 @@ function(object)
 nmar <- 
 function(object)
 {
-  if(!any(class(object) == "cross"))
-    stop("Input should have class \"cross\".")
+  cl <- class(object)
+  if(!("cross" %in% cl || "map" %in% cl))
+    stop("Input should have class \"cross\" or \"map\".")
+
+  if("map" %in% cl) {
+    if(is.matrix(object[[1]]))
+      return(sapply(object, function(x) ncol(x)))
+    else return(sapply(object, function(x) length(x)))
+  }
 
   if(!is.matrix(object$geno[[1]]$map))
     n.mar1 <- sapply(object$geno, function(x) length(x$map))
@@ -384,8 +413,16 @@ function(object)
 totmar <-
 function(object)
 {
-  if(!any(class(object) == "cross"))
-    stop("Input should have class \"cross\".")
+  cl <- class(object)
+  if(!("cross" %in% cl || "map" %in% cl))
+    stop("Input should have class \"cross\" or \"map\".")
+
+  if("map" %in% cl) {
+    if(is.matrix(object[[1]]))
+      return(sum(sapply(object, function(x) ncol(x))))
+    else return(sum(sapply(object, function(x) length(x))))
+  }
+
 
   if(!is.matrix(object$geno[[1]]$map))
     totmar1 <- sum(sapply(object$geno, function(x) length(x$map)))

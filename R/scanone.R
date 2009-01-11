@@ -3,8 +3,7 @@
 # scanone.R
 #
 # copyright (c) 2001-8, Karl W Broman
-# 
-# last modified Jun, 2008
+# last modified Sep, 2008
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
@@ -29,8 +28,9 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
          addcovar=NULL, intcovar=NULL, weights=NULL,
          use=c("all.obs", "complete.obs"), upper=FALSE,
          ties.random=FALSE, start=NULL, maxit=4000, tol=1e-4,
-         n.perm, perm.Xsp=FALSE, perm.strata=NULL, verbose)
+         n.perm, perm.Xsp=FALSE, perm.strata=NULL, verbose, batchsize=250)
 {
+  if(batchsize < 1) stop("batchsize must be >= 1.")
   model <- match.arg(model)
   method <- match.arg(method)
   use <- match.arg(use)
@@ -99,7 +99,8 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     # do this by brute force
     out <- scanone(cross, chr, pheno.col[1], model, method,
                    addcovar, intcovar, weights, use, upper, ties.random,
-                   start, maxit, tol, n.perm, perm.Xsp, perm.strata, verbose)
+                   start, maxit, tol, n.perm, perm.Xsp, perm.strata,
+                   verbose, batchsize)
     nc <- ncol(out)-2
     cn <- colnames(out)[-(1:2)]
     df <- attr(out, "df")
@@ -108,7 +109,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
                                       method, addcovar, intcovar, weights,
                                       use, upper, ties.random, start,
                                       maxit, tol, n.perm, perm.Xsp,
-                                      perm.strata, verbose)[,-(1:2)]
+                                      perm.strata, verbose, batchsize)[,-(1:2)]
 
     if(length(cn) > 1)
       colnames(out)[-(1:2)] <- paste(rep(cn,length(pheno.col)),
@@ -126,7 +127,7 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
     return(scanone.perm(cross, pheno.col, model, method, addcovar,
                         intcovar, weights, use, upper, ties.random,
                         start, maxit, tol, n.perm, perm.Xsp, perm.strata,
-                        verbose))
+                        verbose, batchsize))
   }
 
   if(n.perm < 0) { # in the midst of permutations
@@ -385,39 +386,102 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
               as.double(weights),        # weights
               result=as.double(rep(0,n.pos)),
               PACKAGE="qtl")
-    else if(method=="imp") 
-      z <- .C("R_scanone_imp",
-              as.integer(n.ind),
-              as.integer(n.pos),
-              as.integer(n.gen),
-              as.integer(n.draws),
-              as.integer(draws),
-              as.double(ac),
-              as.integer(n.ac),
-              as.double(ic),
-              as.integer(n.ic),
-              as.double(pheno),
-              as.integer(n.phe), # number of phenotypes 
-              as.double(weights),
-              result=as.double(rep(0,n.phe*n.pos)),
-              PACKAGE="qtl")
-    
-    else if(method=="hk")  # Haley-Knott regression
-      z <- .C("R_scanone_hk",
-              as.integer(n.ind),         # number of individuals
-              as.integer(n.pos),         # number of markers
-              as.integer(n.gen),         # number of possible genotypes
-              as.double(genoprob),       # genotype probabilities
-              as.double(ac),         # additive covariates
-              as.integer(n.ac),
-              as.double(ic),         # interactive covariates
-              as.integer(n.ic), 
-              as.double(pheno),          # phenotype data
-              as.integer(n.phe), # number of phenotypes 
-              as.double(weights),
-              result=as.double(rep(0,n.phe*n.pos)),
-              PACKAGE="qtl")
-   
+    else if(method=="imp") {
+      if(n.phe > batchsize) {
+        firstcol <- 1
+        z <- NULL
+        while(firstcol <= n.phe) {
+          if(verbose > 2) cat("chr", names(cross$geno)[i], "phe", firstcol, "...\n")
+          thiscol <- firstcol + 0:(batchsize-1)
+          thiscol <- thiscol[thiscol <= n.phe]
+          thisz <- .C("R_scanone_imp",
+                      as.integer(n.ind),
+                      as.integer(n.pos),
+                      as.integer(n.gen),
+                      as.integer(n.draws),
+                      as.integer(draws),
+                      as.double(ac),
+                      as.integer(n.ac),
+                      as.double(ic),
+                      as.integer(n.ic),
+                      as.double(pheno[,thiscol]),
+                      as.integer(length(thiscol)), # number of phenotypes 
+                      as.double(weights),
+                      result=as.double(rep(0,length(thiscol)*n.pos)),
+                      PACKAGE="qtl")
+          firstcol <- firstcol + batchsize
+          if(is.null(z)) {
+            z <- thisz
+            z$result <- matrix(ncol=n.phe, nrow=n.pos)
+          }
+          z$result[,thiscol] <- matrix(thisz$result, nrow=n.pos)
+        }
+      }
+      else {
+        z <- .C("R_scanone_imp",
+                as.integer(n.ind),
+                as.integer(n.pos),
+                as.integer(n.gen),
+                as.integer(n.draws),
+                as.integer(draws),
+                as.double(ac),
+                as.integer(n.ac),
+                as.double(ic),
+                as.integer(n.ic),
+                as.double(pheno),
+                as.integer(n.phe), # number of phenotypes 
+                as.double(weights),
+                result=as.double(rep(0,n.phe*n.pos)),
+                PACKAGE="qtl")
+      }
+    }
+    else if(method=="hk") { # Haley-Knott regression
+      if(n.phe > batchsize) {
+        firstcol <- 1
+        z <- NULL
+        while(firstcol <= n.phe) {
+          if(verbose > 2) cat("chr", names(cross$geno)[i], "phe", firstcol, "...\n")
+          thiscol <- firstcol + 0:(batchsize-1)
+          thiscol <- thiscol[thiscol <= n.phe]
+          thisz <- .C("R_scanone_hk",
+                      as.integer(n.ind),         # number of individuals
+                      as.integer(n.pos),         # number of markers
+                      as.integer(n.gen),         # number of possible genotypes
+                      as.double(genoprob),       # genotype probabilities
+                      as.double(ac),         # additive covariates
+                      as.integer(n.ac),
+                      as.double(ic),         # interactive covariates
+                      as.integer(n.ic), 
+                      as.double(pheno[,thiscol]),          # phenotype data
+                      as.integer(length(thiscol)), # number of phenotypes 
+                      as.double(weights),
+                      result=as.double(rep(0,length(thiscol)*n.pos)),
+                      PACKAGE="qtl")
+          firstcol <- firstcol + batchsize
+          if(is.null(z)) {
+            z <- thisz
+            z$result <- matrix(ncol=n.phe, nrow=n.pos)
+          }
+          z$result[,thiscol] <- matrix(thisz$result, nrow=n.pos)
+        }
+      }
+      else {
+        z <- .C("R_scanone_hk",
+                as.integer(n.ind),         # number of individuals
+                as.integer(n.pos),         # number of markers
+                as.integer(n.gen),         # number of possible genotypes
+                as.double(genoprob),       # genotype probabilities
+                as.double(ac),         # additive covariates
+                as.integer(n.ac),
+                as.double(ic),         # interactive covariates
+                as.integer(n.ic), 
+                as.double(pheno),          # phenotype data
+                as.integer(n.phe), # number of phenotypes 
+                as.double(weights),
+                result=as.double(rep(0,n.phe*n.pos)),
+                PACKAGE="qtl")
+      }
+    }
     else if(method=="ehk")  { # extended Haley-Knott method
       z <- .C("R_scanone_ehk",
               as.integer(n.ind),         # number of individuals
@@ -677,7 +741,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
          use=c("all.obs", "complete.obs"), upper=FALSE,
          ties.random=FALSE, start=NULL, maxit=4000, tol=1e-4,
          n.perm=1000, perm.Xsp=FALSE, perm.strata=NULL,
-         verbose=TRUE)
+         verbose=TRUE, batchsize=250)
 {
   method <- match.arg(method)
   model <- match.arg(model)
@@ -710,14 +774,14 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
                                 pheno.col, model,
                                 method, addcovar, intcovar, weights, use,
                                 upper, ties.random, start, maxit, tol,
-                                verbose, perm.strata)
+                                verbose, perm.strata, batchsize)
 
     if(verbose) cat("--X chromosome permutations\n")
     resX <- scanone.perm.engine(n.perm.X, subset(cross, chr=xchr),
                                 pheno.col, model,
                                 method, addcovar, intcovar, weights, use,
                                 upper, ties.random, start, maxit, tol,
-                                verbose, perm.strata)
+                                verbose, perm.strata, batchsize)
     res <- list("A"=resA, "X"=resX)
     attr(res, "xchr") <- xchr
     attr(res, "L") <- c("A"=La, "X"=Lx)
@@ -729,7 +793,7 @@ function(cross, pheno.col=1, model=c("normal","binary","2part","np"),
     res <- scanone.perm.engine(n.perm, cross, pheno.col, model,
                                method, addcovar, intcovar, weights, use,
                                upper, ties.random, start, maxit, tol,
-                               verbose, perm.strata)
+                               verbose, perm.strata, batchsize)
   }
 
   attr(res,"method") <- method
@@ -751,7 +815,7 @@ scanone.perm.engine <-
 function(n.perm, cross, pheno.col, model,
          method, addcovar, intcovar, weights, use,
          upper, ties.random, start, maxit, tol,
-         verbose, perm.strata)
+         verbose, perm.strata, batchsize=250)
 {
   ## local variables
   n.phe <- length(pheno.col)
@@ -823,7 +887,7 @@ function(n.perm, cross, pheno.col, model,
     pheno.col <- 1:n.perm
     tem <- scanone(cross,,pheno.col,model,method,addcovar,
                    intcovar, weights, use, upper,ties.random,start,
-                   maxit,tol,n.perm= -1, perm.Xsp=FALSE, perm.strata, verbose=FALSE)
+                   maxit,tol,n.perm= -1, perm.Xsp=FALSE, perm.strata, verbose=FALSE, batchsize)
 
     res <- matrix(apply(tem[,-(1:2),drop=FALSE], 2, max, na.rm=TRUE), ncol=1)
     attr(res, "df") <- attr(tem, "df")
@@ -878,7 +942,7 @@ function(n.perm, cross, pheno.col, model,
 
       tem <- scanone(cross,,pheno.col,model,method,addcovarp,
                      intcovarp,weights,use,upper,ties.random,start,
-                     maxit,tol,n.perm= -i, perm.Xsp=FALSE, perm.strata, verbose=FALSE)
+                     maxit,tol,n.perm= -i, perm.Xsp=FALSE, perm.strata, verbose=FALSE, batchsize)
       
       res[i,] <- apply(tem[,-(1:2),drop=FALSE], 2, max, na.rm=TRUE)
 

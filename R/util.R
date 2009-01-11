@@ -2,16 +2,15 @@
 #
 # util.R
 #
-# copyright (c) 2001-8, Karl W Broman
+# copyright (c) 2001-9, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-#
-# last modified Jul, 2008
+# last modified Jan, 2009
 # first written Feb, 2001
 # Licensed under the GNU General Public License version 2 (June, 1991)
 # 
 # Part of the R/qtl package
-# Contains: pull.map, replace.map, c.cross, create.map,
+# Contains: pull.map, markernames, replace.map, c.cross, create.map,
 #           clean, clean.cross, drop.nullmarkers,
 #           drop.markers, geno.table, genotab.em
 #           mf.k, mf.h, imf.k, imf.h, mf.cf, imf.cf, mf.m, imf.m,
@@ -25,7 +24,8 @@
 #           convert, convert.scanone, convert.scantwo
 #           find.flanking, strip.partials, comparegeno
 #           qtlversion, locate.xo, jittermap, getid,
-#           find.markerpos, geno.crosstab, LikePheVector
+#           find.markerpos, geno.crosstab, LikePheVector,
+#           matchchr, convert2sa
 #
 ######################################################################
 
@@ -55,56 +55,22 @@ function(cross, chr)
 
 ######################################################################
 #
-# replace.map
+# markernames
 #
-# replace the map portion of a cross object with a list defining a map
+# pull out the marker names for selected chromosomes as one big vector
 #
 ######################################################################
 
-replace.map <-
-function(cross, map)
+markernames <- 
+function(cross, chr)
 {
-  if(!any(class(cross) == "cross")) 
+  if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
 
-  n.chr <- nchr(cross) 
-  n.mar <- nmar(cross)
-
-  n.chr2 <- length(map)
-  n.mar2 <- sapply(map,length)
-
-  type <- class(cross)[1]
-  if(type=="4way") {
-    mnames <- unlist(lapply(cross$geno, function(a) colnames(a$map)))
-    mnames2 <- unlist(lapply(map, function(a) colnames(a)))
-    n.mar2 <- n.mar2/2
-  }
-  else if(type == "bc" || type == "f2" || type == "riself" || type=="risib" || type=="dh") {
-    mnames <- unlist(lapply(cross$geno, function(a) names(a$map)))
-    mnames2 <- unlist(lapply(map, function(a) names(a)))
-  }
-  else 
-    stop("Cross type ", type, " not yet supported.")
-
-  # check that things line up properly
-  if(n.chr != n.chr2)
-    stop("Numbers of chromosomes don't match.")
-  if(any(names(cross$geno) != names(map)))
-    stop("Chromosome names don't match.")
-  if(any(n.mar != n.mar2))
-    stop("Number of markers don't match.")
-  if(any(mnames != mnames2)) 
-    stop("Marker names don't match.")
-
-  # proceed if no errors
-  for(i in 1:length(cross$geno)) {
-    cross$geno[[i]]$map <- map[[i]]
-    if(is.matrix(map[[i]]))
-      class(cross$geno[[i]]$map) <- "matrix"
-    else class(cross$geno[[i]]$map) <- "numeric"
-  }
-
-  cross
+  if(!missing(chr)) cross <- subset(cross, chr=chr)
+  temp <- unlist(lapply(cross$geno, function(a) colnames(a$data)))
+  names(temp) <- NULL
+  temp
 }
 
 ######################################################################
@@ -779,7 +745,7 @@ function(dat, tol=1e-6, maxit=10000, verbose=FALSE)
 # with the markers specified by name
 ######################################################################
 geno.crosstab <-
-function(cross, mname1, mname2)
+function(cross, mname1, mname2, eliminate.zeros=TRUE)
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -810,9 +776,58 @@ function(cross, mname1, mname2)
   g1[is.na(g1)] <- 0
   g2[is.na(g2)] <- 0
 
-  g1names <- c("-", getgenonames(crosstype, chrtype[1], "full", getsex(cross), attributes(cross)))
-  g2names <- c("-", getgenonames(crosstype, chrtype[2], "full", getsex(cross), attributes(cross)))
+  g1names <- getgenonames(crosstype, chrtype[1], "full", getsex(cross), attributes(cross))
+  g2names <- getgenonames(crosstype, chrtype[2], "full", getsex(cross), attributes(cross))
   
+  if(chrtype[1] != "X") {
+    if(crosstype == "f2") 
+      g1names <- c(g1names, paste("not", g1names[c(3,1)]))
+    else if(crosstype == "bc" || crosstype == "risib" || crosstype=="riself" || crosstype=="dh") {
+    }
+    else if(crosstype == "4way") {
+      temp <- g1names
+      g1names <- c(temp,
+                   paste(temp[c(1,3)], collapse="/"),
+                   paste(temp[c(2,4)], collapse="/"),
+                   paste(temp[c(1,2)], collapse="/"),
+                   paste(temp[c(3,4)], collapse="/"),
+                   paste(temp[c(1,4)], collapse="/"),
+                   paste(temp[c(2,3)], collapse="/"),
+                   paste("not", temp[1]),
+                   paste("not", temp[2]),
+                   paste("not", temp[3]),
+                   paste("not", temp[4]))
+
+      g1names[5:8] <- substr(temp[c(1,2,1,3)], c(1,1,2,2), c(1,1,2,2))
+    }
+    else stop("Unknown cross type: ",crosstype)
+  }
+  if(chrtype[2] != "X") {
+    if(crosstype == "f2") 
+      g2names <- c(g2names, paste("not", g2names[c(3,1)]))
+    else if(crosstype == "bc" || crosstype == "risib" || crosstype=="riself" || crosstype=="dh") {
+    }
+    else if(crosstype == "4way") {
+      temp <- g2names
+      g2names <- c(temp,
+                   paste(temp[c(1,3)], collapse="/"),
+                   paste(temp[c(2,4)], collapse="/"),
+                   paste(temp[c(1,2)], collapse="/"),
+                   paste(temp[c(3,4)], collapse="/"),
+                   paste(temp[c(1,4)], collapse="/"),
+                   paste(temp[c(2,3)], collapse="/"),
+                   paste("not", temp[1]),
+                   paste("not", temp[2]),
+                   paste("not", temp[3]),
+                   paste("not", temp[4]))
+
+      g2names[5:8] <- substr(temp[c(1,2,1,3)], c(1,1,2,2), c(1,1,2,2))
+    }
+    else stop("Unknown cross type: ",crosstype)
+  }
+  g1names <- c("-", g1names)
+  g2names <- c("-", g2names)
+
   g1 <- as.character(g1)
   g2 <- as.character(g2)
 
@@ -830,6 +845,14 @@ function(cross, mname1, mname2)
   
   tab <- table(g1, g2)
   names(attributes(tab)$dimnames) <- c(mname1, mname2)
+
+  if(eliminate.zeros) { # eliminate rows and columns with no data (but always include missing data row and column)
+    rs <- apply(tab, 1, sum); rs[1] <- 1
+    tab <- tab[rs>0,,drop=FALSE]
+    cs <- apply(tab, 2, sum); cs[1] <- 1
+    tab <- tab[,cs>0,drop=FALSE]
+  }
+
   tab
 }
 
@@ -875,13 +898,16 @@ function(cross, chr, order, error.prob=0.0001,
   map.function <- match.arg(map.function)
   
   # check chromosome argument
-  if(is.character(chr)) {
-    old.chr <- chr
+  if(!missing(chr)) {
+    chr <- matchchr(chr, names(cross$geno))
+    if(length(chr) > 1) {
+      warning("switch.order can deal with just one chromosome at a time")
+      chr <- chr[1]
+    }
+    cchr <- chr
     chr <- match(chr, names(cross$geno))
-    if(length(chr) > 1) chr <- chr[1]
-    if(is.na(chr))
-      stop("There is no chromosome named", chr)
   }
+  else chr <- 1
 
   # check order argument
   n.mar <- nmar(cross)
@@ -924,13 +950,13 @@ function(cross, chr, order, error.prob=0.0001,
 
   # re-estimate rec fracs for re-ordered chromosome
   if(flag==1) {
-    temp <- est.rf(subset(cross, chr=chr))$rf
+    temp <- est.rf(subset(cross, chr=cchr))$rf
     rf[oldcols,oldcols] <- temp
     cross$rf <- rf
   }
 
   # re-estimate map
-  newmap <- est.map(subset(cross,chr=chr),
+  newmap <- est.map(subset(cross,chr=cchr),
                     error.prob=error.prob, map.function=map.function,
                     maxit=maxit, tol=tol, sex.sp=sex.sp)
 
@@ -965,31 +991,7 @@ function(x, chr, ind, ...)
 
   # pull out relevant chromosomes
   if(!missing(chr)) {
-    if(is.logical(chr)) {
-      if(length(chr) != n.chr) 
-        stop("If logical, chr argument must have length ", n.chr)
-      chr <- sort((1:n.chr)[chr])
-    }
-        
-    if(is.numeric(chr)) {
-      # if all negative numbers, convert to positive
-      if(all(chr < 1)) chr <- sort((1:n.chr)[chr])
-      else chr <- sort(chr)
-        
-      if(any(chr < 1 | chr > n.chr))
-        stop("Chromosome numbers out of range.")
-    }
-    else {
-      if(any(!(chr %in% names(x$geno))))
-        stop("Not all chromosome names found.")
-      # convert to numeric
-      chr <- sort(match(chr,names(x$geno)))
-    }
-
-    if(length(chr) != length(unique(chr))) {
-      chr <- unique(chr)
-      warning("Dropping duplicate chromosomes")
-    }
+    chr <- matchchr(chr, names(x$geno))
 
     if("rf" %in% names(x)) { # pull out part of rec fracs
       if(totmar(x) != ncol(x$rf))
@@ -1012,20 +1014,61 @@ function(x, chr, ind, ...)
     if(is.logical(ind)) {
       ind[is.na(ind)] <- FALSE
       if(length(ind) != n.ind) 
-        stop("If logical, ind argument must have length ", n.ind)
+        stop("ind argument has wrong length (", length(ind), "; should be ", n.ind, ")")
       ind <- (1:n.ind)[ind]
     }
-        
-    if(is.numeric(ind)) {
-      ind <- ind[!is.na(ind)]
 
-      # if all negative numbers, convert to positive
-      if(all(ind < 1)) ind <- (1:n.ind)[ind]
-        
-      if(any(ind < 1 | ind > n.ind))
-        stop("Individual numbers out of range.")
+    theid <- getid(x)
+
+    if(!is.null(theid)) { # cross has individual IDs
+      if(is.numeric(ind)) {
+        if(all(ind < 0)) {
+          ind <- -ind
+          if(any(is.na(match(ind, theid)))) { # treat as numbers
+            if(any(ind < 1 | ind > n.ind))
+              stop("individuals outside 1 and ", n.ind)
+            ind <- (1:n.ind)[-ind]
+          }
+          else
+            ind <- ind[-match(ind, theid)]
+        }
+        else {
+          if(all(!is.na(match(ind, theid))))
+            ind <- match(ind, theid)
+          else {
+            if(any(ind < 1 | ind > n.ind))
+              stop("individuals outside 1 and ", n.ind)
+          }
+        }
+      }
+      else {
+        ind <- as.character(ind)
+        if(all(substr(ind, 1,1) == "-")) {
+          ind <- substr(ind, 2, nchar(ind))
+          m <- match(ind, theid)
+          if(all(is.na(m)))
+            stop("No matching individuals.")
+          if(any(is.na(m)))
+            warning("Individuals not found: ", paste(ind[is.na(m)]))
+          ind <- (1:n.ind)[-m[!is.na(m)]]
+        }
+        else  {
+          m <- match(ind, theid)
+          if(any(is.na(m)))
+            warning("Individuals not found: ", paste(ind[is.na(m)], collapse=" "))
+          ind <- m[!is.na(m)]
+        }
+      }
+      ind <- ind[!is.na(ind)]
     }
-    else stop("ind argument must be either logical or numeric.")
+    else { # no individual IDs
+      if(!is.numeric(ind))
+        stop("In the absense of individual IDs, ind should be logical or numeric.")
+      if(all(ind < 0))
+        ind <- (1:n.ind)[ind]
+      if(any(ind < 1 | ind > n.ind))
+        stop("individuals outside 1 and ", n.ind)
+    }
     # Note: ind should now be a numeric vector
 
     if(length(ind) == 0)
@@ -1132,13 +1175,15 @@ function(...)
   chr <- names(x$geno)
   n.mar <- nmar(x)
   marnam <- unlist(lapply(x$geno,function(b) colnames(b$data)))
+  marpos <- unlist(lapply(x$geno,function(b) b$map))
 
   map.mismatch <- 0
   for(i in 2:n.args) {
     y <- args[[i]]
     y.marnam <- unlist(lapply(y$geno, function(b) colnames(b$data)))
+    y.marpos <- unlist(lapply(y$geno, function(b) b$map))
     if(chr != names(y$geno) || any(n.mar != nmar(y)) ||
-       any(marnam != y.marnam)) {
+       any(marnam != y.marnam) || any(marpos != y.marpos)) {
       map.mismatch <- 1
       break
     }
@@ -1271,6 +1316,7 @@ function(...)
           for(i in 1:n.args) {
             wh <- prev + 1:n.ind[i]
             prev <- prev + n.ind[i]
+            
             if(classes[i]=="f2") 
               geno[[j]]$prob[wh,,] <- args[[i]]$geno[[j]]$prob
             else # backcross
@@ -1926,7 +1972,7 @@ function(results, chr, qtl.index, prob=0.95, lodcolumn=1, expandtomarkers=FALSE)
   area <- 10^results[,lodcolumn+2]*width
   area <- area/sum(area)
   
-  o <- rev(order(results[,lodcolumn+2]))
+  o <- order(results[,lodcolumn+2], decreasing=TRUE)
   
   cs <- cumsum(area[o])
   
@@ -2095,14 +2141,14 @@ function(cross, marker, newchr, newpos)
   if(is.na(oldindex)) stop(marker, " not found.\n")
   if(length(oldindex) > 1) stop(marker, " found multiple times.\n")
 
-  if(!(newchr %in% names(cross$geno)))
-    stop("Chromosome ", newchr, " not found.\n")
-
   chr <- chr[oldindex]
   pos <- pos[oldindex]
 
   # pull out genotype data
   g <- cross$geno[[chr]]$data[,pos]
+
+  chrtype <- class(cross$geno[[chr]])
+  mapmatrix <- is.matrix(cross$geno[[chr]]$map)
 
   # delete marker
   if(nmar(cross)[chr] == 1)  { # only marker on that chromosome, so drop the chromosome
@@ -2118,6 +2164,26 @@ function(cross, marker, newchr, newpos)
       cross$geno[[chr]]$map <- cross$geno[[chr]]$map[-pos]
   }
 
+
+  if(!(newchr %in% names(cross$geno))) { # create a new chromosome
+    n <- length(cross$geno)
+    cross$geno[[n+1]] <- list("data"=as.matrix(g),
+                              "map"=as.numeric(0))
+    names(cross$geno)[n+1] <- newchr
+    class(cross$geno[[n+1]]) <- chrtype
+    colnames(cross$geno[[n+1]]$data) <- marker
+    if(mapmatrix) {
+      if(missing(newpos)) newpos <- 0
+      cross$geno[[n+1]]$map <- matrix(newpos, ncol=1, nrow=2)
+      colnames(cross$geno[[n+1]]$map) <- marker
+    }
+    else {
+      if(missing(newpos)) newpos <- 0
+      cross$geno[[n+1]]$map <- newpos
+      names(cross$geno[[n+1]]$map) <- marker
+    }
+    return(cross)
+  }
 
   if(missing(newpos)) {
     # add marker to end of new chromosome
@@ -2456,13 +2522,19 @@ function( cross, chr, pos)
 
   map = pull.map(cross)
 
-  if(is.matrix(map[[1]]) && nrow(map[[1]]) > 1) 
+  if(is.matrix(map[[1]]) && nrow(map[[1]]) > 1)
     stop("This function works only for crosses with sex-averaged maps.")
 
   if(length(chr) == 1 && length(pos) > 1) {
     chr <- rep(chr,length(pos))
   }
-
+  wh <- match(chr, names(cross$geno))
+  if(any(is.na(wh))) {
+    stop("Chr ", paste(chr[is.na(wh)], collapse=", "), " not found.")
+    wh <- wh[!is.na(wh)]
+  }
+  chr <- names(cross$geno)[wh]     
+  
   marker = NULL
   for (i in seq(length(chr))) {
     tmp = map[[chr[i]]]-pos[i]
@@ -2480,7 +2552,7 @@ function( cross, chr, pos)
     }
     marker = rbind(marker,m[f[c(1:2,order(abs(tmp[f]))[1])]])
   }
-  dimnames(marker) <- list(paste("chr",chr,":",pos,sep=""),
+  dimnames(marker) <- list(paste(chr,":",pos,sep=""),
                            c("left","right","close"))
   as.data.frame(marker)
 }
@@ -2524,7 +2596,7 @@ function(cross, verbose=TRUE)
 # comparegeno
 ######################################################################
 comparegeno <-
-function(cross, what=c("proportion","number"))
+function(cross, what=c("proportion","number", "both"))
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -2542,8 +2614,21 @@ function(cross, what=c("proportion","number"))
           n.missing=as.integer(rep(0,n.ind^2)),
           PACKAGE="qtl")
 
-  if(what=="number") return(matrix(z$n.match,n.ind,n.ind))
-  else return(matrix(z$n.match/(n.mar-z$n.missing),n.ind,n.ind))
+  if(what=="number") {
+    z <- matrix(z$n.match,n.ind,n.ind)
+  }
+  else {
+    if(what=="proportion") {
+      z <- matrix(z$n.match/(n.mar-z$n.missing),n.ind,n.ind)
+      diag(z) <- NA
+    }
+    else {
+      prop <- matrix(z$n.match/(n.mar-z$n.missing),n.ind,n.ind)
+      z <- matrix(z$n.match,n.ind,n.ind)
+      z[lower.tri(z)] <- prop[lower.tri(z)]
+    }
+  }
+  z
 }
   
           
@@ -2803,5 +2888,78 @@ function(pheno, n.ind, n.phe)
   FALSE
 }
 
+######################################################################
+# for matching chromosome names
+######################################################################
+matchchr <-
+function(selection, thechr)
+{
+  if(is.factor(thechr)) thechr <- as.character(thechr)
+  if(length(thechr) > length(unique(thechr)))
+    stop("Duplicate chromosome names.")
+
+  if(is.logical(selection)) {
+    if(length(selection) != length(thechr))
+      stop("Logical vector to select chromosomes is the wrong length")
+    return(thechr[selection])
+  }
+
+  if(is.numeric(selection)) selection <- as.character(selection)
+
+  if(length(selection) > length(unique(selection))) {
+    warning("Dropping duplicate chromosomes")
+    selection <- unique(selection)
+  }
+
+  g <- grep("^-", selection)
+  if(length(g) > 0 && length(g) < length(selection))
+    stop("In selecting chromosomes, all must start with '-' or none should.")
+  if(length(g) > 0) {
+    selectomit <- TRUE
+    selection <- substr(selection, 2, nchar(selection))
+  }
+  else selectomit <- FALSE
+      
+  wh <- match(selection, thechr)
+  if(any(is.na(wh))) {
+    warning("Chr ", paste(selection[is.na(wh)], collapse=", "), " not found")
+    wh <- wh[!is.na(wh)]
+    if(length(wh) == 0) return(thechr)
+  }
+  
+  if(selectomit) return(thechr[-wh])
+  thechr[sort(wh)]
+}
+
+######################################################################
+# convert2sa
+#
+# convert a sex-specific maps to a sex-averaged one.
+# We pull out just the female map, and give a warning if the male and
+# female maps are too different
+######################################################################
+convert2sa <-
+function(map, tol=1e-4)
+{  
+  if(!("map" %in% class(map)))
+     stop("Input should have class 'map'.")
+
+  if(!is.matrix(map[[1]]))
+    stop("Input map doesn't seem to be a sex-specific map.")
+
+  theclass <- sapply(map, class)
+
+  fem <- lapply(map, function(a) a[1,])
+
+  dif <- sapply(map, function(a) { a <- apply(a, 1, diff); max(abs(apply(a, 1, diff))) })
+  if(max(dif) > tol)
+    warning("Female and male inter-marker distances differ by as much as ", max(dif), ".")
+
+  for(i in seq(along=theclass)) class(fem[[i]]) <- theclass[i]
+  
+  class(fem) <- "map"
+  fem
+}
 
 # end of util.R
+

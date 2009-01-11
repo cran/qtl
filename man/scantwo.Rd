@@ -16,14 +16,18 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
         incl.markers=FALSE, clean.output=FALSE,
         maxit=4000, tol=1e-4,
         verbose=TRUE, n.perm, perm.strata=NULL,
-        assumeCondIndep=FALSE)
+        assumeCondIndep=FALSE, batchsize=250)
 }
 
 \arguments{
  \item{cross}{An object of class \code{cross}. See
    \code{\link[qtl]{read.cross}} for details.}
- \item{chr}{Optional vector indicating the chromosomes for which LOD scores
-   should be calculated.}
+ \item{chr}{Optional vector indicating the chromosomes for which LOD
+   scores should be calculated.  This should be a vector of character
+   strings referring to chromosomes by name; numeric values are
+   converted to strings.  Refer to chromosomes with a preceding \code{-}
+   to have all chromosomes but those considered.  A logical (TRUE/FALSE)
+   vector may also be used.}
  \item{pheno.col}{Column number in the phenotype matrix which should be
    used as the phenotype.  This can be a vector of integers; for methods
    \code{"hk"} and \code{"imp"} this can be considerably faster than doing
@@ -79,6 +83,8 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
  \item{assumeCondIndep}{If TRUE, assume conditional independence of QTL
    genotypes given marker genotypes.  This is an approximation, but it
    may speed things up.}
+ \item{batchsize}{The number of phenotypes (or permutations) to be run
+   as a batch; used only for methods \code{"hk"} and \code{"imp"}.}
 }
 
 \details{

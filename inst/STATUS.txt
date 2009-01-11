@@ -1,10 +1,150 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-8, Karl W Broman
+copyright (c) 2001-9, Karl W Broman
 Licensed under the GNU General Public License version 2 (June, 1991)
 http://www.rqtl.org
 ----------------------------------------------------------------------
+
+Version 1.10, 1/11/2009:
+
+Major changes:
+
+  Revised the way that the 'chr' argument is treated in functions such
+  as scanone, scantwo, etc., to give greater consitency.  Numbers are
+  interpreted as character strings to be matched to the chromosome
+  names.  Negative numbers and character strings that start with "-"
+  are interpreted as omitting the corresponding chromosomes, matched
+  by name.  One may also use a logical vector (TRUE/FALSE), of the
+  same length as there are chromosomes, indicating which chromosomes
+  are to be considered.  So if an object has three chromosomes named
+  "1", "3", "4", using chr=2 will result in an error, while chr=3 will
+  give the second chromosome (named "3").
+
+  Also revised the way that the 'ind' argument is treated in
+  subset.cross and plot.geno, in the case that the input cross
+  contains individual identifiers in the phenotype data.  The 'ind'
+  argument can still be a logical vector, but otherwise we first seek
+  to match the values against individual identifiers.  For identifiers
+  that are character strings, one may use "-" at the beginning of each
+  to indicate all individuals except those given.
+
+  Added an argument 'batchsize' to scanone and scantwo, so that in the
+  case that multiple phenotypes (or permutations) are to be run as a
+  batch (with method "hk" or "imp"), they can be run in smaller
+  batches (indicated by batchsize).  This can speed things up quite a
+  bit in the case of a very large number of phenotypes (or
+  permutations).
+
+  Added two functions for the de novo construction of a genetic map.
+  formLinkageGroups uses pairwise marker linkage information
+  (calculated with est.rf) to partition markers into linkage groups.
+  orderMarkers uses a quick but not very good algorithm for ordering
+  the markers on a chromosome (minimizing the number of obligate
+  crossovers).  
+
+  Added a function addcovarint, which is similar to addint, but adds
+  one QTL x covariate interaction at a time.
+
+Minor changes:
+
+  Created functions replacemap.scanone and replacemap.scantwo, which
+  enable one to plot scanone or scantwo results relative to another
+  map (with positions interpolated based on marker locations).  These
+  can be used, for example, so that one may plot scanone or scantwo
+  results relative to a physical map.  
+   
+  Added a function replacemap.cross, which is the same as the long
+  extant function replace.map.  This was so that I could the functions
+  replacemap.scanone and replacemap.scantwo (see above).  All can be
+  used with the 'generic' function replacemap.
+
+  Revised the functions nchr, nmar, totmar, so that they work for map
+  objects as well as cross objects.  Separated the help files for
+  nind, nmar, totmar, nphe, nchr from the summary.cross help file, so
+  that the use of the revised functions can be explained.
+
+  Revised the way in which LOD score columns are renamed in c.scanone
+  and cbind.scanoneperm. If labels are given, these are appended to
+  the end of the names, but if labels are not given and there are no
+  repeats in the column names, the column names are left as they were.
+
+  Added functions subset.scanoneperm and subset.scantwoperm for
+  pulling out selected LOD columns in the case that permutation tests
+  were run with multiple phenotypes.
+
+  Revised calc.penalties so that it can deal with the case of scantwo
+  permutations for multiple phenotypes: Added an argument "lodcolumn"
+  for selecting the phenotype; if missing, penalties for all phenotype
+  are calculated.
+
+  Added a function markernames for pulling the marker names out of a
+  cross object (as one long vector).
+
+  summary.cross now checks for duplicate chromosome names and
+  chromosome names that start with '-', either of which would cause
+  major problems.
+
+  Revised summary.cross so that, if the phenotype data are missing
+  column names, an error is given.
+
+  Revised est.map so that the chromosomes are given classes "A" or "X"
+  according to the chromosome types in the input cross object.
+
+  Revised geno.crosstab to deal with partially informative genotypes
+  in an intercross or 4-way cross.  Added an argument so that (by
+  default) columns and rows with no data will not be printed.
+
+  Revised comparegeno to have the option what="both", through which
+  the result has the proportion of matches in the lower triangle and
+  the number of matches in the upper triangle.  Also, now if
+  what="proportion" the diagonal has all missing values (rather than
+  all 1's); otherwise the diagonal contains the number of typed
+  markers for each individual.
+
+  Revised movemarker so that one can move a marker onto a totally new
+  chromosome. 
+
+  Revised sim.cross so that if the input map object has no chromosome
+  names, the chromosomes in the output cross object still have names.
+
+  Revised summary.cross to give a warning if the chromosomes are not
+  named. 
+
+  Added a function convert2sa for converting a sex-specific map object
+  to a sex-averaged map object by pulling out the female marker
+  locations (and issuing a warning if the female and male locations
+  are very different).  This is useful for plotting a simpler version
+  of a map estimated for a 4-way cross via est.map with sex.sp=FALSE.
+
+  Slight change to countqtlterms(), used by stepwiseqtl(), to skip the
+  parsing of interactions in the case that there are 0 or 1
+  interactions; this might speed things up slightly.
+
+  Fixed a slight with plotModel; the lines indicating interactions
+  were a bit askew.
+
+  Slight changes in ripple and bayesint, changing use of rev(order(.))
+  to order(., decreasing=TRUE)
+
+  Added a more clear error message in the case that the number of
+  individuals in the cross doesn't match the number of individuals in
+  the QTL object in fitqtl, stepwiseqtl, addqtl, addint, addpair,
+  refineqtl.
+
+  Fixed a couple of bugs in refineqtl, one concerning convergence and
+  the other concerning dropping individuals with missing covariates or
+  phenotypes in the case that there is just one covariate.
+
+  Fixed a slight problem in c.cross: if maps are not precisely the
+  same, we don't try to combine the genotype probabilities.
+
+  Fixed a bug in summary.scanone with format="allpeaks" for the case
+  that there are no peaks meeting the threshold/alpha.
+
+  Fixed a bug in switch.order related to the change in references to
+  chromosomes.  
+
 
 Version 1.09, 7/18/2008:
 
