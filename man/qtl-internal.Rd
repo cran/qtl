@@ -4,6 +4,7 @@
 \alias{calc.genoprob.special}
 \alias{calc.pairprob}
 \alias{calc.plod}
+\alias{charround}
 \alias{checkcovar}
 \alias{checkformula}
 \alias{checkStepwiseqtlStart}
@@ -19,6 +20,7 @@
 \alias{effectplot.getmark}
 \alias{effectplot.calmeanse}
 \alias{expandf2covar}
+\alias{find.pseudomarkerpos}
 \alias{fitqtlengine}
 \alias{fitstahl.estp}
 \alias{fitstahl.este}
@@ -138,6 +140,7 @@ calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001,
               map.function=c("haldane","kosambi","c-f","morgan"), map,
               assumeCondIndep=FALSE)
 calc.plod(lod, nterms, type=c("f2","bc"), penalties)
+charround(x, digits=1)
 checkcovar(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
 checkformula(formula, qtl.name, covar.name)
 checkStepwiseqtlStart(qtl, formula, covar=NULL)
@@ -155,6 +158,7 @@ dropXcol(type=c("f2","bc"), sexpgm, cross.attr)
 effectplot.getmark(cross, mname)
 effectplot.calmeanse(pheno, mark1, mark2, geno1, geno2, ndraws, var.flag=c("pooled", "group"))
 expandf2covar(thecovar)
+find.pseudomarkerpos(cross, marker, where=c("draws", "prob"))
 fitqtlengine(pheno, qtl, covar=NULL, formula, method=c("imp", "hk"),
              dropone=TRUE, get.ests=FALSE, run.checks=TRUE, cross.attr)
 fitstahl.estp(cross, error.prob=0.0001, m=0, tol=1e-4, maxit=4000)
