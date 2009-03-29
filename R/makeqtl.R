@@ -2,10 +2,22 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-8, Hao Wu and Karl W. Broman
-# last modified Aug, 2008
+# copyright (c) 2002-9, Hao Wu and Karl W. Broman
+# last modified Feb, 2009
 # first written Apr, 2002
-# Licensed under the GNU General Public License version 2 (June, 1991)
+#
+#     This program is free software; you can redistribute it and/or
+#     modify it under the terms of the GNU General Public License, as
+#     published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version. 
+# 
+#     This program is distributed in the hope that it will be useful,
+#     but without any warranty; without even the implied warranty of
+#     merchantability or fitness for a particular purpose.  See the
+#     GNU General Public License for more details.
+# 
+#     A copy of the GNU General Public License is available at
+#     http://www.r-project.org/Licenses/
 # 
 # Part of the R/qtl package
 # Contains: makeqtl, replaceqtl, addtoqtl, dropfromqtl, locatemarker
@@ -193,7 +205,7 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
     }
 
     # make qtl names
-    qtl.name <- paste( paste(chr,sep=""), round(pos,dig), sep="@")
+    qtl.name <- paste( paste(chr,sep=""), charround(pos,dig), sep="@")
   }
 
   # output object
@@ -219,18 +231,18 @@ function(cross, chr, pos, qtl.name, what=c("draws", "prob"))
 #
 ######################################################################
 replaceqtl <-
-function(cross, qtl, indextodrop, chr, pos, qtl.name, drop.lod.profile=TRUE)
+function(cross, qtl, index, chr, pos, qtl.name, drop.lod.profile=TRUE)
 {
   if(class(qtl) != "qtl")
     stop("qtl should have class \"qtl\".")
 
-  if(any(indextodrop < 1 | indextodrop > qtl$n.qtl))
-    stop("indextodrop should be between 1 and ", qtl$n.qtl)
+  if(any(index < 1 | index > qtl$n.qtl))
+    stop("index should be between 1 and ", qtl$n.qtl)
 
-  if(length(indextodrop) != length(chr) || length(indextodrop) != length(pos))
-    stop("indextodrop, chr, and pos should all have the same length.")
-  if(!missing(qtl.name) && length(indextodrop) != length(qtl.name))
-    stop("indextodrop and qtl.name should have the same length.")
+  if(length(index) != length(chr) || length(index) != length(pos))
+    stop("index, chr, and pos should all have the same length.")
+  if(!missing(qtl.name) && length(index) != length(qtl.name))
+    stop("index and qtl.name should have the same length.")
     
   if("geno" %in% names(qtl)) what <- "draws"
   else what <- "prob"
@@ -241,19 +253,19 @@ function(cross, qtl, indextodrop, chr, pos, qtl.name, drop.lod.profile=TRUE)
     newqtl <- makeqtl(cross, chr, pos, qtl.name=qtl.name, what=what)
   
   if(what=="draws") {
-    qtl$geno[,indextodrop,] <- newqtl$geno
+    qtl$geno[,index,] <- newqtl$geno
   }
   else {
-    qtl$prob[indextodrop] <- newqtl$prob
+    qtl$prob[index] <- newqtl$prob
   }
 
-  qtl$name[indextodrop] <- newqtl$name
-  qtl$chr[indextodrop] <- newqtl$chr
-  qtl$pos[indextodrop] <- newqtl$pos
+  qtl$name[index] <- newqtl$name
+  qtl$chr[index] <- newqtl$chr
+  qtl$pos[index] <- newqtl$pos
 
   if(qtl$n.ind != newqtl$n.ind) stop("Mismatch in no. individuals")
 
-  qtl$n.gen[indextodrop] <- newqtl$n.gen
+  qtl$n.gen[index] <- newqtl$n.gen
 
   if(drop.lod.profile)
     attr(qtl, "lodprofile") <- NULL
@@ -306,6 +318,9 @@ function(cross, qtl, chr, pos, qtl.name, drop.lod.profile=TRUE)
   if(qtl$n.ind != newqtl$n.ind)
     stop("Mismatch in no. individuals")
   qtl$n.gen <- c(qtl$n.gen, newqtl$n.gen)
+
+  attr(qtl, "formula") <- NULL
+  attr(qtl, "pLOD") <- NULL
 
   if(drop.lod.profile)
     attr(qtl, "lodprofile") <- NULL
@@ -397,6 +412,9 @@ function(qtl, index, chr, pos, qtl.name, drop.lod.profile=TRUE)
   }
   if("prob" %in% names(qtl))
     qtl$prob <- qtl$prob[idx]
+
+  attr(qtl, "formula") <- NULL
+  attr(qtl, "pLOD") <- NULL
 
   if(drop.lod.profile)
     attr(qtl, "lodprofile") <- NULL
@@ -547,14 +565,17 @@ function(x, chr, horizontal=FALSE, shift=TRUE,
       x$name <- x$altname
 
     if(horizontal) {
-      arrows(thepos, whchr - 0.25, thepos, whchr, lwd=2, col="red", len=0.1)
-      text(thepos, whchr-0.5, x$name, col="red")
+      arrows(thepos, whchr - 0.35, thepos, whchr, lwd=2, col="red", len=0.05)
+      text(thepos, whchr-0.4, x$name, col="red", adj=c(0.5,0))
     }
     else {
-      arrows(whchr + 0.25, thepos, whchr, thepos, lwd=2, col="red", len=0.1)
-      text(whchr+0.5, thepos, x$name, col="red")
+      arrows(whchr + 0.35, thepos, whchr, thepos, lwd=2, col="red", len=0.05)
+      text(whchr+0.4, thepos, x$name, col="red", adj=c(0,0.5))
     }
   }
+
+  attr(qtl, "formula") <- NULL
+  attr(qtl, "pLOD") <- NULL
 
   invisible()
 }
@@ -598,6 +619,9 @@ function(qtl, neworder)
   qtl$chr <- qtl$chr[neworder]
   qtl$pos <- qtl$pos[neworder]
   
+  attr(qtl, "formula") <- NULL
+  attr(qtl, "pLOD") <- NULL
+
   if("lodprofile" %in% names(attributes(qtl))) {
     lodprof <- attr(qtl, "lodprofile")
     if(length(lodprof) == length(neworder))

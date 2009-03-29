@@ -2,10 +2,22 @@
 #
 # addqtl.R
 #
-# copyright (c) 2007-8, Hao Wu and Karl W. Broman
-# last modified Dec, 2008
+# copyright (c) 2007-9, Karl W. Broman
+# last modified Feb, 2009
 # first written Nov, 2007
-# Licensed under the GNU General Public License version 2 (June, 1991)
+#
+#     This program is free software; you can redistribute it and/or
+#     modify it under the terms of the GNU General Public License, as
+#     published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version. 
+# 
+#     This program is distributed in the hope that it will be useful,
+#     but without any warranty; without even the implied warranty of
+#     merchantability or fitness for a particular purpose.  See the
+#     GNU General Public License for more details.
+# 
+#     A copy of the GNU General Public License is available at
+#     http://www.r-project.org/Licenses/
 # 
 # Part of the R/qtl package
 # Contains: addint, print.addint, addqtl, addpair,
@@ -222,7 +234,7 @@ function(x, ...)
   cat("Model formula:")
   w <- options("width")[[1]]
   printQTLformulanicely(attr(x, "formula"), "                   ", w+5, w)
-  cat("\n\n")
+  cat("\n")
 
   cat("Add one pairwise interaction at a time table:\n")
   cat("--------------------------------------------\n")
@@ -1288,7 +1300,7 @@ function(x, ...)
   cat("Model formula:")
   w <- options("width")[[1]]
   printQTLformulanicely(attr(x, "formula"), "                   ", w+5, w)
-  cat("\n\n")
+  cat("\n")
 
   cat("Add one QTL x covar interaction at a time table:\n")
   cat("--------------------------------------------\n")

@@ -5,9 +5,21 @@
 # copyright (c) 2001-9, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Jan, 2009
+# last modified Mar, 2009
 # first written Feb, 2001
-# Licensed under the GNU General Public License version 2 (June, 1991)
+#
+#     This program is free software; you can redistribute it and/or
+#     modify it under the terms of the GNU General Public License, as
+#     published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version. 
+# 
+#     This program is distributed in the hope that it will be useful,
+#     but without any warranty; without even the implied warranty of
+#     merchantability or fitness for a particular purpose.  See the
+#     GNU General Public License for more details.
+# 
+#     A copy of the GNU General Public License is available at
+#     http://www.r-project.org/Licenses/
 # 
 # Part of the R/qtl package
 # Contains: pull.map, markernames, replace.map, c.cross, create.map,
@@ -25,7 +37,7 @@
 #           find.flanking, strip.partials, comparegeno
 #           qtlversion, locate.xo, jittermap, getid,
 #           find.markerpos, geno.crosstab, LikePheVector,
-#           matchchr, convert2sa
+#           matchchr, convert2sa, charround
 #
 ######################################################################
 
@@ -1902,10 +1914,21 @@ function(results, chr, qtl.index, drop=1.5, lodcolumn=1,
   }
 
   rn <- rownames(results)[c(o[1],w,o[2])]
+
   # look for duplicate rows
+  if(length(w)>1 && rn[length(rn)]==rn[length(rn)-1]) w <- w[-length(w)]
+  else if(length(w)>1 && rn[2]==rn[1]) w <- w[-1]
+  rn <- rownames(results)[c(o[1],w,o[2])]
+  
+  # look for more duplicate rows
   if(any(table(rn)> 1)) {
-    rn[2] <- paste(rn[2], "")
-    if(rn[1] == rn[3]) rn[3] <- paste(rn[3], " ")
+    tab <- table(rn)
+    temp <- which(tab>1)
+    for(j in temp) {
+      z <- which(rn==names(tab)[j])
+      for(k in 2:length(z)) 
+        rn[z[k:length(z)]] <- paste(rn[z[k:length(z)]], " ", sep="")
+    }
   }
 
   results <- results[c(o[1],w,o[2]),]
@@ -2164,6 +2187,7 @@ function(cross, marker, newchr, newpos)
       cross$geno[[chr]]$map <- cross$geno[[chr]]$map[-pos]
   }
 
+  if(is.numeric(newchr)) newchr <- as.character(newchr)
 
   if(!(newchr %in% names(cross$geno))) { # create a new chromosome
     n <- length(cross$geno)
@@ -2875,6 +2899,75 @@ function(cross, marker)
 
 
 ######################################################################
+# find the chromosome and position of a vector of pseudomarkers
+######################################################################
+find.pseudomarkerpos <-
+function(cross, marker, where=c("draws","prob"))
+{
+  if(length(marker) != length(unique(marker))) {
+    warning("Dropping duplicate pseudomarker names.")
+    marker <- unique(marker)
+  }
+
+  output <- data.frame(chr=rep("", length(marker)),
+                       pos=rep(NA, length(marker)))
+  output$chr <- as.character(output$chr)
+  rownames(output) <- marker
+  
+  where <- match.arg(where)
+  if(where=="draws" && !("draws" %in% names(cross$geno[[1]]))) 
+      stop("You'll need to first run sim.geno")
+  if(where=="prob" && !("prob" %in% names(cross$geno[[1]])))
+      stop("You'll need to first run calc.genoprob")
+      
+  themap <- vector("list", nchr(cross))
+  names(themap) <- names(cross$geno)
+  for(i in 1:nchr(cross)) {
+    if(where=="draws") 
+      themap[[i]] <- attr(cross$geno[[i]]$draws, "map")
+    else
+      themap[[i]] <- attr(cross$geno[[i]]$prob, "map")
+  }
+
+  chr <- rep(names(themap), sapply(themap, length))
+  if(!is.matrix(themap[[1]])) {
+    pmar <- unlist(lapply(themap, names))
+    pos <- unlist(themap)
+    onemap <- TRUE
+  }
+  else {
+    pos <- unlist(lapply(themap, function(a) a[1,]))
+    pos2 <- unlist(lapply(themap, function(a) a[2,]))
+    onemap <- FALSE
+    pmar <- unlist(lapply(themap, colnames))
+    output <- cbind(output, pos2=rep(NA, length(marker)))
+    colnames(output)[2:3] <- c("pos.female","pos.male")
+  }
+  whnotmarker <- grep("^loc-*[0-9]*", pmar)
+  pmar[whnotmarker] <- paste("c", chr[whnotmarker], ".", pmar[whnotmarker], sep="")
+  
+  for(i in seq(along=marker)) {
+    wh <- match(marker[i], pmar)
+    if(is.na(wh)) {
+      output[i,1] <- NA
+      output[i,2] <- NA
+    }
+    else {
+      if(length(wh) > 1) {
+        warning("Pseudomarker ", marker[i], " found multiple times.")
+        wh <- sample(wh, 1)
+      }
+      output[i,1] <- chr[wh]
+      output[i,2] <- pos[wh]
+      if(!onemap) output[i,3] <- pos2[wh]
+    }
+  }
+
+  output
+}
+
+
+######################################################################
 # utility function for determining whether pheno.col (as argument
 # to scanone etc) can be interpreted as a vector of phenotypes,
 # versus a vector of phenotype columns
@@ -2959,6 +3052,31 @@ function(map, tol=1e-4)
   
   class(fem) <- "map"
   fem
+}
+
+# round as character string, ensuring ending 0's are kept.
+charround <-
+function(x, digits=1)
+{
+  if(digits < 1) 
+    stop("This is intended for the case digits >= 1.")
+  
+  y <- as.character(round(x, digits))
+
+  z <- strsplit(y, "\\.")
+  sapply(z, function(a, digits)
+         {
+           if(length(a) == 1)
+             b <- paste(a[1], ".", paste(rep("0", digits),collapse=""), sep="")
+           else {
+             if(nchar(a[2]) == digits)
+               b <- paste(a, collapse=".")
+             else
+               b <- paste(a[1], ".", a[2],
+                          paste(rep("0", digits - nchar(a[2])), collapse=""),
+                          sep="")
+           }
+         }, digits)
 }
 
 # end of util.R
