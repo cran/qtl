@@ -2,22 +2,21 @@
 #
 # summary.scantwo.R
 #
-# copyright (c) 2001-8, Karl W Broman, Hao Wu, and Brian Yandell
-# last modified Aug, 2008
+# copyright (c) 2001-9, Karl W Broman, Hao Wu, and Brian Yandell
+# last modified May, 2009
 # first written Nov, 2001
 #
 #     This program is free software; you can redistribute it and/or
-#     modify it under the terms of the GNU General Public License, as
-#     published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version. 
+#     modify it under the terms of the GNU General Public License,
+#     version 3, as published by the Free Software Foundation.
 # 
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  See the
-#     GNU General Public License for more details.
+#     merchantability or fitness for a particular purpose.  See the GNU
+#     General Public License, version 3, for more details.
 # 
-#     A copy of the GNU General Public License is available at
-#     http://www.r-project.org/Licenses/
+#     A copy of the GNU General Public License, version 3, is available
+#     at http://www.r-project.org/Licenses/GPL-3
 # 
 # Part of the R/qtl package
 # Contains: summary.scantwo, print.summary.scantwo,
@@ -141,15 +140,23 @@ function(object, thresholds,
     if(length(d)==3) {
       if(!missing(perms)) {
         ncp <- sapply(perms, ncol)
-        if(any(ncp != d[3]))
-          stop("perms have different numbers of columns as object input.\n")
+        if(all(ncp==1)) onepermcol <- TRUE
+        else onepermcol <- FALSE
+        if(any(ncp != d[3])) {
+          if(onepermcol)  {
+            if(lodcolumn > 1)
+              warning("Just one column of permutation results; assuming they apply to all LOD score columns.")
+          }
+          else
+            stop("perms have different numbers of columns as object input.\n")
+        }
       }
       
       if(lodcolumn < 1 || lodcolumn > d[3])
         stop("lodcolumn must be between 1 and ", d[3])
       
       object$lod <- object$lod[,,lodcolumn]
-      if(!missing(perms))
+      if(!missing(perms) && !onepermcol)
         perms <- lapply(perms, function(a, b) a[,b,drop=FALSE], lodcolumn)
     }
   }
@@ -158,8 +165,14 @@ function(object, thresholds,
       d <- ncol(object$pos1.jnt)
       if(!missing(perms)) {
         ncp <- sapply(perms, ncol)
-        if(any(ncp != d))
-          stop("perms have different numbers of columns as object input.\n")
+        if(all(ncp==1)) onepermcol <- TRUE
+        else onepermcol <- FALSE
+        if(any(ncp != d[3])) {
+          if(onepermcol) 
+            warning("Just one column of permutation results; reusing for all LOD score columns.")
+          else
+            stop("perms have different numbers of columns as object input.\n")
+        }
       }
       
       if(lodcolumn < 1 || lodcolumn > d)
@@ -168,7 +181,7 @@ function(object, thresholds,
       for(i in 3:length(object))
         object[[i]] <- object[[i]][,lodcolumn]
 
-      if(!missing(perms))
+      if(!missing(perms) && !onepermcol)
         perms <- lapply(perms, function(a, b) a[,b,drop=FALSE], lodcolumn)
     }
   }
@@ -320,7 +333,7 @@ function(object, for.perm=FALSE)
   if(length(dim(lod)) == 3) n.phe <- dim(lod)[3]
 
   if(!("scanoneX" %in% names(object)) ||
-     is.null(object$scanoneX)) {
+     is.null(object$scanoneX) || length(object$scanoneX)==0) {
     if(n.phe==1) scanoneX <- diag(lod)
     else {
       scanoneX <- diag(lod[,,1])
@@ -328,6 +341,10 @@ function(object, for.perm=FALSE)
     }
   }
   else scanoneX <- object$scanoneX
+
+  if((is.matrix(scanoneX) && nrow(scanoneX) != nrow(lod)) ||
+     (!is.matrix(scanoneX) && length(scanoneX) != nrow(lod)))
+    stop("scanoneX component has length ", length(scanoneX), " but should have length ", nrow(lod))
 
   n.chrpair <- n.chr*(n.chr+1)/2
 
@@ -624,12 +641,12 @@ function(object, lodcolumn=1,
 #
 # sets LOD scores that are missing or < 0 to 0
 # If full LOD < add've LOD, set full = add've
-# sets LOD scores for pairs of positions that are not separated
-#     by a marker to 0.
+# sets LOD scores, for pairs of positions that are not separated
+#     by n.mar markers and distance cM, to 0
 ###################################################################### 
 
 clean.scantwo <-
-function(object)
+function(object, n.mar=1, distance=0, ...)
 {
   if(class(object)[1] != "scantwo")
     stop("Input should have class \"scantwo\".")
@@ -649,7 +666,7 @@ function(object)
     {
       out <- x
       for(i in seq(along=x))
-          out[i] <- sum((z >= x[i] & z <= y[i]) | (z <= x[i] & z >= y[i])) +
+          out[i] <- sum((z > x[i] & z < y[i]) | (z < x[i] & z > y[i])) +
             (x[i] == y[i])
           out
     }
@@ -659,10 +676,14 @@ function(object)
     m <- map[map[,1]==names(fmap)[i],2]
     idx <- 1:length(m)+last
     last <- last + length(m)
+
+    toclean <- (outer(m, m, subrou, fmap[[i]]) < n.mar) | (abs(outer(m, m, "-")) <distance)
+    diag(toclean) <- FALSE
+    
     if(length(dim(lod))==3) # case of multiple phenotypes
-      lod[idx,idx,][outer(m, m, subrou, fmap[[i]])==0] <- 0
+      lod[idx,idx,][toclean] <- 0
     else
-      lod[idx,idx][outer(m, m, subrou, fmap[[i]])==0] <- 0
+      lod[idx,idx][toclean] <- 0
   }
 
   # if full LOD < add've LOD, set full = add've
@@ -687,8 +708,6 @@ function(object)
 
   object
 }
-
-
 
 ######################################################################
 #

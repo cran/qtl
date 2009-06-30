@@ -2,24 +2,23 @@
 #
 # add_threshold.R
 #
-# copyright (c) 2006-8, Karl W Broman, Johns Hopkins University
-# last modified Jun, 2007
+# copyright (c) 2006-9, Karl W Broman, Johns Hopkins University
+# last modified Jun, 2009
 # first written Dec, 2006
 #
 #     This program is free software; you can redistribute it and/or
-#     modify it under the terms of the GNU General Public License, as
-#     published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version. 
+#     modify it under the terms of the GNU General Public License,
+#     version 3, as published by the Free Software Foundation.
 # 
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  See the
-#     GNU General Public License for more details.
+#     merchantability or fitness for a particular purpose.  See the GNU
+#     General Public License, version 3, for more details.
 # 
-#     A copy of the GNU General Public License is available at
-#     http://www.r-project.org/Licenses/
+#     A copy of the GNU General Public License, version 3, is available
+#     at http://www.r-project.org/Licenses/GPL-3
 # 
-# Contains: add.threshold
+# Contains: add.threshold, xaxisloc.scanone
 # 
 ######################################################################
 
@@ -95,6 +94,44 @@ function(out, chr, perms, alpha=0.05, lodcolumn=1, gap=25, ...)
     }
   }
   invisible()
+}
+
+# xaxisloc.scanone
+# find x-axis locations for a plot of scanone output
+xaxisloc.scanone <-
+function(out, thechr, thepos, chr, gap=25)
+{
+  if(missing(out)) 
+    stop("You must provide scanone output, so we can get chromosome lengths.")
+  if(!any(class(out) == "scanone"))
+    stop("out should have class \"scanone\".")
+  if(!missing(chr))
+    out <- subset(out, chr=chr)
+  chr <- unique(out[,1])
+
+  if(length(thechr) != 1) {
+    if(length(thepos)==1) 
+      thepos <- rep(thepos, length(thechr))
+    else if(length(thechr) != length(thepos))
+      stop("If thechr and thepos have length>1 they must both have the same length")
+  }
+  else {
+    if(length(thepos)!=1) 
+      thechr <- rep(thechr, length(thepos))
+  }
+
+  if(length(thechr) > 1) {
+    res <- rep(NA, length(thechr))
+    for(i in seq(along=thechr))
+      res[i] <- xaxisloc.scanone(out, chr, thechr[i], thepos[i], gap)
+    return(res)
+  }
+
+  L <- tapply(out[,2], out[,1], function(a) diff(range(a)))
+  L <- L[!is.na(L)]
+  start <- c(0,cumsum(L+gap))
+  
+  start[which(as.character(thechr)==chr)]+thepos
 }
 
 # end of add_threshold.R

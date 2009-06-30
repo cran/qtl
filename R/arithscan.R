@@ -2,22 +2,21 @@
 #
 # arithscan.R
 #
-# copyright (c) 2005-8, Karl W Broman
-# last modified Apr, 2008
+# copyright (c) 2005-9, Karl W Broman
+# last modified May, 2009
 # first written Mar, 2005
 #
 #     This program is free software; you can redistribute it and/or
-#     modify it under the terms of the GNU General Public License, as
-#     published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version. 
+#     modify it under the terms of the GNU General Public License,
+#     version 3, as published by the Free Software Foundation.
 # 
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  See the
-#     GNU General Public License for more details.
+#     merchantability or fitness for a particular purpose.  See the GNU
+#     General Public License, version 3, for more details.
 # 
-#     A copy of the GNU General Public License is available at
-#     http://www.r-project.org/Licenses/
+#     A copy of the GNU General Public License, version 3, is available
+#     at http://www.r-project.org/Licenses/GPL-3
 #
 # Part of the R/qtl package
 # Contains: +.scanone, -.scanone, +.scanoneperm, -.scanoneperm
@@ -291,7 +290,12 @@ function(e1, e2)
     stop("input arguments do not conform.")
 
   e1$lod <- e1$lod - e2$lod
-  if(e1x) e1$scanoneX <- e1$scanoneX - e2$scanoneX
+  if(e1x) {
+    if(is.null(e1$scanoneX) && is.null(e2$scanoneX))
+      e1$scanoneX <- NULL
+    else 
+      e1$scanoneX <- e1$scanoneX - e2$scanoneX
+  }
   
   if(!is.null(df1) && !is.null(df2)) {
     if(length(df1) != length(df2))
@@ -333,7 +337,12 @@ function(e1, e2)
     stop("input arguments do not conform.")
 
   e1$lod <- e1$lod + e2$lod
-  if(e1x) e1$scanoneX <- e1$scanoneX + e2$scanoneX
+  if(e1x) {
+    if(is.null(e1$scanoneX) && is.null(e2$scanoneX))
+      e1$scanoneX <- NULL
+    else 
+      e1$scanoneX <- e1$scanoneX + e2$scanoneX
+  }
   
   if(!is.null(df1) && !is.null(df2)) {
     if(length(df1) != length(df2))

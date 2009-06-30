@@ -2,22 +2,21 @@
 #
 # summary.scanone.R
 #
-# copyright (c) 2001-8, Karl W Broman
-# last modified Sep, 2008
+# copyright (c) 2001-9, Karl W Broman
+# last modified May, 2009
 # first written Sep, 2001
 #
 #     This program is free software; you can redistribute it and/or
-#     modify it under the terms of the GNU General Public License, as
-#     published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version. 
+#     modify it under the terms of the GNU General Public License,
+#     version 3, as published by the Free Software Foundation.
 # 
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  See the
-#     GNU General Public License for more details.
+#     merchantability or fitness for a particular purpose.  See the GNU
+#     General Public License, version 3, for more details.
 # 
-#     A copy of the GNU General Public License is available at
-#     http://www.r-project.org/Licenses/
+#     A copy of the GNU General Public License, version 3, is available
+#     at http://www.r-project.org/Licenses/GPL-3
 # 
 # Part of the R/qtl package
 # Contains: summary.scanone, print.summary.scanone,
@@ -50,8 +49,12 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
   if(format != "onepheno" && !missing(lodcolumn))
     warning("lodcolumn ignored except when format=\"onepheno\".")
 
-  if(!missing(perms) && !any(class(perms) == "scanoneperm"))
-    warning("perms need to be in scanoneperm format.")
+  if(!missing(perms)) {
+    if("scantwoperm" %in% class(perms))
+      perms <- scantwoperm2scanoneperm(perms)
+    else if(!("scanoneperm" %in% class(perms)))
+      warning("perms need to be in scanoneperm format.")
+  }
 
   # check input
   if(missing(perms) && !missing(alpha))
@@ -83,8 +86,26 @@ function(object, threshold, format=c("onepheno", "allpheno", "allpeaks"),
       cn.perms <- colnames(perms)
     }
 
-    if(ncol.object != ncol.perms)
-      stop("scanone input has different number of LOD columns as perms input.")
+    if(ncol.object != ncol.perms) {
+      if(ncol.perms==1) { # reuse the multiple columns
+        origperms <- perms
+        if("xchr" %in% names(attributes(perms))) {
+          for(j in 2:ncol.object) {
+            perms$A <- cbind(perms$A, origperms$A)
+            perms$X <- cbind(perms$X, origperms$X)
+          }
+          cn.perms <- colnames(perms$A) <- colnames(perms$X) <- cn.object
+        }
+        else {
+          for(j in 2:ncol.object)
+            perms <- cbind(perms, origperms)
+          cn.perms <- colnames(perms) <- cn.object
+        }
+        warning("Just one column of permutation results; reusing for all LOD score columns.")
+      }
+      else 
+        stop("scanone input has different number of LOD columns as perms input.")
+    }
     if(!all(cn.object == cn.perms))
       warning("Column names in scanone input do not match those in perms input.")
   }
