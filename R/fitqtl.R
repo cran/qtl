@@ -3,21 +3,20 @@
 # fitqtl.R
 #
 # copyright (c) 2002-9, Hao Wu and Karl W. Broman
-# last modified Feb, 2009
+# last modified Jun, 2009
 # first written Apr, 2002
 #
 #     This program is free software; you can redistribute it and/or
-#     modify it under the terms of the GNU General Public License, as
-#     published by the Free Software Foundation; either version 2 of
-#     the License, or (at your option) any later version. 
+#     modify it under the terms of the GNU General Public License,
+#     version 3, as published by the Free Software Foundation.
 # 
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  See the
-#     GNU General Public License for more details.
+#     merchantability or fitness for a particular purpose.  See the GNU
+#     General Public License, version 3, for more details.
 # 
-#     A copy of the GNU General Public License is available at
-#     http://www.r-project.org/Licenses/
+#     A copy of the GNU General Public License, version 3, is available
+#     at http://www.r-project.org/Licenses/GPL-3
 # 
 # Part of the R/qtl package
 # Contains: fitqtl, fitqtlengine, parseformula, summary.fitqtl,
@@ -936,6 +935,7 @@ function(n)
 deparseQTLformula <-
 function(formula, reorderterms=FALSE)
 {
+  if(is.null(formula)) return(NULL)
   if(reorderterms) {
     if(is.character(formula)) formula <- as.formula(formula)
     factors <- colnames(attr(terms(formula), "factors"))
