@@ -10,7 +10,8 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
-o Fix bug regarding X chromosome in fitqtl.
+o Revise the help file for read.cross to make the coding of genotypes
+  more clear.
 
 o Analysis of binary traits by "hk" in scanone/two.
 
@@ -20,9 +21,6 @@ o In c.cross, include an argument for "flipping" a backcross, so that
   a backcross to (AxB)xB can be combined with an intercross
 
 o plot of genotype frequencies / P-values
-
-o function to identify the XO locations (based on countXO?)
-  [this is locate.xo, I think, but just for a single chromosome.]
 
 o qtl x covar interactions in stepwiseqtl
 

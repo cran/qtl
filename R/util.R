@@ -5,7 +5,7 @@
 # copyright (c) 2001-9, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Jun, 2009
+# last modified Sep, 2009
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 #           print.summary.map, find.pheno,
 #           convert, convert.scanone, convert.scantwo
 #           find.flanking, strip.partials, comparegeno
-#           qtlversion, locate.xo, jittermap, getid,
+#           qtlversion, locateXO, jittermap, getid,
 #           find.markerpos, geno.crosstab, LikePheVector,
 #           matchchr, convert2sa, charround, testchr,
 #           scantwoperm2scanoneperm, subset.map, [.map, [.cross,
@@ -959,8 +959,9 @@ function(cross, chr, order, error.prob=0.0001,
   if("rf" %in% names(cross)) {
     rf <- cross$rf
     # determine column within rec fracs
-    oldcols <- cumsum(c(0,n.mar))[chr]+seq(along=order)
-    newcols <- cumsum(c(0,n.mar))[chr]+order
+    whchr <- which(names(cross$geno)==chr)
+    oldcols <- cumsum(c(0,n.mar))[whchr]+seq(along=order)
+    newcols <- cumsum(c(0,n.mar))[whchr]+order
     rf[oldcols,] <- rf[newcols,]
     rf[,oldcols] <- rf[,newcols]
     colnames(rf)[oldcols] <- colnames(rf)[newcols]
@@ -2436,17 +2437,17 @@ function(object, ...)
 
     len.f <- sapply(fmap,function(a) diff(range(a)))
     len.m <- sapply(mmap,function(a) diff(range(a)))
-    avesp.f <- sapply(fmap,function(a) mean(diff(a)))
-    avesp.m <- sapply(mmap,function(a) mean(diff(a)))
-    maxsp.f <- sapply(fmap,function(a) max(diff(a)))
-    maxsp.m <- sapply(mmap,function(a) max(diff(a)))
+    avesp.f <- sapply(fmap,function(a) {if(length(a)<2) return(NA); mean(diff(a))})
+    avesp.m <- sapply(mmap,function(a) {if(length(a)<2) return(NA); mean(diff(a))})
+    maxsp.f <- sapply(fmap,function(a) {if(length(a)<2) return(NA); max(diff(a))})
+    maxsp.m <- sapply(mmap,function(a) {if(length(a)<2) return(NA); max(diff(a))})
     totlen.f <- sum(len.f)
     totlen.m <- sum(len.m)
 
-    tot.avesp.f <- mean(unlist(lapply(fmap,diff)))
-    tot.avesp.m <- mean(unlist(lapply(mmap,diff)))
-    tot.maxsp.f <- max(maxsp.f)
-    tot.maxsp.m <- max(maxsp.m)
+    tot.avesp.f <- mean(unlist(lapply(fmap,diff)), na.rm=TRUE)
+    tot.avesp.m <- mean(unlist(lapply(mmap,diff)), na.rm=TRUE)
+    tot.maxsp.f <- max(maxsp.f,na.rm=TRUE)
+    tot.maxsp.m <- max(maxsp.m,na.rm=TRUE)
                     
     output <- rbind(cbind(n.mar,len.f,len.m,avesp.f,avesp.m, maxsp.f, maxsp.m),
                     c(tot.mar,totlen.f,totlen.m,tot.avesp.f,tot.avesp.m,
@@ -2463,11 +2464,11 @@ function(object, ...)
     tot.mar <- sum(n.mar)
 
     len <- sapply(map,function(a) diff(range(a)))
-    avesp <- sapply(map,function(a) mean(diff(a)))
-    maxsp <- sapply(map,function(a) max(diff(a)))
+    avesp <- sapply(map,function(a) {if(length(a)<2) return(NA); mean(diff(a))})
+    maxsp <- sapply(map,function(a) {if(length(a)<2) return(NA); max(diff(a))})
     totlen <- sum(len)
-    tot.avesp <- mean(unlist(lapply(map,diff)))
-    tot.maxsp <- max(maxsp)
+    tot.avesp <- mean(unlist(lapply(map,diff)), na.rm=TRUE)
+    tot.maxsp <- max(maxsp, na.rm=TRUE)
                     
     output <- rbind(cbind(n.mar,len,avesp, maxsp),
                     c(tot.mar,totlen,tot.avesp, tot.maxsp))
@@ -2718,22 +2719,28 @@ function()
 
 ######################################################################
 #
-# locate.xo
+# locateXO
 #
 # Locate crossovers on a single chromosome in each individual
 # Look at just the first chromosome
 # 
 ######################################################################
 
-locate.xo <-
-function(cross)
+locateXO <-
+function(cross, chr)
 {
+  if(!missing(chr)) {
+    cross <- subset(cross, chr=chr)
+    if(nchr(cross) != 1)
+      warning("locateXO works on just one chr; considering chr ", names(cross$geno)[1])
+  }
+
   geno <- cross$geno[[1]]$data
   geno[is.na(geno)] <- 0
   type <- class(cross)[1]
 
   if(type != "bc" && type != "f2" && type != "riself" && type != "risib" && type!="dh")
-    stop("locate.xo only working for backcross, intercross or RI strains.")
+    stop("locateXO only working for backcross, intercross or RI strains.")
 
   map <- cross$geno[[1]]$map
   if(is.matrix(map)) map <- map[1,]
