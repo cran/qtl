@@ -17,6 +17,18 @@ http://www.rqtl.org
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
+Version 1.14, 9/30/2009:
+
+Major changes:
+
+  None.
+
+Minor changes:
+
+  Slight changes to read.cross for formats "mm" and "qtlcart",
+  regarding use of the function grep().
+
+
 Version 1.13, 9/10/2009:
 
 Major changes:
