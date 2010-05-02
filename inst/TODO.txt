@@ -10,7 +10,17 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
-o Add functions convert2riself and convert2risib.  
+o In mqmsetcofactors(), we might allow cofactors() to be marker names
+  rather than just marker indices.
+
+o In the various MQM functions, pheno.col might be a phenotype name
+  rather than just numeric index.  Also, it might be a vector of
+  phenotype values.  (Both, as in scanone etc.)
+
+o scantwo: ability to scan just specific chromosome pairs
+
+o scanone with method="hk": Major memory problems in the permutations
+  with multiple phenotypes. 
 
 o Revise the help file for read.cross to make the coding of genotypes
   more clear.

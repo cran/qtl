@@ -1,7 +1,7 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-9, Karl W Broman
+copyright (c) 2001-2010, Karl W Broman
 http://www.rqtl.org
 
     The R/qtl package is free software; you can redistribute it and/or
@@ -16,6 +16,99 @@ http://www.rqtl.org
     A copy of the GNU General Public License, version 3, is available
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
+
+Version 1.15, 5/2/2010:
+
+Major changes:
+
+  In collaboration with Danny Arends, Pjotr Prins, and Ritsert Jansen,
+  we have incorporated Ritsert Jansen's MQM mapping software within
+  R/qtl. (Previously, it was available only through the commercial
+  software package, mapqtl).  See the tutorial at
+  http://www.rqtl.org/tutorials/MQM-tour.pdf
+
+Minor changes:
+
+  Added a function transformPheno for transforming one or more
+  phenotypes in a cross object.
+
+  Added a function convert.map for converting a genetic map from one
+  map function to another.
+
+  Added functions convert2riself and convert2risib, for converting a
+  cross object to be treated as RIL by selfing or sib mating,
+  respectively. 
+
+  Added function simulateMissingData, for omitting genotypes at random
+  from a cross object.
+
+  Revised write.cross so that it can handle non-numeric phenotypes.
+  Also changed the default for the "digits" argument to NULL, so that
+  phenotypes and map positions are not rounded.  
+
+  Revised read.cross to have arguments error.prob and map.function, to
+  be used if est.map is called.
+
+  Revised locateXO: it no longer shifts the first marker to position
+  0, and it has a new argument, full.info; if this is TRUE,
+  the output includes not just the estimated crossover locations but
+  also the endpoints of the intervals to which they are known to reside.
+
+  Revised summary.cross so that if there are > 30 phenotypes, we don't
+  show the percent missing phenotypes for all traits but just overall.
+
+  Revised stepwiseqtl so that if additive.only=TRUE, you only need to
+  give one penalty.
+
+  Revised read.cross with format="csv" so that initial fields in 2nd
+  row need not be completely empty, but can have white space.  (This
+  was a common problem for users importing csv files.)
+
+  In plot.qtl, added argument "justdots", so that one can plot just
+  dots at the QTL rather than arrows and QTL names, and "col", the
+  color used to indicate the QTL.
+
+  Fixed a bug in xaxisloc.scanone for the case of multiple chr/pos in
+  the input.
+
+  Fixed an apparent bug in read.cross for format="qtlcart"; need to
+  treat negative genotype codes as missing.
+
+  Fixed a bug in sim.cross for type="4way"; previously it was just
+  using the female map for both female and male meioses.
+
+  Fixed a bug in find.pseudomarkerpos in the case of sex-specific maps
+  (as in a 4-way cross).
+
+  lodint and bayesint now stop with an error if chr or qtl.index have
+  length > 1.  Before, they gave weird results and a meaningless
+  error. 
+
+  In read.cross with format="csv", give a better error message if
+  there are odd values in the marker positions.
+
+  Fixed a bug in scanone/scantwo for RIL on the X chromosome; the X
+  chromosome needs to be treated like to autosomes.  We can't really
+  deal with the sexes properly here.
+
+  Revised scanone and scantwo so that, if using multiple CPUs via snow
+  and calculations are stopped early, the cluster nodes are stopped on
+  exit.
+
+  Revised summary.cross so that, for cross type "riself", there's no
+  warning about a chromosome named "X" having class "A".
+
+  Removed some odd erroneous code from the plot.qtl function.
+
+  Fixed a bug in summary.scanone that shows up in the case of multiple
+  LOD columns with permutations and format="allpeaks".
+
+  Fixed a bug in scanone permutations in the case of multiple
+  phenotypes with missing data.
+
+  Fixed a problem in effectplot that arose from an apparent bug in
+  weighted.mean in R version 2.10.1
+
 
 Version 1.14, 9/30/2009:
 
