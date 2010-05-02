@@ -35,7 +35,27 @@
 \alias{genotab.em}
 \alias{getid}
 \alias{getsex}
+
+\alias{addmarkerstointervalmap}
+\alias{calculatedensity}
+\alias{checkdistances}
+\alias{circlelocations}
+\alias{drawcirculargenome}
+\alias{drawspline}
+\alias{estimatemarkerlod}
+\alias{getChr}
+\alias{getchromosomelength}
+\alias{getgenomelength}
+\alias{locationtocircle}
+\alias{loopthroughmulti}
+\alias{mqmextractpseudomarkers}
+\alias{mqm_version}
+\alias{scanall}
+\alias{scoremissingmarkers}
+\alias{stepsize}
+
 \alias{getgenonames}
+\alias{getThird}
 \alias{grab.arg.names}
 \alias{imf.cf}
 \alias{imf.h}
@@ -59,8 +79,11 @@
 \alias{mf.stahl}
 \alias{mybinaryrep}
 \alias{orderMarkers.sub}
+\alias{ourline}
+\alias{ourstop}
 \alias{parseformula}
 \alias{plot.effectscan}
+\alias{polyplot}
 \alias{print.addcovarint}
 \alias{print.addint}
 \alias{print.compactqtl}
@@ -117,6 +140,8 @@
 \alias{sim.cross.bc}
 \alias{sim.cross.f2}
 \alias{sim.ril}
+\alias{snowCoreALL}
+\alias{snowCoreBOOT}
 \alias{subrousummaryscantwo}
 \alias{summary.scantwocondensed}
 \alias{summary.addcovarint}
@@ -151,7 +176,7 @@ checkformula(formula, qtl.name, covar.name)
 checkStepwiseqtlStart(qtl, formula, covar=NULL)
 clean(object, \dots)
 condense(object)
-convert(object)
+convert(object, \dots)
 convertMWril(cross, parents, error.prob=0)
 countqtlterms(formula, ignore.covar=TRUE)
 create.map(map, step, off.end, stepwidth=c("fixed", "variable"))
@@ -181,9 +206,29 @@ markerforwself2(x, y, maxsize=7)
 genotab.em(dat, tol=1e-6, maxit=10000, verbose=FALSE)
 getid(cross)
 getsex(cross)
+
+addmarkerstointervalmap(cross,intervalresult,verbose=FALSE)
+calculatedensity(cross,distance=30)
+checkdistances(cross,cofactors,dist=5)
+circlelocations(nt)
+drawcirculargenome(result,lodmarkers=FALSE,spacing=50)
+drawspline(cn1, cn2, lwd = 1,col="blue",\dots)
+estimatemarkerlod(interresults)
+getChr(x)
+getchromosomelength(result, chr)
+getgenomelength(result)
+locationtocircle(result, chr, loc, spacing=50, fixoutofbounds=TRUE, verbose=FALSE)
+loopthroughmulti(cross,result,save=FALSE,spacing=100)
+mqmextractpseudomarkers(mqmresult)
+mqm_version()
+scanall(cross, scanfunction=scanone, multicore=TRUE, n.clusters=1, batchsize=10, FF=0,cofactors=NULL, \dots, plot=FALSE, verbose=FALSE)
+scoremissingmarkers(cross)
+stepsize(mqmpseudomarkers)
+
 getgenonames(type=c("f2","bc","riself","risib","4way","dh","special"),
              chrtype=c("A","X"), expandX=c("simple","standard","full"),
              sexpgm, cross.attr)
+getThird(x)
 grab.arg.names(\dots)
 imf.cf(r)
 imf.h(r)
@@ -207,9 +252,15 @@ mf.m(d)
 mf.stahl(d, m=0, p=0)
 mybinaryrep(n)
 orderMarkers.sub(cross, chr, window=7, use.ripple=TRUE)
+ourline()
+ourstop(...)
 parseformula(formula, qtl.dimname, covar.dimname)
 \method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
      add.legend=TRUE, alternate.chrid=FALSE, \dots)
+polyplot(x, type='b', legend=TRUE,legendloc=0, labels=NULL, cex =
+         par("cex"), pch = 19, gpch = 21, bg = par("bg"), color = par("fg"),
+         col=NULL, ylim=range(x[is.finite(x)]), xlim = NULL, main = NULL, xlab =
+         NULL, ylab = NULL, add=FALSE, ... ) 
 \method{print}{addcovarint}(x, \dots)
 \method{print}{addint}(x, \dots)
 \method{print}{compactqtl}(x, \dots)
@@ -300,6 +351,8 @@ sim.cross.f2(map, model, n.ind, error.prob, missing.prob,
              partial.missing.prob, keep.errorind, m, p, map.function)
 sim.ril(map, n.ril=1, type=c("sibmating", "selfing"), n.str=c("2","4","8"),
         m=0, p=0, error.prob=0, missing.prob=0, random.cross=TRUE)
+snowCoreALL(x, all.data, scanfunction, cofactors, verbose=FALSE, \dots)
+snowCoreBOOT(x, all.data, scanfunction, bootmethod, cofactors, verbose=FALSE, \dots)
 subrousummaryscantwo(object, for.perm=FALSE)
 \method{summary}{scantwocondensed}(object, thresholds, 
          what=c("best", "full", "add", "int"),
@@ -311,10 +364,10 @@ subrousummaryscantwo(object, for.perm=FALSE)
 testchr(selection, thechr)
 vbscan(cross, pheno.col=1, upper=FALSE, method="em", maxit=4000,
        tol=1e-4)
-write.cross.csv(cross, filestem="data", digits=5, rotate=FALSE,
+write.cross.csv(cross, filestem="data", digits=NULL, rotate=FALSE,
                 split=FALSE)
-write.cross.gary(cross, digits)
-write.cross.mm(cross, filestem="data", digits=5)
+write.cross.gary(cross, digits=NULL)
+write.cross.mm(cross, filestem="data", digits=NULL)
 write.cross.qtlcart(cross, filestem="data")
 }
 

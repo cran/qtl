@@ -1,0 +1,31 @@
+This directory contains standalone binaries of R/qtl (currently MQM
+implentations).
+
+run:
+
+  cd ./contrib/bin
+  cmake .
+	make 
+	make test   
+  (the binary is 'mqm').
+
+(you will need the standard GNU gcc set, as well as cmake)
+
+To run regression testing from the default R interpreter:
+
+  rm CMakeCache.txt ; cmake -DTEST_R=TRUE 
+  make testR
+
+To test all
+
+  make testall
+
+To run a single test you can use regular expressions (man ctest), e.g.
+
+  ctest -R TestMQMF2_test0 
+
+Both build and install the 'R/qtl' package in its default location before
+running the test scripts. You need both R and lapack, on Debian/Ubuntu:
+
+  apt-get install r-base r-base-dev liblapack-dev
+

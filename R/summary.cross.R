@@ -2,8 +2,8 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-9, Karl W Broman
-# last modified Apr, 2009
+# copyright (c) 2001-2010, Karl W Broman
+# last modified Apr, 2010
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -81,7 +81,10 @@ function(object,...)
   typings <- typings/sum(typings)
 
   # amount of missing phenotype data
-  missing.phe <- as.numeric(cbind(apply(object$pheno,2,function(a) mean(is.na(a)))))
+  if(ncol(object$pheno) <= 30)
+    missing.phe <- as.numeric(cbind(apply(object$pheno,2,function(a) mean(is.na(a)))))
+  else
+    missing.phe <- mean(as.numeric(is.na(object$pheno)))
 
   # check that, in the case of a "4way" cross, the genetic
   #     maps are matrices with 2 rows, and that for other crosses,
@@ -264,7 +267,7 @@ function(object,...)
     chr.nam <- as.character(1:length(chr.class))
   }
     
-  if(any(chr.class=="A" & (chr.nam=="X" | chr.nam=="x"))) {
+  if(type != "riself" && any(chr.class=="A" & (chr.nam=="X" | chr.nam=="x"))) {
     wh <- which(chr.nam=="X" | chr.nam=="x")
     warning("Chromosome \"", chr.nam[wh], "\" has class \"A\" but probably ",
             "should have class \"X\".")

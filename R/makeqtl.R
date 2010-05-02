@@ -2,9 +2,11 @@
 #
 # makeqtl.R
 #
-# copyright (c) 2002-9, Hao Wu and Karl W. Broman
-# last modified Sep, 2009
+# copyright (c) 2002-2010, Hao Wu and Karl W. Broman
+# last modified Apr, 2010
 # first written Apr, 2002
+#
+# Modified by Danny Arends
 #
 #     This program is free software; you can redistribute it and/or
 #     modify it under the terms of the GNU General Public License,
@@ -480,6 +482,7 @@ function(object, ...)
   rownames(output) <- object$altname
   
   attr(output, "type") <- type
+  if(!is.null(attr(object,"mqm"))) attr(output, "mqm") <- attr(object,"mqm")
   if(type=="draws") attr(output, "n.draws") <- n.draws
   class(output) <- c("summary.qtl", "data.frame")
 
@@ -503,7 +506,7 @@ function(x, ...)
     if(type=="draws")
       thetext <- paste("imputed genotypes, with", attr(x, "n.draws"), "imputations.")
     else thetext <- "genotype probabilities."
-  
+    if(!is.null(attr(x,"mqm"))) thetext <- paste("model created by mqmscan")
     cat("  QTL object containing", thetext, "\n\n")
 
     print.data.frame(x, digits=5)
@@ -526,7 +529,8 @@ function(x, ...)
 ######################################################################
 plot.qtl <-
 function(x, chr, horizontal=FALSE, shift=TRUE,
-         show.marker.names=FALSE,  alternate.chrid=FALSE, ...)
+         show.marker.names=FALSE,  alternate.chrid=FALSE,
+         justdots=FALSE, col="red", ...)
 {
   if(!("qtl" %in% class(x)))
     stop("input should be a qtl object")
@@ -569,18 +573,24 @@ function(x, chr, horizontal=FALSE, shift=TRUE,
     if(length(grep("^.+@[0-9\\.]+$", x$name)) == length(x$name))
       x$name <- x$altname
 
-    if(horizontal) {
-      arrows(thepos, whchr - 0.35, thepos, whchr, lwd=2, col="red", len=0.05)
-      text(thepos, whchr-0.4, x$name, col="red", adj=c(0.5,0))
+    if(!justdots) {
+      if(horizontal) {
+        arrows(thepos, whchr - 0.35, thepos, whchr, lwd=2, col=col, len=0.05)
+        text(thepos, whchr-0.4, x$name, col=col, adj=c(0.5,0))
+      }
+      else {
+        arrows(whchr + 0.35, thepos, whchr, thepos, lwd=2, col=col, len=0.05)
+        text(whchr+0.4, thepos, x$name, col=col, adj=c(0,0.5))
+      }
     }
     else {
-      arrows(whchr + 0.35, thepos, whchr, thepos, lwd=2, col="red", len=0.05)
-      text(whchr+0.4, thepos, x$name, col="red", adj=c(0,0.5))
+      if(horizontal) 
+        points(thepos, whchr, pch=16, col=col)
+      else {
+        points(whchr, thepos, pch=16, col=col)
+      }
     }
   }
-
-  attr(qtl, "formula") <- NULL
-  attr(qtl, "pLOD") <- NULL
 
   invisible()
 }

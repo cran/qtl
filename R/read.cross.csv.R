@@ -2,8 +2,8 @@
 #
 # read.cross.csv.R
 #
-# copyright (c) 2000-9, Karl W Broman
-# last modified Apr, 2009
+# copyright (c) 2000-2010, Karl W Broman
+# last modified Apr, 2010
 # first written Aug, 2000
 #
 #     This program is free software; you can redistribute it and/or
@@ -79,16 +79,22 @@ function(dir, file, na.strings=c("-","NA"),
     data <- as.data.frame(t(data), stringsAsFactors=FALSE)
 
   # determine number of phenotypes based on initial blanks in row 2
-  if(data[2,1] != "")
+  if(length(grep("^\\s*$", data[2,1]))==0)
     stop("You must include at least one phenotype (e.g., an index).")
-  n.phe <- min(which(data[2,] != ""))-1
+  empty <- grep("^\\s*$", data[2,])
+  n.phe <- min((1:ncol(data))[-empty])-1
 
   # Is map included?  yes if first n.phe columns in row 3 are all blank
-  if(all(!is.na(data[3,1:n.phe]) & data[3,1:n.phe]=="")) {
+  empty <- rep(FALSE, n.phe)
+  empty[grep("^\\s*$", data[3,1:n.phe])] <- TRUE
+  if(all(!is.na(data[3,1:n.phe]) & empty)) {
     map.included <- TRUE
     map <- asnumericwithdec(unlist(data[3,-(1:n.phe)]), dec=dec)
-    if(any(is.na(map))) 
-      stop("There are missing marker positions.")
+    if(any(is.na(map))) {
+      temp <- unique(unlist(data[3,-(1:n.phe)])[is.na(map)])
+      stop(paste("There are missing marker positions.\n",
+                 "   In particular, we see these values: ", paste("\"", temp, "\"", collapse=" ", sep="")))
+    }
     nondatrow <- 3
   }
   else {
