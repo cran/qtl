@@ -10,8 +10,8 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
-o stepwiseqtl: change indications of QTL locations from "7:47.7" to
-  "7@47.7".  
+o Bug in estimates from fitqtl for RIL: they need to be divided in
+  half.  
 
 o In mqmsetcofactors(), we might allow cofactors() to be marker names
   rather than just marker indices.
