@@ -8,7 +8,7 @@
 #
 # 
 # first written Februari 2009
-# last modified April 2010
+# last modified July 2010
 #
 #     This program is free software; you can redistribute it and/or
 #     modify it under the terms of the GNU General Public License,
@@ -35,13 +35,12 @@
 ######################################################################
 	
 mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominance"),forceML=FALSE,
-                    cofactor.significance=0.02,em.iter=1000,window.size=25.0,step.size=5.0,
-                    step.min=-20.0,step.max=220,logtransform = FALSE,
-					estimate.map = FALSE,plot=FALSE,verbose=FALSE, outputmarkers=TRUE, multicore=TRUE, batchsize=10, n.clusters=1,test.normality=FALSE){
+                    cofactor.significance=0.02,em.iter=1000,window.size=25.0,step.size=5.0,logtransform = FALSE,
+					estimate.map = FALSE,plot=FALSE,verbose=FALSE, outputmarkers=TRUE, multicore=TRUE, batchsize=10, n.clusters=1,test.normality=FALSE,off.end=0){
   
   start <- proc.time()
   model <- match.arg(model)
-  step.max <- as.integer(ceiling((step.max+step.size)/step.size)*step.size)
+
   #Because iirc we cannot pass booleans from R to C
   if(forceML){
     forceML <- 1           #1 -> Maximum Likelyhood
@@ -90,11 +89,15 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 		geno <- NULL
 		chr <- NULL
 		dist <- NULL
-		out.qtl <- NULL	
+    newcmbase <- NULL
+		out.qtl <- NULL
 		for(i in 1:n.chr) {
+      #We always shift the marker positions to 0
 			geno <- cbind(geno,cross$geno[[i]]$data)
 			chr <- c(chr,rep(i,dim(cross$geno[[i]]$data)[2]))
-			dist <- c(dist,cross$geno[[i]]$map)
+      newcmbase = c(newcmbase,min(cross$geno[[i]]$map))
+      cross$geno[[i]]$map <- cross$geno[[i]]$map-(min(cross$geno[[i]]$map))
+      dist <- c(dist,cross$geno[[i]]$map)
 		}
 		if(cofactor.significance <=0 || cofactor.significance >= 1){
 			stop("cofactor.significance must be between 0 and 1.\n")
@@ -113,7 +116,7 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 		if (length(pheno.col) > 1){
       cross$pheno <- cross$pheno[,pheno.col]   #Scale down the triats
       result <- mqmscanall( cross,cofactors=cofactors,forceML=forceML,model=model,
-                        cofactor.significance=cofactor.significance,step.min=step.min,step.max=step.max,step.size=step.size,window.size=window.size,
+                        cofactor.significance=cofactor.significance,step.size=step.size,window.size=window.size,
                         logtransform=logtransform, estimate.map = estimate.map,plot=plot, verbose=verbose,n.clusters=n.clusters,batchsize=batchsize)
 			return(result)
 		}
@@ -221,19 +224,15 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 				}
 			}
 		}
-
+    step.min = -off.end;
+    step.max = max(dist)+step.size+off.end;
+    step.max <- as.integer(ceiling((step.max+step.size)/step.size)*step.size)
 		if((step.min+step.size) > step.max){
 			stop("step.max needs to be >= step.min + step.size")
 		}
-		if(step.min>0){
-			stop("step.min needs to be <= 0")
-		}		
+#    cat("Step.min:",step.min," Step.max:",step.max,"\n")
 		if(step.size < 1){
 			stop("step.size needs to be >= 1")
-		}
-		max.cm.on.map <- max(unlist(pull.map(cross)))
-		if(step.max < max.cm.on.map){
-				stop("Markers outside of the mapping at ",max.cm.on.map," cM, please set parameter step.max larger than this value.")		
 		}
 		qtlAchromo <- length(seq(step.min,step.max,step.size))
 		if(verbose) cat("INFO: Number of locations per chromosome: ",qtlAchromo, "\n")
@@ -343,17 +342,40 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 	if(backward && !is.null(qc) && model.present){
 	  attr(qtl,"mqmmodel") <- QTLmodel
 	}
-	class(qtl) <- c("scanone",class(qtl)) 
+	class(qtl) <- c("scanone",class(qtl))
 	for( x in 1:nchr(cross)){
 		#Remove pseudomarkers from the dataset and scale to the chromosome
 		to.remove <- NULL
 		chr.length <- max(cross$geno[[x]]$map)
 		markers.on.chr <- which(qtl[,1]==x)
-		to.remove <- markers.on.chr[which(qtl[markers.on.chr,2] > chr.length+step.size)]
-		to.remove <- c(to.remove,markers.on.chr[which(qtl[markers.on.chr,2] < 0)])
-		qtl <- qtl[-to.remove,]
-	}		
-	#Reset plotting and return the results
+		to.remove <- markers.on.chr[which(qtl[markers.on.chr,2] > chr.length+off.end+(2*step.size))]
+		to.remove <- c(to.remove,markers.on.chr[which(qtl[markers.on.chr,2] < -off.end)])
+#    cat(nrow(qtl)," ",x," Markers: ",length(markers.on.chr)," To rem:",length(to.remove),"\n")
+    qtl <- qtl[-to.remove,]
+  }		
+	if(outputmarkers){
+    qtl <- addmarkerstointervalmap(cross,qtl)
+  	qtl <- as.data.frame(qtl)
+    if(backward && !is.null(qc) && model.present){
+      attr(qtl,"mqmmodel") <- QTLmodel
+    }
+    class(qtl) <- c("scanone",class(qtl))   
+  }  
+  for(x in 1:n.chr){
+    markers.on.chr <- which(qtl[,1]==x)
+    if(newcmbase[x] !=0 && nrow(qtl[markers.on.chr,]) > 0){
+      qtl[markers.on.chr,2] <- qtl[markers.on.chr,2]+newcmbase[x]
+      for(n in 1:nrow(qtl[markers.on.chr,])){
+        name <- rownames(qtl[markers.on.chr,])[n]
+        if(!is.na(name) && grepl(".loc",name,fixed=TRUE)){
+          id <- which(name==rownames(qtl))
+          rownames(qtl)[id] <- paste(strsplit(name,".loc",fixed=TRUE)[[1]][1],".loc",as.numeric(strsplit(name,".loc",fixed=TRUE)[[1]][2])+newcmbase[x],sep="")
+        }
+      }
+    }
+  }
+
+  #Plot the results if the user asked for it
 	if(plot){
 		info.c <- qtl
 		#Check for errors in the information content IF err we can't do a second plot
@@ -378,22 +400,12 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 			labels <- paste("QTL",colnames(cross$pheno)[pheno.col])
 			legend("topright", labels,col=c("black"),lty=c(1))
 		}
-	}
-	#Reset the plotting window to contain 1 plot (fot the next upcomming pots
-	if(plot){
 	  op <- par(mfrow = c(1,1))
 	}
+  
 	end.3 <- proc.time()   
 	if(verbose) cat("INFO: Calculation time (R->C,C,C-R): (",round((end.1-start)[3], digits=3), ",",round((end.2-end.1)[3], digits=3),",",round((end.3-end.2)[3], digits=3),") (in seconds)\n")
-	
-	if(outputmarkers){
-    qtl <- addmarkerstointervalmap(cross,qtl)
-  	qtl <- as.data.frame(qtl)
-    if(backward && !is.null(qc) && model.present){
-      attr(qtl,"mqmmodel") <- QTLmodel
-    }
-    class(qtl) <- c("scanone",class(qtl))   
-  }
+
 	qtl
 	}else{
 		stop("Currently only F2, BC, and selfed RIL crosses can be analyzed by MQM.")

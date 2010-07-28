@@ -2,8 +2,8 @@
 #
 # est.map.R
 #
-# copyright (c) 2001-9, Karl W Broman
-# last modified Apr, 2009
+# copyright (c) 2001-2010, Karl W Broman
+# last modified Jul, 2010
 # first written Apr, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -30,14 +30,23 @@
 ######################################################################
 
 est.map <- 
-function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
+function(cross, chr, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","morgan"),
          m=0, p=0, maxit=10000, tol=1e-6, sex.sp=TRUE, verbose=FALSE,
-         omit.noninformative=TRUE)
+         omit.noninformative=TRUE, offset)
 {
   if(!("cross" %in% class(cross)))
     stop("Input should have class \"cross\".")
 
+  if(!missing(chr))
+    cross <- subset(cross, chr=chr)
+
   type <- class(cross)[1]
+
+  if(!missing(offset)) {
+    if(length(offset)==1) offset <- rep(offset, nchr(cross))
+    else if(length(offset) != nchr(cross))
+      stop("offset must have length 1 or n.chr (", nchr(cross), ")")
+  }
 
   if(m < 0 || p < 0 || p > 1)
     stop("Must have m >=0 and 0 <= p <= 1")
@@ -130,18 +139,18 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
       rf <- mf(diff(cross$geno[[i]]$map))
       if(type=="risib" || type=="riself")
         rf <- adjust.rf.ri(rf,substr(type,3,nchar(type)),chrtype[i])
-      rf[rf < 1e-14] <- 1e-14
+#      rf[rf < 1e-14] <- 1e-14
     }
     else {
       # randomize the maps a bit
       orig <- cross$geno[[i]]$map
-      cross$geno[[i]]$map <- cross$geno[[i]]$map +
-        runif(length(cross$geno[[i]]$map), -0.2, 0.2)
+#      cross$geno[[i]]$map <- cross$geno[[i]]$map +
+#        runif(length(cross$geno[[i]]$map), -0.2, 0.2)
 
       rf <- mf(diff(cross$geno[[i]]$map[1,]))
-      rf[rf < 1e-14] <- 1e-14
+#      rf[rf < 1e-14] <- 1e-14
       rf2 <- mf(diff(cross$geno[[i]]$map[2,]))
-      rf2[rf2 < 1e-14] <- 1e-14
+#      rf2[rf2 < 1e-14] <- 1e-14
       if(!sex.sp && chrtype[i]=="X")
         temp.sex.sp <- TRUE
       else temp.sex.sp <- sex.sp
@@ -166,6 +175,7 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
               as.integer(verbose),
               PACKAGE="qtl")
 
+      z$rf[z$rf < 1e-14] <- 1e-14
       if(type=="riself" || type=="risib") 
         z$rf <- adjust.rf.ri(z$rf, substr(type, 3, nchar(type)),
                              chrtype[i], expand=FALSE)
@@ -203,6 +213,7 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
                 as.integer(verbose),
                 PACKAGE="qtl")
       }
+      z$d[z$d < 1e-14] <- 1e-14
       newmap[[i]] <- cumsum(c(min(cross$geno[[i]]$map),z$d))
       names(newmap[[i]]) <- names(cross$geno[[i]]$map)
       attr(newmap[[i]], "loglik") <- z$loglik
@@ -224,6 +235,9 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
               as.integer(verbose),
               PACKAGE="qtl")
               
+      z$rf[z$rf<1e-14] <- 1e-14
+      z$rf2[z$rf2<1e-14] <- 1e-14
+      
       if(!temp.sex.sp) z$rf2 <- z$rf
 
       newmap[[i]] <- rbind(cumsum(c(min(orig[1,]),imf(z$rf))),
@@ -234,6 +248,18 @@ function(cross, error.prob=0.0001, map.function=c("haldane","kosambi","c-f","mor
 
     class(newmap[[i]]) <- chrtype[i]
   } # end loop over chromosomes
+
+
+  if(!missing(offset)) {  # shift map start positions
+    for(i in seq(along=newmap))
+      if(is.matrix(newmap[[i]])) {
+        for(j in 1:2) 
+          newmap[[i]][j,] <- newmap[[i]][j,] - newmap[[i]][j,1] + offset[i]
+      } else {
+          newmap[[i]] <- newmap[[i]] - newmap[[i]][1] + offset[i]
+      }
+  }
+      
 
   class(newmap) <- "map"
   newmap

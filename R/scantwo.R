@@ -2,8 +2,8 @@
 #
 # scantwo.R
 #
-# copyright (c) 2001-9, Karl W Broman and Hao Wu
-# last modified Dec, 2009
+# copyright (c) 2001-2010, Karl W Broman and Hao Wu
+# last modified Jul, 2010
 # first written Nov, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -82,6 +82,12 @@ function(cross, chr, pheno.col=1,
     return(operm[[1]])
   }
 
+  # check perm.strat
+  if(!missing(perm.strata) && !is.null(perm.strata)) {
+    if(length(perm.strata) != nind(cross))
+      stop("perm.strata, if given, must have length = nind(cross) [", nind(cross), "]")
+  }
+
   if(LikePheVector(pheno.col, nind(cross), nphe(cross))) {
     cross$pheno <- cbind(pheno.col, cross$pheno)
     pheno.col <- 1
@@ -147,7 +153,7 @@ function(cross, chr, pheno.col=1,
     # If use="complete.obs", drop individuals with any missing phenotypes
     if(use=="complete.obs") {
       temp <- checkcovar(cross, pheno.col, addcovar, intcovar,
-                         perm.strata, TRUE)
+                         perm.strata, ind.noqtl=NULL, TRUE)
       cross <- temp[[1]]
       pheno <- temp[[2]]
       addcovar <- temp[[3]]
@@ -164,7 +170,7 @@ function(cross, chr, pheno.col=1,
     # drop individuals with missing covariates
     cross$pheno <- cbind(cross$pheno, rep(1, nind(cross)))
     temp <- checkcovar(cross, nphe(cross), addcovar, intcovar,
-                         perm.strata, TRUE)
+                         perm.strata, ind.noqtl=NULL, TRUE)
     cross <- temp[[1]]
     pheno <- cross$pheno[,pheno.col, drop=FALSE]
     addcovar <- temp[[3]]
@@ -208,8 +214,8 @@ function(cross, chr, pheno.col=1,
 
     # reorder LOD score columns and make sure that the names are correct
     dimnames(out$lod) <- list(NULL, NULL, colnames(cross$pheno)[unlist(batches)])
-    out$lod <- out[,,colnames(cross$pheno)[pheno.col]]
-    dimnames(out)[[3]] <- colnames(cross$pheno)[pheno.col]
+    out$lod <- out$lod[,,colnames(cross$pheno)[pheno.col]]
+    dimnames(out$lod)[[3]] <- colnames(cross$pheno)[pheno.col]
     attr(out,"phenotypes") <- colnames(cross$pheno)[pheno.col]
 
     return(out)
@@ -272,7 +278,7 @@ function(cross, chr, pheno.col=1,
   if(n.perm < 0) { # in the midst of permutations
     if(use=="all.obs") {
       temp <- checkcovar(cross, pheno.col, addcovar, intcovar,
-                         perm.strata, n.perm==-1)
+                         perm.strata, ind.noqtl=NULL, n.perm==-1)
       cross <- temp[[1]]
       pheno <- temp[[2]]
       addcovar <- temp[[3]]
@@ -319,9 +325,9 @@ function(cross, chr, pheno.col=1,
   }
   
   if(model=="binary") {
-    if(method != "em") {
+    if(method != "em" && method != "hk") {
       method <- "em"
-      if(n.perm > -2) warning("Only EM algorithm coded for binary traits")
+      if(n.perm > -2) warning("Only EM algorithm and Haley-Knott regression coded for binary traits; using EM")
     }
     if(!is.null(weights)) {
       weights <- NULL
@@ -462,7 +468,7 @@ function(cross, chr, pheno.col=1,
       if(length(o) > 0) # inter-marker locations cited as "c*.loc*"
         w[o] <- paste("c",names(cross$geno)[i],".",w[o],sep="")
       map <- cbind(chr=rep(names(cross$geno)[i],length(map)),
-                   pos=as.data.frame(map) )
+                   pos=as.data.frame(as.numeric(map)) )
       rownames(map) <- w 
 
       # equally spaced positions
@@ -935,7 +941,7 @@ function(cross, chr, pheno.col=1,
           }
         } # end different chromosome
       }
-      else if(model=="binary" && method=="em") {
+      else if(model=="binary") {
         if(i==j) { # same chromosome
 
           if(i==1) { # first time! do null model and get neg log10 likelihood
@@ -1016,24 +1022,45 @@ function(cross, chr, pheno.col=1,
 
           if(verbose>1) cat("  --Done.\n")
 
-          z <- .C("R_scantwo_1chr_binary_em", 
-                  as.integer(n.ind),
-                  as.integer(n.pos[i]),
-                  as.integer(n.gen[i]),
-                  as.double(temp),
-                  as.double(ac),
-                  as.integer(n.ac),
-                  as.double(ic),
-                  as.integer(n.ic),
-                  as.integer(pheno),
-                  as.double(start),
-                  result=as.double(rep(0,n.pos[i]^2)),
-                  as.integer(maxit),
-                  as.double(tol),
-                  as.integer(verbose),
-                  as.integer(n.col2drop),
-                  as.integer(col2drop),
-                  PACKAGE="qtl")
+          if(method=="em") 
+            z <- .C("R_scantwo_1chr_binary_em", 
+                    as.integer(n.ind),
+                    as.integer(n.pos[i]),
+                    as.integer(n.gen[i]),
+                    as.double(temp),
+                    as.double(ac),
+                    as.integer(n.ac),
+                    as.double(ic),
+                    as.integer(n.ic),
+                    as.integer(pheno),
+                    as.double(start),
+                    result=as.double(rep(0,n.pos[i]^2)),
+                    as.integer(maxit),
+                    as.double(tol),
+                    as.integer(verbose),
+                    as.integer(n.col2drop),
+                    as.integer(col2drop),
+                    PACKAGE="qtl")
+          else # h-k regression
+            z <- .C("R_scantwo_1chr_binary_hk", 
+                    as.integer(n.ind),
+                    as.integer(n.pos[i]),
+                    as.integer(n.gen[i]),
+                    as.double(cross$geno[[i]]$prob[,keep.pos[[i]],]),
+                    as.double(temp),
+                    as.double(ac),
+                    as.integer(n.ac),
+                    as.double(ic),
+                    as.integer(n.ic),
+                    as.double(pheno),
+                    result=as.double(rep(0,n.pos[i]^2)),
+                    as.integer(n.col2drop),
+                    as.integer(col2drop),
+                    as.double(tol),
+                    as.integer(maxit),
+                    as.integer(verbose),
+                    PACKAGE="qtl")
+            
 
           # re-organize results
           results[wh.col[[i]],wh.col[[i]]] <-
@@ -1047,26 +1074,47 @@ function(cross, chr, pheno.col=1,
                      nullcoef[-1],rep(0,n.gen[i]*n.gen[j]+
                                       (n.gen[i]*(n.gen[j]-1)*n.intcovar)));
 
-          z <- .C("R_scantwo_2chr_binary_em",
-                  as.integer(n.ind),
-                  as.integer(n.pos[i]),
-                  as.integer(n.pos[j]),
-                  as.integer(n.gen[i]),
-                  as.integer(n.gen[j]),
-                  as.double(cross$geno[[i]]$prob[,keep.pos[[i]],]),
-                  as.double(cross$geno[[j]]$prob[,keep.pos[[j]],]),
-                  as.double(ac),
-                  as.integer(n.ac),
-                  as.double(ic),
-                  as.integer(n.ic),
-                  as.integer(pheno),
-                  as.double(start),
-                  full=as.double(rep(0,n.pos[i]*n.pos[j])),
-                  int=as.double(rep(0,n.pos[i]*n.pos[j])),
-                  as.integer(maxit),
-                  as.double(tol),
-                  as.integer(verbose),
-                  PACKAGE="qtl")
+          if(method=="em")
+            z <- .C("R_scantwo_2chr_binary_em",
+                    as.integer(n.ind),
+                    as.integer(n.pos[i]),
+                    as.integer(n.pos[j]),
+                    as.integer(n.gen[i]),
+                    as.integer(n.gen[j]),
+                    as.double(cross$geno[[i]]$prob[,keep.pos[[i]],]),
+                    as.double(cross$geno[[j]]$prob[,keep.pos[[j]],]),
+                    as.double(ac),
+                    as.integer(n.ac),
+                    as.double(ic),
+                    as.integer(n.ic),
+                    as.integer(pheno),
+                    as.double(start),
+                    full=as.double(rep(0,n.pos[i]*n.pos[j])),
+                    int=as.double(rep(0,n.pos[i]*n.pos[j])),
+                    as.integer(maxit),
+                    as.double(tol),
+                    as.integer(verbose),
+                    PACKAGE="qtl")
+          else # h-k regression
+            z <- .C("R_scantwo_2chr_binary_hk", 
+                    as.integer(n.ind),
+                    as.integer(n.pos[i]),
+                    as.integer(n.pos[j]),
+                    as.integer(n.gen[i]),
+                    as.integer(n.gen[j]),
+                    as.double(cross$geno[[i]]$prob[,keep.pos[[i]],]),
+                    as.double(cross$geno[[j]]$prob[,keep.pos[[j]],]),
+                    as.double(ac),
+                    as.integer(n.ac),
+                    as.double(ic),
+                    as.integer(n.ic),
+                    as.double(pheno),
+                    full=as.double(rep(0,n.pos[i]*n.pos[j])),
+                    int=as.double(rep(0,n.pos[i]*n.pos[j])),
+                    as.double(tol),
+                    as.integer(maxit),
+                    as.integer(verbose),
+                    PACKAGE="qtl")
 
           results[wh.col[[j]],wh.col[[i]]] <-
             t(matrix(z$full,ncol=n.pos[j]))

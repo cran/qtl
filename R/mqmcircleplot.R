@@ -91,10 +91,9 @@ mqmplot.circle <- function(cross, result, highlight=0, spacing=25, interactstren
           }
           if(highlight==0){
             col=colorz[x]
-            title(sub = "Multiple traits")
           }else{
             col=rgb(0.1, 0.1, 0.1, 0.1)  
-            if(highlight==x) title(sub = paste("Multiple traits highlight of:",colnames(cross$pheno)[x]))
+            if(highlight==x) title(main = paste("Circleplot of:",colnames(cross$pheno)[x]))
           }
           for(y in 1:length(model[[4]])){
             qtll <- locationtocircle(templateresult,model[[4]][y],model[[5]][y],spacing=spacing)
@@ -107,13 +106,12 @@ mqmplot.circle <- function(cross, result, highlight=0, spacing=25, interactstren
                   changeB <- (eff$Means[2,2]-eff$Means[2,1])      
                   #interaction
                   qtl2 <- locationtocircle(templateresult,model[[4]][z],model[[5]][z],spacing=spacing)
-                  if(changeA/abs(changeA) !=  changeB/abs(changeB)){
-                    retresults <- rbind(retresults,c(model$name[y],model$name[z],changeA,changeB,mean(eff$SEs)))
-                    drawspline(qtll,qtl2,lwd=2,col="green")
-                  }else{
+                  if(!is.na(changeA) && !is.na(changeB) && !any(is.na(eff$SEs))){
+                    col <- "blue"
+                    if(changeA/abs(changeA) <  changeB/abs(changeB)) col <- "green"
                     if(abs(abs(changeA)-abs(changeB)) > interactstrength*mean(eff$SEs)){       
-                      retresults <- rbind(retresults,c(model$name[y],model$name[z],changeA,changeB,mean(eff$SEs)))
-                      drawspline(qtll,qtl2,lwd=1.5,col="blue")
+                        retresults <- rbind(retresults,c(model$name[y],model$name[z],changeA,changeB,mean(eff$SEs)))
+                        drawspline(qtll,qtl2,lwd=2,col=col)
                     }
                   }
                 }
@@ -129,7 +127,7 @@ mqmplot.circle <- function(cross, result, highlight=0, spacing=25, interactstren
           if(verbose) cat("Trait ",x," has no model\n")
         }
       }
-      legend("bottomleft",c("Trait","QTL"),col=c("black","black"),pch=c(24,19),cex=1)
+      legend("topleft",c("Trait","QTL"),col=c("black","black"),pch=c(24,19),cex=1)
     }
     if(any(class(result)=="scanone") || highlight > 0){
       #single scan result or highlighting one of the multiple
@@ -137,7 +135,6 @@ mqmplot.circle <- function(cross, result, highlight=0, spacing=25, interactstren
         #Just highlight the template result
         result <- templateresult
       }
-      if(verbose) cat("Single trait plot\n")
       model <- mqmgetmodel(result)
       if(!is.null(model)){
          for(y in 1:length(model[[4]])){
@@ -145,16 +142,16 @@ mqmplot.circle <- function(cross, result, highlight=0, spacing=25, interactstren
           points(qtll,col="red",pch=19,cex=1)
           text(qtll*1.15,model[[2]][y],col="red",cex=0.7)
           if(!is.null(cross$locations)){
-            location <- as.numeric(cross$locations[[1]])
+            location <- as.numeric(cross$locations[[highlight]])
             traitl <- locationtocircle(templateresult,location[1],location[2],spacing=spacing)
-            points(traitl,col="red",pch=24,cex=1)
+            points(traitl,col="red",lwd=2,pch=24,cex=1.5)
           }else{
             traitl <- c(0,0)
           }
           if(!(highlight>0))drawspline(traitl,qtll,col="red")
         }   
       }
-      legend("bottomright",c("Significant Cofactor","Interaction Enhance","Interaction Flip"),col=c("red","blue","green"),pch=19,lwd=c(0,1,2),cex=0.75)
+      legend("topright",c("Significant Cofactor","Interaction Increase","Interaction Decrease"),col=c("red","blue","green"),pch=19,lwd=c(0,1,2),cex=0.75)
       if(highlight==0) title(sub = "Single trait")
     }
   }else{
@@ -182,7 +179,7 @@ circlelocations <- function(nt){
 drawspline <- function (cn1, cn2, lwd = 1,col="blue",...){
   x <- cbind(cn1[1],0,cn2[1])
   y <- cbind(cn1[2],0,cn2[2])
-  xspline(x, y, shape=1, lwd=lwd, border=col,...)
+  r <- xspline(x, y, lty=1, shape=1, lwd=lwd, border=col,...)
 }
 
 getchromosomelength <- function(result, chr){
@@ -222,7 +219,6 @@ locationtocircle <- function(result, chr, loc, spacing=50, fixoutofbounds=TRUE, 
 drawcirculargenome <- function(result,lodmarkers=FALSE,spacing=50){
   result <- mqmextractmarkers(result)
   plot(c(-1.1, 1.1), c(-1.1, 1.1), type = "n", axes = FALSE, xlab = "", ylab = "")
-  title(main = "Circular genome plot")
   totallength <- getgenomelength(result)
   nchr <- length(unique(result[,1]))
   cvalues <- circlelocations(totallength+(nchr*spacing))
@@ -243,7 +239,21 @@ drawcirculargenome <- function(result,lodmarkers=FALSE,spacing=50){
       points(locationtocircle(result,result[x,1],result[x,2],spacing=spacing),pch=20)
     }
   }
+  for(x in 1:nchr){
+    chrnumberloc <- locationtocircle(result,x,getchromosomelength(result,x)/2,spacing=spacing)
+    points(t(c(-1.1, -1.15)))
+    points(t(c(-0.9, -1.15)))
+    points(t(c(-0.7, -1.15)))
+    text(t(c(-0.9, -1.0)),paste("Distances in cM"),cex=0.8)
+    text(t(c(-1.1, -1.1)),paste("0 cM"),cex=0.7)
+    text(t(c(-0.9, -1.1)),paste(round((totallength+(nchr*spacing))*(0.2/(2*pi)),dig=1),"cM"),cex=0.7)
+    text(t(c(-0.7, -1.1)),paste(round((totallength+(nchr*spacing))*(0.4/(2*pi)),dig=1),"cM"),cex=0.7)
+    text(0.9*chrnumberloc,paste("Chr",x),cex=0.8)
+
+  }
 }
+
+
 
 loopthroughmulti <- function(cross,result,save=FALSE,spacing=100){
   n <- 1
