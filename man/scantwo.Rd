@@ -38,7 +38,7 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
    of individuals in the cross, and there must be either non-integers or
    values < 1 or > no. phenotypes; this last case may be useful for studying
    transformations.}
- \item{model}{The phenotypic model: the usual normal model or a model for
+ \item{model}{The phenotype model: the usual normal model or a model for
    binary traits.}
  \item{method}{Indicates whether to use the
    the EM algorithm, imputation, Haley-Knott regression, or marker
@@ -131,6 +131,8 @@ scantwo(cross, chr, pheno.col=1, model=c("normal","binary"),
 
   In the case that \code{n.perm} is specified, the R function
   \code{scantwo} is called repeatedly.
+
+  For \code{model="binary"}, a logistic regression model is used.
 }
 
 \section{X chromosome}{
@@ -196,7 +198,7 @@ linkage to the X chromosome.  (See the help file for
   quantitative traits using RFLP linkage maps.  \emph{Genetics}
   \bold{121}, 185--199.
 
-  Sen, \'S. and Churchill, G. A. (2001) A statistical framework for quantitative
+  Sen, \if{latex}{\out{\'S}}\if{html}{\out{&#346;}}\if{text}{S}. and Churchill, G. A. (2001) A statistical framework for quantitative
   trait mapping.  \emph{Genetics} \bold{159}, 371--387.
 
   Soller, M., Brody, T. and Genizi, A. (1976) On the power of experimental

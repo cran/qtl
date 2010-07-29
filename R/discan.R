@@ -2,8 +2,8 @@
 #
 # discan.R
 #
-# copyright (c) 2001-7, Karl W Broman
-# last modified Jul, 2007
+# copyright (c) 2001-2010, Karl W Broman
+# last modified Jul, 2010
 # first written Oct, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -31,9 +31,9 @@
 ######################################################################
 
 discan <-
-function(cross, pheno, method=c("em","mr"),
+function(cross, pheno, method=c("em","hk","mr"),
          addcovar=NULL, intcovar=NULL, maxit=4000, tol=1e-4,
-         verbose=FALSE, give.warnings=TRUE)
+         verbose=FALSE, give.warnings=TRUE, ind.noqtl)
 {
   method <- match.arg(method)
 
@@ -49,6 +49,24 @@ function(cross, pheno, method=c("em","mr"),
   dfA <- -1
   dfX <- parXa <- -1
 
+  # individuals with no QTL effect
+  if(missing(ind.noqtl)) ind.noqtl <- rep(FALSE, nind(cross))
+  else {
+    if(!is.logical(ind.noqtl) || length(ind.noqtl) != nind(cross)) 
+      stop("ind.noqtl be a logical vector of length n.ind (", nind(cross), ")")
+
+    if(sum(ind.noqtl) > 1) {
+      if(method == "mr") {
+        ind.noqtl <- rep(FALSE, nind(cross))
+        warning("ind.noqtl ignored for method=", method, ", model=binary") 
+      }
+      else if(is.null(addcovar) && (!is.logical(ind.noqtl) || any(ind.noqtl))) {
+        ind.noqtl <- rep(FALSE, nind(cross))
+        warning("ind.noqtl ignored when no additive covariates")
+      }
+    }
+  }
+
   if(method=="mr" && n.addcovar+n.intcovar>0)  {
     if(give.warnings) warning("Covariates ignored with method=\"mr\"; use \"em\" instead")
     n.addcovar <- n.intcovar <- addcovar <- intcovar <- 0
@@ -63,7 +81,6 @@ function(cross, pheno, method=c("em","mr"),
   llik0 <- c("A"=NA,"X"=NA)
   nullcoef <- list("A"=NA,"X"=NA)
 
-  # calculate genotype probabilities one chromosome at a time
   for(i in 1:n.chr) {
 
     chrtype <- class(cross$geno[[i]])
@@ -166,7 +183,25 @@ function(cross, pheno, method=c("em","mr"),
 
       if(is.matrix(map)) map <- map[1,]
 
-      if(n.ac + n.ic > 0) {
+      if(method=="hk") {
+        z <- .C("R_scanone_hk_binary",
+                as.integer(n.ind),         # number of individuals
+                as.integer(n.pos),         # number of markers
+                as.integer(n.gen),         # number of possible genotypes
+                as.double(genoprob),       # genotype probabilities
+                as.double(ac),
+                as.integer(n.ac),
+                as.double(ic),
+                as.integer(n.ic),
+                as.double(pheno),          # phenotype data
+                result=as.double(rep(0,n.pos)),
+                as.double(tol),
+                as.integer(maxit),
+                as.integer(verbose),
+                as.integer(ind.noqtl),
+                PACKAGE="qtl")
+      }
+      else if(n.ac + n.ic > 0) {
 
         start <- rep(nullcoef[[chrtype]][1],n.gen)
         if(n.ac > 0)
@@ -189,6 +224,7 @@ function(cross, pheno, method=c("em","mr"),
                 as.integer(maxit),
                 as.double(tol),
                 as.integer(verbose),
+                as.integer(ind.noqtl),
                 PACKAGE="qtl")
       }
       else {
@@ -207,7 +243,7 @@ function(cross, pheno, method=c("em","mr"),
     }
     z <- matrix(z$result,nrow=n.pos)
 
-    if(method == "em") z[,1] <- z[,1] - llik0[chrtype]
+    if(method != "mr") z[,1] <- z[,1] - llik0[chrtype]
     z[is.na(z[,1]),1] <- 0
 
     z <- z[,1,drop=FALSE]

@@ -5,7 +5,7 @@
 # copyright (c) 2001-2010, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified May, 2010
+# last modified Jul, 2010
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -21,9 +21,10 @@
 #     at http://www.r-project.org/Licenses/GPL-3
 # 
 # Part of the R/qtl package
-# Contains: pull.map, markernames, replace.map, c.cross, create.map,
+# Contains: pull.map, markernames, c.cross, create.map,
 #           clean, clean.cross, drop.nullmarkers,
-#           drop.markers, geno.table, genotab.em
+#           drop.markers, pull.markers, drop.dupmarkers
+#           geno.table, genotab.em
 #           mf.k, mf.h, imf.k, imf.h, mf.cf, imf.cf, mf.m, imf.m,
 #           mf.stahl, imf.stahl
 #           switch.order, makeSSmap,
@@ -38,7 +39,8 @@
 #           find.markerpos, geno.crosstab, LikePheVector,
 #           matchchr, convert2sa, charround, testchr,
 #           scantwoperm2scanoneperm, subset.map, [.map, [.cross,
-#           findDupMarkers, convert2riself, convert2risib
+#           findDupMarkers, convert2riself, convert2risib,
+#           switchAlleles, nqrank
 #
 ######################################################################
 
@@ -254,17 +256,22 @@ function(map, step, off.end, stepwidth = c("fixed", "variable"))
       return(map+minloc)
     }
     else if(step>0 && off.end == 0) {
+
       if(ncol(map)==1) return(map+minloc)
 
       a <- seq(floor(min(map[1,])),max(map[1,]),
                by = step)
       a <- a[is.na(match(a,map[1,]))]
 
+      if(length(a)==0) return(map+minloc)
+
       b <- sapply(a,function(x,y,z) {
           ZZ <- min((seq(along=y))[y > x])
           (x-y[ZZ-1])/(y[ZZ]-y[ZZ-1])*(z[ZZ]-z[ZZ-1])+z[ZZ-1] }, map[1,],map[2,])
+
       m1 <- c(a,map[1,])
       m2 <- c(b,map[2,])
+
       names(m1) <- names(m2) <- c(paste("loc",a,sep=""),markernames)
       return(rbind(sort(m1),sort(m2))+minloc)
     }
@@ -539,6 +546,91 @@ function(cross, markers)
 }
 
 ######################################################################
+# pull.markers
+#
+# like drop.markers, but retain just those indicated
+######################################################################
+pull.markers <-
+function(cross, markers)
+{
+  mn <- markernames(cross)
+  m <- match(markers, mn)
+  if(any(is.na(m)))
+    warning("Some markers couldn't be found: ", paste(markers[is.na(m)], collapse=" "))
+  drop.markers(cross, mn[is.na(match(mn, markers))])
+}
+
+######################################################################
+# drop.dupmarkers
+#
+# drop duplicate markers, retaining the consensus genotypes
+######################################################################
+drop.dupmarkers <-
+function(cross, verbose=TRUE)
+{
+  mn <- markernames(cross)
+  tab <- table(mn)
+  if(all(tab==1)) {
+    if(verbose) cat("No duplicate markers.\n")
+    return(cross)
+  }
+
+  dup <- names(tab[tab > 1])
+  if(verbose) cat(" ", length(dup), "duplicate markers\n")
+
+  # get consensus genotypes
+  g <- pull.geno(cross)[,!is.na(match(mn, dup))]
+  ng.omitted <- rep(NA, length(dup))
+  tot.omitted <- 0
+  nmar.omitted <- 0
+  for(i in seq(along=dup)) {
+    gg <- g[,colnames(g)==dup[i],drop=FALSE]
+    res <- apply(gg, 1, function(a)
+                 {
+                   if(all(is.na(a))) return(c(NA, 0))
+                   a <- unique(a[!is.na(a)])
+                   if(length(a)==1) return(c(a, 0))
+                   return(c(NA, 1))
+                 } )
+    if(verbose>1) {
+      cat("  ", dup[i], ":\t", sum(res[2,]), " genotypes omitted\n", sep="")
+      if(sum(res[2,]) > 1) cat("      ", paste(which(res[2,]>0), collapse=" "), "\n")
+    }
+    tot.omitted <- tot.omitted + sum(res[2,])
+
+    flag <- FALSE
+    for(j in seq(along=cross$geno)) {
+      mn <- colnames(cross$geno[[j]]$data)
+      wh <- mn==dup[i]
+      if(!any(wh)) next
+      wh <- which(wh)
+      if(!flag) {
+        flag <- TRUE
+        cross$geno[[j]]$data[,wh[1]] <- res[1,]
+        if(length(wh)==1) next
+        else wh <- wh[-1]
+      }
+      if(length(wh) > 0) {
+        nmar.omitted <- nmar.omitted + length(wh)
+        cross$geno[[j]]$data <- cross$geno[[j]]$data[,-wh,drop=FALSE]
+        if(is.matrix(cross$geno[[j]]$map))
+          cross$geno[[j]]$map <- cross$geno[[j]]$map[,-wh,drop=FALSE]
+        else
+          cross$geno[[j]]$map <- cross$geno[[j]]$map[-wh]
+      }
+    }
+  }
+  if(verbose) {
+    cat("  Total genotypes omitted:", tot.omitted, "\n")
+    cat("  Total markers omitted:  ", nmar.omitted, "\n")
+  }
+
+  clean(cross)
+}                   
+
+
+
+######################################################################
 #
 # geno.table
 #
@@ -548,7 +640,7 @@ function(cross, markers)
 ######################################################################
 
 geno.table <- 
-function(cross, chr)
+function(cross, chr, scanone.output=FALSE)
 {
   if(!any(class(cross) == "cross"))
     stop("Input should have class \"cross\".")
@@ -727,7 +819,19 @@ function(cross, chr)
     results <- cbind(results, P.value=pval)
   }   
 
-  data.frame(chr=rep(names(cross$geno),nmar(cross)),results)
+  if(!scanone.output)
+    return(data.frame(chr=rep(names(cross$geno),nmar(cross)),results))
+
+  temp <- results[,1:(ncol(results)-1)]
+  res <- data.frame(chr=rep(names(cross$geno),nmar(cross)),
+                    pos=unlist(pull.map(cross)),
+                    neglog10P=-log10(results[,ncol(results)]),
+                    missing=temp[,1]/apply(temp, 1, sum),
+                    temp[,-1]/apply(temp[,-1], 1, sum))
+  class(res) <- c("scanone", "data.frame")
+  rownames(res) <- rownames(results)
+  res[,1] <- factor(as.character(res[,1]), levels=unique(as.character(res[,1])))
+  res
 }
 
 
@@ -1009,7 +1113,7 @@ function(cross, chr, order, error.prob=0.0001,
   }
 
   # re-estimate map
-  newmap <- est.map(subset(cross,chr=chr),
+  newmap <- est.map(cross, chr=chr,
                     error.prob=error.prob, map.function=map.function,
                     maxit=maxit, tol=tol, sex.sp=sex.sp)
 
@@ -1538,7 +1642,7 @@ function(cross, method=c("imp","argmax", "no_dbl_XO"), error.prob=0.0001,
 ######################################################################
 
 checkcovar <-
-function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
+function(cross, pheno.col, addcovar, intcovar, perm.strata, ind.noqtl=NULL, verbose=TRUE)
 {
   chrtype <- sapply(cross$geno, class)
 
@@ -1636,6 +1740,7 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
     n.intcovar <- ncol(intcovar)
   }
   if(!is.null(perm.strata)) perm.strata <- perm.strata[keep.ind]
+  if(!is.null(ind.noqtl)) ind.noqtl <- ind.noqtl[keep.ind]
 
   # drop individuals missing any covariates
   if(!is.null(addcovar)) { # note that intcovar is contained in addcovar
@@ -1647,6 +1752,7 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
       if(!is.null(intcovar)) intcovar <- intcovar[!wh,,drop=FALSE]
       n.ind <- nind(cross)
       if(!is.null(perm.strata)) perm.strata <- perm.strata[!wh]
+      if(!is.null(ind.noqtl)) ind.noqtl <- ind.noqtl[!wh]
       if(verbose) warning("Dropping ", sum(wh), " individuals with missing covariates.\n")
     }
   }
@@ -1685,7 +1791,8 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, verbose=TRUE)
   pheno <- as.matrix(pheno)
 
   list(cross=cross, pheno=pheno, addcovar=addcovar, intcovar=intcovar,
-       n.addcovar=n.addcovar, n.intcovar=n.intcovar, perm.strata=perm.strata)
+       n.addcovar=n.addcovar, n.intcovar=n.intcovar, perm.strata=perm.strata, 
+       ind.noqtl=ind.noqtl)
 }
 
 # Find the nearest marker to a particular position
@@ -3278,7 +3385,11 @@ function(map, tol=1e-4)
 
   fem <- lapply(map, function(a) a[1,])
 
-  dif <- sapply(map, function(a) { a <- apply(a, 1, diff); max(abs(apply(a, 1, diff))) })
+  dif <- sapply(map, function(a) { if(ncol(a)==1) return(diff(a))
+                                   a <- apply(a, 1, diff);
+                                   if(is.matrix(a)) return(max(abs(apply(a, 1, diff))))
+                                   abs(diff(a)) })
+
   if(max(dif) > tol)
     warning("Female and male inter-marker distances differ by as much as ", max(dif), ".")
 
@@ -3623,6 +3734,149 @@ function(object, scale=1e-6)
 
   object
 }
+
+
+shiftmap <-
+function(object, offset=0)
+{
+  if("cross" %in% class(object)) {
+    if(length(offset) == 1) offset <- rep(offset, nchr(object))
+    else if(length(offset) != nchr(object))
+      stop("offset must have length 1 or n.chr (", nchr(object), ")")
+
+    for(i in 1:nchr(object)) {
+      if(is.matrix(object$geno[[i]]$map)) {
+        for(j in 1:2)
+          object$geno[[i]]$map[j,] <- object$geno[[i]]$map[j,] - object$geno[[i]]$map[j,1] + offset[i]
+      } else {
+        object$geno[[i]]$map <- object$geno[[i]]$map - object$geno[[i]]$map[1] + offset[i]
+      }
+    }
+  } else if("map" %in% class(object)) {
+    if(length(offset) != 1) offset <- rep(offset, length(object))
+    else if(length(offset) != length(object))
+      stop("offset must have length 1 or n.chr (", length(object), ")")
+    for(i in seq(along=object)) {
+      if(is.matrix(object[[i]])) {
+        for(j in 1:2)
+          object[[i]][j,] <- object[[i]][j,] - object[[i]][j,1] + offset[i]
+      } else {
+        object[[i]] <- object[[i]] - object[[i]][1] + offset[i]
+      }
+    }
+  } else 
+    stop("shiftmap works only for objects of class \"cross\" or \"map\".")
+
+  object
+}
+
+######################################################################
+# switch alleles in a cross
+######################################################################
+switchAlleles <-
+function(cross, markers, switch=c("AB","CD","ABCD", "parents"))
+{
+  type <- class(cross)[1]
+  switch <- match.arg(switch)
+  
+  if(type %in% c("bc", "risib", "riself", "dh")) { 
+    if(switch != "AB")
+      warning("Using switch = \"AB\".")
+
+    found <- rep(FALSE, length(markers))
+    for(i in 1:nchr(cross)) {
+      cn <- colnames(cross$geno[[i]]$data)
+      m <- match(markers, cn)
+      if(any(!is.na(m))) {
+        found[!is.na(m)] <- TRUE
+        for(j in m[!is.na(m)]) {
+          g <- cross$geno[[i]]$data[,j]
+          cross$geno[[i]]$data[!is.na(g) & g==1,j] <- 2
+          cross$geno[[i]]$data[!is.na(g) & g==2,j] <- 1
+        }
+      }
+    }
+
+  }
+  else if(type=="f2") {
+    if(switch != "AB")
+      warning("Using switch = \"AB\".")
+
+    found <- rep(FALSE, length(markers))
+    for(i in 1:nchr(cross)) {
+      cn <- colnames(cross$geno[[i]]$data)
+      m <- match(markers, cn)
+      if(any(!is.na(m))) {
+        found[!is.na(m)] <- TRUE
+        for(j in m[!is.na(m)]) {
+          g <- cross$geno[[i]]$data[,j]
+          cross$geno[[i]]$data[!is.na(g) & g==1,j] <- 3
+          cross$geno[[i]]$data[!is.na(g) & g==3,j] <- 1
+          cross$geno[[i]]$data[!is.na(g) & g==4,j] <- 5
+          cross$geno[[i]]$data[!is.na(g) & g==5,j] <- 4
+        }
+      }
+    }
+  }
+  else if(type=="4way") {
+
+    if(switch=="AB") 
+      newg <- c(2,1,4,3,6,5,7,8,10,9,12,11,14,13)
+    else if(switch=="CD")
+      newg <- c(3,4,1,2,5,6,8,7,10,9,13,14,11,12)
+    else if(switch=="ABCD")
+      newg <- c(4,3,2,1,6,5,8,7,9,10,14,13,12,11)
+    else # switch parents
+      newg <- c(1,3,2,4,7,8,5,6,9,10,11,13,12,14)
+
+    found <- rep(FALSE, length(markers))
+    for(i in 1:nchr(cross)) {
+      cn <- colnames(cross$geno[[i]]$data)
+      m <- match(markers, cn)
+      if(any(!is.na(m))) {
+        found[!is.na(m)] <- TRUE
+        for(j in m[!is.na(m)]) {
+          g <- cross$geno[[i]]$data[,j]
+          for(k in 1:14)
+            cross$geno[[i]]$data[!is.na(g) & g==k,j] <- newg[k]
+        }
+      }
+    }
+
+  }
+
+  if(any(!found))
+    warning("Some markers not found: ", paste(markers[!found], collapse=" "))
+
+  clean(cross)
+}
+
+######################################################################
+#
+# nqrank: Convert a set of quantitative values to the corresponding
+#         normal quantiles (preserving mean and SD)
+#
+######################################################################
+
+nqrank <-
+function(x, jitter=FALSE)
+{
+  y <- x[!is.na(x)]
+  themean <- mean(y, na.rm=TRUE)
+  thesd <- sd(y, na.rm=TRUE)
+
+  y[y == Inf] <- max(y[y<Inf])+10
+  y[y == -Inf] <- min(y[y > -Inf]) - 10
+  if(jitter)
+    y <- rank(y+runif(length(y))/(sd(y)*10^8))
+  else y <- rank(y)
+
+  x[!is.na(x)] <- qnorm((y-0.5)/length(y))
+
+  x*thesd/sd(x, na.rm=TRUE)-mean(x,na.rm=TRUE)+themean
+}
+
+# end of nqrank.R
 
 
 # end of util.R

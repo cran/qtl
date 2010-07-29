@@ -46,13 +46,27 @@ if (test != 966) stop("scanone_mr gives an incorrect result")
 augmentedcross <- mqmaugment(listeria, minprob=1.0, verbose=TRUE)
 nind = nind(augmentedcross)
 if (nind!=120) stop("Number of individuals incorrect: ",nind)
-result <- mqmscan(augmentedcross, logtransform=TRUE, outputmarkers = FALSE)
+result <- mqmscan(augmentedcross, logtransform=TRUE, outputmarkers = FALSE,off.end=0)
 test1 = round(result[5,5]*1000)
 test2 = round(max(result[,5]*1000))
 cat("test1 = ",test1,"\n")
 cat("test2 = ",test2,"\n")
 if (test1 != 76) stop("MQM gives an unexpected result (1)")
-if (test2 != 5426) stop("MQM gives an unexpected result (2)")
+if (test2 != 5384) stop("MQM gives an unexpected result (2)")
+
+# ---- Test for negative markerlocations
+data(hyper)
+hyper <- fill.geno(hyper)
+#Mess up the markers by shifting
+temp <- shiftmap(hyper, offset=10^7)
+out.temp <- mqmscan(temp,verb=TRUE,off.end=10)
+if(!(rownames(out.temp)[3]=="D1Mit296")) stop("MQM something wrong with positive shifts in location")
+#Mess up the dataset by moving 1 marker infront of the chromosome
+hyper$geno[[1]]$map[1] <- -10
+res <- mqmscan(hyper,verbose=T,off.end=100)
+if(any(is.na(res[,3]))) stop("MQM failed to handle negative locations correctly")
+if(!(rownames(res)[2]=="c1.loc-105")) stop("MQM something wrong with negative locations")   #to -15 because off.end defaults to 10
+
 
 cat("Version information:\n")
 cat("R/qtl = ",version$RQTL,"\n")
