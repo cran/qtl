@@ -5,7 +5,7 @@
 # copyright (c) 2001-2010, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Jul, 2010
+# last modified Aug, 2010
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -809,11 +809,40 @@ function(cross, chr, scanone.output=FALSE)
   }    
   else if(type == "4way") {
     for(i in 1:length(pval)) {
-      if(allchrtype[i] == "A") {
-        x <- results[i,2:5]
-        y <- results[i,-(1:5)]
-        if(sum(x) > 0 && sum(y)==0)
-          pval[i] <- chisq.test(x,p=c(0.25,0.25,0.25,0.25))$p.value
+      x <- results[i,2:5]
+      y <- results[i,-(1:5)]
+      if(sum(x) > 0 && sum(y)==0)
+        pval[i] <- chisq.test(x,p=c(0.25,0.25,0.25,0.25))$p.value
+      else {
+        if(allchrtype[i] == "A") {
+          res <- results[i,-1]
+          if(all(res[-c(1,11)]==0))      # AC/not AC
+            pval[i] <- chisq.test(res[c(1,11)], p=c(0.25, 0.75))$p.value
+          else if(all(res[-c(2,12)]==0)) # BC/not BC
+            pval[i] <- chisq.test(res[c(2,12)], p=c(0.25, 0.75))$p.value
+          else if(all(res[-c(3,13)]==0)) # AD/not AD
+            pval[i] <- chisq.test(res[c(3,13)], p=c(0.25, 0.75))$p.value
+          else if(all(res[-c(4,14)]==0)) # BD/not BD
+            pval[i] <- chisq.test(res[c(4,14)], p=c(0.25, 0.75))$p.value
+          else if(all(res[-c(5,6)]==0)) # A/B
+            pval[i] <- chisq.test(res[c(5,6)], p=c(0.5, 0.5))$p.value
+          else if(all(res[-c(7,8)]==0)) # C/D
+            pval[i] <- chisq.test(res[c(7,8)], p=c(0.5, 0.5))$p.value
+          else if(all(res[-c(9,10)]==0)) # AC/BD or AD/BC
+            pval[i] <- chisq.test(res[c(9,10)], p=c(0.5, 0.5))$p.value
+          else if(all(res[-c(2,4,5)]==0)) # BC/BD/A
+            pval[i] <- chisq.test(res[c(2,4,5)], p=c(0.25, 0.25, 0.5))$p.value
+          else if(all(res[-c(1,3,6)]==0)) # AC/AD/B
+            pval[i] <- chisq.test(res[c(1,3,6)], p=c(0.25, 0.25, 0.5))$p.value
+          else if(all(res[-c(3,4,7)]==0)) # AD/BD/C
+            pval[i] <- chisq.test(res[c(3,4,7)], p=c(0.25, 0.25, 0.5))$p.value
+          else if(all(res[-c(1,2,8)]==0)) # AC/BC/D
+            pval[i] <- chisq.test(res[c(1,2,8)], p=c(0.25, 0.25, 0.5))$p.value
+          else if(all(res[-c(2,3,9)]==0)) # AC/BD or AD or BC
+            pval[i] <- chisq.test(res[c(2,3,9)], p=c(0.25, 0.25, 0.5))$p.value
+          else if(all(res[-c(1,4,10)]==0)) # AD/BC or AC or BD
+            pval[i] <- chisq.test(res[c(1,4,10)], p=c(0.25, 0.25, 0.5))$p.value
+        }
       }
     }
     results <- cbind(results, P.value=pval)
@@ -822,9 +851,14 @@ function(cross, chr, scanone.output=FALSE)
   if(!scanone.output)
     return(data.frame(chr=rep(names(cross$geno),nmar(cross)),results))
 
-  temp <- results[,1:(ncol(results)-1)]
+  themap <- pull.map(cross)
+  if(is.matrix(themap[[1]]))
+    thepos <- unlist(lapply(themap, function(a) a[1,]))
+  else thepos <- unlist(themap)
+
+  temp <- results[,1:(ncol(results)-1),drop=FALSE]
   res <- data.frame(chr=rep(names(cross$geno),nmar(cross)),
-                    pos=unlist(pull.map(cross)),
+                    pos=thepos,
                     neglog10P=-log10(results[,ncol(results)]),
                     missing=temp[,1]/apply(temp, 1, sum),
                     temp[,-1]/apply(temp[,-1], 1, sum))
@@ -1013,23 +1047,25 @@ function(cross, mname1, mname2, eliminate.zeros=TRUE)
 # map functions
 mf.k <- function(d) 0.5*tanh(d/50)
 mf.h <- function(d) 0.5*(1-exp(-d/50))
-imf.k <- function(r) 50*atanh(2*r)
-imf.h <- function(r) -50*log(1-2*r)
+imf.k <- function(r) { r[r >= 0.5] <- 0.5-1e-14; 50*atanh(2*r) }
+imf.h <- function(r) { r[r >= 0.5] <- 0.5-1e-14; -50*log(1-2*r) }
 mf.m <- function(d) sapply(d,function(a) min(a/100,0.5))
 imf.m <- function(r) sapply(r,function(a) min(a*100,50))
 
 # carter-falconer: mf.cf, imf.cf
-imf.cf <- function(r) 12.5*(log(1+2*r)-log(1-2*r))+25*atan(2*r)
+imf.cf <- function(r) { r[r >= 0.5] <- 0.5-1e-14; 12.5*(log(1+2*r)-log(1-2*r))+25*atan(2*r) }
 
 mf.cf <-
 function(d)
 {
+  d[d >= 300] <- 300
+
   icf <- function(r,d)
     imf.cf(r)-d
 
   sapply(d,function(a) {
     if(a==0) return(0)
-    uniroot(icf, c(0,0.5-1e-10),d=a)$root })
+    uniroot(icf, c(0,0.5-1e-14),d=a)$root })
 }
 
 
@@ -3875,8 +3911,5 @@ function(x, jitter=FALSE)
 
   x*thesd/sd(x, na.rm=TRUE)-mean(x,na.rm=TRUE)+themean
 }
-
-# end of nqrank.R
-
 
 # end of util.R
