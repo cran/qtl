@@ -17,6 +17,40 @@ http://www.rqtl.org
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
+Version 1.18, 8/18/2010:
+
+Major changes:
+
+  None.
+
+Minor changes:
+
+  Revised geno.table so that, for 4-way crosses, it gives P-values in
+  most cases.  (Previously, it just did so for fully informative
+  markers.) 
+
+  Changed the default format for max.scanPhyloQTL and
+  summary.scanPhyloQTL from format="lod" to format="postprob".
+
+  Added function inferredpartitions for pulling out the inferred
+  partitions for a specified chromosome from the output of
+  scanPhyloQTL. 
+
+  Fixed a problem in ripple with method="likelihood".  (The problem
+  arose in revisions in version 1.17.)
+
+  Fixed a problem in est.map that resulted in NAs.  (The problem arose
+  in revisions in version 1.17.)
+
+  Slight changes to "inverse" map functions imf.k, imf.h, imf.cf, so
+  that recombination fractions >= 0.5 return large map distances
+  rather than NAs.
+
+  Fixed a bug in summary.scanPhyloQTL so that it works when the input
+  has just one chromosome and so the colnames remain like "AB|CD"
+  rather than getting converted to "AB.CD".
+
+
 Version 1.17, 7/28/2010:
 
 Major changes:
