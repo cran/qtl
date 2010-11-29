@@ -4,6 +4,7 @@
 \alias{calc.genoprob.special}
 \alias{calc.pairprob}
 \alias{calc.plod}
+\alias{calcPermPval}
 \alias{charround}
 \alias{checkcovar}
 \alias{checkformula}
@@ -37,7 +38,6 @@
 \alias{flipcross}
 \alias{genAllPartitions}
 \alias{genotab.em}
-\alias{getid}
 \alias{getsex}
 
 \alias{addmarkerstointervalmap}
@@ -178,6 +178,7 @@ calc.pairprob(cross, step=0, off.end=0, error.prob=0.0001,
               map.function=c("haldane","kosambi","c-f","morgan"), map,
               assumeCondIndep=FALSE)
 calc.plod(lod, nterms, type=c("f2","bc"), penalties)
+calcPermPval(peaks, perms)
 charround(x, digits=1)
 checkPhyloCrosses(crosses, taxa, nostop=FALSE)
 checkPhyloPartition(partition, taxa)
@@ -217,7 +218,6 @@ markerforwsel(x, y, maxsize=7)
 markerforwself2(x, y, maxsize=7)
 genAllPartitions(n.taxa, taxa)
 genotab.em(dat, tol=1e-6, maxit=10000, verbose=FALSE)
-getid(cross)
 getsex(cross)
 
 addmarkerstointervalmap(cross,intervalresult,verbose=FALSE)
@@ -264,16 +264,16 @@ mf.k(d)
 mf.m(d)
 mf.stahl(d, m=0, p=0)
 mybinaryrep(n)
-orderMarkers.sub(cross, chr, window=7, use.ripple=TRUE)
+orderMarkers.sub(cross, chr, window=7, use.ripple=TRUE, verbose=FALSE)
 ourline()
-ourstop(...)
+ourstop(\dots)
 parseformula(formula, qtl.dimname, covar.dimname)
 \method{plot}{effectscan}(x, gap=25, ylim, mtick=c("line","triangle"),
      add.legend=TRUE, alternate.chrid=FALSE, \dots)
 polyplot(x, type='b', legend=TRUE,legendloc=0, labels=NULL, cex =
          par("cex"), pch = 19, gpch = 21, bg = par("bg"), color = par("fg"),
          col=NULL, ylim=range(x[is.finite(x)]), xlim = NULL, main = NULL, xlab =
-         NULL, ylab = NULL, add=FALSE, ... ) 
+         NULL, ylab = NULL, add=FALSE, \dots) 
 \method{print}{addcovarint}(x, \dots)
 \method{print}{addint}(x, \dots)
 \method{print}{compactqtl}(x, \dots)
@@ -321,7 +321,7 @@ revisecovar(sexpgm, covar)
 reviseqtlnuminformula(formula, oldnum, newnum)
 revisescantwodf(df)
 reviseXdata(type=c("f2","bc"), expandX=c("simple","standard","full"),
-            sexpgm, geno, prob, draws, pairprob, cross.attr)
+            sexpgm, geno, prob, draws, pairprob, cross.attr, force=FALSE)
 ripple.perm1(n)
 ripple.perm2(n)
 ripple.perm.sub(x, mat)

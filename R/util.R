@@ -5,7 +5,7 @@
 # copyright (c) 2001-2010, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Aug, 2010
+# last modified Nov, 2010
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -40,7 +40,8 @@
 #           matchchr, convert2sa, charround, testchr,
 #           scantwoperm2scanoneperm, subset.map, [.map, [.cross,
 #           findDupMarkers, convert2riself, convert2risib,
-#           switchAlleles, nqrank
+#           switchAlleles, nqrank, cleanGeno, typingGap,
+#           calcPermPval
 #
 ######################################################################
 
@@ -1204,14 +1205,16 @@ function(x, chr, ind, ...)
   }
 
   if(!missing(ind)) {
+    theid <- getid(x)
+
     if(is.logical(ind)) {
       ind[is.na(ind)] <- FALSE
       if(length(ind) != n.ind) 
         stop("ind argument has wrong length (", length(ind), "; should be ", n.ind, ")")
-      ind <- (1:n.ind)[ind]
+      if(!is.null(theid)) 
+        ind <- theid[ind]
+      else ind <- (1:n.ind)[ind]
     }
-
-    theid <- getid(x)
 
     if(!is.null(theid)) { # cross has individual IDs
       if(is.numeric(ind)) {
@@ -3005,6 +3008,7 @@ function(cross, chr, full.info=FALSE)
           iright=as.integer(rep(0,n.ind*2*(n.mar-1))),
           left=as.double(rep(0,n.ind*2*(n.mar-1))),
           right=as.double(rep(0,n.ind*2*(n.mar-1))),
+          ntype=as.integer(rep(0,n.ind*2*(n.mar-1))),
           as.integer(full.info),
           PACKAGE="qtl")
   location <- t(matrix(z$location, nrow=n.ind))
@@ -3014,12 +3018,12 @@ function(cross, chr, full.info=FALSE)
     iright <- t(matrix(z$iright, nrow=n.ind))
     left <- t(matrix(z$left, nrow=n.ind))
     right <- t(matrix(z$right, nrow=n.ind))
+    ntype <- t(matrix(z$ntype, nrow=n.ind))
   }
 
-  if(!full.info) {
-    return(lapply(as.data.frame(rbind(nseen, location)),
-                  function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] }))
-  }
+  if(!full.info) 
+    res <- lapply(as.data.frame(rbind(nseen, location)),
+                  function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
   else {
     location <- lapply(as.data.frame(rbind(nseen, location)),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
@@ -3036,17 +3040,27 @@ function(cross, chr, full.info=FALSE)
     right <- lapply(as.data.frame(rbind(nseen, right)),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
     
+    ntype <- lapply(as.data.frame(rbind(nseen, ntype)),
+                  function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
+
     res <- location
     for(i in seq(along=res)) {
-      if(length(res[[i]])>0)
+      if(length(res[[i]])>0) {
+        ntype[[i]][length(ntype[[i]])] <- NA
         res[[i]] <- cbind(location=location[[i]],
                           left=left[[i]],
                           right=right[[i]],
                           ileft=ileft[[i]],
-                          iright=iright[[i]])
+                          iright=iright[[i]],
+                          nTypedBetween=ntype[[i]])
+      }
     }
-    return(res)
   }
+  id <- getid(cross)
+  if(is.null(id)) id <- 1:n.ind
+  names(res) <- id
+
+  res
 }
 
 # jittermap: make sure no two markers are at precisely the same position
@@ -3151,23 +3165,29 @@ function(cross)
   nam <- names(phe)
   if("id" %in% nam) {
     id <- phe$id
-    attr(id,"phenam") <- "id"
+    phenam <- "id"
   }
   else if("ID" %in% nam) {
     id <- phe$ID
-    attr(id,"phenam") <- "ID"
+    phenam <- "ID"
   }
   else if("Id" %in% nam) {
     id <- phe$Id
-    attr(id,"phenam") <- "Id"
+    phenam <- "Id"
   }
   else if("iD" %in% nam) {
     id <- phe$iD
-    attr(id,"phenam") <- "iD"
+    phenam <- "iD"
   }
-  else id <- NULL
+  else {
+    id <- NULL
+    phenam <- NULL
+  }
 
-  if(is.factor(id)) id <- as.character(id)
+  if(is.factor(id))   
+    id <- as.character(id)
+
+  attr(id, "phenam") <- phenam
 
   id
 }
@@ -3789,7 +3809,7 @@ function(object, offset=0)
       }
     }
   } else if("map" %in% class(object)) {
-    if(length(offset) != 1) offset <- rep(offset, length(object))
+    if(length(offset) == 1) offset <- rep(offset, length(object))
     else if(length(offset) != length(object))
       stop("offset must have length 1 or n.chr (", length(object), ")")
     for(i in seq(along=object)) {
@@ -3910,6 +3930,124 @@ function(x, jitter=FALSE)
   x[!is.na(x)] <- qnorm((y-0.5)/length(y))
 
   x*thesd/sd(x, na.rm=TRUE)-mean(x,na.rm=TRUE)+themean
+}
+
+######################################################################
+#
+# cleanGeno: omit genotypes that are possibly in error, as indicated
+#            by apparent double-crossovers separated by a distance of
+#            no more than maxdist and having no more than maxmark
+#            interior typed markers
+#
+######################################################################
+
+cleanGeno <-
+function(cross, chr, maxdist=2.5, maxmark=2, verbose=TRUE)
+{  
+  if(class(cross)[1] != "bc") 
+    stop("This function currently only works for a backcross.")
+
+  if(!missing(chr)) cleaned <- subset(cross, chr=chr)
+  else cleaned <- cross
+
+  thechr <- names(cleaned$geno)
+  totdrop <- 0
+  maxmaxdist <- max(maxdist)
+  for(i in thechr) {
+    xoloc <- locateXO(cleaned, chr=i, full.info=TRUE)
+    nxo <- sapply(xoloc, function(a) if(is.matrix(a)) return(nrow(a)) else return(0))
+    g <- pull.geno(cleaned, chr=i)
+    
+    ndrop <- 0
+    for(j in which(nxo > 1)) {
+      maxd <- xoloc[[j]][-1,"right"] - xoloc[[j]][-nrow(xoloc[[j]]),"left"]
+      wh <- maxd <= maxmaxdist
+      if(any(wh)) {
+        for(k in which(wh)) {
+          nt <- sum(!is.na(g[j,(xoloc[[j]][k,"ileft"]+1):(xoloc[[j]][k+1,"iright"]-1)]))
+          if(nt > 0 && any(nt <= maxmark & maxd[k] < maxdist)) {
+            cleaned$geno[[i]]$data[j,(xoloc[[j]][k,"ileft"]+1):(xoloc[[j]][k+1,"iright"]-1)] <- NA
+            ndrop <- ndrop + nt
+            totdrop <- totdrop + nt
+          }
+        }
+      }
+    }
+    if(verbose && ndrop > 0) {
+      totgen <- sum(ntyped(subset(cross, chr=i)))
+      cat(" ---Dropping ", ndrop, " genotypes (out of ", totgen, ") on chr ", i, "\n", sep="")
+    }
+  }
+
+  if(verbose && nchr(cleaned)>1 && totdrop > 0) {
+    totgen <- sum(ntyped(subset(cross, chr=thechr)))
+    cat(" ---Dropped ", totdrop, " genotypes (out of ", totgen, ") in total\n", sep="")
+  }
+
+  for(i in names(cleaned$geno))
+    cross$geno[[i]] <- cleaned$geno[[i]]
+
+  cross
+}
+
+######################################################################
+# typingGap: calculate gaps between typed markers
+######################################################################
+
+typingGap <-
+function(cross, chr)
+{
+  if(!missing(chr))
+    cross <- subset(cross, chr)
+
+  n.ind <- nind(cross)
+  n.chr <- nchr(cross)
+
+  gaps <- matrix(nrow=n.ind, ncol=n.chr)
+  colnames(gaps) <- names(cross$geno)
+
+  for(i in 1:n.chr) {
+    map <- cross$geno[[i]]$map
+    map <- c(map[1], map, map[length(map)])
+    if(is.matrix(map)) stop("This function can't currently handle sex-specific maps.")
+
+    gaps[,i] <- apply(cbind(1,cross$geno[[i]]$data,1), 1,
+                      function(a,b) max(diff(b[!is.na(a)])), map)
+  }
+  if(n.chr==1) gaps <- as.numeric(gaps)
+  gaps
+}
+
+######################################################################
+# calcPermPval
+#
+# calculate permutation pvalues for summary.scanone()
+######################################################################
+calcPermPval <-
+function(peaks, perms)
+{
+  if(!is.matrix(peaks))
+    peaks <- as.matrix(peaks)
+  if(!is.matrix(perms))
+    perms <- as.matrix(perms)
+
+  ncol.peaks <- ncol(peaks)
+  nrow.peaks <- nrow(peaks)
+  n.perms <- nrow(perms)
+
+  if(ncol.peaks != ncol(perms))
+    stop("ncol(peaks) != ncol(perms)")
+
+  pval <- .C("R_calcPermPval",
+             as.double(peaks),
+             as.integer(ncol.peaks),
+             as.integer(nrow.peaks),
+             as.double(perms),
+             as.integer(n.perms),
+             pval=as.double(rep(0,ncol.peaks*nrow.peaks)),
+             PACKAGE="qtl")$pval
+
+  matrix(pval, ncol=ncol.peaks, nrow=nrow.peaks)
 }
 
 # end of util.R
