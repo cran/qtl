@@ -1,7 +1,7 @@
 
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-2010, Karl W Broman
+copyright (c) 2001-2011, Karl W Broman
 http://www.rqtl.org
 
     The R/qtl package is free software; you can redistribute it and/or
@@ -16,6 +16,59 @@ http://www.rqtl.org
     A copy of the GNU General Public License, version 3, is available
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
+
+Version 1.20, 2/18/2011:
+
+Major changes:
+
+  Enabled est.map to use multiple processors via snow; added argument
+  n.cluster to indicate the number of cluster nodes to use.
+
+  Added the option stepwidth="max" in calc.genoprob, sim.geno, and
+  argmax.geno.  This inserts the minimal number of pseudomarkers so
+  that the maximum step between points is as indicated by the "step"
+  argument. 
+
+Minor changes:
+
+  Fixed a bug in refineqtl() that kept it from working for a 4-way
+  cross.  (The bug also broke stepwiseqtl().)
+
+  Fixed a problem in the internal function dropXcol() that led to a
+  crash in scantwo() for 4-way crosses with an X chromosome.
+
+  Fixed a bug in mqmscan() regarding the chromosome names in the
+  output. 
+
+  Trap cases of X chromosome for crosses other than bc/f2 in
+  stepwiseqtl, makeqtl, addqtl, and addpair.  
+
+  Added a function phenames() for pulling out the names of the
+  phenotypes. 
+
+  Small revisions and enhancements to some of the MQM plots.
+
+  Revised subset.cross so that if the cross contains QTL genotypes
+  (from sim.cross), these are also subsetted.
+
+  Revised replacemap.cross (aka replace.map) so that it will also
+  replace the maps in results from calc.genoprob, sim.geno and
+  argmax.geno, using interpolation if necessary.
+
+  Fixed a couple of minor bugs in mqmscan: one giving duplicate row
+  names, another resulting in pseudomarkers outside the terminal
+  markers even when off.end=0.
+
+  Fixed bugs in scanone and scantwo regarding batch mode for 
+  model != "normal".
+
+  Fixed a bug in refineqtl; it was including all possible covariates
+  refered to in the data frame 'covar', even if they weren't referred
+  to in the formula.
+
+  Fixed a bug in plot.geno, introduced in version 1.19, that made it
+  not work with horizontal=FALSE.
+
 
 Version 1.19, 11/29/2010:
 
