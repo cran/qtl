@@ -3,7 +3,7 @@
 # makeqtl.R
 #
 # copyright (c) 2002-2011, Hao Wu and Karl W. Broman
-# last modified Feb, 2011
+# last modified May, 2011
 # first written Apr, 2002
 #
 # Modified by Danny Arends
@@ -477,7 +477,7 @@ function(object, ...)
   }
   else type <- "prob"
 
-  output <- data.frame(name=object$name, chr=object$chr, pos=object$pos, n.gen=object$n.gen)
+  output <- data.frame(name=object$name, chr=object$chr, pos=object$pos, n.gen=object$n.gen, stringsAsFactors=TRUE)
   rownames(output) <- object$altname
   
   attr(output, "type") <- type
@@ -574,11 +574,11 @@ function(x, chr, horizontal=FALSE, shift=TRUE,
 
     if(!justdots) {
       if(horizontal) {
-        arrows(thepos, whchr - 0.35, thepos, whchr, lwd=2, col=col, len=0.05)
+        arrows(thepos, whchr - 0.35, thepos, whchr, lwd=2, col=col, length=0.05)
         text(thepos, whchr-0.4, x$name, col=col, adj=c(0.5,0))
       }
       else {
-        arrows(whchr + 0.35, thepos, whchr, thepos, lwd=2, col=col, len=0.05)
+        arrows(whchr + 0.35, thepos, whchr, thepos, lwd=2, col=col, length=0.05)
         text(whchr+0.4, thepos, x$name, col=col, adj=c(0,0.5))
       }
     }
@@ -667,7 +667,7 @@ function(x, ...)
   if(is.null(x) || length(x) == 0) 
     cat("Null QTL model\n")
   else {
-    temp <- as.data.frame(x)
+    temp <- as.data.frame(x, stringsAsFactors=TRUE)
     rownames(temp) <- paste("Q", 1:nrow(temp), sep="")
     print.data.frame(temp)
   }

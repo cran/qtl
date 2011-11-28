@@ -5,7 +5,7 @@
 # copyright (c) 2001-2011, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Mar, 2011
+# last modified Jul, 2011
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -72,10 +72,10 @@ function(cross, chr, as.table=FALSE)
       themap1 <- unlist(lapply(themap, function(a) a[1,]))
       themap2 <- unlist(lapply(themap, function(a) a[2,]))
       a <- data.frame(chr=rep(names(cross$geno), nmar(cross)),
-                      pos.female=themap1, pos.male=themap2)
+                      pos.female=themap1, pos.male=themap2, stringsAsFactors=TRUE)
     } else {
       a <- data.frame(chr=rep(names(cross$geno), nmar(cross)),
-                      pos=unlist(themap))
+                      pos=unlist(themap), stringsAsFactors=TRUE)
     }
     rownames(a) <- markernames(cross)
   }
@@ -188,8 +188,10 @@ function(map, step, off.end, stepwidth = c("fixed", "variable", "max"))
             toadd <- c(toadd, seq(nmap[j], nmap[j+1], len=nadd[j]+2)[-c(1,nadd[j]+2)])
         }
       }
-      names(toadd) <- paste("loc", 1:length(toadd), sep="")
-      map <- sort(c(map, toadd))
+      if(length(toadd) > 0)  {
+        names(toadd) <- paste("loc", 1:length(toadd), sep="")
+        map <- sort(c(map, toadd))
+      }
       return(unclass(map))
     }
 
@@ -822,7 +824,7 @@ function(cross, chr, scanone.output=FALSE)
 
         for(j in 1:ncol(dat)) {
            stat <- apply(table(sexpgm$sex, cross$geno[[i]]$data[,j]),1,
-                         function(a) if(sum(a)>0) return(chisq.test(a,p=c(0.5,0.5))$stat)
+                         function(a) if(length(a) > 1 && sum(a)>0) return(chisq.test(a,p=c(0.5,0.5))$stat)
                          else return(0))
            pval[allchrname==chrname[i]][j] <- 1-pchisq(sum(stat),length(stat))
          }
@@ -947,7 +949,7 @@ function(cross, chr, scanone.output=FALSE)
   }   
 
   if(!scanone.output)
-    return(data.frame(chr=rep(names(cross$geno),nmar(cross)),results))
+    return(data.frame(chr=rep(names(cross$geno),nmar(cross)),results, stringsAsFactors=TRUE))
 
   themap <- pull.map(cross)
   if(is.matrix(themap[[1]]))
@@ -959,7 +961,7 @@ function(cross, chr, scanone.output=FALSE)
                     pos=thepos,
                     neglog10P=-log10(results[,ncol(results)]),
                     missing=temp[,1]/apply(temp, 1, sum),
-                    temp[,-1]/apply(temp[,-1], 1, sum))
+                    temp[,-1]/apply(temp[,-1], 1, sum), stringsAsFactors=TRUE)
   class(res) <- c("scanone", "data.frame")
   rownames(res) <- rownames(results)
   res[,1] <- factor(as.character(res[,1]), levels=unique(as.character(res[,1])))
@@ -1163,7 +1165,7 @@ function(d)
 
   sapply(d,function(a) {
     if(a==0) return(0)
-    uniroot(icf, c(0,0.5-1e-14),d=a)$root })
+    uniroot(icf, c(0,0.5-1e-14),d=a,tol=1e-12)$root })
 }
 
 
@@ -1548,7 +1550,7 @@ function(...)
   n.ind <- sapply(args,nind)
   pheno <- matrix(nrow=sum(n.ind),ncol=length(phenam))
   colnames(pheno) <- phenam
-  pheno <- as.data.frame(pheno)
+  pheno <- as.data.frame(pheno, stringsAsFactors=TRUE)
 
   if(!allsame) {
     crosstype <- factor(rep(c("bc","f2")[match(classes,c("bc","f2"))],n.ind),
@@ -2457,6 +2459,10 @@ function(cross1, cross2, tol=1e-5)
     phe1 <- cross1$pheno[,i]
     phe2 <- cross2$pheno[,i]
     if(is.numeric(phe1) & is.numeric(phe2)) {
+      phe1[phe1 == Inf] <- max(phe1[phe1 < Inf], na.rm=TRUE)+5
+      phe2[phe2 == Inf] <- max(phe2[phe2 < Inf], na.rm=TRUE)+5
+      phe1[phe1 == -Inf] <- min(phe1[phe1 > -Inf], na.rm=TRUE)-5
+      phe2[phe2 == -Inf] <- min(phe2[phe2 > -Inf], na.rm=TRUE)-5
       if(any((is.na(phe1) & !is.na(phe2)) | (!is.na(phe1) & is.na(phe2)) |
              (!is.na(phe1) & !is.na(phe2) & abs(phe1-phe2) > tol))) {
         stop("Data for phenotype ", names(cross1$pheno)[i],
@@ -2965,7 +2971,7 @@ function( cross, chr, pos)
   }
   dimnames(marker) <- list(paste(chr,":",pos,sep=""),
                            c("left","right","close"))
-  as.data.frame(marker)
+  as.data.frame(marker, stringsAsFactors=TRUE)
 }
 
 ######################################################################
@@ -3122,25 +3128,25 @@ function(cross, chr, full.info=FALSE)
   }
 
   if(!full.info) 
-    res <- lapply(as.data.frame(rbind(nseen, location)),
+    res <- lapply(as.data.frame(rbind(nseen, location), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
   else {
-    location <- lapply(as.data.frame(rbind(nseen, location)),
+    location <- lapply(as.data.frame(rbind(nseen, location), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
     
-    ileft <- lapply(as.data.frame(rbind(nseen, ileft)),
+    ileft <- lapply(as.data.frame(rbind(nseen, ileft), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
     
-    iright <- lapply(as.data.frame(rbind(nseen, iright)),
+    iright <- lapply(as.data.frame(rbind(nseen, iright), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
 
-    left <- lapply(as.data.frame(rbind(nseen, left)),
+    left <- lapply(as.data.frame(rbind(nseen, left), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
     
-    right <- lapply(as.data.frame(rbind(nseen, right)),
+    right <- lapply(as.data.frame(rbind(nseen, right), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
     
-    ntype <- lapply(as.data.frame(rbind(nseen, ntype)),
+    ntype <- lapply(as.data.frame(rbind(nseen, ntype), stringsAsFactors=TRUE),
                   function(a) { if(a[1]==0) return(numeric(0)); a[(1:a[1])+1] })
 
     res <- location
@@ -3304,7 +3310,7 @@ function(cross, marker)
   }
 
   output <- data.frame(chr=rep("", length(marker)),
-                       pos=rep(NA, length(marker)))
+                       pos=rep(NA, length(marker)), stringsAsFactors=TRUE)
   output$chr <- as.character(output$chr)
   rownames(output) <- marker
   
@@ -3360,7 +3366,7 @@ function(cross, marker, where=c("draws","prob"))
   }
 
   output <- data.frame(chr=rep("", length(marker)),
-                       pos=rep(NA, length(marker)))
+                       pos=rep(NA, length(marker)), stringsAsFactors=TRUE)
   output$chr <- as.character(output$chr)
   rownames(output) <- marker
   
@@ -4095,7 +4101,7 @@ function(cross, chr, maxdist=2.5, maxmark=2, verbose=TRUE)
 ######################################################################
 
 typingGap <-
-function(cross, chr)
+function(cross, chr, terminal=FALSE)
 {
   if(!missing(chr))
     cross <- subset(cross, chr)
@@ -4111,8 +4117,12 @@ function(cross, chr)
     map <- c(map[1], map, map[length(map)])
     if(is.matrix(map)) stop("This function can't currently handle sex-specific maps.")
 
-    gaps[,i] <- apply(cbind(1,cross$geno[[i]]$data,1), 1,
-                      function(a,b) max(diff(b[!is.na(a)])), map)
+    if(terminal) # just look at terminal gaps
+      gaps[,i] <- apply(cbind(1,cross$geno[[i]]$data,1), 1,
+                        function(a,b) {d <- diff(b[!is.na(a)]); max(d[c(1,length(d))]) }, map)
+    else
+      gaps[,i] <- apply(cbind(1,cross$geno[[i]]$data,1), 1,
+                        function(a,b) max(diff(b[!is.na(a)])), map)
   }
   if(n.chr==1) gaps <- as.numeric(gaps)
   gaps

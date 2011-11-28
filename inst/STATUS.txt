@@ -17,7 +17,79 @@ http://www.rqtl.org
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
-Version 1.21, 3/18/2011:
+Version 1.22, 11/28/2011:
+
+Major changes:
+
+  Revised plot.map to deal with a pair of maps with markers in
+  different orders (or with some markers appearing in one map and not
+  the other).  We still require that the two maps have the same
+  chromosomes and chromosome names (with chromosomes in the same
+  order).  
+
+  Revised scantwo to allow analysis of individual chromosome pairs,
+  and reorganized the way that scantwo permutations are done (first
+  summarizing each chromosome pair and then overall); this should
+  eliminate the memory problems we've had with scantwo permutations.
+
+Minor changes:
+
+  Added warning to help file for fitqtl() regarding the estimated
+  percent variance explained in the case of linked loci: the values
+  are misleading.
+
+  Fixed problem in comparecrosses() regarding Inf/-Inf phenotypes.
+
+  Fixed a bug in scantwo, method="hk", for multiple phenotypes or
+  permutation tests in batch.  This showed up only when there were
+  missing genotypes at one or both putative QTL.
+
+  write.cross with format="csv" now exports genotypes as AA/BB for
+  RIL (previously, genotypes were written as AA/AB).
+
+  Fixed bug in addint() and addcovarint()
+
+  Revised typingGap to have an argument 'terminal'; if TRUE, just look
+  at the gap from the terminal markers to the first typed interior
+  marker, giving 0 if the terminal markers are both typed.
+
+  Fixed bug in calc.genoprob with stepwidth="max" in the case that no
+  pseudomarkers are to be added.
+
+  Fixed bug in geno.table for the case that X chromosome has just one
+  observed genotype.
+
+  No longer allow "" in na.strings in read.cross for csv files.
+
+  Revised all calls to data.frame() and as.data.frame() to override
+  global option of stringsAsFactors, so that we know what's going to
+  happen.
+
+  Revised scantwo so that if the 'chr' argument is a list, we do just
+  the scans of the chr in the first component against those in the
+  second component.
+
+  Slight change in plot.info to deal with inclusion of 'main'
+  argument. 
+
+  Added NAMESPACE file.
+
+  Slight changes to avoid some R warning messages.
+
+  Slight change to imf.cf to give more accurate results.
+
+  Fixed warning message in replacemap.
+
+  Fixed warning message in +.scanone.
+
+  Fixed bug in mqmfind.marker.
+
+  Fixed slight bugs in print.addint and print.addcovarint.
+
+  Removed a bunch of unused variables from C code.
+
+
+Version 1.21, 3/21/2011:
 
 Major changes:
 

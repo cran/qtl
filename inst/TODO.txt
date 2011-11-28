@@ -10,6 +10,85 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
  
 SHORT TERM:
 
+o markerlrt() adds attribute "onlylod = TRUE"; this gets stripped off
+  by various functions and should be re-established
+
+o In plot.rfmatrix, include marker name in title (unless main is
+  provided as an argument). 
+
+o Bugs in summary.scanone in the case of multiple phenotypes and
+  multiple thresholds for formats other than allpheno and allpeaks.
+  I get warnings like 
+
+      In lod[, i] > threshold :
+      longer object length is not a multiple of shorter object length
+
+  Also, I need to use as.numeric() on the thresholds
+
+o Helper function for create.map to identify locations on the grid
+
+o function to pull out genoprobs or imputations
+
+o Use snow() with orderMarkers
+
+o Bug in replacemap.cross in case of sex-specific map and
+  genoprob/draws maps that need interpolation
+
+o beeswarm package for plot.pxg
+
+o In sim.cross, to get a QTL on the X chromosome, you need to use
+  chr=20 rather than chr="X".
+
+o scanPhyloQTL should give warning if there are different sets of
+  markers. 
+
+o Function to calculate recombination fraction and LOD score for just
+  adjacent markers.
+
+o geno.crosstab seems unnecessarily slow
+
+o Function to get no. qtl in a QTL object; also no. interactions (via
+  the formula)
+
+o Look at possible global options to see if any might interfere with
+  things. 
+
+o Saunak reported a problem in summary.scanone:
+
+    Some time in the last month, the summary.scanone
+    function does not work (for one data set) when I ask it for p-values
+    with pvalues=TRUE.  It works fine when I don't ask for the p-values.
+    ------------------------------------------
+    Error in calcPermPval(peaks, perms) : 
+     NA/NaN/Inf in foreign function call (arg 4)
+    -------------------------------------------
+
+o checkcovar gives messed up column numbers re 
+  "Following phenotypes are not numeric"
+
+o Column names in output of addpair summary (particularly regarding
+  the 6x15 and 7x15 scans in the hyper demo I did).
+
+o in stepwiseqtl and refineqtl: include an argument that is the
+  distance between qtl (or number of markers between qtl) and somehow
+  prevent qtl from getting too close [to avoid artifacts]
+
+o Bug in plot.scantwo: contours=TRUE gives warning:
+    In any(contours) : coercing argument of type 'double' to logical
+  Also: maybe change the color of the contour.
+
+o Add cross type "haploid" with genotype names like "A" and "B" rather
+  than "AA" and "AB", but otherwise treat like a backcross (along the
+  lines of "dh").
+
+o max.scantwo could take a chr argument
+
+o Add cross type as argument to read.cross; attempt to convert data to
+  that type.
+
+o In sim.cross, do the qtl get sorted by genomic position?  And then
+  do the qtlgeno need to be reordered back?
+
 o Effect plot on X chromosome: be sure that males and females get
   split properly.
 

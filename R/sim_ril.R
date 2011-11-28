@@ -2,8 +2,8 @@
 #
 # sim_ril.R
 #
-# copyright (c) 2004-9, Karl W Broman
-# last modified Apr, 2009
+# copyright (c) 2004-2011, Karl W Broman
+# last modified May, 2011
 # first written May, 2004
 #
 #     This program is free software; you can redistribute it and/or
@@ -106,7 +106,7 @@ function(map, n.ril=1, type=c("sibmating", "selfing"),
     class(geno[[i]]) <- class(omap[[i]])
 
   }
-  pheno <- data.frame(line=1:n.ril)
+  pheno <- data.frame(line=1:n.ril, stringsAsFactors=TRUE)
   x <- list(geno=geno,pheno=pheno,cross=cross)
 
   # ri[n][sib/self]un: un = genotypes not yet transformed
@@ -160,7 +160,7 @@ function(map, n.str=c("4","8"), pat.freq)
   output <- vector("list", length(map))
   names(output) <- names(map)
   for(i in seq(along=map)) {
-    thepat <- sample(seq(length(pat.freq))-1, n.mar[i], prob=pat.freq, repl=TRUE)
+    thepat <- sample(seq(length(pat.freq))-1, n.mar[i], prob=pat.freq, replace=TRUE)
     output[[i]] <- matrix(0, ncol=n.str, nrow=n.mar[i])
     for(j in seq(along=thepat))
       output[[i]][j,sample(1:n.str, thepat[j])] <- 1
