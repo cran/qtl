@@ -2,8 +2,8 @@
 #
 # read.cross.csvs.R
 #
-# copyright (c) 2005-2010, Karl W Broman
-# last modified Feb, 2010
+# copyright (c) 2005-2011, Karl W Broman
+# last modified Jul, 2011
 # first written Oct, 2005
 #
 #     This program is free software; you can redistribute it and/or
@@ -48,6 +48,11 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
   }
 
   args <- list(...)
+
+  if("" %in% na.strings) {
+    na.strings <- na.strings[na.strings != ""]
+    warning("Including \"\" in na.strings will cause problems; omitted.")
+  }
 
   # if user wants to use comma for decimal point, we need
   if(length(args) > 0 && "dec" %in% names(args)) {
@@ -181,7 +186,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
     map <- rep(0,ncol(gen))
 
   colnames(pheno) <- unlist(pheno[1,])
-  pheno <- as.data.frame(pheno[-1,])
+  pheno <- as.data.frame(pheno[-1,], stringsAsFactors=TRUE)
 
   # replace empty cells with NA
   gen <- sapply(gen,function(a) { a[!is.na(a) & a==""] <- NA; a })
@@ -249,7 +254,7 @@ function(dir, genfile, phefile, na.strings=c("-","NA"),
       }
       else return(x)
     }
-  pheno <- data.frame(lapply(pheno, sw2numeric, dec=dec))
+  pheno <- data.frame(lapply(pheno, sw2numeric, dec=dec), stringsAsFactors=TRUE)
 
   # re-order the markers by chr and position
   # try to figure out the chr labels

@@ -10,14 +10,16 @@
 \usage{
 \method{plot}{map}(x, map2, chr, horizontal=FALSE, shift=TRUE,
      show.marker.names=FALSE, alternate.chrid=FALSE, \dots)
+plot.map(x, map2, chr, horizontal=FALSE, shift=TRUE,
+     show.marker.names=FALSE, alternate.chrid=FALSE, \dots)
 }
 
 \arguments{
   \item{x}{A list whose components are vectors of marker locations.  A
     \code{cross} object may be given instead, in which case the genetic
     map it contains is used.}
-  \item{map2}{An optional second genetic map with the same number of
-    chromosomes and markers as the first.  As with the first argument, a
+  \item{map2}{An optional second genetic map with the same number (and
+    names) of chromosomes.  As with the first argument, a
     \code{cross} object may be given instead.  If this argument is
     given, a comparison of the two genetic maps is plotted.}
   \item{chr}{Optional vector indicating the chromosomes to plot.
@@ -41,6 +43,12 @@
 \details{
   Plots the genetic map for each chromosome, or a comparison of the
   genetic maps if two maps are given.
+
+  For a comparison of two maps, the first
+  map is on the left (or, if \code{horizontal=TRUE}, on the top).  Lines
+  are drawn to connect markers.  Markers that exist in just one map and
+  not the other are indicated by short line segments, on one side or the
+  other, that are not connected across.
 
   For a sex-specific map, female and male maps are plotted against one
   another.  For two sex-specific maps, the two female maps are plotted
