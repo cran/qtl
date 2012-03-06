@@ -2,10 +2,10 @@
 #
 # util.R
 #
-# copyright (c) 2001-2011, Karl W Broman
+# copyright (c) 2001-2012, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Jul, 2011
+# last modified Mar, 2012
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -21,8 +21,8 @@
 #     at http://www.r-project.org/Licenses/GPL-3
 # 
 # Part of the R/qtl package
-# Contains: pull.map, markernames, c.cross, create.map,
-#           clean, clean.cross, drop.nullmarkers,
+# Contains: markernames, c.cross, create.map,
+#           clean, clean.cross, drop.nullmarkers, nullmarkers
 #           drop.markers, pull.markers, drop.dupmarkers
 #           geno.table, genotab.em
 #           mf.k, mf.h, imf.k, imf.h, mf.cf, imf.cf, mf.m, imf.m,
@@ -30,7 +30,7 @@
 #           switch.order, makeSSmap,
 #           subset.cross, fill.geno, checkcovar, find.marker,
 #           find.pseudomarker,
-#           adjust.rf.ri, pull.geno, pull.pheno, lodint, bayesint, 
+#           adjust.rf.ri, lodint, bayesint, 
 #           comparecrosses, movemarker, summary.map,
 #           print.summary.map, find.pheno,
 #           convert, convert.scanone, convert.scantwo
@@ -44,44 +44,6 @@
 #           calcPermPval, phenames
 #
 ######################################################################
-
-######################################################################
-#
-# pull.map
-#
-# pull out the map portion of a cross object, as a list
-#
-######################################################################
-
-pull.map <-
-function(cross, chr, as.table=FALSE)
-{
-  if(!any(class(cross) == "cross"))
-    stop("Input should have class \"cross\".")
-
-  if(!missing(chr)) cross <- subset(cross, chr=chr)
-  if(!as.table) {
-    a <- lapply(cross$geno,function(a) {
-      b <- a$map
-      class(b) <- as.character(class(a))
-      b })
-    class(a) <- "map"
-  } else {
-    themap <- pull.map(cross, as.table=FALSE)
-    if(is.matrix(themap[[1]])) {
-      themap1 <- unlist(lapply(themap, function(a) a[1,]))
-      themap2 <- unlist(lapply(themap, function(a) a[2,]))
-      a <- data.frame(chr=rep(names(cross$geno), nmar(cross)),
-                      pos.female=themap1, pos.male=themap2, stringsAsFactors=TRUE)
-    } else {
-      a <- data.frame(chr=rep(names(cross$geno), nmar(cross)),
-                      pos=unlist(themap), stringsAsFactors=TRUE)
-    }
-    rownames(a) <- markernames(cross)
-  }
-
-  a
-}
 
 ######################################################################
 #
@@ -464,6 +426,12 @@ function(object, ...)
 
   cross2 <- list(geno=object$geno,pheno=object$pheno)
 
+  if("cross" %in% names(object))
+    cross2$cross <- object$cross
+
+  if("founderGeno" %in% names(object))
+    cross2$founderGeno <- object$founderGeno
+
   if(!is.null(attr(object, "alleles")))
     attr(cross2, "alleles") <- attr(object, "alleles")
 
@@ -561,17 +529,55 @@ function(cross)
 
       # results of est.rf
       if("rf" %in% names(cross)) {
+        attrib <- attributes(cross$rf)
+
         o <- match(mn.drop,colnames(cross$rf))
         cross$rf <- cross$rf[-o,-o]
+
+        if("onlylod" %in% names(attrib)) # save the onlylod attribute if its there
+          attr(cross$rf, "onlylod") <- attrib$onlylod
       }
     }
   }
   cross$geno <- cross$geno[keep.chr]
 
+  if("founderGeno" %in% names(cross)) 
+    cross$founderGeno <- cross$founderGeno[,markernames(cross)]
+
   cross
 }
 
     
+######################################################################
+#
+# nullmarkers
+#
+# identify markers that have no genotype data from the data matrix and
+# genetic maps
+#
+######################################################################
+
+nullmarkers <-
+function(cross)
+{
+  if(!any(class(cross) == "cross"))
+    stop("Input should have class \"cross\".")
+
+  n.chr <- nchr(cross)
+
+  keep.chr <- rep(TRUE,n.chr)
+  all2drop <- NULL
+  for(i in 1:n.chr) {
+    o <- !apply(cross$geno[[i]]$data,2,function(a) sum(!is.na(a)))
+    if(any(o)) { # remove from genotype data and map
+      mn.drop <- colnames(cross$geno[[i]]$data)[o]
+      all2drop <- c(all2drop, mn.drop)
+    }
+  }
+
+  all2drop
+}
+
 ######################################################################
 #
 # drop.markers
@@ -631,8 +637,13 @@ function(cross, markers)
 
       # results of est.rf
       if("rf" %in% names(cross)) {
+        attrib <- attributes(cross$rf)
+
         o <- match(mn.drop,colnames(cross$rf))
         cross$rf <- cross$rf[-o,-o]
+
+        if("onlylod" %in% names(attrib))
+          attr(cross$rf, "onlylod") <- attrib$onlylod
       }
     }
   }
@@ -641,6 +652,9 @@ function(cross, markers)
     warning("Markers not found: ", paste(markers[!found],collapse=" "))
 
   cross$geno <- cross$geno[keep.chr]
+
+  if("founderGeno" %in% names(cross)) 
+    cross$founderGeno <- cross$founderGeno[,markernames(cross)]
 
   cross
 }
@@ -724,6 +738,9 @@ function(cross, verbose=TRUE)
     cat("  Total genotypes omitted:", tot.omitted, "\n")
     cat("  Total markers omitted:  ", nmar.omitted, "\n")
   }
+
+  if("founderGeno" %in% names(cross)) 
+    cross$founderGeno <- cross$founderGeno[,markernames(cross)]
 
   clean(cross)
 }                   
@@ -1211,6 +1228,8 @@ function(cross, chr, order, error.prob=0.0001,
   # save recombination fractions
   flag <- 0
   if("rf" %in% names(cross)) {
+    attrib <- attributes(cross$rf)
+
     rf <- cross$rf
     # determine column within rec fracs
     whchr <- which(names(cross$geno)==chr)
@@ -1246,6 +1265,8 @@ function(cross, chr, order, error.prob=0.0001,
     temp <- est.rf(subset(cross, chr=chr))$rf
     rf[oldcols,oldcols] <- temp
     cross$rf <- rf
+    if("onlylod" %in% names(attrib))
+      attr(cross$rf, "onlylod") <- attrib$onlylod
   }
 
   # re-estimate map
@@ -1290,6 +1311,8 @@ function(x, chr, ind, ...)
       if(totmar(x) != ncol(x$rf))
         x <- clean(x)
       else {
+        attrib <- attributes(x$rf)
+
         n.mar <- nmar(x)
         n.chr <- n.chr
         wh <- rbind(c(0,cumsum(n.mar)[-n.chr])+1,cumsum(n.mar))
@@ -1297,10 +1320,16 @@ function(x, chr, ind, ...)
         wh <- wh[,chr,drop=FALSE]
         wh <- unlist(apply(wh,2,function(a) a[1]:a[2]))
         x$rf <- x$rf[wh,wh]
+
+        if("onlylod" %in% names(attrib)) # save the onlylod attribute if its there
+          attr(x$rf, "onlylod") <- attrib$onlylod
       }
     }
 
     x$geno <- x$geno[chr]
+
+    if("founderGeno" %in% names(x)) 
+      x$founderGeno <- x$founderGeno[,unlist(lapply(x$geno, function(a) colnames(a$data)))]
   }
 
   if(!missing(ind)) {
@@ -1372,6 +1401,9 @@ function(x, chr, ind, ...)
       warning("Retained only one individual!")
 
     x$pheno <- x$pheno[ind,,drop=FALSE]
+
+    if("cross" %in% names(x))
+      x$cross <- x$cross[ind,,drop=FALSE]
 
     for(i in 1:nchr(x)) {
       x$geno[[i]]$data <- x$geno[[i]]$data[ind,,drop=FALSE]
@@ -2106,73 +2138,6 @@ function(r, type=c("self","sib"), chrtype=c("A","X"), expand=TRUE)
 }
 
 ######################################################################
-# pull.geno
-######################################################################
-pull.geno <-
-function(cross, chr)
-{
-  if(!any(class(cross) == "cross"))
-    stop("Input should have class \"cross\".")
-
-  if(!missing(chr))
-    cross <- subset(cross, chr=chr)
-  
-  X <- cross$geno[[1]]$data
-  if(nchr(cross) > 1)
-    for(i in 2:nchr(cross))
-      X <- cbind(X, cross$geno[[i]]$data)
-  X
-}
-
-######################################################################
-# pull.pheno
-######################################################################
-pull.pheno <-
-function(cross, pheno.col)
-{
-  if(!any(class(cross) == "cross"))
-    stop("Input should have class \"cross\".")
-
-  pheno <- cross$pheno
-
-  if(!missing(pheno.col)) {
-
-    if(is.character(pheno.col)) {
-      m <- match(pheno.col, names(pheno))
-      if(any(is.na(m))) {
-        if(sum(is.na(m)) > 1)
-          warning("Phenotypes ", paste("\"", pheno.col[is.na(m)], "\"", sep="", collapse=" "), " not found.")
-        else 
-          warning("Phenotype ", paste("\"", pheno.col[is.na(m)], "\"", sep="", collapse=" "), " not found.")
-      }
-      if(all(is.na(m))) return(NULL)
-      
-      m <- m[!is.na(m)]
-      pheno <- pheno[,m]
-    }
-    else if(is.logical(pheno.col)) {
-      if(length(pheno.col) != ncol(pheno))
-        stop("If pheno.col is logical, it should have length ", ncol(pheno))
-      pheno <- pheno[,pheno.col]
-    }
-    else if(is.numeric(pheno.col)) {
-      if(any(pheno.col > 0) && any(pheno.col < 0))
-        stop("If pheno.col is numeric, values should be all > 0 or all < 0")
-      if(any(pheno.col > 0) && (any(pheno.col < 1) || any(pheno.col > ncol(pheno))))
-        stop("pheno.col values should be >= 1 and <= ", ncol(pheno))
-      if(any(pheno.col < 0) && (any(pheno.col > -1) || any(pheno.col < -ncol(pheno))))
-        stop("With negative pheno.col values, they should be between -", ncol(pheno), " and -1")
-      pheno <- pheno[,pheno.col]
-    }
-  }
-
-  if(is.data.frame(pheno) && ncol(pheno) == 1) pheno <- pheno[,1]
-
-  pheno
-}
-
-
-######################################################################
 # lodint: function to get lod support interval
 ######################################################################
 lodint <-
@@ -2646,6 +2611,8 @@ function(cross, marker, newchr, newpos)
     #     and rec fracs in lower triangle
     newmar <- unlist(lapply(cross$geno,function(a) colnames(a$data)))
 
+    attrib <- attributes(cross$rf)
+
     rf <- cross$rf
     lods <- rf;lods[lower.tri(rf)] <- t(rf)[lower.tri(rf)]
     rf[upper.tri(rf)] <- t(rf)[upper.tri(rf)]
@@ -2654,6 +2621,9 @@ function(cross, marker, newchr, newpos)
     rf[upper.tri(rf)] <- lods[upper.tri(rf)]
 
     cross$rf <- rf
+
+    if("onlylod" %in% names(attrib)) # save the onlylod attribute if its there
+      attr(cross$rf, "onlylod") <- attrib$onlylod
   }
 
 
@@ -2767,9 +2737,9 @@ function(object, ...)
                              c("n.mar","length","ave.spacing", "max.spacing"))
   }
 
-  output <- output
+  output <- as.data.frame(output)
   attr(output, "sexsp") <- sexsp
-  class(output) <- c("summary.map", data.frame)
+  class(output) <- c("summary.map", "data.frame")
   output
 }
 
@@ -3052,14 +3022,13 @@ function(cross, what=c("proportion","number", "both"))
 ######################################################################
 # print the installed version of R/qtl
 ######################################################################
-#qtlversion <-
-#function()
-#  installed.packages()["qtl","Version"]
 qtlversion <-
 function()
 {
-  u <- strsplit(library(help=qtl)[[3]][[1]][2]," ")[[1]]
-  u[length(u)]
+  version <- unlist(packageVersion("qtl"))
+
+  # make it like #.#-#
+  paste(c(version,".","-")[c(1,4,2,5,3)], collapse="")
 }
 
 
