@@ -5,7 +5,7 @@
 # copyright (c) 2001-2012, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Mar, 2012
+# last modified May, 2012
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@
 #           subset.cross, fill.geno, checkcovar, find.marker,
 #           find.pseudomarker,
 #           adjust.rf.ri, lodint, bayesint, 
-#           comparecrosses, movemarker, summary.map,
+#           comparecrosses, movemarker, summary.map (aka summaryMap),
 #           print.summary.map, find.pheno,
 #           convert, convert.scanone, convert.scantwo
 #           find.flanking, strip.partials, comparegeno
@@ -1867,7 +1867,9 @@ function(cross, pheno.col, addcovar, intcovar, perm.strata, ind.noqtl=NULL, verb
     keep.ind <- as.numeric(which(apply(pheno, 1, function(x) !any(is.na(x)))))
 #    keep.ind <- (1:length(pheno))[!is.na(pheno)]
     n.drop <- nind(cross) - length(keep.ind)
-    cross <- subset.cross(cross,ind=keep.ind)
+    keep.ind.boolean <- rep(FALSE, nind(cross))
+    keep.ind.boolean[keep.ind] <- TRUE
+    cross <- subset.cross(cross,ind=keep.ind.boolean)
     pheno <- pheno[keep.ind,,drop=FALSE]
     if(verbose) warning("Dropping ", n.drop, " individuals with missing phenotypes.\n")
   }
@@ -2677,7 +2679,7 @@ function(cross, marker, newchr, newpos)
 # Give a short summary of a genetic map object.
 # 
 ######################################################################
-summary.map <- 
+summaryMap <- summary.map <- 
 function(object, ...)
 {
   map <- object
