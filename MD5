@@ -1,4 +1,4 @@
-38a6d5806b81a46b1ccb11b3150d3de7 *DESCRIPTION
+36c25687d57520d79908b81fef607003 *DESCRIPTION
 83a067e88a88bbcb7795d229bdf8c3bc *NAMESPACE
 9534fa5b3fef01751aa7ad102308617e *R/add.cim.covar.R
 26e4fb9fb12808d9d324256dfb74966e *R/add_threshold.R
@@ -71,12 +71,12 @@ dcb28e01844e0492764e1745126eadd3 *R/stepwiseqtl.R
 1a5401d2d9ae7d5578f15708616d362f *R/summary.scantwo.old.R
 013dc49a91b851056f7237f602b333eb *R/transformPheno.R
 ea07118c6709db6db07b715ba8ed332e *R/tryallpositions.R
-8151a36d8762d2a1abcd710d422496c4 *R/util.R
+d7cc68512244d4ee3718bb4a31d2c7ce *R/util.R
 a05c0e72e4346301548e1b2f4413e17e *R/vbscan.R
 8600bd37699bd68ac11661c553338f8b *R/write.cross.R
 9709445edb89015f3b7be49e578c3194 *R/write.cross.qtab.R
 18c4c59166fdb62dba619762ae96452c *R/xchr.R
-ce5057c9ef102265dad139d04147ebd7 *README.txt
+2f8ae05de54e6f0efabb873ff2256223 *README.txt
 bfdc793706886935deaa09ac656b1f85 *contrib/bin/CMakeLists.txt
 88bd9a1f93997dc7a0f3b9f42ba3042e *contrib/bin/FindRLibs.cmake
 a2151c53575c7e54ceef324add76f356 *contrib/bin/README
@@ -164,11 +164,11 @@ f3128811c78d1282d044e5da58c73c60 *data/locations.RData
 ca388f8ed50d697871f42431037d7f50 *data/multitrait.RData
 39550e6d5a0a95f2e2120f96c9f6bb43 *inst/BUGS.txt
 19b849f792af25c391f31d677210b0d5 *inst/CITATION
-266aedb1996ca5c9ec5cce4d322df0ea *inst/INSTALL_ME.txt
+0bcb1c05a417f46f16688519615a280e *inst/INSTALL_ME.txt
 f6bc7c5215d6f1b0c94235a5ef381e25 *inst/LICENSE.txt
 c8b990e307ecee343beb5a217265ffcf *inst/MQM-TODO.txt
-ce5057c9ef102265dad139d04147ebd7 *inst/README.txt
-403543114d522ed9d6c554bb15a41480 *inst/STATUS.txt
+2f8ae05de54e6f0efabb873ff2256223 *inst/README.txt
+418b9414453c464f6dc611d84d8ebaa4 *inst/STATUS.txt
 d060f5de6823b96f67cdd502b9b0ad49 *inst/TODO.txt
 aeebf758f12f6aaba5a7299c46ec7989 *inst/docs/MQM-tour.R
 61657f562f1d0aa6a419caa461382d69 *inst/docs/Sources/MQM/MQM-tour.Rnw
