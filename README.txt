@@ -1,12 +1,12 @@
 ----------------------------------------------------------------------
 R/qtl
-copyright (c) 2001-2012, Karl W Broman
+copyright (c) 2001-2013, Karl W Broman
 http://www.rqtl.org
 
 Authors: Karl W Broman <kbroman@biostat.wisc.edu> and Hao Wu, with
          ideas from Gary Churchill and Saunak Sen and contributions
-         from Danny Arends, Ritsert Jansen, Pjotr Prins, and Brian
-         Yandell
+         from Danny Arends, Ritsert Jansen, Pjotr Prins, Laura
+         Shannon, and Brian Yandell
 ----------------------------------------------------------------------
 
 R/qtl is an extensible, interactive environment for mapping
