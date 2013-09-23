@@ -17,6 +17,46 @@ http://www.rqtl.org
     at http://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
+Version 1.28, 9/23/2013:
+
+Major changes:
+
+  Added cross type "haploid". Like backcross ("bc") or doubled
+  haploids ("dh") but with genotype labels like "A" and "B" instead of
+  "AA" and "AB"/"BB".
+
+  Added crosstype argument to read.cross, to force a particular cross
+  type (such as "riself").
+
+  For parallel processing, replaced reliance on the snow library with
+  the use of the parallel library.
+
+Minor changes:
+
+  Added formMarkerCovar(), to facilitate use of markers as covariates
+  in QTL analysis.
+
+  Added function addmarker() for adding genotypes for a marker to a
+  cross object.
+
+  Added function nqtl() for counting number of QTL in QTL object.
+
+  Added examples to help files for plotPXG and effectplot on getting the
+  output.
+
+  Slight change to way to handle random number generation for
+  cluster-based computing.
+
+  Fix bug in fitqtl-link functions for model="binary" (re matrix rank)
+
+  Fixed write.cross to allow use for BCsFt crosses.
+
+  Fixed an out-of-bounds error in the C++ code mqmscan.cpp.
+
+  In stepwiseqtl with verbose=FALSE, the initial LOD score is no
+  longer printed.
+
+
 Version 1.27, 4/11/2013:
 
 Major changes:

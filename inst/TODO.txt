@@ -10,28 +10,14 @@ Karl Broman, <kbroman@biostat.wisc.edu>.
 
 SHORT TERM:
 
-o stepwiseqtl: "initial lod: " printed even if verbose=FALSE
+o Revise rqtltour and rqtltour2 to emphasize the use of RStudio.
+  Suggest using download.file() and then loading with File -> Open
+  rather than using url.show()
 
-o Add to help file for ploxPXG: example on grabbing the results
-  (Same for effectplot?)
-
-    table(out[,1], out[,3])
-    data(hyper)
-    out <- plotPXG(hyper, "D1Mit123")
-    out[1:5,]
-    table(out[,1], out[,3])
-    out[ out[,3] == 1, ]
+o calc.genoprob: calculate genotype probabilities at a pre-specified
+  map
 
 o Add pheno.col type arguments to all of the MQM functions
-
-o revise use of snow package to use parallel instead
-
-  library(parallel)
-  cl <- makeCluster(detectCores())
-  clusterSetRNGStream(cl)
-  clusterEvalQ(cl, library(qtl))
-  results <- clusterApply(cl, blah)
-  stopCluster(cl)
 
 o Bug in scantwo: occasionally lod scores not matching what I get from
   lm(); see example data from Quoc Tran
@@ -73,7 +59,7 @@ o Bugs in summary.scanone in the case of multiple phenotypes and
 
 o Helper function for create.map to identify locations on the grid
 
-o Use snow() with orderMarkers
+o Use library(parallel) with orderMarkers
 
 o beeswarm package for plot.pxg
 
@@ -115,14 +101,7 @@ o Bug in plot.scantwo: contours=TRUE gives warning:
     In any(contours) : coercing argument of type 'double' to logical
   Also: maybe change the color of the contour.
 
-o Add cross type "haploid" with genotype names like "A" and "B" rather
-  than "AA" and "AB", but otherwise treat like a backcross (along the
-  lines of "dh").
-
 o max.scantwo could take a chr argument
-
-o Add cross type as argument to read.cross; attempt to convert data to
-  that type.
 
 o In sim.cross, do the qtl get sorted by genomic position?  And then
   do the qtlgeno need to be reordered back?

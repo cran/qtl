@@ -2,8 +2,8 @@
 #
 # write.cross.R
 #
-# copyright (c) 2001-2012, Karl W Broman and Hao Wu
-# last modified Jul, 2012
+# copyright (c) 2001-2013, Karl W Broman and Hao Wu
+# last modified Sep, 2013
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -55,6 +55,9 @@ function(cross, format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtlcart", "gary"
       cross$geno[[i]]$data <- fixX4write(cross$geno[[i]]$data,sex,pgm,crosstype)
   }
 
+  if(crosstype == "bcsft") # convert BCsFt to intercross for writing
+    class(cross)[1] <- "f2"
+
   if(format=="csv") write.cross.csv(cross,filestem,digits,FALSE,FALSE)
   else if(format=="csvr") write.cross.csv(cross,filestem,digits,TRUE,FALSE)
   else if(format=="csvs") write.cross.csv(cross,filestem,digits,FALSE,TRUE)
@@ -91,7 +94,7 @@ function(cross, filestem="data", digits=NULL)
   n.mar <- nmar(cross)
   
   type <- class(cross)[1]
-  if(type=="riself" || type=="risib" || type=="dh") type <- "bc"
+  if(type=="riself" || type=="risib" || type=="dh" || type=="haploid") type <- "bc"
   if(type != "f2" && type != "bc")
     stop("write.cross.mm only works for intercross, backcross, doubled haploid and RI data.")
 
@@ -209,8 +212,8 @@ write.cross.csv <-
 function(cross, filestem="data", digits=NULL, rotate=FALSE, split=FALSE)
 {
   type <- class(cross)[1]
-  if(type != "f2" && type != "bc" && type != "riself" && type != "risib" && type != "dh")
-    stop("write.cross.csv only works for intercross, backcross, RI, and doubled haploid data.")
+  if(type != "f2" && type != "bc" && type != "riself" && type != "risib" && type != "dh" && type != "haploid")
+    stop("write.cross.csv only works for intercross, backcross, RI, doubled haploid, and haploid data.")
 
   if(!split) 
     file <- paste(filestem, ".csv", sep="")
@@ -246,6 +249,7 @@ function(cross, filestem="data", digits=NULL, rotate=FALSE, split=FALSE)
                  paste("not ", alle[1],alle[1],sep=""))
 
     if(type=="dh" || type=="riself" || type=="risib") alleles[2:3] <- alleles[3:2]
+    else if(type=="haploid") alleles <- alle
   }
   else alleles <- c("A","H","B","D","C")
 
