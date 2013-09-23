@@ -2,8 +2,8 @@
 #
 # scanone.R
 #
-# copyright (c) 2001-2012, Karl W Broman
-# last modified Oct, 2012
+# copyright (c) 2001-2013, Karl W Broman
+# last modified Sep, 2013
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -52,21 +52,24 @@ function(cross, chr, pheno.col=1, model=c("normal","binary","2part","np"),
   if(any(chrtype=="X") && (class(cross)[1] == "risib" || class(cross)[1] == "riself")) 
     for(i in which(chrtype=="X")) class(cross$geno[[i]]) <- "A"
 
-  if(!missing(n.perm) && n.perm > 0 && n.cluster > 1 && suppressWarnings(require(snow,quietly=TRUE))) {
+  if(!missing(n.perm) && n.perm > 0 && n.cluster > 1) {
     cat(" -Running permutations via a cluster of", n.cluster, "nodes.\n")
-    cl <- makeCluster(n.cluster)
-    clusterStopped <- FALSE
-    on.exit(if(!clusterStopped) stopCluster(cl))
-    clusterSetupRNG(cl)
-    clusterEvalQ(cl, require(qtl, quietly=TRUE))
+    updateParallelRNG(n.cluster)
+
+    scanonePermInParallel <- function(n.perm, cross, chr, pheno.col, model, method, addcovar,
+                                      intcovar, weights, use, upper, ties.random, start, maxit, tol,
+                                      perm.Xsp, perm.strata, batchsize)
+        scanone(cross=cross, chr=chr, pheno.col=pheno.col, model=model, method=method, addcovar=addcovar,
+                intcovar=intcovar, weights=weights, use=use, upper=upper, ties.random=ties.random, start=start,
+                maxit=maxit, tol=tol, n.perm=n.perm, perm.Xsp=perm.Xsp, perm.strata=perm.strata, batchsize=batchsize,
+                n.cluster=0, verbose=FALSE)
+
     n.perm <- ceiling(n.perm/n.cluster)
     if(missing(chr)) chr <- names(cross$geno)
-    operm <- clusterCall(cl, scanone, cross, chr, pheno.col, model, method,
-                         addcovar, intcovar, weights, use, upper, ties.random,
-                         start, maxit, tol, n.perm, perm.Xsp, perm.strata, verbose=FALSE,
-                         batchsize, n.cluster=0)
-    stopCluster(cl)
-    clusterStopped <- TRUE
+    operm <- mclapply(rep(n.perm, n.cluster), scanonePermInParallel, cross=cross, chr=chr, pheno.col=pheno.col,
+                      model=model, method=method, addcovar=addcovar, intcovar=intcovar, weights=weights, use=use,
+                      upper=upper, ties.random=ties.random, start=start, maxit=maxit, tol=tol, perm.Xsp=perm.Xsp,
+                      perm.strata=perm.strata, batchsize=batchsize, mc.cores=n.cluster)
     for(j in 2:length(operm))
       operm[[1]] <- c(operm[[1]], operm[[j]])
     return(operm[[1]])

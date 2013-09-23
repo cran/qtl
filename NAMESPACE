@@ -1,9 +1,12 @@
 useDynLib(qtl)
 
 # Import package dependencies
-import(graphics, stats, utils)
+import(graphics, stats, utils, parallel)
 
 # Export all names
+export(formMarkerCovar)
+export(nqtl)
+export(addmarker)
 export(inferFounderHap)
 export(pull.genoprob, pull.argmaxgeno, pull.draws)
 export(nullmarkers)

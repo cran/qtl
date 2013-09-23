@@ -2,8 +2,8 @@
 #
 # ripple.R
 #
-# copyright (c) 2001-2011, Karl W Broman
-# last modified Dec, 2011
+# copyright (c) 2001-2013, Karl W Broman
+# last modified Sep, 2013
 # first written Oct, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -48,7 +48,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     if(length(chr) > 1)
       stop("ripple only works for one chromosome at a time.")
     if(!testchr(chr, names(cross$geno)))
-      stop("Chr ", chr, "not found.")
+      stop("Chr ", chr, " not found.")
   }
   cross <- subset(cross,chr=chr)
   chr.name <- names(cross$geno)[1]
@@ -117,7 +117,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     else temcross$geno[[1]]$map <- m
 
     if(verbose) cat("  ", n.orders,"total orders\n")
-    if(n.cluster > 1 && suppressWarnings(require(snow, quietly=TRUE))) {
+    if(n.cluster > 1) {
       # parallelize
       if(n.orders <= n.cluster) n.cluster <- n.orders
       cl <- makeCluster(n.cluster)
@@ -168,7 +168,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
         func <- "R_ripple_f2"
       else func <- "R_ripple_bc"        # X chromsome  
     }
-    else if(type %in% c("bc", "riself", "risib", "dh", "bcsft")) func <- "R_ripple_bc"
+    else if(type %in% c("bc", "riself", "risib", "dh", "haploid", "bcsft")) func <- "R_ripple_bc"
     else if(type == "4way") func <- "R_ripple_4way"
     else if(type=="ri4self" || type=="ri8self" || type=="ri4sib" || type=="ri8sib" || type=="bgmagic16")
       func <- "R_ripple_ril48"
@@ -181,7 +181,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
     n.ind <- nind(cross)
 
     if(verbose) cat("  ", n.orders,"total orders\n")
-    if(n.cluster > 1 && suppressWarnings(require(snow, quietly=TRUE))) {
+    if(n.cluster > 1) {
       # parallelize
       if(n.orders <= n.cluster) n.cluster <- n.orders
 
@@ -238,7 +238,7 @@ function(cross, chr, window=4, method=c("countxo","likelihood"),
 }
 
 ######################################################################
-# function for method="likelihood", for snow 
+# function for method="likelihood", for parallel processing (formerly with snow pkg)
 ######################################################################
 rippleSnowLik <-
 function(orders, cross, error.prob, map.function, maxit, tol, sex.sp)
@@ -260,7 +260,7 @@ function(orders, cross, error.prob, map.function, maxit, tol, sex.sp)
 
 
 ######################################################################
-# function for method="countxo", for snow
+# function for method="countxo", for parallel processing (formerly with snow pkg)
 ######################################################################
 rippleSnowCountxo <-
 function(orders, genodat, func)
