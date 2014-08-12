@@ -126,6 +126,7 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
 
   bool dropj = false;
   int jj=0;
+
   // Rprintf("any triple of non-segregating markers is considered to be the result of:\n");
   // Rprintf("identity-by-descent (IBD) instead of identity-by-state (IBS)\n");
   // Rprintf("no (segregating!) cofactors are fitted in such non-segregating IBD regions\n");
@@ -135,12 +136,12 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
       if(((*mapdistance)[j+1]-(*mapdistance)[j])==0.0){ dropj=true; }
     }
     if (!dropj) {
-      marker[jj]= marker[j];
-      (*cofactor)[jj]= (*cofactor)[j];
-      (*mapdistance)[jj]= (*mapdistance)[j];
-      chr[jj]= chr[j];
-      r[jj]= r[j];
-      position[jj]= position[j];
+      marker[jj]          = marker[j];
+      (*cofactor)[jj]     = (*cofactor)[j];
+      (*mapdistance)[jj]  = (*mapdistance)[j];
+      chr[jj]             = chr[j];
+      r[jj]               = r[j];
+      position[jj]        = position[j];
       jj++;
     } else{
       if (verbose) Rprintf("INFO: Marker %d at chr %d is dropped\n",j,chr[j]);
@@ -149,12 +150,15 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
       }
     }
   }
-  debug_trace("Number of markers: %d -> %d\n",Nmark,jj);
-  Nmark= jj;
+  Rprintf("Number of markers: %d -> %d\n",Nmark,jj);
+  Nmark = jj;
   (*nummark) = jj;
 
   // Update the array of marker positions - and calculate R[f] based on these new locations
+  Free(position);     // Free position, because we reallocate them
   position = relative_marker_position(Nmark,chr);
+
+  Free(r);            // Free r, because we reallocate them
   r = recombination_frequencies(Nmark, position, (*mapdistance));
 
   debug_trace("After dropping of uninformative cofactors\n");
@@ -192,7 +196,9 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
     for (int j=0; j<Nmark; j++) {
       newmarker[j][i]= marker[j][i];
     }
-  }                                             // End fix
+  }
+  delMQMMarkerMatrix(marker, Nmark);
+  // End fix
   
   vector newweight = newvector(Naug);
 
@@ -201,7 +207,10 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
   if(max > stepmax){ fatal("ERROR: Re-estimation of the map put markers at: %f Cm, run the algorithm with a step.max larger than %f Cm", max, max); }
 
   //Check if everything still is correct positions and R[f]
+  Free(position);     // Free position, because we reallocate them
   position = relative_marker_position(Nmark,chr);
+
+  Free(r);      // Free r, because we reallocate them
   r = recombination_frequencies(Nmark, position, (*mapdistance));
   
   /* eliminate individuals with missing trait values */
@@ -272,9 +281,13 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
   }
   if (R_finite(logL) && !R_IsNaN(logL)) {
     if(Backwards==1){    // use only selected cofactors
-      logL = backward(Nind, Nmark, (*cofactor), marker, y, weight, ind, Naug, logL,variance, F1, F2, &selcofactor, r, position, &informationcontent, mapdistance,&Frun,run,useREML,fitQTL,dominance, em, windowsize, stepsize, stepmin, stepmax,crosstype,verbose);
+      logL = backward(Nind, Nmark, (*cofactor), marker, y, weight, ind, Naug, logL,variance, F1, F2, &selcofactor, r, 
+                      position, &informationcontent, mapdistance,&Frun,run,useREML,fitQTL,dominance, em, windowsize, 
+                      stepsize, stepmin, stepmax,crosstype,verbose);
     }else{ // use all cofactors
-      logL = mapQTL(Nind, Nmark, (*cofactor), (*cofactor), marker, position,(*mapdistance), y, r, ind, Naug, variance, 'n', &informationcontent,&Frun,run,useREML,fitQTL,dominance, em, windowsize, stepsize, stepmin, stepmax,crosstype,verbose); // printout=='n'
+      logL = mapQTL(Nind, Nmark, (*cofactor), (*cofactor), marker, position,(*mapdistance), y, r, ind, Naug, variance,
+                    'n', &informationcontent,&Frun,run,useREML,fitQTL,dominance, em, windowsize, stepsize, stepmin, 
+                    stepmax,crosstype,verbose); // printout=='n'
     }
   }
   // Write output and/or send it back to R
@@ -294,16 +307,18 @@ double analyseF2(int Nind, int *nummark, cvector *cofactor, MQMMarkerMatrix mark
     QTL[0][Nsteps+ii] = informationcontent[ii];
   }
   //Free used memory
-  Free(position); Free(weight); Free(ind); Free(r); Free(informationcontent);
+  Free(position);
+  Free(weight);
+  Free(ind);
+  Free(r);
+  Free(informationcontent);
   freematrix((void **)Frun,Nsteps);
-  delMQMMarkerMatrix(marker,Nmark+1);
+  delMQMMarkerMatrix(marker, Nmark+1);
   Free(y);
   Free(chr);
   Free(selcofactor); // Rprintf("INFO: Analysis of data finished");
   return logL;
 }
-
-
 
 /**********************************************************************
  *
@@ -372,6 +387,7 @@ void mqmscan(int Nind, int Nmark,int Npheno,int **Geno,int **Chromo, double **Di
     R_CheckUserInterrupt(); /* check for ^C */
     R_FlushConsole();
   #endif
+  //delMQMMarkerMatrix(markers, Nmark+1); // [Danny:] This looked suspicious, We don't need to clean because it is cleaned in analyseF2
   return;
 }  /* end of function mqmscan */
 
