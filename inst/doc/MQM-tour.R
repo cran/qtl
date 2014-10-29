@@ -168,13 +168,13 @@ legend("topleft", c("scanone","MQM"), col=c("black","green"), lwd=1)
 
 
 ###################################################
-### code chunk number 22: MQM-tour.Rnw:436-437
+### code chunk number 22: MQM-tour.Rnw:426-427
 ###################################################
 real_markers <- mqmextractmarkers(mqm)
 
 
 ###################################################
-### code chunk number 23: MQM-tour.Rnw:458-463
+### code chunk number 23: MQM-tour.Rnw:448-453
 ###################################################
 max(mqm)
 find.marker(maug, chr=5, pos=35)
@@ -192,7 +192,7 @@ mqm_co1 <- mqmscan(maug, setcofactors)
 
 
 ###################################################
-### code chunk number 25: MQM-tour.Rnw:480-482
+### code chunk number 25: MQM-tour.Rnw:470-472
 ###################################################
 # plot after adding first cofactor
 par(mfrow = c(2,1))
@@ -208,14 +208,14 @@ plot(mqm_co1)
 
 
 ###################################################
-### code chunk number 27: MQM-tour.Rnw:499-500
+### code chunk number 27: MQM-tour.Rnw:489-490
 ###################################################
 plot(m_one, mqm_co1, col=c("black","green"), lty=1:2)
 legend("topleft", c("scanone","MQM"), col=c("black","green"), lwd=1)
 
 
 ###################################################
-### code chunk number 28: MQM-tour.Rnw:520-524
+### code chunk number 28: MQM-tour.Rnw:510-514
 ###################################################
 # summary(mqm_co1)
 multitoset <- c(multitoset, find.markerindex(maug, find.marker(maug,4,10)))
@@ -234,7 +234,7 @@ mqm_co2 <- mqmscan(maug, setcofactors)
 
 
 ###################################################
-### code chunk number 30: MQM-tour.Rnw:539-540
+### code chunk number 30: MQM-tour.Rnw:529-530
 ###################################################
 par(mfrow = c(2,1))
 plot(mqmgetmodel(mqm_co2))
@@ -252,7 +252,7 @@ legend("topleft", c("one cofactor","two cofactors"), col=c("blue","green"),
 
 
 ###################################################
-### code chunk number 32: MQM-tour.Rnw:559-561
+### code chunk number 32: MQM-tour.Rnw:549-551
 ###################################################
 # plot closeup of threeway comparison
 plot(mqm, mqm_co1, mqm_co2, col=c("green","red","blue"), lty=1:3)
@@ -261,7 +261,7 @@ legend("topleft", c("no cofactors","one cofactor","two cofactors"),
 
 
 ###################################################
-### code chunk number 33: MQM-tour.Rnw:619-623 (eval = FALSE)
+### code chunk number 33: MQM-tour.Rnw:609-613 (eval = FALSE)
 ###################################################
 ## autocofactors <- mqmautocofactors(maug, 50)
 ## mqm_auto <- mqmscan(maug, autocofactors)
@@ -270,7 +270,7 @@ legend("topleft", c("no cofactors","one cofactor","two cofactors"),
 
 
 ###################################################
-### code chunk number 34: MQM-tour.Rnw:626-630
+### code chunk number 34: MQM-tour.Rnw:616-620
 ###################################################
 autocofactors <- mqmautocofactors(maug, 50)
 mqm_auto <- mqmscan(maug, autocofactors)
@@ -287,7 +287,7 @@ mqm_backw <- mqmscan(maug, setcofactors)
 
 
 ###################################################
-### code chunk number 36: MQM-tour.Rnw:642-644
+### code chunk number 36: MQM-tour.Rnw:632-634
 ###################################################
 # plot result of cofactor selection
 par(mfrow = c(2,1))
@@ -304,7 +304,7 @@ mqmplot.cofactors(maug, setcofactors, justdots=TRUE)
 
 
 ###################################################
-### code chunk number 38: MQM-tour.Rnw:660-662
+### code chunk number 38: MQM-tour.Rnw:650-652
 ###################################################
 # plot result of cofactor backward elimination
 par(mfrow = c(2,1))
@@ -321,7 +321,7 @@ plot(mqmgetmodel(mqm_auto))
 
 
 ###################################################
-### code chunk number 40: MQM-tour.Rnw:677-679
+### code chunk number 40: MQM-tour.Rnw:667-669
 ###################################################
 # plot result of cofactor backward elimination
 par(mfrow = c(2,1))
@@ -344,7 +344,7 @@ plot(mqm_backw)
 
 
 ###################################################
-### code chunk number 43: MQM-tour.Rnw:705-706
+### code chunk number 43: MQM-tour.Rnw:695-696
 ###################################################
 plot(m_one, mqm_backw, col=c("black","green"), lty=1:2)
 legend("topleft", c("scanone","MQM"), col=c("black","green"), lwd=1)
@@ -357,18 +357,18 @@ legend("topleft", c("scanone","MQM"), col=c("black","green"), lwd=1)
 ## par(mfrow = c(2,1))
 ## plot(mqmgetmodel(mqm_backw_low))
 ## plot(mqm_backw,mqm_backw_low, col=c("blue","green"), lty=1:2)
-## legend("topleft", c("Significance=0.02","Significance=0.002"), 
+## legend("topleft", c("Significance=0.02","Significance=0.002"),
 ##        col=c("blue","green"), lwd=1)
 
 
 ###################################################
-### code chunk number 45: MQM-tour.Rnw:745-746
+### code chunk number 45: MQM-tour.Rnw:733-734
 ###################################################
 mqm_backw_low <- mqmscan(maug, setcofactors, cofactor.significance=0.002)
 par(mfrow = c(2,1))
 plot(mqmgetmodel(mqm_backw_low))
 plot(mqm_backw,mqm_backw_low, col=c("blue","green"), lty=1:2)
-legend("topleft", c("Significance=0.02","Significance=0.002"), 
+legend("topleft", c("Significance=0.02","Significance=0.002"),
        col=c("blue","green"), lwd=1)
 
 
@@ -379,7 +379,7 @@ legend("topleft", c("Significance=0.02","Significance=0.002"),
 
 
 ###################################################
-### code chunk number 47: MQM-tour.Rnw:775-776
+### code chunk number 47: MQM-tour.Rnw:763-764
 ###################################################
 mqmplot.singletrait(mqm_backw_low, extended=TRUE)
 
@@ -391,7 +391,7 @@ mqmplot.singletrait(mqm_backw_low, extended=TRUE)
 
 
 ###################################################
-### code chunk number 49: MQM-tour.Rnw:809-810
+### code chunk number 49: MQM-tour.Rnw:797-798
 ###################################################
 dirresults <- mqmplot.directedqtl(multitrait, mqm_backw_low)
 
@@ -403,7 +403,7 @@ dirresults <- mqmplot.directedqtl(multitrait, mqm_backw_low)
 
 
 ###################################################
-### code chunk number 51: MQM-tour.Rnw:828-829
+### code chunk number 51: MQM-tour.Rnw:816-817
 ###################################################
 plotPXG(multitrait, marker="GH.117C")
 
@@ -415,7 +415,7 @@ plotPXG(multitrait, marker="GH.117C")
 
 
 ###################################################
-### code chunk number 53: MQM-tour.Rnw:850-851
+### code chunk number 53: MQM-tour.Rnw:838-839
 ###################################################
 effectplot(multitrait, mname1="GH.117C", mname2="GA1")
 
@@ -427,13 +427,13 @@ effectplot(multitrait, mname1="GH.117C", mname2="GA1")
 
 
 ###################################################
-### code chunk number 55: MQM-tour.Rnw:877-878
+### code chunk number 55: MQM-tour.Rnw:865-866
 ###################################################
 effectplot(multitrait, mname1="PVV4", mname2="GH.117C")
 
 
 ###################################################
-### code chunk number 56: MQM-tour.Rnw:921-924
+### code chunk number 56: MQM-tour.Rnw:909-912
 ###################################################
 require(snow)
 results <- mqmpermutation(maug, scanfunction=mqmscan, cofactors=setcofactors,
@@ -441,20 +441,20 @@ results <- mqmpermutation(maug, scanfunction=mqmscan, cofactors=setcofactors,
 
 
 ###################################################
-### code chunk number 57: MQM-tour.Rnw:927-928
+### code chunk number 57: MQM-tour.Rnw:915-916
 ###################################################
 mqmplot.permutations(results)
 
 
 ###################################################
-### code chunk number 58: MQM-tour.Rnw:939-941
+### code chunk number 58: MQM-tour.Rnw:927-929
 ###################################################
 resultsrqtl <- mqmprocesspermutation(results)
 summary(resultsrqtl)
 
 
 ###################################################
-### code chunk number 59: MQM-tour.Rnw:962-965
+### code chunk number 59: MQM-tour.Rnw:950-953
 ###################################################
 data(multitrait)
 m_imp <- fill.geno(multitrait)
@@ -462,7 +462,7 @@ mqmscanfdr(m_imp, mqmscanall, cofactors=setcofactors, n.cluster=2)
 
 
 ###################################################
-### code chunk number 60: MQM-tour.Rnw:1009-1012
+### code chunk number 60: MQM-tour.Rnw:997-1000
 ###################################################
 data(multitrait)
 m_imp <- fill.geno(multitrait)
@@ -470,13 +470,13 @@ mqm_imp5 <- mqmscan(m_imp, pheno.col=1:5, n.cluster=2)
 
 
 ###################################################
-### code chunk number 61: MQM-tour.Rnw:1015-1016
+### code chunk number 61: MQM-tour.Rnw:1003-1004
 ###################################################
 mqmplot.multitrait(mqm_imp5, type="image")
 
 
 ###################################################
-### code chunk number 62: MQM-tour.Rnw:1024-1027
+### code chunk number 62: MQM-tour.Rnw:1012-1015
 ###################################################
 cofactorlist <- mqmsetcofactors(m_imp, 3)
 mqm_imp5 <- mqmscan(m_imp, pheno.col=1:5 , cofactors=cofactorlist,
@@ -484,31 +484,31 @@ mqm_imp5 <- mqmscan(m_imp, pheno.col=1:5 , cofactors=cofactorlist,
 
 
 ###################################################
-### code chunk number 63: MQM-tour.Rnw:1030-1031
+### code chunk number 63: MQM-tour.Rnw:1018-1019
 ###################################################
 mqmplot.multitrait(mqm_imp5, type="image")
 
 
 ###################################################
-### code chunk number 64: MQM-tour.Rnw:1041-1042
+### code chunk number 64: MQM-tour.Rnw:1029-1030
 ###################################################
 mqmplot.multitrait(mqm_imp5, type="lines")
 
 
 ###################################################
-### code chunk number 65: MQM-tour.Rnw:1062-1063
+### code chunk number 65: MQM-tour.Rnw:1050-1051
 ###################################################
 mqmplot.circle(m_imp, mqm_imp5)
 
 
 ###################################################
-### code chunk number 66: MQM-tour.Rnw:1072-1073
+### code chunk number 66: MQM-tour.Rnw:1060-1061
 ###################################################
 mqmplot.circle(m_imp, mqm_imp5, highlight=2)
 
 
 ###################################################
-### code chunk number 67: MQM-tour.Rnw:1095-1098
+### code chunk number 67: MQM-tour.Rnw:1083-1086
 ###################################################
 data(locations)
 multiloc <- addloctocross(m_imp, locations)
@@ -516,7 +516,7 @@ mqmplot.cistrans(mqm_imp5, multiloc, 5, FALSE, TRUE)
 
 
 ###################################################
-### code chunk number 68: MQM-tour.Rnw:1111-1112
+### code chunk number 68: MQM-tour.Rnw:1099-1100
 ###################################################
 mqmplot.circle(multiloc, mqm_imp5, highlight=2)
 
