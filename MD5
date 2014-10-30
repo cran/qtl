@@ -1,4 +1,4 @@
-8caf0fa828433c2f6ebad3f319a8e1c5 *DESCRIPTION
+ce65ff0fb82ad925a2410a4c2153fc82 *DESCRIPTION
 6c7aaee4ac2af5abdc2ee2d0975947e3 *NAMESPACE
 be09adead3e7ef2c4a141178391fde75 *R/add.cim.covar.R
 91636cfc738d2a6f18024ed628341bd9 *R/add_threshold.R
@@ -99,17 +99,17 @@ e5d3fa6caa0576e6a770a8f7e22cf315 *data/map10.RData
 ca7ed54066a7579ea0ed9cd1c04d4354 *data/multitrait.RData
 c1971de49f830f2912b6c4ac41f0144e *inst/BUGS.txt
 19b849f792af25c391f31d677210b0d5 *inst/CITATION
-31902a8d2ce2c6eee0b00b1c89b47808 *inst/INSTALL_ME.txt
+8fc0b2b54ea56773f6b166bc8aab5e11 *inst/INSTALL_ME.txt
 f6bc7c5215d6f1b0c94235a5ef381e25 *inst/LICENSE.txt
 c8b990e307ecee343beb5a217265ffcf *inst/MQM-TODO.txt
 39a5b2862a5893ac23e0862786a64c07 *inst/README.md
-341007b229ceae1d8406571b5718a840 *inst/STATUS.txt
+69c659df29d2a82ff8b5d18f0d4463db *inst/STATUS.txt
 bb7367e70e80baeb154931672d4c954b *inst/TODO.txt
-334fab43e9e48c3354cd1ab01e83d544 *inst/contrib/bin/CMakeLists.txt
+1723dec70d7b0ed3c1c99e7b7581e948 *inst/contrib/bin/CMakeLists.txt
 1e10167bc08e8c501be1ac201247af7d *inst/contrib/bin/FindRLibs.cmake
 a2151c53575c7e54ceef324add76f356 *inst/contrib/bin/README
 f300bcbb15db0aa41bfa87e4598ca999 *inst/contrib/bin/mqmdebugout.cpp
-90ecd36024118a2cf2bf07c1fe486b39 *inst/contrib/bin/mqmmain.cpp
+b7f842cec0ea8e7025a4495586ba4548 *inst/contrib/bin/mqmmain.cpp
 872352d722e347e7202db6d5e7208f26 *inst/contrib/bin/regressiontests.bat
 72e795393b05712e52d2dfcd013853d2 *inst/contrib/bin/rtest/regression/mqm_listeria1.rtest
 1fc00c7595303eb7b28b7c22552e6a32 *inst/contrib/bin/rtest/regression/scanone_mr.rtest
@@ -176,7 +176,7 @@ d89ef8ce1e7a097fb859b6f0463a28ee *inst/contrib/biolib/README
 f605130493a82e5e91911de5b6b8b6c1 *inst/contrib/scripts/cleanup.sh
 2b3f7306cdc6fb6add972d40a09d7028 *inst/contrib/scripts/install_rqtl.sh
 83c1e2ea3cdf1ff0f886eb96b5c4d5e2 *inst/contrib/scripts/repl_inputs.rb
-6cfb9ed2898a6f7bdc8b9e59ffae7b6f *inst/contrib/scripts/run_all_tests.sh
+6e30a9820a443a31db0538cf07c06531 *inst/contrib/scripts/run_all_tests.sh
 241ab5cd315e17513c395de2703aeec3 *inst/contrib/scripts/update_header.rb
 c5a2ee3e930b1755c96a48b0ec3d4e98 *inst/doc/MQM-tour.R
 0936e4d4c5ed9f8bfc66e85c694e4bb5 *inst/doc/MQM-tour.pdf
@@ -211,7 +211,7 @@ b7ee88c6b1ce5df40209c9bd58acf9b8 *inst/doc/new_summary_scanone.R
 a808a0dcf90e74a422bf3ea84f4bd55b *inst/doc/new_summary_scantwo.R
 83dbe80c9f5b641b0b269be341c80df2 *inst/doc/new_summary_scantwo.pdf
 5de0f099578b884016db92738d3f2dc3 *inst/doc/rqtltour.R
-f48921099ac69da816a38ae4660e68bb *inst/doc/rqtltour.pdf
+2962bca51fa8d6b14c548cd35cae4780 *inst/doc/rqtltour.pdf
 f8569d240e7f00630b002306f6af77a3 *inst/doc/rqtltour2.R
 0851169416f3b84ebc829da7fd3b294e *inst/doc/rqtltour2.pdf
 1b42a662f601adaa9660800eefa4e42f *inst/sampledata/README.txt
@@ -514,7 +514,7 @@ e89c16bbdc202d4014a36494ba227c30 *src/mqmmapqtl.cpp
 660298dff42fb7ee76552284475a7bb0 *src/mqmmixture.h
 e9e62feda3dc87e990888bc11b5fc4b3 *src/mqmprob.cpp
 70ff1060b83ff81c9327d77cb081bcc1 *src/mqmprob.h
-bd83839a2662889eb1ec7f3721bee125 *src/mqmregression.cpp
+8e7dc03f7d0ec77bf374ed15a50ae0b6 *src/mqmregression.cpp
 fef48f3073b3506c18dc44ac4e1263a7 *src/mqmregression.h
 f29dff71c17e33cfe3a65d380c6c9433 *src/mqmscan.cpp
 f8565e0a549327219c4559ac3f97bf4d *src/mqmscan.h
