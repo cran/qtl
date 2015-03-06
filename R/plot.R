@@ -151,12 +151,13 @@ geno.image <-
     Geno <- pull.geno(cross)
 
     # colors to use
+    maxgeno <- max(Geno, na.rm=TRUE)
     if(type != "4way") {
         thecolors <- c("white", "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")
         thebreaks <- seq(-0.5, 5.5, by=1)
     }
     else {
-        if(max(Geno,na.rm=TRUE) <= 5) {
+        if(maxgeno <= 5) {
             thecolors <- c("white", "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")
             thebreaks <- seq(-0.5, 5.5, by=1)
         }
@@ -166,6 +167,8 @@ geno.image <-
             thebreaks <- seq(-0.5, 10.5, by=1)
         }
     }
+    thecolors <- thecolors[1:(maxgeno+1)]
+    thebreaks <- thebreaks[1:(maxgeno+2)]
 
     # reorder the individuals according to their phenotype
     o <- 1:nrow(Geno)
@@ -197,8 +200,17 @@ geno.image <-
     on.exit(par(xpd=old.xpd,las=old.las))
 
     # plot grid with black pixels where there is missing data
-    image(1:nrow(g),1:ncol(g),g,ylab="Individuals",xlab="Markers",col=thecolors,
-          breaks=thebreaks)
+    plot_image_sub <-
+        function(g, ylab="Individuals",xlab="Markers", col=thecolors, ...)
+        {
+            if(length(thebreaks) != length(col)+1)
+                stop("Must have one more break than color\n",
+                     "length(breaks) = ", length(thebreaks),
+                     "\nlength(col) = ", length(col))
+            image(1:nrow(g),1:ncol(g), g, col=col, xlab=xlab, ylab=ylab,
+                  breaks=thebreaks, ...)
+        }
+    plot_image_sub(g, ...)
 
     # plot lines at the chromosome boundaries
     n.mar <- nmar(cross)
@@ -1387,6 +1399,8 @@ plotPXG <- plot.pxg <-
     if(!infer) { # replace partially informative genotypes with NAs
         if(type == "f2") x[x > 3] <- NA
         if(type == "4way") x[x > 4] <- NA
+        if(sum(!is.na(x)) == 0)
+            stop("Can't use infer=FALSE as there are no fully informative genotypes")
     }
 
     # in case of X chromosome, recode some genotypes
@@ -1558,21 +1572,24 @@ plotPheno <- plot.pheno <-
     if(u==2 || (u < 10  && nind(x) > 50))
         phe <- as.factor(phe)
 
-    old.las <- par("las")
-    on.exit(par(las=old.las))
-    par(las=1)
+    plot_pheno_sub <-
+        function(phe, xlab=paste("phe", pheno.col),
+                 main=colnames(x$pheno)[pheno.col], col="white",
+                 breaks=ceiling(2*sqrt(nind(x))),
+                 las=1,
+                 ...)
+        {
+            if(is.factor(phe)) {
+                barplot(table(phe), xlab=xlab, main=main, col=col, las=las, ...)
+            }
+            else {
+                phe <- as.numeric(phe)[1:nind(x)]
+                hist(phe, breaks = breaks,
+                     xlab = xlab, main = main, las=las, ...)
+            }
+        }
 
-    if(is.factor(phe)) {
-        barplot(table(phe),  xlab = paste("phe", pheno.col),
-                main = colnames(x$pheno)[pheno.col], col = "white", ...)
-    }
-    else {
-        phe <- as.numeric(phe)[1:nind(x)]
-        hist(phe, breaks = ceiling(2*sqrt(nind(x))),
-             xlab = paste("phe", pheno.col),
-             main = colnames(x$pheno)[pheno.col], ...)
-    }
-
+    plot_pheno_sub(phe, ...)
 }
 
 # end of plot.R

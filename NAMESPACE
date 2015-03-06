@@ -3,8 +3,11 @@ useDynLib(qtl)
 # Import package dependencies
 import(graphics, stats, utils, parallel)
 
+export(flip.order)
 export(map2table)
 export(scanonevar)
+export(scanonevar.meanperm)
+export(scanonevar.varperm)
 export(reduce2grid)
 export(formMarkerCovar)
 export(nqtl)
@@ -54,7 +57,7 @@ export(simulatemissingdata, stepwiseqtl, strip.partials, subrousummaryscantwo)
 export(summaryMap, summary.map, switch.order, switchAlleles, top.errorlod)
 export(totmar, transformPheno, tryallpositions, typingGap, write.cross, xaxisloc.scanone)
 export(clean, condense, convert)
-export(summaryScantwoOld, summary.scantwo.old)
+export(summaryScantwoOld)
 export(reviseXdata)
 
 
