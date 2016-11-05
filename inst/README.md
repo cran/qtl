@@ -1,7 +1,7 @@
 ## R/qtl: A QTL mapping environment
 
 [![Build Status](https://travis-ci.org/kbroman/qtl.svg?branch=master)](https://travis-ci.org/kbroman/qtl)
-[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/qtl)](http://cran.r-project.org/package=qtl)
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/qtl)](https://cran.r-project.org/package=qtl)
 
 **Authors**: Karl W Broman and Hao Wu, with ideas from Gary Churchill
 and &#346;aunak Sen and contributions from Danny Arends,
@@ -9,10 +9,10 @@ Robert Corty, Timoth&eacute;e Flutre, Ritsert Jansen, Pjotr Prins, Lars
 R&ouml;nneg&aring;rd, Rohan Shah, Laura Shannon, Quoc Tran, Aaron
 Wolen, and Brian Yandell
 
-[R/qtl](http://www.rqtl.org) is an extensible, interactive environment for mapping
+[R/qtl](http://rqtl.org) is an extensible, interactive environment for mapping
 quantitative trait loci (QTL) in experimental crosses. It is
 implemented as an add-on package for the freely available and widely
-used statistical language/software [R](http://www.R-project.org).
+used statistical language/software [R](https://www.r-project.org).
 The development of this software as an add-on to R allows us to take
 advantage of the basic mathematical and statistical functions, and
 powerful graphics capabilities, that are provided with R. Further, the
@@ -47,4 +47,4 @@ merchantability or fitness for a particular purpose.  See the GNU
 General Public License for more details.
 
 A copy of the GNU General Public License, version 3, is available at
-<http://www.r-project.org/Licenses/GPL-3>
+<https://www.r-project.org/Licenses/GPL-3>
