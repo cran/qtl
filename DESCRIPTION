@@ -1,6 +1,6 @@
 Package: qtl
-Version: 1.40-8
-Date: 2016-10-31
+Version: 1.41-6
+Date: 2017-06-11
 Title: Tools for Analyzing QTL Experiments
 Author: Karl W Broman <kbroman@biostat.wisc.edu> and Hao Wu, with
   ideas from Gary Churchill and Saunak Sen and contributions from
@@ -17,6 +17,6 @@ Suggests: testthat
 License: GPL-3
 URL: http://rqtl.org
 NeedsCompilation: yes
-Packaged: 2016-10-31 13:53:16 UTC; kbroman
+Packaged: 2017-06-11 21:50:21 UTC; kbroman
 Repository: CRAN
-Date/Publication: 2016-11-05 08:59:40
+Date/Publication: 2017-06-12 06:00:56 UTC

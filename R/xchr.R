@@ -560,7 +560,7 @@ reviseXdata <-
             if(all(pgm==1) && !force) { # both sexes, backw dir
                 if(!missing(geno)) {
                     gmale <- geno[sex==1,]
-                    if(expandX!="full") {
+                    if(expandX=="simple") {
                         gmale[!is.na(gmale) & gmale==1] <- 3
                         gmale[!is.na(gmale) & gmale==2] <- 1
                     }
@@ -574,7 +574,7 @@ reviseXdata <-
 
                 else if(!missing(draws)) {
                     gmale <- draws[sex==1,,]
-                    if(expandX!="full") {
+                    if(expandX=="simple") {
                         gmale[gmale==1] <- 3
                         gmale[gmale==2] <- 1
                     }

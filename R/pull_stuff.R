@@ -2,10 +2,10 @@
 #
 # pull_stuff.R
 #
-# copyright (c) 2001-2012, Karl W Broman
+# copyright (c) 2001-2017, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Mar, 2012
+# last modified Mar, 2017
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -194,7 +194,9 @@ pull.genoprob <-
             colnames(fullpr)[thecol] <- paste(colnames(pr[[i]]), thisgen, sep=":")
             if(include.pos.info) {
                 thechr[thecol] <- rep(names(cross$geno)[i], length(thecol))
-                thepos[thecol] <- attr(pr[[i]], "map")
+                map <- attr(pr[[i]], "map")
+                if(is.matrix(map)) map <- map[1,] # sex-specific map; take female positions
+                thepos[thecol] <- map
             }
         }
         curcol <- curcol + ncol(pr[[i]])*length(dim3)
@@ -256,7 +258,9 @@ pull.argmaxgeno <-
         colnames(fullam)[thecol] <- colnames(am[[i]])
         if(include.pos.info) {
             thechr[thecol] <- rep(names(cross$geno)[i], length(thecol))
-            thepos[thecol] <- attr(am[[i]], "map")
+            map <- attr(am[[i]], "map")
+            if(is.matrix(map)) map <- map[1,] # sex-specific map; take female positions
+            thepos[thecol] <- map
         }
         curcol <- curcol + length(thecol)
     }
@@ -286,7 +290,7 @@ pull.draws <-
         cross <- subset(cross, chr=chr)
 
     if(!("draws" %in% names(cross$geno[[1]])))
-        stop("You must first run argmax.geno.")
+        stop("You must first run sim.geno.")
 
     dr <- lapply(cross$geno, function(a) a$draws)
     chrnames <- names(cross$geno)
