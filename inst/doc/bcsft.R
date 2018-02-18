@@ -1,7 +1,8 @@
 ### R code from vignette source 'bcsft.Rnw'
+### Encoding: UTF-8
 
 ###################################################
-### code chunk number 1: bcsft.Rnw:70-74
+### code chunk number 1: bcsft.Rnw:74-78
 ###################################################
 library(qtl)
 listeria.bc2s3<-read.cross(format="csv",
@@ -10,14 +11,14 @@ listeria.bc2s3<-read.cross(format="csv",
 
 
 ###################################################
-### code chunk number 2: bcsft.Rnw:78-80
+### code chunk number 2: bcsft.Rnw:82-84
 ###################################################
 data(hyper)
 hyper3 <- convert2bcsft(hyper, BC.gen = 3)
 
 
 ###################################################
-### code chunk number 3: bcsft.Rnw:88-92
+### code chunk number 3: bcsft.Rnw:92-96
 ###################################################
 listeria.f2<-read.cross(format="csv",
    file=system.file(file.path("sampledata", "listeria.csv"), package = "qtl"))
@@ -26,26 +27,26 @@ map.f2<-est.map(listeria.f2)
 
 
 ###################################################
-### code chunk number 4: bcsft.Rnw:97-99
+### code chunk number 4: bcsft.Rnw:101-103
 ###################################################
 map.bc1 <- est.map(hyper)
 map.bc3<-est.map(hyper3)
 
 
 ###################################################
-### code chunk number 5: bcsft.Rnw:103-104
+### code chunk number 5: bcsft.Rnw:107-108
 ###################################################
 plot(map.f2, map.bc2s3, label=FALSE, main="")
 
 
 ###################################################
-### code chunk number 6: bcsft.Rnw:111-112
+### code chunk number 6: bcsft.Rnw:115-116
 ###################################################
 plot(map.bc1, map.bc3, label=FALSE, main="")
 
 
 ###################################################
-### code chunk number 7: bcsft.Rnw:122-130
+### code chunk number 7: bcsft.Rnw:126-134
 ###################################################
 listeria.bc2s3<-replace.map(listeria.bc2s3, map.f2)
 listeria.f2<-replace.map(listeria.f2, map.f2)
@@ -58,13 +59,13 @@ one.bc2s3<-scanone(listeria.bc2s3, method="em",pheno.col=1)
 
 
 ###################################################
-### code chunk number 8: bcsft.Rnw:134-135
+### code chunk number 8: bcsft.Rnw:138-139
 ###################################################
 plot(one.f2, one.bc2s3, col=c("red", "purple"))
 
 
 ###################################################
-### code chunk number 9: bcsft.Rnw:141-149
+### code chunk number 9: bcsft.Rnw:145-153
 ###################################################
 hyper3<-replace.map(hyper3, map.bc1)
 hyper<-replace.map(hyper, map.bc1)
@@ -77,7 +78,7 @@ one.hyp3<-scanone(hyper3, method="em",pheno.col=1)
 
 
 ###################################################
-### code chunk number 10: bcsft.Rnw:153-154
+### code chunk number 10: bcsft.Rnw:157-158
 ###################################################
 plot(one.hyp, one.hyp3, col=c("red", "purple"))
 
