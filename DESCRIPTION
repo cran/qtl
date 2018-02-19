@@ -1,6 +1,6 @@
 Package: qtl
-Version: 1.42-7
-Date: 2018-02-16
+Version: 1.42-8
+Date: 2018-02-19
 Title: Tools for Analyzing QTL Experiments
 Author: Karl W Broman <kbroman@biostat.wisc.edu> and Hao Wu, with
   ideas from Gary Churchill and Saunak Sen and contributions from
@@ -18,7 +18,8 @@ License: GPL-3
 URL: https://rqtl.org, https://github.com/kbroman/qtl
 BugReports: https://github.com/kbroman/qtl/issues
 Encoding: UTF-8
+ByteCompile: true
 NeedsCompilation: yes
-Packaged: 2018-02-16 21:15:26 UTC; kbroman
+Packaged: 2018-02-19 15:49:39 UTC; kbroman
 Repository: CRAN
-Date/Publication: 2018-02-18 15:31:12 UTC
+Date/Publication: 2018-02-19 19:40:16 UTC

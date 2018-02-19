@@ -1,4 +1,4 @@
-917466322534bd5de2600d16de8b71bc *DESCRIPTION
+80db87a26eb4bdae383b256a87f12701 *DESCRIPTION
 9ff3136c14a1bdcb215d46ef1ad47339 *NAMESPACE
 be09adead3e7ef2c4a141178391fde75 *R/add.cim.covar.R
 38801c883ff011aaaa32a0247cf01465 *R/add_threshold.R
@@ -67,7 +67,7 @@ feca194c570efcfa3be35854df861e4b *R/scanoneboot.R
 0e881b83577160556a4771b9dcc08efb *R/scanonevar.meanperm.R
 cd39b4e457e757f5a9b36397ec6d4ebf *R/scanonevar.varperm.R
 dc4c086aacc0eaa6801f1ed578ac98e0 *R/scanqtl.R
-e74bf89075f6f292b7b115e364ff7c81 *R/scantwo.R
+1fd274a05ad34a1dd507ca89b51686f3 *R/scantwo.R
 57a366187c3ec65980ec0329c948e92c *R/scantwopermhk.R
 85360bf5580d5763f979b31efee9b3a8 *R/sim.geno.R
 e5da49f0318e6296ebf57282af8a7416 *R/sim_ril.R
@@ -80,7 +80,7 @@ fe7de89a9f3ca4a81bdc852955ce7ce6 *R/summary.cross.R
 818d61ec95144e85fb8a94deb2ab2954 *R/summary.scantwo.old.R
 c6cd187dda5782475986d51d763ded86 *R/transformPheno.R
 77a6253ca5b9b85debf4f028635e5df5 *R/tryallpositions.R
-e58f58fd4261354f760466ec4ed15725 *R/util.R
+14df1a732e761b540ac3d4d791c2ae1e *R/util.R
 e64b6eaf423c13295c752de1de751fab *R/vbscan.R
 7a088a393e967649514591691eb020b4 *R/viridis.R
 65c83b35fc950bab6e9b5b8abd2962bf *R/write.cross.R
@@ -102,11 +102,11 @@ af2a4dd3c63e8114400f3326cf842368 *data/listeria.RData
 0dfc08646a14335b6ee1bc2e75085ad4 *data/multitrait.RData
 c1971de49f830f2912b6c4ac41f0144e *inst/BUGS.txt
 0f194c0082205db7501a8fadad5653cd *inst/CITATION
-1242bfcd16cb0c16883112ef5871451e *inst/INSTALL_ME.txt
+f5c8fac750ff88587ce6add34ec1f430 *inst/INSTALL_ME.txt
 f6bc7c5215d6f1b0c94235a5ef381e25 *inst/LICENSE.txt
 c8b990e307ecee343beb5a217265ffcf *inst/MQM-TODO.txt
 01cb55041df69da5609e50ece5858c99 *inst/README.md
-e6b0dd7ad16de97d132949acfdfd43b7 *inst/STATUS.txt
+7c5845b44310eff89683586fe0c82dd1 *inst/STATUS.txt
 6bbfe0f89c64c39473a8896a290d5d8a *inst/TODO.txt
 1723dec70d7b0ed3c1c99e7b7581e948 *inst/contrib/bin/CMakeLists.txt
 1e10167bc08e8c501be1ac201247af7d *inst/contrib/bin/FindRLibs.cmake
@@ -202,7 +202,7 @@ f5078ec60c48d7e3a0239c294eb05b94 *inst/doc/Sources/rqtltour.tex
 c42f67bc3a255b66451f4c6053f11038 *inst/doc/Sources/rqtltour2.tex
 50aa128d97d4128f18aa9ef642c6d494 *inst/doc/bcsft.R
 6c73b8c6e1dc686c1a36c9872a318bfe *inst/doc/bcsft.Rnw
-4f5efd07b0d694c8ce9f733bc48a1200 *inst/doc/bcsft.pdf
+702cf9b331267afc69ac7d1efc6a41aa *inst/doc/bcsft.pdf
 92b2c2c03224914617a19bc3ac02b7e4 *inst/doc/geneticmaps.R
 536f8a7a96f10fc7c622a64165587051 *inst/doc/geneticmaps.pdf
 40eb8179441ce7496f6c5e252c8b2b56 *inst/doc/new_multiqtl.R
@@ -212,9 +212,9 @@ b7ee88c6b1ce5df40209c9bd58acf9b8 *inst/doc/new_summary_scanone.R
 a808a0dcf90e74a422bf3ea84f4bd55b *inst/doc/new_summary_scantwo.R
 83dbe80c9f5b641b0b269be341c80df2 *inst/doc/new_summary_scantwo.pdf
 5de0f099578b884016db92738d3f2dc3 *inst/doc/rqtltour.R
-b5f73376adc86319a51c1fbe46785e9a *inst/doc/rqtltour.pdf
+487ecdee52478125c70f7a7d22da1300 *inst/doc/rqtltour.pdf
 f8569d240e7f00630b002306f6af77a3 *inst/doc/rqtltour2.R
-24c96735c36abda1488bb06faa6ec830 *inst/doc/rqtltour2.pdf
+0851169416f3b84ebc829da7fd3b294e *inst/doc/rqtltour2.pdf
 1b42a662f601adaa9660800eefa4e42f *inst/sampledata/README.txt
 f6a9eebc3f37d26e0a5b8ed672354712 *inst/sampledata/gen.txt
 9198bd35e7a221556c5e2008d00cf84c *inst/sampledata/listeria.csv
