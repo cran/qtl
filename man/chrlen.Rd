@@ -20,7 +20,7 @@ chrlen(object)
   maps, it returns a 2-row matrix with the two lengths for each chromosome.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.f2)
@@ -31,6 +31,6 @@ chrlen(map)
 }
 
 \seealso{ \code{\link{summaryMap}}, \code{\link{pull.map}},
-  \code{\link{summary.cross}} } 
+  \code{\link{summary.cross}} }
 
 \keyword{print}

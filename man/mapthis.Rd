@@ -24,11 +24,11 @@ purpose of illustrating the process of constructing a genetic map.  The
 markers are all assigned to a single chromosome and in a random order,
 and there are a number of problematic markers and individuals.
 
-See \url{https://rqtl.org/tutorials/geneticmaps.pdf} for a tutorial
+See \url{http://rqtl.org/tutorials/geneticmaps.pdf} for a tutorial
 on how to construct a genetic map with these data.}
 
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(mapthis)

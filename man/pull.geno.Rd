@@ -24,7 +24,7 @@
   cross object, with the chromosomes pasted together.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(listeria)
@@ -38,7 +38,7 @@ abline(h=nrow(dat)+0.5)
 }
 
 \seealso{ \code{\link{pull.pheno}}, \code{\link{pull.map}}
-  \code{\link{pull.draws}}, \code{\link{pull.genoprob}}, 
+  \code{\link{pull.draws}}, \code{\link{pull.genoprob}},
   \code{\link{pull.argmaxgeno}} }
 
 \keyword{utilities}

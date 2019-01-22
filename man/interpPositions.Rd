@@ -25,12 +25,12 @@ interpPositions(oldpositions, oldmap, newmap)
 
 \value{The input data frame, \code{oldpositions}, with an additional
   column \code{newpos} with the interpolated positions along
-  \code{newmap}.} 
+  \code{newmap}.}
 
 
 \details{
 In this explanation, take \code{oldmap} and \code{newmap} to be the
-physical and genetic maps, respectively.  
+physical and genetic maps, respectively.
 
 We use linear interpolation within each interval, assuming a constant
 recombination rate within the interval.  Past the terminal
@@ -38,7 +38,7 @@ markers, we use linear extrapolation, using the chromosome-wide average
 recombination rate.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 
 \examples{

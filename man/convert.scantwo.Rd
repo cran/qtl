@@ -20,7 +20,7 @@
 
 \value{
   The same scanone output, but revised for use with R/qtl version 1.03
-  and later.  
+  and later.
 }
 
 \details{
@@ -30,7 +30,7 @@
   additive QTL models.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 \dontrun{out2.new <- convert(out2.old)}

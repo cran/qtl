@@ -42,11 +42,11 @@ typingGap(cross, chr, terminal=FALSE)
 
 \examples{
 data(hyper)
-plot(typingGap(hyper, chr=5), 
+plot(typingGap(hyper, chr=5),
      ylab="Maximum gap between typed markers (cM)",
      ylim=c(0, diff(range(pull.map(hyper,chr=5)[[1]]))))
 
-plot(typingGap(hyper, chr=4), 
+plot(typingGap(hyper, chr=4),
      ylab="Maximum gap between typed markers (cM)",
      ylim=c(0, diff(range(pull.map(hyper,chr=4)[[1]]))))
 
@@ -58,6 +58,6 @@ plot(typingGap(hyper, chr=4, terminal=TRUE),
 \seealso{ \code{\link{ntyped}},
           \code{\link{nmissing}}, \code{\link{locateXO}} }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \keyword{utilities}

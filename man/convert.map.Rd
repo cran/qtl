@@ -14,7 +14,7 @@
 
 \arguments{
  \item{object}{A genetic map object, of class \code{"map"}: A list whose
- components are vectors of marker locations.} 
+ components are vectors of marker locations.}
  \item{old.map.function}{The map function used in forming the map in
    \code{object}.}
  \item{new.map.function}{The new map function to be used.}
@@ -33,7 +33,7 @@
   back to distances with the \code{new.map.function}.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(listeria)

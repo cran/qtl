@@ -22,7 +22,7 @@
  \item{n.mar}{Pairs of positions not separated by at least this many
  markers have LOD scores set to 0.}
  \item{distance}{Pairs of positions not separated by at least this
- distance have LOD scores set to 0.} 
+ distance have LOD scores set to 0.}
  \item{\dots}{Ignored at this point.}
 }
 
@@ -47,6 +47,6 @@ out2cl2 <- clean(out2, n.mar=2, distance=5)
 \seealso{ \code{\link{scantwo}},
   \code{\link{summary.scantwo}} }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \keyword{manip}

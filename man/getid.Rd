@@ -19,10 +19,10 @@
   column named \code{id} or \code{ID}).
 
   If there are no such identifiers in the cross, the function returns
-  \code{NULL}. 
+  \code{NULL}.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.f2)

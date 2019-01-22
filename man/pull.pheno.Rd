@@ -16,7 +16,7 @@
  \item{pheno.col}{A vector specifying which phenotypes to keep or discard.
    This may be a logical vector, a numeric vector, or a vector
    of character strings (for the phenotype names). If missing, the
-   entire set of phenotypes is output.} 
+   entire set of phenotypes is output.}
 }
 
 \value{
@@ -24,7 +24,7 @@
   If there is just one phenotype, a vector (rather than a data.frame) is returned.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(listeria)

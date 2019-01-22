@@ -7,7 +7,7 @@
   Establish initial orders for markers within chromosomes by a greedy
   algorithm, adding one marker at a time with locations of previous
   markers fixed, in the position giving the miniminum number of obligate
-  crossovers. 
+  crossovers.
 }
 
 \usage{
@@ -70,7 +70,7 @@ orderMarkers(cross, chr, window=7, use.ripple=TRUE, error.prob=0.0001,
   compared via \code{\link{ripple}}.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(listeria)

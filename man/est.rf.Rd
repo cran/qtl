@@ -18,7 +18,7 @@ est.rf(cross, maxit=10000, tol=1e-6)
  \item{maxit}{Maximum number of iterations for the EM algorithm (not
    used with backcrosses).}
  \item{tol}{Tolerance for determining convergence (not used with
-   backcrosses).} 
+   backcrosses).}
 }
 
 \value{
@@ -38,7 +38,7 @@ est.rf(cross, maxit=10000, tol=1e-6)
   the 4-way cross, we estimate sex-averaged recombination fractions.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(badorder)

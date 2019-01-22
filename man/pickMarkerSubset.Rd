@@ -31,12 +31,12 @@ the location of marker \eqn{i}, for \eqn{i \in 1, \dots, M}{i in 1,
 \dots, M}.  We use the dynamic programming algorithm of Broman and Weber
 (1999) to identify the subset of markers \eqn{i_1, \dots, i_k}{i[1], \dots,
 i[k]} for which \eqn{d_{i_{j+1}} - d_{i_j} \le}{d(i[j+1]) - d(i[j]) <=}
-\code{min.distance} and \eqn{\sum w_{i_j}}{sum w(i[j])} is maximized. 
+\code{min.distance} and \eqn{\sum w_{i_j}}{sum w(i[j])} is maximized.
 
 If there are multiple optimal subsets, we pick one at random.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \references{
   Broman,  K. W. and Weber,  J. L. (1999) Method for constructing
@@ -60,6 +60,7 @@ wts <- -log( (n.missing+1) / (nind(hyper)+1) )
 pickMarkerSubset(pull.map(hyper)[[4]], 5, wts)
 }
 
-\seealso{ \code{\link{drop.markers}}, \code{\link{pull.markers}} }
+\seealso{ \code{\link{drop.markers}}, \code{\link{pull.markers}},
+          \code{\link{findDupMarkers}} }
 
 \keyword{manip}

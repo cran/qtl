@@ -23,7 +23,7 @@
   about the results.
 }
 
-\author{Hao Wu; Karl W Broman, \email{kbroman@biostat.wisc.edu}}
+\author{Hao Wu; Karl W Broman, \email{broman@wisc.edu}}
 
 \examples{
 data(fake.f2)
@@ -44,6 +44,6 @@ summary(lod)
 }
 
 \seealso{ \code{\link{fitqtl}}, \code{\link{makeqtl}},
-\code{\link{scanqtl}} }  
+\code{\link{scanqtl}} }
 
 \keyword{print}

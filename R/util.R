@@ -2,10 +2,10 @@
 #
 # util.R
 #
-# copyright (c) 2001-2015, Karl W Broman
+# copyright (c) 2001-2019, Karl W Broman
 #     [find.pheno, find.flanking, and a modification to create.map
 #      from Brian Yandell]
-# last modified Aug, 2015
+# last modified Jan, 2019
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -1652,7 +1652,7 @@ c.cross <-
         y <- args[[i]]
         y.marnam <- unlist(lapply(y$geno, function(b) colnames(b$data)))
         y.marpos <- unlist(lapply(y$geno, function(b) b$map))
-        if(chr != names(y$geno) || any(n.mar != nmar(y)) ||
+        if(any(chr != names(y$geno)) || any(n.mar != nmar(y)) ||
            any(marnam != y.marnam) || any(marpos != y.marpos)) {
             map.mismatch <- 1
             break
@@ -2008,14 +2008,14 @@ checkcovar <-
     }
 
     # check phenotypes - we allow multiple phenotypes here
-    if(pheno.col < 1 || pheno.col > nphe(cross))
+    if(any(pheno.col < 1 | pheno.col > nphe(cross)))
         stop("Specified phenotype column is invalid.")
     # check if all phenotypes are numeric
     pheno <- cross$pheno[,pheno.col,drop=FALSE]
     idx.nonnum <- which(!apply(pheno,2, is.numeric))
     if(length(idx.nonnum) > 0)
-        stop("Following phenotypes are not numeric: Column ",
-             paste(idx.nonnum, collapse=","))
+        stop("Following phenotypes are not numeric: ",
+             paste(colnames(pheno)[idx.nonnum], collapse=", "))
 
     orig.n.ind <- nind(cross)
 
@@ -2857,7 +2857,7 @@ summaryMap <- summary.map <-
     if(any(class(map) == "cross")) # a cross object
         map <- pull.map(map)
     if(!any(class(map) == "map"))
-        stop("Input should have class \"cross\" or \"map\".")
+        warning("Input should have class \"cross\" or \"map\".")
 
     n.chr <- length(map)
     chrnames <- names(map)

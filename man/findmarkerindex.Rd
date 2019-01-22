@@ -18,11 +18,11 @@
 
 \value{
   A vector of numeric indices, from 1, 2, \dots, \code{totmar(cross)},
-  with \code{NA} for markers not found. 
+  with \code{NA} for markers not found.
 }
 
 
-\author{Danny Arends; Karl W Broman \email{kbroman@biostat.wisc.edu} }
+\author{Danny Arends; Karl W Broman \email{broman@wisc.edu} }
 
 \examples{
 data(hyper)

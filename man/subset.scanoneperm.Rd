@@ -5,7 +5,7 @@
 \title{Subsetting permutation test results}
 
 \description{
-  Pull out results for a specified set LOD columns from 
+  Pull out results for a specified set LOD columns from
   permutation results from \code{\link{scanone}}.
 }
 
@@ -15,7 +15,7 @@
 }
 
 \arguments{
- \item{x}{Permutation results from 
+ \item{x}{Permutation results from
    \code{\link{scanone}}, run with \code{n.perm}>0.}
  \item{repl}{A vector specifying which permutation replicates to keep or (if
  negative) omit.}
@@ -28,7 +28,7 @@
 \value{The input \code{scanone} permutation results, but with only the specified
   subset of the data.}
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.bc)

@@ -11,16 +11,16 @@
 
 \arguments{
  \item{cross1}{An object of class \code{cross} (must be an
-   intercross). See \code{\link{read.cross}} for details.} 
+   intercross). See \code{\link{read.cross}} for details.}
  \item{cross2}{An object of class \code{cross} (must be an
-   intercross). See \code{\link{read.cross}} for details.} 
+   intercross). See \code{\link{read.cross}} for details.}
  \item{tol}{Tolerance value for comparing genetic map positions and
    numeric phenotypes.}
 }
 
 \value{None.}
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(listeria)

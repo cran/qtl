@@ -5,7 +5,7 @@
 \title{Subsetting chromosomes for a genetic map}
 
 \description{
-  Pull out a specified set of chromosomes from a 
+  Pull out a specified set of chromosomes from a
   \code{map} object.
 }
 
@@ -23,7 +23,7 @@
   of chromosomes.}
 
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(map10)

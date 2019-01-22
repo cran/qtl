@@ -30,7 +30,7 @@ top.errorlod(cross, chr, cutoff=4, msg=TRUE)
   number, individual number, marker name, and error LOD score.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(hyper)
@@ -38,7 +38,7 @@ data(hyper)
 # Calculate error LOD scores
 hyper <- calc.errorlod(hyper,error.prob=0.01)
 
-# Print those above a specified cutoff 
+# Print those above a specified cutoff
 top.errorlod(hyper,cutoff=4)
 }
 

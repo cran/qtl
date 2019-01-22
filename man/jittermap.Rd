@@ -21,10 +21,10 @@
   Either the input cross object or the input map, but with marker
   positions slightly jittered.  If the input was a cross, the function
   \code{\link[=clean.cross]{clean}} is run to strip off any intermediate
-  calculations. 
+  calculations.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(hyper)

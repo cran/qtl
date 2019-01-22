@@ -10,7 +10,7 @@
 
 \usage{
 \method{plot}{scanoneboot}(x, \dots)
-}			    
+}
 
 \arguments{
   \item{x}{An object of class \code{"scanoneboot"}, as output by
@@ -38,8 +38,8 @@ plot(out.boot)
 }
 
 \seealso{ \code{\link{scanone}},
-  \code{\link{summary.scanoneboot}} } 
+  \code{\link{summary.scanoneboot}} }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \keyword{hplot}

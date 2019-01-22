@@ -4,22 +4,22 @@
 
 \title{Simulated data for a backcross}
 
-\description{ 
+\description{
   Simulated data for a backcross, obtained using
-  \code{\link{sim.cross}}.   
-} 
+  \code{\link{sim.cross}}.
+}
 
 \usage{data(fake.bc)}
 
 \format{
   An object of class \code{cross}.  See \code{\link{read.cross}}
-  for details. 
+  for details.
 }
 
 
 \details{
   There are 400 backcross individuals typed at 91 markers and with two
-  phenotypes and two covariates (sex and age).  
+  phenotypes and two covariates (sex and age).
 
   The two phenotypes are due to four QTLs, with no epistasis.  There is
   one on chromosome 2 (at 30 cM), two on chromosome 5 (at 10 and 50 cM),
@@ -29,7 +29,7 @@
   second phenotype. Age has an effect of increasing the phenotypes.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.bc)

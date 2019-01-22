@@ -17,12 +17,12 @@
 }
 
 \value{
-  An object of class \code{summary.qtl}, which is just a data.frame 
+  An object of class \code{summary.qtl}, which is just a data.frame
   containing the chromosomes, positions, and number of possible
   genotypes for each QTL.
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.f2)
@@ -38,6 +38,6 @@ qtl <- makeqtl(fake.f2, qc, qp, what="prob")
 summary(qtl)
 }
 
-\seealso{ \code{\link{makeqtl}} } 
+\seealso{ \code{\link{makeqtl}} }
 
 \keyword{print}

@@ -15,7 +15,7 @@
  \item{newchr}{The chromosome to which the marker should be moved.}
  \item{newpos}{The position (in cM) at which the marker should be
    placed.  If missing, the marker is placed at the end of the
-   chromosome.} 
+   chromosome.}
 }
 
 \value{
@@ -24,11 +24,11 @@
 
   All intermediate calculations (such as the results of
   \code{\link{calc.genoprob}} and \code{\link{est.rf}}) are
-  removed. 
+  removed.
 }
 
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(badorder)

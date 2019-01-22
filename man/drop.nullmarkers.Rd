@@ -6,7 +6,7 @@
 \description{
   Drop markers, from the data matrices and genetic maps, that have no
   genotype data.
-} 
+}
 
 \usage{
 drop.nullmarkers(cross)
@@ -38,6 +38,6 @@ listeria <- drop.nullmarkers(listeria)
 \seealso{ \code{\link{nullmarkers}}, \code{\link{drop.markers}}, \code{\link{clean.cross}},
   \code{\link{geno.table}} }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \keyword{manip}

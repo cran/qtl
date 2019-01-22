@@ -35,11 +35,11 @@
   \bold{Note}: Markers that are tightly linked to a marker whose alleles
   are switched are likely to also be flagged by this method.  The real
   problem markers are likely those with the biggest difference in LOD
-  scores. 
+  scores.
 }
 
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(fake.f2)

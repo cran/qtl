@@ -4,7 +4,7 @@
 \title{Find position of a marker}
 
 \description{
-  Find the chromosome and cM position of a set of genetic markers. 
+  Find the chromosome and cM position of a set of genetic markers.
 }
 
 \usage{find.markerpos(cross, marker)}
@@ -21,7 +21,7 @@
 }
 
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(hyper)

@@ -4,7 +4,7 @@
 #
 # copyright (c) 2014, INRA (author: Timothee Flutre)
 #                     (Some revisions by Karl Broman)
-# last modified Jan, 2015
+# last modified Dec, 2018
 # first written May, 2014
 #
 # This program is free software; you can redistribute it and/or
@@ -181,12 +181,17 @@ function(locfile){
     lines <- lines[-todrop]
 
     spl <- strsplit(lines, "\\s+")
+    if(length(spl) != nb.loci)
+      stop("nloc=", nb.loci, " but genotypes are found at ", length(spl), " markers")
     spl.lengths <- vapply(spl, length, 1)
     if(any(spl.lengths > nb.inds+4))
         stop("lines should have no more than ", nb.inds+4, " columns\n",
              "Problems in lines", seq(along=spl.lengths)[spl.lengths > nb.inds+4])
 
-    rownames(genotypes) <- vapply(spl, "[", "", 1)
+    rn <- vapply(spl, "[", "", 1)
+    if(nrow(genotypes) != length(rn))
+        stop(paste0("nloc = ", nrow(genotypes), ", but .loc file contains ", length(rn), " genotype rows"))
+    rownames(genotypes) <- rn
 
     if(length(spl) > nb.loci + 1){
         msg <- paste("there seems to be more loci (", locus.id-1,
@@ -194,8 +199,10 @@ function(locfile){
         stop(msg, call.=FALSE)
     }
 
+    nb.fields <- rep(NA, length(lines))
     for(line.id in 1:length(lines)){
         tokens <- spl[[line.id]]
+        nb.fields[line.id] <- length(tokens)
 
         if(length(tokens) > nb.inds + 1){
             for(i in 2:(length(tokens)-nb.inds)){
@@ -209,6 +216,8 @@ function(locfile){
         }
         genotypes[line.id,] <- tokens[(length(tokens)-nb.inds+1):length(tokens)]
     }
+    if(length(unique(nb.fields)) > 1)
+        stop("some markers have more fields than others")
 
     genotypes <- t(genotypes) # individuals in rows, markers in columns
 
@@ -238,7 +247,7 @@ function(locfile){
             stop(msg, call.=FALSE)
         }
         for(locus.id in 1:nb.loci){
-            if(seg[locus.id] == "<abxcd>"){
+            if(seg[locus.id] %in% new.seg.types){
                 next
             } else if(seg[locus.id] == "<abxac>"){
                 seg[locus.id] <- "<efxeg>"

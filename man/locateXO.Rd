@@ -27,7 +27,7 @@ locateXO(cross, chr, full.info=FALSE)
   For each individual we detemine the locations of obligate crossovers,
   and estimate their location to be at the midpoint between the nearest
   flanking typed markers.
-  
+
   The function currently only works for a backcross, intercross, or
   recombinant inbred line.
 }
@@ -46,7 +46,7 @@ locateXO(cross, chr, full.info=FALSE)
   genotyping errors).
 }
 
-\author{Karl W Broman, \email{kbroman@biostat.wisc.edu} }
+\author{Karl W Broman, \email{broman@wisc.edu} }
 
 \examples{
 data(hyper)
