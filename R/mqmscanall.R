@@ -2,12 +2,12 @@
 #
 # mqmscanall.R
 #
-# Copyright (c) 2009-2014, Danny Arends
+# Copyright (c) 2009-2019, Danny Arends
 #
 # Modified by Pjotr Prins and Karl Broman
 #
 # first written Februari 2009
-# last modified Jan 2014
+# last modified Dec 2019
 #
 #     This program is free software; you can redistribute it and/or
 #     modify it under the terms of the GNU General Public License,
@@ -37,8 +37,11 @@ scanall <- function(cross, scanfunction=scanone, multicore=TRUE, n.clusters=1, b
     if(missing(cross)){
         ourstop("No cross file. Please supply a valid cross object.")
     }
-    if(!(class(cross)[1] == "f2" || class(cross)[1] == "bc" || class(cross)[1] == "riself"))
+    crosstype <- crosstype(cross)
+    if(!(crosstype == "f2" || crosstype == "bc" || crosstype == "riself"))
         stop("Currently only F2, BC, and selfed RIL crosses can be analyzed by MQM.")
+
+    cross <- omit_x_chr(cross)
 
     start <- proc.time()
     n.pheno <- nphe(cross)

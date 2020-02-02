@@ -75,9 +75,11 @@ An object of class \code{cross}. See \code{\link{read.cross}} for details. % \cr
     }
   \item{plot}{ plot the results (default FALSE)}
   \item{verbose}{ verbose output}
-  \item{outputmarkers}{Needs to be explained}
+  \item{outputmarkers}{If TRUE (the default), the results include the
+  marker locations as well as along a grid of pseudomarkers; if FALSE,
+  the results include only the grid positions.}
   \item{multicore}{Use multicore (if available)}
-  \item{batchsize}{Needs to be explained}
+  \item{batchsize}{Number of traits being analyzed as a batch.}
   \item{n.clusters}{Number of child processes to split the job into.}
   \item{test.normality}{If TRUE, test whether the phenotype follows a
     normal distribution via \code{\link{mqmtestnormal}}.
@@ -119,7 +121,7 @@ obtained from the \code{mqmmulti} object, in scanone format.
 \seealso{
   \itemize{
 % \input{"inst/doc/Sources/MQM/mqm/standard_seealso.txt"}
-    \item The MQM tutorial: \url{http://rqtl.org/tutorials/MQM-tour.pdf}
+    \item The MQM tutorial: \url{https://rqtl.org/tutorials/MQM-tour.pdf}
     \item \code{\link{MQM}} - MQM description and references
     \item \code{\link{mqmscan}} - Main MQM single trait analysis
     \item \code{\link{mqmscanall}} - Parallellized traits analysis

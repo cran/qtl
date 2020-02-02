@@ -1,0 +1,33 @@
+
+R version 3.6.1 (2019-07-05) -- "Action of the Toes"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(tools)
+> Stangle(file="MQM-tour.Rnw")
+Writing to file MQM-tour.R 
+> Sweave(file="MQM-tour.Rnw", pdf=FALSE)
+Writing to file MQM-tour.tex
+Processing code chunks with options ...
+ 1 : keep.source term verbatim (label = setseed, MQM-tour.Rnw:141)
+ 2 : echo keep.source term verbatim (MQM-tour.Rnw:144)
+ 3 : echo keep.source (label = missingdata, MQM-tour.Rnw:153)
+ 4 : keep.source term verbatim eps  (label = missingdataplot, MQM-tour.Rnw:158)
+Error in grDevices::postscript(file = paste0(name, ".eps"), width = width,  : 
+  cannot open file 'Figs/fig-missingdataplot.eps'
+Calls: Sweave -> <Anonymous> -> <Anonymous> -> <Anonymous>
+Execution halted

@@ -1,0 +1,158 @@
+\documentclass[11pt]{article}
+\setlength{\topmargin}{-.5in}
+\setlength{\textheight}{23.5cm}
+\setlength{\textwidth}{17.0cm}
+\setlength{\oddsidemargin}{.025in}
+\setlength{\evensidemargin}{.025in}
+\setlength{\textwidth}{6.25in}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{verbatim}   % useful for program listings
+\usepackage{color}      % use if color is used in text
+\usepackage{subfigure}  % use for side-by-side figures
+\usepackage{float}
+\usepackage{Sweave}
+\usepackage{url}
+
+\newcommand{\mqm}{\emph{MQM}}
+\newcommand{\MQM}{\mqm}
+\newcommand{\qtl}{QTL}
+\newcommand{\QTL}{\qtl}
+\newcommand{\xqtl}{\emph{x}QTL}
+\newcommand{\mqtl}{\emph{m}QTL}
+\newcommand{\eqtl}{\emph{e}QTL}
+\newcommand{\lod}{LOD}
+\newcommand{\cM}{cM}
+\newcommand{\rqtl}{\emph{R/qtl}}
+\newcommand{\cim}{\emph{CIM}}
+\newcommand{\At}{\emph{Arabidopsis thaliana}}
+\newcommand{\FIXME}{({\bf FIXME!})}
+\newcommand{\CHECK}{({\bf CHECK!})}
+\newcommand{\NOTE}[1]{({\tt NOTE: #1 })}
+\newcommand{\intro}[1]{\vspace{0.15in}#1:}
+\newcommand{\code}{\texttt}
+\newcommand{\etal}{\emph{et al.}}
+
+\newcommand{\Atintro}{\At\ RIL mQTL dataset (multitrait) with 24 metabolites as phenotypes \cite{Keurentjes2006}}
+\newcommand{\Atintrocolors}{\Atintro\ comparing \mqm\ (\code{mqmscan} in green) and
+single \qtl\ mapping (\code{scanone} in black)}
+
+\title { Tutorial - Multiple-QTL Mapping (MQM) Analysis for R/qtl }
+\author { Danny Arends, Pjotr Prins, Karl W. Broman and Ritsert C. Jansen }
+\begin {document}
+\maketitle
+\clearpage
+
+
+\setkeys{Gin}{width=6.25in} %% <- change width of figures
+
+\section{Introduction}
+
+\input{mqm/description.txt}
+
+\vspace{0.3in}
+
+\input{mqm/advantages_latex.txt}
+
+\input{mqm/limitations.txt}
+
+Despite these limitations, \mqm\footnote{MQM should not be confused with
+composite interval mapping (CIM) \cite{CIMa,CIMb}.  The advantage of MQM
+over CIM is reduction of type I error (a QTL is indicated at a location where there
+is no QTL present) and type II error (a QTL is not detected) for QTL detection
+\cite{jansen94b}.} is a valuable addition to the \qtl\ mapper's toolbox. It
+is able to deal with QTL in coupling phase and QTL in repulsion phase. \mqm\
+handles missing data and has higher power to detect QTL (linked and unlinked)
+than other methods.  R/qtl's \mqm\ is faster than other implementations and
+scales on multi-CPU systems and computer clusters.  In this tutorial we will
+show you how to use \mqm\ for \qtl\ mapping.
+
+\mqm\ is an integral part of the free \rqtl\
+package \cite{rqtlbook,broman09,broman03} for the R statistical
+language\footnote{We assume the reader knows how to load his data into R using
+the R/qtl \code{read.cross} function; see also the R/qtl tutorials \cite{broman09}
+and book \cite{rqtlbook}.}.
+
+\section{A quick overview of \mqm}
+
+These are the typical steps in an \mqm\ \qtl\ analysis:
+
+\begin{itemize}
+\item Load data into R
+\item Fill in missing data, using either \code{mqmaugmentdata} or \code{fill.geno}
+\item Unsupervised backward elimination to analyse \emph{cofactors}, using \code{mqmscan}
+\item Optionally select \emph{cofactors\/} at markers that are thought to influence \qtl\ at, or near, the location
+\item Permutation or simulation analysis to get estimates of significance, using \code{mqmpermutation} or \code{mqmscanfdr}
+\end{itemize}
+
+Using maximum likelihood (ML), or restricted maximum likelihood (REML), the
+algorithm employs a backward elimination strategy to identify \qtl\ underlying
+the trait. The algorithm passes through the following stages:
+
+\begin{itemize}
+\item Likelihood-based estimation of the full model using all cofactors
+\item Backward elimination of cofactors, followed by a
+      genome scan for \qtl
+\item If there are no \emph{cofactors\/} defined, the backward elimination of cofactors
+      is skipped and a genome scan for \qtl\ is performed, testing each genetic (interval)
+      location individually. In this case REML and ML will result in the same \qtl\ profile
+      because there is no full model.
+\end{itemize}
+
+The results created during the genome scan and the \qtl\ model are
+returned as an (extended) R/qtl \code{scanone} object. Several special
+plotting routines are available for \mqm\ results.
+
+%\clearpage
+
+\section{Data augmentation}
+\label{augmentation}
+
+In an ideal world all datasets would be complete (with the genotype
+for every
+individual at every marker determined), however in the real world datasets are often incomplete. That is, genotype
+information is missing, or can have multiple plausible values. \mqm\
+automatically expands the
+dataset by adding all potential variants and attaching a probability to each.  For
+example, information is missing (unknown) at a marker location for one
+individual. Based on the values of the neighbouring markers, and the
+(estimated) recombination rate, a probability is attached to all possible
+genotypes.  With \mqm\ all possible genotypes with a probability above
+the
+parameter \code{minprob} are considered.
+
+When encountering a missing marker genotype (possible genotypes {\bf A} and {\bf B} in a
+RIL), all possible genotypes at the missing location are created.  Thus at
+the missing location two `individuals' are created in the \emph{augmentation} step,
+one with genotype {\bf A}, and one with genotype {\bf B}. A probability is
+attached to both \emph{augmented} individuals.  The combined probability of all
+missing marker locations tells whether a genotype is likely, or unlikely,
+which allows for weighted analysis later.
+
+To see an example of missing data with an F$_2$ intercross, we can
+visualize the genotypes of the individuals using \code{geno.image}. In
+Figure~\ref{missing data} there are 2\% missing values in white. The
+other colors are genotypes at a certain position, for a certain
+individual. Simulate an F$_2$ dataset with 2\% missing genotypes as
+follows:
+
+\intro{Simulate a dataset with missing data}
+% set seed so that everything comes out exactly the same
+\begin{Schunk}
+\begin{Sinput}
+> library(qtl)
+> data(map10)
+> simcross <- sim.cross(map10, type="f2", n.ind=100, missing.prob=0.02)
+\end{Sinput}
+\end{Schunk}
+
+and plot the genotype data using \code{geno.image} (Figure~\ref{missing data}):
+
+
+\begin{Schunk}
+\begin{Sinput}
+> geno.image(simcross)
+\end{Sinput}
+\end{Schunk}
+
+\begin{figure}

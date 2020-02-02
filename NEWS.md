@@ -1,7 +1,7 @@
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-2019, Karl W Broman
-<http://rqtl.org>
+copyright (c) 2001-2020, Karl W Broman
+<https://rqtl.org>
 
     The R/qtl package is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License,
@@ -15,6 +15,45 @@ copyright (c) 2001-2019, Karl W Broman
     A copy of the GNU General Public License, version 3, is available
     at https://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
+
+## Version 1.45, 2020-02-01
+
+### Minor changes
+
+- Added `plot()` and `summary()` functions for the output of
+  `comparegeno()`.
+
+- Added internal functions `crosstype()` and `chrtype()`.
+
+- Added argument `crosstype` to internal function `fitqtlengine()`
+  rather than taking it from the cross attributes.
+
+- Went through full package to replace use of `class(blah)=="blah"`
+  with `inherits(blah, "blah")`.
+
+- mqmscan() and mqmscanall() now give a warning about omitting the X
+  chromosome, and give a more meaningful error if there are no autosomes.
+
+- Improved warning and error messages in several places: rather than
+  "Chromosome misspecified" say "Chromosome __ not found"
+
+### Bug fixes
+
+- Fix bug regarding missing phenotypes in `stepwiseqtl()`.
+
+- Fix bug in `addpair()` re converting map to data frame (getting
+  error like `cannot coerce class "A" to data.frame`).
+
+- Fix bug related to reading 4-way cross data, to ensure that the
+  genetic map for each chromosome is a 2-row matrix.
+
+- Fix bug in `refineqtl()` that gave a warning about `min(diff(a))`
+  when there was a single marker on a chromosome.
+  ([Issue #78](https://github.com/kbroman/qtl/issues/78))
+
+- Added explanations of a couple of arguments for mqmscan() that had
+  previously not been explained.
+
 
 ## Version 1.44, 2019-01-22
 
@@ -67,7 +106,7 @@ copyright (c) 2001-2019, Karl W Broman
   following code at the top:
 
   ```
-  source("http://rqtl.org/dotfunc.R")
+  source("https://rqtl.org/dotfunc.R")
   ```
 
 ### Minor changes:
@@ -854,7 +893,7 @@ copyright (c) 2001-2019, Karl W Broman
 
 - Added a tutorial on genetic map construction; find it within the
   package at docs/geneticmaps.pdf, or (more simply, probably), find it
-  on the web at http://rqtl.org/tutorials/geneticmaps.pdf
+  on the web at https://rqtl.org/tutorials/geneticmaps.pdf
 
 - Added two additional formats to summary.scanone(), "tabByCol" and
   "tabByChr".  These produce tables of LOD peaks organized by LOD
@@ -1162,7 +1201,7 @@ copyright (c) 2001-2019, Karl W Broman
   we have incorporated Ritsert Jansen's MQM mapping software within
   R/qtl. (Previously, it was available only through the commercial
   software package, mapqtl).  See the tutorial at
-  http://rqtl.org/tutorials/MQM-tour.pdf
+  https://rqtl.org/tutorials/MQM-tour.pdf
 
 ### Minor changes:
 
@@ -2310,7 +2349,7 @@ copyright (c) 2001-2019, Karl W Broman
 - Completely revised the summary.scanone and summary.scantwo
   functions.  I have written documents to explain the use of the new
   functions.  These are distributed with the code and are also
-  available at the R/qtl website (http://rqtl.org), under
+  available at the R/qtl website (https://rqtl.org), under
   "Tutorials".
 
 - summary.scanone:  There is now a format argument, useful for the
@@ -4050,6 +4089,3 @@ copyright (c) 2001-2019, Karl W Broman
 
 - Saunak Sen and I are now working together on this project, and so
   things will begin to progress more quickly (we hope).
-
-----------------------------------------------------------------------
-End of STATUS.txt

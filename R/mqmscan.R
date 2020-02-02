@@ -2,13 +2,13 @@
 #
 # mqmscan.R
 #
-# Copyright (c) 2009-2017, Danny Arends
+# Copyright (c) 2009-2019, Danny Arends
 #
 # Modified by Pjotr Prins and Karl Broman
 #
 #
 # first written Februari 2009
-# last modified Dec 2017
+# last modified Dec 2019
 #
 #     This program is free software; you can redistribute it and/or
 #     modify it under the terms of the GNU General Public License,
@@ -43,6 +43,9 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
     start <- proc.time()
     model <- match.arg(model)
 
+    # omit X chromosome
+    cross <- omit_x_chr(cross)
+
     #Because iirc we cannot pass booleans from R to C
     if(forceML){
         forceML <- 1           #1 -> Maximum Likelyhood
@@ -62,14 +65,15 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
     if(is.null(cross)){
         stop("No cross file. Please supply a valid cross object.")
     }
-    if(class(cross)[1] == "f2" || class(cross)[1] == "bc" || class(cross)[1] == "riself"){
-        if(class(cross)[1] == "f2"){
+    crosstype <- crosstype(cross)
+    if(crosstype == "f2" || crosstype == "bc" || crosstype == "riself"){
+        if(crosstype == "f2"){
             ctype = 1
         }
-        if(class(cross)[1] == "bc" || class(cross)[1]=="dh" || class(cross)[1]=="haploid"){
+        if(crosstype == "bc" || crosstype=="dh" || crosstype=="haploid"){
             ctype = 2
         }
-        if(class(cross)[1] == "riself") {
+        if(crosstype == "riself") {
             ctype = 3
 
             # check genotypes
@@ -83,7 +87,7 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
         n.ind <- nind(cross)
         n.chr <- nchr(cross)
         if(verbose) {
-            cat("INFO: Received a valid cross file type:",class(cross)[1],".\n")
+            cat("INFO: Received a valid cross file type:",crosstype,".\n")
             cat("INFO: Number of individuals: ",n.ind,"\n")
             cat("INFO: Number of chromosomes: ",n.chr,"\n")
         }
@@ -407,7 +411,7 @@ mqmscan <- function(cross,cofactors=NULL,pheno.col=1,model=c("additive","dominan
 
         for( x in 1:nchr(cross)){
             #Remove the off ends that we left hanging a step before
-            if(class(cross$geno[[x]])!="X"){
+           if(chrtype(cross$geno[[x]])!="X"){
                 to.remove <- NULL
                 chr.length <- max(cross$geno[[x]]$map)
                 markers.on.chr <- which(qtl[,1]==x)
