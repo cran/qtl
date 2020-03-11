@@ -16,6 +16,22 @@ copyright (c) 2001-2020, Karl W Broman
     at https://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
+## Version 1.46, 2020-02-28
+
+### Minor changes
+
+- In preparation for R 4.0, when the default for `stringsAsFactors`
+  will become `FALSE` rather than `TRUE` in `read.table()` and
+  `data.frame()`, we needed to add `stringsAsFactors=TRUE` to calls to
+  `read.table()` and `data.frame()` in various places. Also there was
+  some ugliness regarding `addpair()`.
+
+### Bug fixes
+
+- Fix bug in `mqmpermutation()` by removing the uses of batches and
+  the `batchsize` argument.
+
+
 ## Version 1.45, 2020-02-01
 
 ### Minor changes

@@ -1,29 +1,30 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=latex 2019.8.9)  17 AUG 2019 08:46
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=latex 2018.10.11)  10 APR 2019 11:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **MQM-tour.tex
 (./MQM-tour.tex
-LaTeX2e <2018-12-01>
+LaTeX2e <2017-04-15>
+Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
-Document Class: article 2018/09/03 v1.4i Standard LaTeX document class
+Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size11.clo
-File: size11.clo 2018/09/03 v1.4i Standard LaTeX file (size option)
+File: size11.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
 )
-\c@part=\count80
-\c@section=\count81
-\c@subsection=\count82
-\c@subsubsection=\count83
-\c@paragraph=\count84
-\c@subparagraph=\count85
-\c@figure=\count86
-\c@table=\count87
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
 \abovecaptionskip=\skip41
 \belowcaptionskip=\skip42
 \bibindent=\dimen102
 )
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
-Package: amsmath 2018/12/01 v2.17b AMS math features
+Package: amsmath 2017/09/02 v2.17a AMS math features
 \@mathmargin=\skip43
 
 For additional information on amsmath, use the `?' option.
@@ -42,30 +43,30 @@ Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2016/03/08 v2.02 operator names
 )
-\inf@bad=\count88
-LaTeX Info: Redefining \frac on input line 223.
-\uproot@=\count89
-\leftroot@=\count90
-LaTeX Info: Redefining \overline on input line 385.
-\classnum@=\count91
-\DOTSCASE@=\count92
-LaTeX Info: Redefining \ldots on input line 482.
-LaTeX Info: Redefining \dots on input line 485.
-LaTeX Info: Redefining \cdots on input line 606.
-\Mathstrutbox@=\box27
-\strutbox@=\box28
+\inf@bad=\count87
+LaTeX Info: Redefining \frac on input line 213.
+\uproot@=\count88
+\leftroot@=\count89
+LaTeX Info: Redefining \overline on input line 375.
+\classnum@=\count90
+\DOTSCASE@=\count91
+LaTeX Info: Redefining \ldots on input line 472.
+LaTeX Info: Redefining \dots on input line 475.
+LaTeX Info: Redefining \cdots on input line 596.
+\Mathstrutbox@=\box26
+\strutbox@=\box27
 \big@size=\dimen105
-LaTeX Font Info:    Redeclaring font encoding OML on input line 729.
-LaTeX Font Info:    Redeclaring font encoding OMS on input line 730.
-\macc@depth=\count93
-\c@MaxMatrixCols=\count94
+LaTeX Font Info:    Redeclaring font encoding OML on input line 712.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 713.
+\macc@depth=\count92
+\c@MaxMatrixCols=\count93
 \dotsspace@=\muskip10
-\c@parentequation=\count95
-\dspbrk@lvl=\count96
+\c@parentequation=\count94
+\dspbrk@lvl=\count95
 \tag@help=\toks15
-\row@=\count97
-\column@=\count98
-\maxfields@=\count99
+\row@=\count96
+\column@=\count97
+\maxfields@=\count98
 \andhelp@=\toks16
 \eqnshift@=\dimen106
 \alignsep@=\dimen107
@@ -77,8 +78,8 @@ LaTeX Font Info:    Redeclaring font encoding OMS on input line 730.
 \multlinegap=\skip44
 \multlinetaggap=\skip45
 \mathdisplay@stack=\toks18
-LaTeX Info: Redefining \[ on input line 2844.
-LaTeX Info: Redefining \] on input line 2845.
+LaTeX Info: Redefining \[ on input line 2817.
+LaTeX Info: Redefining \] on input line 2818.
 )
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
@@ -129,10 +130,10 @@ Package: subfigure 2002/03/15 v2.1.5 subfigure package
 \subfigbottomskip=\skip48
 \subfigcapmargin=\dimen115
 \subfiglabelskip=\skip49
-\c@subfigure=\count100
-\c@lofdepth=\count101
-\c@subtable=\count102
-\c@lotdepth=\count103
+\c@subfigure=\count99
+\c@lofdepth=\count100
+\c@subtable=\count101
+\c@lotdepth=\count102
 
 ****************************************
 * Local config file subfigure.cfg used *
@@ -143,11 +144,11 @@ Package: subfigure 2002/03/15 v2.1.5 subfigure package
 )
 (/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
-\c@float@type=\count104
+\c@float@type=\count103
 \float@exts=\toks22
-\float@box=\box29
+\float@box=\box28
 \@float@everytoks=\toks23
-\@floatcapt=\box30
+\@floatcapt=\box29
 )
 (/usr/share/texmf/tex/latex/R/tex/latex/Sweave.sty
 Package: Sweave 
@@ -156,18 +157,18 @@ Package: Sweave
 Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
 )
 (/usr/share/texlive/texmf-dist/tex/latex/fancyvrb/fancyvrb.sty
-Package: fancyvrb 2019/01/15
+Package: fancyvrb 2008/02/07
 
-Style option: `fancyvrb' v3.2a <2019/01/15> (tvz)
-\FV@CodeLineNo=\count105
+Style option: `fancyvrb' v2.7a, with DG/SPQR fixes, and firstline=lastline fix 
+<2008/02/07> (tvz)
+\FV@CodeLineNo=\count104
 \FV@InFile=\read2
-\FV@TabBox=\box31
-\c@FancyVerbLine=\count106
-\FV@StepNumber=\count107
+\FV@TabBox=\box30
+\c@FancyVerbLine=\count105
+\FV@StepNumber=\count106
 \FV@OutFile=\write3
-)
-(/usr/share/texlive/texmf-dist/tex/latex/base/textcomp.sty
-Package: textcomp 2018/08/11 v2.0j Standard LaTeX package
+) (/usr/share/texlive/texmf-dist/tex/latex/base/textcomp.sty
+Package: textcomp 2017/04/05 v2.0i Standard LaTeX package
 Package textcomp Info: Sub-encoding information:
 (textcomp)               5 = only ISO-Adobe without \textcurrency
 (textcomp)               4 = 5 + \texteuro
@@ -183,82 +184,7 @@ Package textcomp Info: Setting ? sub-encoding to TS1/1 on input line 79.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/ts1enc.def
 File: ts1enc.def 2001/06/05 v3.0e (jk/car/fm) Standard LaTeX file
-Now handling font encoding TS1 ...
-... processing UTF-8 mapping file for font encoding TS1
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/ts1enc.dfu
-File: ts1enc.dfu 2018/10/05 v1.2f UTF-8 support for inputenc
-   defining Unicode char U+00A2 (decimal 162)
-   defining Unicode char U+00A3 (decimal 163)
-   defining Unicode char U+00A4 (decimal 164)
-   defining Unicode char U+00A5 (decimal 165)
-   defining Unicode char U+00A6 (decimal 166)
-   defining Unicode char U+00A7 (decimal 167)
-   defining Unicode char U+00A8 (decimal 168)
-   defining Unicode char U+00A9 (decimal 169)
-   defining Unicode char U+00AA (decimal 170)
-   defining Unicode char U+00AC (decimal 172)
-   defining Unicode char U+00AE (decimal 174)
-   defining Unicode char U+00AF (decimal 175)
-   defining Unicode char U+00B0 (decimal 176)
-   defining Unicode char U+00B1 (decimal 177)
-   defining Unicode char U+00B2 (decimal 178)
-   defining Unicode char U+00B3 (decimal 179)
-   defining Unicode char U+00B4 (decimal 180)
-   defining Unicode char U+00B5 (decimal 181)
-   defining Unicode char U+00B6 (decimal 182)
-   defining Unicode char U+00B7 (decimal 183)
-   defining Unicode char U+00B9 (decimal 185)
-   defining Unicode char U+00BA (decimal 186)
-   defining Unicode char U+00BC (decimal 188)
-   defining Unicode char U+00BD (decimal 189)
-   defining Unicode char U+00BE (decimal 190)
-   defining Unicode char U+00D7 (decimal 215)
-   defining Unicode char U+00F7 (decimal 247)
-   defining Unicode char U+0192 (decimal 402)
-   defining Unicode char U+02C7 (decimal 711)
-   defining Unicode char U+02D8 (decimal 728)
-   defining Unicode char U+02DD (decimal 733)
-   defining Unicode char U+0E3F (decimal 3647)
-   defining Unicode char U+2016 (decimal 8214)
-   defining Unicode char U+2020 (decimal 8224)
-   defining Unicode char U+2021 (decimal 8225)
-   defining Unicode char U+2022 (decimal 8226)
-   defining Unicode char U+2030 (decimal 8240)
-   defining Unicode char U+2031 (decimal 8241)
-   defining Unicode char U+203B (decimal 8251)
-   defining Unicode char U+203D (decimal 8253)
-   defining Unicode char U+2044 (decimal 8260)
-   defining Unicode char U+204E (decimal 8270)
-   defining Unicode char U+2052 (decimal 8274)
-   defining Unicode char U+20A1 (decimal 8353)
-   defining Unicode char U+20A4 (decimal 8356)
-   defining Unicode char U+20A6 (decimal 8358)
-   defining Unicode char U+20A9 (decimal 8361)
-   defining Unicode char U+20AB (decimal 8363)
-   defining Unicode char U+20AC (decimal 8364)
-   defining Unicode char U+20B1 (decimal 8369)
-   defining Unicode char U+2103 (decimal 8451)
-   defining Unicode char U+2116 (decimal 8470)
-   defining Unicode char U+2117 (decimal 8471)
-   defining Unicode char U+211E (decimal 8478)
-   defining Unicode char U+2120 (decimal 8480)
-   defining Unicode char U+2122 (decimal 8482)
-   defining Unicode char U+2126 (decimal 8486)
-   defining Unicode char U+2127 (decimal 8487)
-   defining Unicode char U+212E (decimal 8494)
-   defining Unicode char U+2190 (decimal 8592)
-   defining Unicode char U+2191 (decimal 8593)
-   defining Unicode char U+2192 (decimal 8594)
-   defining Unicode char U+2193 (decimal 8595)
-   defining Unicode char U+2329 (decimal 9001)
-   defining Unicode char U+232A (decimal 9002)
-   defining Unicode char U+2422 (decimal 9250)
-   defining Unicode char U+25E6 (decimal 9702)
-   defining Unicode char U+25EF (decimal 9711)
-   defining Unicode char U+266A (decimal 9834)
-   defining Unicode char U+FEFF (decimal 65279)
-))
+)
 LaTeX Info: Redefining \oldstylenums on input line 334.
 Package textcomp Info: Setting cmr sub-encoding to TS1/0 on input line 349.
 Package textcomp Info: Setting cmss sub-encoding to TS1/0 on input line 350.
@@ -324,20 +250,20 @@ Package textcomp Info: Setting ptmx sub-encoding to TS1/4 on input line 408.
 Package textcomp Info: Setting ptmj sub-encoding to TS1/4 on input line 409.
 )
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
-Package: fontenc 2018/08/11 v2.0j Standard LaTeX package
+Package: fontenc 2017/04/05 v2.0i Standard LaTeX package
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def
-File: t1enc.def 2018/08/11 v2.0j Standard LaTeX file
+File: t1enc.def 2017/04/05 v2.0i Standard LaTeX file
 LaTeX Font Info:    Redeclaring font encoding T1 on input line 48.
 ))
 (/usr/share/texlive/texmf-dist/tex/latex/ae/ae.sty
 Package: ae 2001/02/12 1.3 Almost European Computer Modern
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
-Package: fontenc 2018/08/11 v2.0j Standard LaTeX package
+Package: fontenc 2017/04/05 v2.0i Standard LaTeX package
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def
-File: t1enc.def 2018/08/11 v2.0j Standard LaTeX file
+File: t1enc.def 2017/04/05 v2.0i Standard LaTeX file
 LaTeX Font Info:    Redeclaring font encoding T1 on input line 48.
 )
 LaTeX Font Info:    Try loading font information for T1+aer on input line 105.
@@ -348,7 +274,8 @@ File: t1aer.fd 1997/11/16 Font definitions for T1/aer.
 (/usr/share/texlive/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip11
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
-) (./MQM-tour.aux)
+)
+No file MQM-tour.aux.
 \openout1 = `MQM-tour.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 42.
@@ -365,7 +292,6 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 42.
 LaTeX Font Info:    ... okay on input line 42.
 LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 42.
 LaTeX Font Info:    Try loading font information for TS1+cmr on input line 42.
-
 (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
@@ -423,8 +349,6 @@ LaTeX Warning: Reference `missing data' on page 3 undefined on input line 149.
 [3])
 *x
 
-*x
-
 *
 ! Interruption.
 <*> 
@@ -432,11 +356,11 @@ LaTeX Warning: Reference `missing data' on page 3 undefined on input line 149.
 ? x
  
 Here is how much of TeX's memory you used:
- 2964 strings out of 492616
- 38484 string characters out of 6131417
- 100121 words of memory out of 5000000
- 6821 multiletter control sequences out of 15000+600000
+ 2973 strings out of 492983
+ 39365 string characters out of 6134921
+ 93097 words of memory out of 5000000
+ 6487 multiletter control sequences out of 15000+600000
  30221 words of font info for 52 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 35i,8n,24p,251b,200s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 35i,8n,24p,251b,194s stack positions out of 5000i,500n,10000p,200000b,80000s
 Output written on MQM-tour.dvi (3 pages, 10428 bytes).
