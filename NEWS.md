@@ -1,6 +1,6 @@
 Revision history for the R/qtl package
 ----------------------------------------------------------------------
-copyright (c) 2001-2020, Karl W Broman
+copyright (c) 2001-2021, Karl W Broman
 <https://rqtl.org>
 
     The R/qtl package is free software; you can redistribute it and/or
@@ -15,6 +15,38 @@ copyright (c) 2001-2020, Karl W Broman
     A copy of the GNU General Public License, version 3, is available
     at https://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
+
+## Version 1.47, 2021-01-07
+
+### Minor changes
+
+- Added function `find_large_intervals()` for finding inter-marker
+  intervals in a map with length greater than some value.
+
+- Fixed potential problem in documentation, since `plot()` has moved
+  from the graphics package to base.
+
+- Acknowledge R Core Team among contributors, as zeroin function
+  (in C) had been taken from R version 2.15.1. Also add a Copyrights
+  field to the DESCRIPTION file.
+
+- Allow `rescalemap()`, `shiftmap()`, `summaryMap()`, and
+  `jittermap()` to work with plain lists.
+
+- Fixed Issue #91 where pull.rf() gives a cryptic error if marker
+  names are not all distinct.
+
+### Bug fixes
+
+- Fix a problem in `inferredpartitions()` that occurs in the devel
+  version of R.
+
+- Small change to `read.cross()` to avoid warning about length of
+  `alleles` argument for `crosstype="4way"`. (Fixes Issue #90.)
+
+- Small change to `read.cross()` to avoid messing with X chromosome
+  genotypes when `crosstype=4way"`. (Fixes Issue #88.)
+
 
 ## Version 1.46, 2020-02-28
 

@@ -2,8 +2,8 @@
 #
 # read.cross.R
 #
-# copyright (c) 2000-2019, Karl W Broman
-# last modified Dec, 2019
+# copyright (c) 2000-2020, Karl W Broman
+# last modified Dec, 2020
 # first written Aug, 2000
 #
 #     This program is free software; you can redistribute it and/or
@@ -131,6 +131,9 @@ read.cross <-
     estimate.map <- cross[[2]]
     cross <- cross[[1]]
 
+    if(is.null(crosstype)) crosstype <- crosstype(cross)
+    else class(cross) <- c(crosstype, "cross")
+
     # if chr names all start with "chr" or "Chr", remove that part
     chrnam <- names(cross$geno)
     if(all(regexpr("^[Cc][Hh][Rr]",chrnam)>0)){
@@ -159,6 +162,9 @@ read.cross <-
 
     ## Pass through read.cross.bcsft for BCsFt (convert if appropriate).
     cross <- read.cross.bcsft(cross = cross, BC.gen = BC.gen, F.gen = F.gen, ...)
+
+    if(crosstype=="risib") cross <- convert2risib(cross)
+    else if(crosstype=="riself") cross <- convert2riself(cross)
 
     # store genotype data as integers
     for(i in 1:nchr(cross))
@@ -190,11 +196,6 @@ read.cross <-
     }
 
     attr(cross, "alleles") <- alleles
-
-    if(is.null(crosstype)) crosstype <- crosstype(cross)
-    if(crosstype=="risib") cross <- convert2risib(cross)
-    else if(crosstype=="riself") cross <- convert2riself(cross)
-    else class(cross) <- c(crosstype, "cross")
 
     # if 4-way cross, make the maps matrices
     if(crosstype=="4way") {

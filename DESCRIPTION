@@ -1,17 +1,20 @@
 Package: qtl
-Version: 1.46-2
-Date: 2020-02-28
+Version: 1.47-9
+Date: 2021-01-07
 Title: Tools for Analyzing QTL Experiments
 Author: Karl W Broman <broman@wisc.edu> and Hao Wu, with
   ideas from Gary Churchill and Saunak Sen and contributions from
   Danny Arends, Robert Corty, Timothee Flutre, Ritsert Jansen, Pjotr
   Prins, Lars Ronnegard, Rohan Shah, Laura Shannon, Quoc Tran, Aaron
-  Wolen, and Brian Yandell
+  Wolen, Brian Yandell, and R Core Team
 Maintainer: Karl W Broman <broman@wisc.edu>
 Description: Analysis of experimental crosses to identify genes
   (called quantitative trait loci, QTLs) contributing to variation in
   quantitative traits.
   Broman et al. (2003) <doi:10.1093/bioinformatics/btg112>.
+Copyright: Code for Brent's method for finding the root of a univariate
+        function was taken from R 2.15.1 (Copyright 1999, 2001 The R
+        Core Team)
 Depends: R (>= 2.14.0)
 Imports: parallel, graphics, stats, utils, grDevices
 Suggests: testthat
@@ -20,8 +23,7 @@ URL: https://rqtl.org, https://github.com/kbroman/qtl
 BugReports: https://github.com/kbroman/qtl/issues
 Encoding: UTF-8
 ByteCompile: true
-RoxygenNote: 7.0.2
 NeedsCompilation: yes
-Packaged: 2020-03-11 15:50:01 UTC; kbroman
+Packaged: 2021-01-07 18:59:36 UTC; kbroman
 Repository: CRAN
-Date/Publication: 2020-03-11 23:10:02 UTC
+Date/Publication: 2021-01-07 21:30:03 UTC

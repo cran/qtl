@@ -23,7 +23,8 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
 }
 
 \arguments{
-  \item{format}{Specifies the format of the data.}
+  \item{format}{Specifies the format of the data file or files. Details
+  on the various file formats are provided below.}
   \item{dir}{Directory in which the data files will be found.  In
     Windows, use forward slashes (\code{"/"}) or double backslashes
     (\code{"\\\\"}) to specify directory trees.}
@@ -144,7 +145,7 @@ read.cross(format=c("csv", "csvr", "csvs", "csvsr", "mm", "qtx",
 
   The \code{sampledata} directory in the package distribution contains
   sample data files in multiple formats.    Also see
-  \url{https://rqtl.org/sampledata}.
+  \url{https://rqtl.org/sampledata/}.
 
   The \code{\dots} argument enables additional arguments to be passed to
   the function \code{\link[utils]{read.table}} in the case of \code{csv}
@@ -440,7 +441,7 @@ dat7 <- read.cross("karl", dir="Mydata", genfile="gen.txt",
 \references{
   Broman, K. W. and Sen,
   \if{latex}{\out{\'S}}\if{html}{\out{&#346;}}\if{text}{S}. (2009) \emph{A
-  guide to QTL mapping with R/qtl.}  Springer.  \url{https://rqtl.org/book}
+  guide to QTL mapping with R/qtl.}  Springer.  \url{https://rqtl.org/book/}
 }
 
 
@@ -449,7 +450,7 @@ dat7 <- read.cross("karl", dir="Mydata", genfile="gen.txt",
   \code{\link{write.cross}}, \code{\link{sim.cross}}, \code{\link[utils]{read.table}}.
   The \code{sampledata} directory in the package distribution contains
   sample data files in multiple formats.  Also see
-  \url{https://rqtl.org/sampledata}.
+  \url{https://rqtl.org/sampledata/}.
 }
 
 \keyword{IO}
