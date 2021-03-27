@@ -1,6 +1,6 @@
 Package: qtl
-Version: 1.47-9
-Date: 2021-01-07
+Version: 1.48-1
+Date: 2021-03-24
 Title: Tools for Analyzing QTL Experiments
 Author: Karl W Broman <broman@wisc.edu> and Hao Wu, with
   ideas from Gary Churchill and Saunak Sen and contributions from
@@ -24,6 +24,6 @@ BugReports: https://github.com/kbroman/qtl/issues
 Encoding: UTF-8
 ByteCompile: true
 NeedsCompilation: yes
-Packaged: 2021-01-07 18:59:36 UTC; kbroman
+Packaged: 2021-03-24 16:04:27 UTC; kbroman
 Repository: CRAN
-Date/Publication: 2021-01-07 21:30:03 UTC
+Date/Publication: 2021-03-27 08:40:10 UTC
