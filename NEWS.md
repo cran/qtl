@@ -16,6 +16,21 @@ copyright (c) 2001-2021, Karl W Broman
     at https://www.r-project.org/Licenses/GPL-3
 ----------------------------------------------------------------------
 
+## Verison 1.50, 2021-10-06
+
+## New features
+
+- `cim()` now includes an `addcovar` argument for including additional
+  covariates in the model.
+
+### Minor changes
+
+- Revised qtlversion() to handle a case like "1.50".
+
+- Added `#define USE_FC_LEN_T` in C code that calls Fortran, because
+  of a change in R 3.6.5 that's going to be required in R 4.2.0.
+
+
 ## Version 1.48, 2021-03-24
 
 ### Bug fixes
