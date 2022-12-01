@@ -1,5 +1,20 @@
 # Revision history for the R/qtl package
 
+## Version 1.54, 2022-12-01
+
+### Minor changes
+
+- `locateXO()` and `countXO()` are now working for cross type BCsFt
+  (by treating it as an F2 intercross).
+
+### Bug fixes
+
+- Fixed a bug in `summary.cross()` re `&` vs `&&`.
+
+- Fix bug in `read.cross.bcsft()` so that in `read.cross()` you can
+  use `crosstype="bcsft"`
+
+
 ## Version 1.52, 2022-07-09
 
 ### Minor changes

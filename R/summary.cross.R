@@ -2,8 +2,8 @@
 #
 # summary.cross.R
 #
-# copyright (c) 2001-2019, Karl W Broman
-# last modified Dec, 2019
+# copyright (c) 2001-2022, Karl W Broman
+# last modified Oct, 2022
 # first written Feb, 2001
 #
 #     This program is free software; you can redistribute it and/or
@@ -73,7 +73,7 @@ summary.cross <-
 
     # table of genotype values
     typings <- typingsA <- typingsX <- NULL
-    if(type %in% c("f2", "bcsft") & !is.bcs) {
+    if(type %in% c("f2", "bcsft") && !is.bcs) {
         if(is.null(GenoX)) {
             typings <- table(factor(Geno[!is.na(Geno)], levels=1:5))
             temp <- getgenonames("f2", "A", cross.attr=attributes(object))
