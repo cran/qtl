@@ -1,22 +1,23 @@
 Package: qtl
-Version: 1.70
-Date: 2024-08-21
+Version: 1.72
+Date: 2025-11-19
 Title: Tools for Analyzing QTL Experiments
-Author: Karl W Broman [aut, cre] (<https://orcid.org/0000-0002-4914-6671>),
+Author: Karl W Broman [aut, cre] (ORCID:
+    <https://orcid.org/0000-0002-4914-6671>),
   Hao Wu [aut],
-  Gary Churchill [ctb] (<https://orcid.org/0000-0001-9190-9284>),
-  Saunak Sen [ctb] (<https://orcid.org/0000-0003-4519-6361>),
-  Danny Arends [ctb] (<https://orcid.org/0000-0001-8738-0162>),
+  Gary Churchill [ctb] (ORCID: <https://orcid.org/0000-0001-9190-9284>),
+  Saunak Sen [ctb] (ORCID: <https://orcid.org/0000-0003-4519-6361>),
+  Danny Arends [ctb] (ORCID: <https://orcid.org/0000-0001-8738-0162>),
   Robert Corty [ctb],
   Timothee Flutre [ctb],
   Ritsert Jansen [ctb],
-  Pjotr Prins [ctb] (<https://orcid.org/0000-0002-8021-9162>),
+  Pjotr Prins [ctb] (ORCID: <https://orcid.org/0000-0002-8021-9162>),
   Lars Ronnegard [ctb],
   Rohan Shah [ctb],
   Laura Shannon [ctb],
   Quoc Tran [ctb],
   Aaron Wolen [ctb],
-  Brian Yandell [ctb] (<https://orcid.org/0000-0002-8774-9377>),
+  Brian Yandell [ctb] (ORCID: <https://orcid.org/0000-0002-8774-9377>),
   R Core Team [ctb]
 Authors@R: c(person(given = c("Karl", "W"),
                     family = "Broman",
@@ -89,6 +90,6 @@ BugReports: https://github.com/kbroman/qtl/issues
 Encoding: UTF-8
 ByteCompile: true
 NeedsCompilation: yes
-Packaged: 2024-08-21 11:19:33 UTC; kbroman
+Packaged: 2025-11-19 15:04:00 UTC; kbroman
 Repository: CRAN
-Date/Publication: 2024-08-22 02:20:03 UTC
+Date/Publication: 2025-11-19 15:50:02 UTC
